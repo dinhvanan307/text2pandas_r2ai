@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "vifinqa-btc-2026",
+  "snapshot_id": "ca033190f2e9e99f",
+  "immutable": true,
+  "source_revision": "0450088ab22ec946f04f097586967ca405955b3b",
+  "license": "CC BY-NC 4.0 for the financial-report corpus; question annotation license unspecified",
+  "counts": {
+    "ticker": 100,
+    "financial_statement_txt": 1973,
+    "question": 1012
+  },
+  "paths": {
+    "financial_statements": "financial_statements",
+    "questions": "questions/questions.jsonl",
+    "companies": "metadata/companies.csv",
+    "companies_source_name": "code_stock.csv"
+  },
+  "payload_tree_sha256": "57fd7ca41903dbb749d774b1ee34373c8243faec7ba0fd91c8b51fb082b0282a",
+  "payload_tree_hash_note": "companies.csv is hashed with its immutable upstream label code_stock.csv",
+  "baseline": "provenance/baseline_20260825.json"
+}

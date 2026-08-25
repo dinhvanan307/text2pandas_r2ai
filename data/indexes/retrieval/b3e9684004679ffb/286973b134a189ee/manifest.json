@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "index_id": "286973b134a189ee",
+  "source_a6_build_id": "b3e9684004679ffb",
+  "source_a6_db": "data/processed/a6/b3e9684004679ffb/silver.db",
+  "source_a6_db_sha256": "6622b913c3cc3d8b20cf1d45840da8eda6147230cfeb82df4f357fee4123b269",
+  "database": "retrieval.db",
+  "database_bytes": 4240060416,
+  "database_sha256": "e9f62775a75794d770954ba1903f7a90c8b97467e5398b0baa2057bec8e67d5f",
+  "config_fingerprint": "286973b134a189ee",
+  "indexes_added": [
+    "ix_tc_ticker_year",
+    "ix_tc_stmt_ticker",
+    "ix_doc_tky",
+    "ix_obs_tab_period"
+  ],
+  "legacy_provenance": "PROVENANCE.legacy.json",
+  "baseline": "provenance/baseline_20260825.json"
+}

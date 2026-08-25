@@ -1,0 +1,47 @@
+{
+ "ten": "RETRIEVAL_FREEZE_v1",
+ "ngay": "2026-08-19",
+ "ly_do": "FREEZE vi OPPORTUNITY COST (cong docs/92 §6), KHONG phai vi dat target",
+ "baseline_leaderboard": {
+  "submission_id": 3236,
+  "TABLES_F2": 0.3538,
+  "TABLES_P": 0.1933,
+  "TABLES_R": 0.4744,
+  "TABLES_MRR5": 0.4066,
+  "DOCS_F2": 0.7536,
+  "DOCS_P": 0.5062,
+  "DOCS_R": 0.8941,
+  "DOCS_MRR5": 0.7841
+ },
+ "config": {
+  "brands": true,
+  "stop_mode": "fold",
+  "basis_mode": "soft",
+  "year_slack": 1,
+  "top_k_rank": 50,
+  "depth_dung_lai": 300,
+  "N_policy": "clamp(3 * n_o, 1, 30)"
+ },
+ "config_fingerprint": "286973b134a189ee",
+ "contract": {
+  "relevant_tables": "<doc_id>|<line_no> 1-based, khong hau to _extracted",
+  "relevant_docs": "suy tu relevant_tables, giu thu tu xuat hien"
+ },
+ "artifact": {
+  "refs_1012": "artifacts/retrieval/vplus/refs_1012.json",
+  "gold": "data/dev/gold_v2.jsonl",
+  "pool": "data/dev/gold_tay_pool_v7.jsonl"
+ },
+ "md5": {
+  "src/retrieval/question_intent.py": "47f477a0dcd52e98b18f52061d0482fb",
+  "src/retrieval/normalize.py": "3de7159caac9a79b03427fa127bc0c0d",
+  "src/retrieval/subject.py": "73e236b783a652cc6bcad87104f8c720",
+  "src/retrieval/rank_s2.py": "8feecabef165edc472776a021a833482",
+  "src/retrieval/query_terms.py": "9a43378580670522a3cc702836dddac4",
+  "src/retrieval/filter_s1.py": "c1b58711f09eaf33b472e220b2611495",
+  "src/retrieval/alias_store.py": "9627d020569914614165b5895d5763dc",
+  "src/retrieval/submission_adapter.py": "05d6b29d58553187e2fd15443ade574d",
+  "src/retrieval/evalkit/stages.py": "37439150fd77b6a4c5ecc674b7f34f03",
+  "configs/retrieval/eval_v1.yaml": "c6ba77d8b7befad471cc350d010a4191"
+ }
+}

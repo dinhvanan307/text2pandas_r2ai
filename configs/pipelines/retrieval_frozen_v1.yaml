@@ -1,0 +1,23 @@
+schema_version: "1.0"
+name: RETRIEVAL_FREEZE_v1
+frozen_at: 2026-08-19
+reason: opportunity_cost
+source_a6_build_id: b3e9684004679ffb
+index_id: 286973b134a189ee
+parameters:
+  brands: true
+  stop_mode: fold
+  basis_mode: soft
+  year_slack: 1
+  top_k_rank: 50
+  max_depth: 300
+  result_limit_policy: clamp(3 * n_o, 1, 30)
+baseline:
+  submission_id: 3236
+  tables_f2: 0.3538
+  tables_precision: 0.1933
+  tables_recall: 0.4744
+  documents_f2: 0.7536
+  documents_precision: 0.5062
+  documents_recall: 0.8941
+provenance: provenance/retrieval/RETRIEVAL_FREEZE_v1.json

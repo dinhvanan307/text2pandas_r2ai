@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "name": "ViFinQA reference codebase",
+  "source": "https://github.com/DSKT-NOWJ/ViFinQA.git",
+  "commit": "a1c09cc0ed8a0474e27749a40e5c3ac174a660da",
+  "purpose": "reference and audit only",
+  "runtime_dependency": false,
+  "included_in_corpus_hash": false,
+  "tracked_by_parent_repository": false
+}

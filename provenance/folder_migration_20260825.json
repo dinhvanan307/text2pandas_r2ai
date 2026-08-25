@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "migrated_at": "2026-08-25",
+  "method": "same-filesystem move; no payload transformation",
+  "source_baseline": "provenance/baseline_20260825.json",
+  "verification": {
+    "raw_tree_sha256": {
+      "expected": "57fd7ca41903dbb749d774b1ee34373c8243faec7ba0fd91c8b51fb082b0282a",
+      "actual": "57fd7ca41903dbb749d774b1ee34373c8243faec7ba0fd91c8b51fb082b0282a",
+      "status": "PASS"
+    },
+    "a6_tree_sha256": {
+      "expected": "1c0161c2c8be7389fb23fab8cbb40e1d1d602307db6db008461c7b8ae460f5d4",
+      "actual": "1c0161c2c8be7389fb23fab8cbb40e1d1d602307db6db008461c7b8ae460f5d4",
+      "status": "PASS"
+    },
+    "a6_db_sha256": {
+      "expected": "6622b913c3cc3d8b20cf1d45840da8eda6147230cfeb82df4f357fee4123b269",
+      "actual": "6622b913c3cc3d8b20cf1d45840da8eda6147230cfeb82df4f357fee4123b269",
+      "status": "PASS"
+    },
+    "retrieval_db_sha256": {
+      "expected": "e9f62775a75794d770954ba1903f7a90c8b97467e5398b0baa2057bec8e67d5f",
+      "actual": "e9f62775a75794d770954ba1903f7a90c8b97467e5398b0baa2057bec8e67d5f",
+      "status": "PASS"
+    }
+  },
+  "mappings": [
+    ["../data/external/vifinqa/financial_statements", "data/raw/btc/financial_statements"],
+    ["../data/external/vifinqa/questions", "data/raw/btc/questions"],
+    ["../data/external/vifinqa/code_stock.csv", "data/raw/btc/metadata/companies.csv"],
+    ["../release_finala6", "data/processed/a6/b3e9684004679ffb"],
+    ["../retrieval/work.db", "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"],
+    ["../data/dev", "data/curated/dev-legacy"],
+    ["../data/gold", "data/curated/gold"],
+    ["../data/bronze", "artifacts/runs/a6/legacy-bronze"],
+    ["../data/silver", "artifacts/legacy/silver-pre-a6"],
+    ["../retrieval", "artifacts/runs/retrieval/legacy-202608"]
+  ]
+}
