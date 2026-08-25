@@ -226,7 +226,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     cfg = SubmissionConfig(doc_id_variant=args.doc_id, locator_base=args.locator_base)
     zip_path = build_submission(rep.results, questions, stage, cfg)
 
-    val = validate_zip(zip_path, set(questions))
+    val = validate_zip(zip_path, questions, corpus_root=CORPUS)
     print("\n╔═══════════ VALIDATOR ═══════════╗")
     print(f"  bản ghi              : {val.n_records:,}")
     print(f"  lỗi                  : {len(val.errors)}")
@@ -299,7 +299,7 @@ def cmd_package(args: argparse.Namespace) -> int:
         _sh2.copy2(f, out / "data" / f.name)
 
     zip_path = build_submission(results, questions, out, cfg)
-    val = validate_zip(zip_path, set(questions))
+    val = validate_zip(zip_path, questions, corpus_root=CORPUS)
     print(f"\n╔═══ BÀI NỘP  doc_id={cfg.doc_id_variant}  locator_base={cfg.locator_base} ═══╗")
     print(f"  bản ghi   : {val.n_records:,} / {len(questions):,}")
     print(f"  lỗi       : {len(val.errors)}")
