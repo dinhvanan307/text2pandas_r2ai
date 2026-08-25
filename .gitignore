@@ -1,0 +1,186 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+# venv ĐÓNG BĂNG dựng từ requirements.lock — sinh lại được từ lock,
+# không bao giờ commit (vài trăm MB, và nó phụ thuộc nền tảng).
+.venv-build/
+env/
+
+# Data files — large/cached data
+data/fine_tuning/bird_python/_repo/
+data/financial_raw/vnstock_cache/*.csv
+data/financial_raw/vnstock_cache/*.parquet
+data/financial_raw/bctc_xlsx/*.xlsx
+data/domain/feedback_store.db
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Keep these data files in git
+!data/financial_raw/sample_csv/
+!data/financial_raw/merged/
+!data/financial_raw/processed/
+!data/evaluation/golden_test_set/
+
+# Evaluation run results (regenerated)
+data/evaluation/eval_results*.json
+data/evaluation/eval_tier*.json
+data/evaluation/eval_all_tiers.json
+data/evaluation/quick_eval.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Docker
+docker/*.log
+
+# Temp
+*.tmp
+/tmp/
+
+# Agents / gemini config
+.agents/
+.gemini/
+
+# FUSE mount temp artifacts
+.fuse_hidden*
+_to_delete/
+
+# ── Dữ liệu ngoài (~379 MB) ────────────────────────────────────────────
+# KHÔNG commit: (1) quá lớn, (2) license CC BY-NC 4.0 — hạn chế phân phối lại,
+# (3) tái tạo được 100% bằng tools/data_acquisition/download_vifinqa.py
+#     (script ghim revision, idempotent, resumable)
+data/external/**
+# Cho git đi vào thư mục con để giữ lại vài tệp nhỏ bên dưới
+!data/external/**/
+# GIỮ báo cáo kiểm kê: nhỏ, ghi rõ revision đã ghim → nguồn tái lập
+!data/external/vifinqa/dataset_report.md
+!data/external/**/.gitkeep
+
+# Repo clone lồng bên trong (có .git riêng → git sẽ hiểu nhầm thành gitlink)
+data/external/vifinqa/_codebase/
+
+# Log tải dữ liệu
+data/external/_logs/
+
+# Thư mục tạm
+_tmp_bak/
+
+# ── Tầng dữ liệu medallion (sinh ra từ pipeline, tái tạo được) ──
+data/bronze/
+data/silver/
+data/gold/
+data/submissions/
+!data/*/.gitkeep
+
+# ── Thư mục chờ xoá thủ công (device không cho rm) ──
+_TO_DELETE/
+
+# ── RC-00 · Artifact lớn không bao giờ vào git ───────────────────────────────
+# Chúng tái tạo được từ source + corpus, và một tệp 1,5 GB trong lịch sử git là
+# không đảo ngược được. Đường dẫn của chúng nằm trong manifest, băm nằm trong
+# SHA256SUMS — đó mới là thứ cần bàn giao.
+_to_delete/
+artifacts/
+silver_release/
+*.zip
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+*.parquet
+
+# Bản sao do Finder sinh ra khi trùng tên
+*[0-9][0-9].[0-9][0-9].[0-9][0-9]/
+.DS_Store
+
+# ── Đánh dấu NGOẠI LỆ: evidence PHẢI vào git ────────────────────────────────
+# `reports/` chứa JSON forensics/gate/registry — chúng là bằng chứng nghiệm thu,
+# nhỏ, và review 28 §2.2 nêu đích danh việc chúng vắng mặt là blocker B-0.
+!reports/
+!reports/**/*.json
+!reports/**/*.txt
+!reports/**/*.log
+
+# ── NGOẠI LỆ: artifact ĐÓNG BĂNG phải vào git ──────────────────────────────
+# `artifacts/` bị chặn vì chứa DB nhiều GB. Nhưng `artifacts/policy/` là các
+# cohort/contract đóng băng ở P3 — chúng LÀ bằng chứng nghiệm thu và review 28
+# §2.2 xếp việc chúng vắng mặt khỏi repo là blocker.
+!artifacts/
+artifacts/*
+!artifacts/policy/
+!artifacts/policy/**
+# Mẫu UID/locator đóng băng của RC1 (3 KB) là evidence P2 — phải vào git.
+# `artifacts/rc1_baseline/silver.db` (3,9 GB) thì KHÔNG: nó tái tạo được từ
+# `silver_release.zip` bằng một lệnh giải nén, và băm của nó đã nằm trong
+# `reports/rc1_baseline_forensics.json`.
+!artifacts/rc1_baseline/
+artifacts/rc1_baseline/*
+!artifacts/rc1_baseline/rc1_samples.json
+
+# rác tạm của env_check._writable() — probe ghi thật để phát hiện read-only
+# mount/quota/SIP. Bình thường nó tự xoá; chỉ sót lại khi chạy trên môi
+# trường không unlink được, và khi đó nó làm bẩn cây và chặn build_handoff_set.
+.dp_write_probe
+
+# A5 · thư mục script đo blast radius (đã chuyển sang artifacts/rc2/a5_probe/scripts)
+tools/_probe/
+_to_delete/
+
+# ── sinh bởi tools/git_inventory_v1.py (review 131 §7) ──
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv*/
+.DS_Store
+
+# artifact lớn / dẫn xuất — giữ NGOÀI Git, tra bằng SHA manifest
+artifacts/retrieval/work.db
+artifacts/rc2/packagesa6/
+artifacts/rc2/release_finala6/
+artifacts/execution/candidates/
+wheelhouse*/
+wheelhouse*.zip
+silver_release.zip
+*_evidence*.zip
+_h0_stage/
+to_read/
+verify_out/
+sync_122_*/
+sync_122_*.zip
+!sync_122_2.sha256
+zi8fvJau
+
+# data/dev: chỉ giữ metadata nhỏ, bỏ dump bản ghi
+data/dev/answer_a6/
+data/dev/answer_v2/
+data/dev/answer_v3/
+data/dev/so_hoc/
+data/dev/gold_tay_pool_*.jsonl
+data/dev/gold_worksheet_*.jsonl
+
+# ── dist/ · gói bàn giao (dọn 24/08/2026) ───────────────────────────────────
+# Mọi packet gửi reviewer nằm ở đây thay vì vứt ở root. Nội dung là ZIP sinh ra
+# được từ source + parent, nên không bao giờ vào git; chỉ file .sha256 nhỏ là
+# thứ đáng giữ để đối chiếu.
+dist/*.zip
+dist/*.tgz
+!dist/README.md
+!dist/*.sha256
+
+# ── _TO_DELETE/ · hàng chờ xoá thủ công ─────────────────────────────────────
+# Volume này không cho `rm` (Operation not permitted) nên rác được CHUYỂN vào
+# đây rồi xoá từ máy thật. Xem reports/cleanup_*/ để biết đã bỏ những gì.
+_TO_DELETE/

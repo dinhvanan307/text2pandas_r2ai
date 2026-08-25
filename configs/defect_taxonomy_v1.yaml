@@ -1,0 +1,214 @@
+# RC-09 · Khoá defect taxonomy — MỘT bảng mã, mọi thứ khác ánh xạ về đây.
+#
+# Audit A-11 bắt được: `handoff 15` đổi nghĩa D-05 và D-06. Đó không phải lỗi
+# chính tả — nó làm hỏng khả năng so sánh giữa hai lần báo cáo, và mọi số liệu
+# lịch sử gắn nhãn D-05 trở nên mơ hồ. Vì thế bảng này KHOÁ nghĩa, và mọi
+# quality flag · collision class · unresolved class · Retrieval feedback đều
+# phải ánh xạ về đúng một ID ở đây.
+#
+# Đổi nghĩa một ID đã phát hành là BREAKING. Cần ID mới thì thêm ID mới.
+
+taxonomy_version: "1.1"   # A5 · them D-11 (percent_value_implausible) va
+                          # D-12 (period_from_row_path). Noi dung doi thi
+                          # so phien ban phai doi, neu khong truong nay chi
+                          # la trang tri.
+locked_at: "2026-08-06"
+
+defects:
+  D-01:
+    name: header loss
+    definition: >
+      Ô mang giá trị bị vùng tiêu đề nuốt, không sinh observation.
+    status: fixed
+    evidence: unexplained_financial_drop_count = 0 trên b927c3e8f90aed74
+    maps_from:
+      quality_flags: [header_would_consume_table, header_row_has_small_numbers]
+      dropped_reasons: [header_row]
+
+  D-02:
+    name: row hierarchy
+    definition: >
+      Cây phân cấp dòng bỏ lỡ dòng mở phạm vi, nên hai khoản mục khác nhau
+      cùng rơi vào một `row_path`.
+    status: classified
+    maps_from:
+      collision_classes: [missing_row_parent]
+
+  D-03:
+    name: column grouping / collision
+    definition: >
+      Đụng độ trên trục CỘT — nhiều cột cùng nhãn sau khi ghép tầng header,
+      thường do mất tầng nhóm cột.
+    status: classified
+    maps_from:
+      collision_classes: [missing_column_group]
+
+  D-04:
+    name: empty / missing labels
+    definition: >
+      Dòng không có nhãn hoặc không tìm được tổ tiên nào để neo giá trị vào.
+    status: classified
+    maps_from:
+      quality_flags: [generic_row_label]
+      dropped_reasons: [no_row_label]
+
+  D-05:
+    name: split table
+    definition: >
+      Bảng bị cắt qua ranh giới trang, phần thân nằm ở một khối `<table>` khác
+      với phần tiêu đề.
+    note: >
+      NGHĨA KHOÁ. `handoff 15` từng dùng D-05 cho "section_text bẩn" — đó là
+      D-06. Không lặp lại.
+    status: blocked
+    blocked_reason: ghép bảng đổi `table_uid`, là thay đổi breaking
+    maps_from:
+      collision_classes: [missing_label_or_split]
+
+  D-06:
+    name: dirty section / context
+    definition: >
+      `section_text` hoặc `context_clean` bị cắt cụt, lẫn ngày tháng, hoặc
+      hỏng mã hoá.
+    note: >
+      NGHĨA KHOÁ. `handoff 15` từng dùng D-06 cho "chiều ngoài bảng" — đó là
+      D-08 mới ở dưới.
+    status: partial
+    maps_from:
+      quality_rules: [DQ-ENC-MOJIBAKE, DQ-ENC-NFC]
+
+  D-07:
+    name: cross-table scale contamination
+    definition: >
+      Bậc đơn vị của một bảng bị áp nhầm sang bảng khác qua ngữ cảnh rộng hơn.
+    status: ceiling
+    evidence: escaped_still_implausible = 0; verified_correct_on_gold = null
+    maps_from:
+      quality_rules: [Q-OBS-SCALE-REJECTED]
+      quality_flags: [scale_rejected_implausible]
+
+  # RC-09 yêu cầu `missing_dimension` phải được map thành subclass CÓ LÝ DO,
+  # hoặc tạo ID mới kèm migration note. Chọn ID mới, vì nó không phải một
+  # biến thể của D-02: sửa `row_path` không giải quyết được nó.
+  D-08:
+    name: out-of-table dimension
+    definition: >
+      Hai dòng cùng tổ tiên, cùng nhãn, cùng kỳ nhưng khác giá trị. Chiều phân
+      biệt (quý, chi nhánh, loại tiền tệ, hoặc vị trí trong tài liệu) KHÔNG
+      nằm trong bảng.
+    status: blocked
+    blocked_reason: >
+      Không sửa được bằng cách cải thiện `row_path`. Phân biệt chúng cần
+      `row_uid` — đã có trong hợp đồng.
+    migration_note: >
+      MỚI ở taxonomy v1.0. Trước đây bị gộp nhầm vào D-06 trong handoff 15.
+      Số liệu lịch sử gắn D-06 cho `missing_dimension` phải đọc lại là D-08.
+    maps_from:
+      collision_classes: [missing_dimension]
+
+  # Tiny-money là lỗi độc lập, phát hiện ở audit A-04. Nó không thuộc D-01..07.
+  D-09:
+    name: false numeric value from reference column
+    definition: >
+      Ô ở cột Mã số / Thuyết minh / STT bị xuất thành giá trị tiền, do nhãn cột
+      bị OCR làm hỏng nên bộ phân vai trò không nhận ra.
+    status: partial
+    measured_on: b927c3e8f90aed74
+    breakdown:
+      total: 2836
+      rule_false_positive_after_scale: 740
+      reference_header_matched: 472
+      section_number_shaped_value: 79
+      remaining_for_column_signal: 1545
+    note: >
+      740/2.836 là lỗi của CHÍNH RULE: `Q-OBS-TINY-MONEY` so ngưỡng 1.000 trên
+      giá trị THÔ, chưa áp `scale_exponent`. Bảng khai `triệu đồng`, ô ghi `3`,
+      thực tế là 3.000.000 VND.
+    maps_from:
+      quality_rules: [Q-OBS-TINY-MONEY]
+      quality_flags: [tiny_money_unresolved]
+
+# ── Ánh xạ ngược · dùng khi nhận feedback từ Retrieval ──────────────────────
+# `error_owner=data` + `defect_class` phải giải được về đúng một ID ở trên.
+# ── RC2-039 · D-10 ───────────────────────────────────────────────────────
+  D-10:
+    name: unit ambiguous on share-labelled column
+    definition: >
+      Nhãn nêu "cổ phiếu" nhưng không đủ bằng chứng kết luận đơn vị là ĐẾM hay
+      TIỀN. Không phải lỗi bóc tách: giá trị đúng, chỉ đơn vị chưa xác định.
+    status: blocking_until_classified
+    evidence: >
+      98 ô loại này được phát hành với execution_ready=1 trên 7aa8b4c22984bf5f;
+      65 trong đó mang tín hiệu đếm ở nhãn DÒNG mà luật cũ chỉ đọc nhãn cột.
+    maps_from:
+      quality_flags: [unit_ambiguous_share_column]
+
+# ── A5 · D-11, D-12 ──────────────────────────────────────────────────────
+  D-11:
+    name: percent-classified cell with impossible magnitude
+    definition: >
+      Ô được phân loại PHẦN TRĂM nhưng |giá trị| >= 1.000. Giá trị là số THẬT
+      trong tài liệu; sai ở nhãn đơn vị, không ở phép đọc số.
+    status: blocking_until_reclassified
+    evidence: >
+      Đo trên A4: 102.748/103.193 ô percentage candidate có |v| < 1.000. Phần
+      đuôi là 2 ô ở [1e3,1e4), 75 ô ở [1e4,1e6), 368 ô >= 1e6. Mẫu:
+      38.708.428.190.000 ở cột `01/01/2024 › (%)` — ô tiền bị gán nhầm vì
+      `header_path` gộp cột tiền với cột `%` liền kề.
+    maps_from:
+      quality_flags: [percent_value_implausible]
+
+  D-12:
+    name: period recovered from row axis
+    definition: >
+      Kỳ không có ở nhãn cột lẫn ngữ cảnh bảng, mà có ở nhãn DÒNG dưới dạng
+      ngày tuyệt đối. Bố cục chuyển vị của bảng biến động vốn chủ sở hữu.
+    status: warning_if_addressable_else_blocking
+    evidence: >
+      185.385 ô có period_source='none' trên A4, trong đó 152.455 `note` và
+      27.064 `equity_change`. 9.528 ô có ngày tuyệt đối ở nhãn dòng đọc được
+      bằng chính `_DMY`/`_DMY_WORDS` của bộ phân giải kỳ.
+    maps_from:
+      quality_flags: [period_from_row_path]
+
+# Namespace của readiness KHÁC namespace defect. `blocking_reasons_json` ghi
+# `confidence_low`, `column_role_unknown`… còn taxonomy đánh số D-xx. Không có
+# bảng nối thì phép kiểm "mọi lý do chặn đều map được" không có gì để so, và
+# bản trước lặng lẽ PASS với tập rỗng. Bảng này là bảng nối đó.
+readiness_reasons:
+  semantic_collision: D-03
+  period_unresolved: D-08
+  period_inferred_without_evidence: D-08
+  unit_unknown: D-07
+  unit_assumed_no_evidence: D-07
+  scale_conflict: D-07
+  unit_ambiguous_share_column: D-10
+  percent_value_implausible: D-11
+  period_inferred_from_row_path: D-12
+  period_row_path_not_addressable: D-12
+  label_empty: D-04
+  generic_label_not_discriminative: D-04
+  confidence_low: D-09
+  tiny_money_unconfirmed: D-09
+  parse_ambiguity_unresolved: D-09
+  column_role_unknown: D-09
+  physical_duplicate: D-05
+
+reverse_index:
+  collision_classes:
+    missing_row_parent: D-02
+    missing_column_group: D-03
+    missing_label_or_split: D-05
+    missing_dimension: D-08
+  dropped_reasons:
+    header_row: D-01
+    non_value_column: D-09
+    parse_ambiguous: D-04
+    parse_not_a_number: null      # hành vi ĐÚNG, không phải defect
+    no_structure: D-01
+  quality_rules:
+    Q-OBS-TINY-MONEY: D-09
+    Q-OBS-SCALE-REJECTED: D-07
+    Q-OBS-GENERIC-LABEL: D-04
+    Q-COL-ROLE-UNKNOWN: D-09
+    DQ-ENC-MOJIBAKE: D-06

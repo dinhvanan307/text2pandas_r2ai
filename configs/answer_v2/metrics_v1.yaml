@@ -1,0 +1,181 @@
+# metric_ontology wave 1 — AG1_R2_FORMULA
+#
+# 14 metric, KHÔNG phải 16. `operating_profit` và `CFO` bị loại vì đo trên
+# 2.633.554 observation của work.db cho **ground = 0%** với alias hiển nhiên
+# (doc 145 §8, P1-5). Đưa chúng vào wave 1 làm 4 formula chết im lặng.
+#
+# `match: prefix_normalized` — chuẩn hoá lower + bỏ dấu + gộp khoảng trắng, rồi
+# so khớp TIỀN TỐ. Chọn tiền tố (không phải bằng tuyệt đối) vì A6 nối hậu tố kỳ
+# vào `row_path_text` ở nhiều bảng.
+#
+# `forbidden_aliases` là phần quan trọng nhất và dễ bị bỏ sót: "nợ phải trả"
+# là tiền tố của "nợ phải trả người bán ngắn hạn". Không chặn thì
+# `total_liabilities` nuốt hàng chục dòng con và D/E sai một cách hệ thống.
+
+version: 1
+match_policy: prefix_normalized
+
+metrics:
+  - metric_id: total_assets
+    aliases: ["tong cong tai san", "tong tai san"]
+    statement_types: [balance_sheet]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: ["tong tai san ngan han", "tong tai san dai han"]
+
+  - metric_id: total_liabilities
+    aliases: ["no phai tra"]
+    statement_types: [balance_sheet]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases:
+      - "no phai tra nguoi ban"
+      - "no phai tra ngan han"
+      - "no phai tra dai han"
+      - "no phai tra khac"
+      - "no phai tra noi bo"
+      # ── P0 · chặn va chạm mở ra bởi luật tiền tố dòng-tổng ──────────────
+      # "Tổng nợ phải trả VÀ vốn chủ sở hữu" = TỔNG TÀI SẢN, không phải nợ.
+      # 2.018 observation trên A6 (work.db e9f62775…). Tiền tố "no phai tra va"
+      # bắt trọn cả biến thể OCR ("vonchu so huu", "von chu so hu u", "… 2",
+      # "… 440 300 400"). Không chặn → D/E sai một cách hệ thống.
+      - "no phai tra va"
+      - "no phai tra von chu so huu"
+      # Dòng chi tiết thuyết minh "Cộng nợ phải trả – Phải trả khách hàng…".
+      - "no phai tra phai tra"
+
+  - metric_id: current_liabilities
+    aliases: ["no ngan han"]
+    statement_types: [balance_sheet]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: ["no ngan han khac", "no ngan han den han"]
+
+  - metric_id: equity
+    aliases: ["von chu so huu"]
+    statement_types: [balance_sheet]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: ["von chu so huu khac", "von chu so huu cua co dong khong kiem soat"]
+
+  - metric_id: current_assets
+    aliases: ["tai san ngan han"]
+    statement_types: [balance_sheet]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: ["tai san ngan han khac"]
+
+  - metric_id: inventory
+    aliases: ["hang ton kho"]
+    statement_types: [balance_sheet, note]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: ["du phong giam gia hang ton kho", "gia tri thuan hang ton kho"]
+
+  - metric_id: net_revenue
+    aliases: ["doanh thu thuan"]
+    statement_types: [income_statement]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: ["doanh thu thuan khac"]
+
+  - metric_id: gross_profit
+    aliases: ["loi nhuan gop"]
+    statement_types: [income_statement]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: []
+
+  - metric_id: profit_after_tax
+    aliases: ["loi nhuan sau thue"]
+    statement_types: [income_statement]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases:
+      - "loi nhuan sau thue cua co dong khong kiem soat"
+      - "loi nhuan sau thue chua phan phoi"
+    # ── P0 · chặn ĐỊNH NGỮ PHÂN BỔ (đo: 1.553 observation trên work.db
+    # e9f62775…). "Lợi nhuận sau thuế CỦA CỔ ĐÔNG CÔNG TY MẸ" là phần lãi thuộc
+    # chủ sở hữu công ty mẹ — một BỘ PHẬN của LNST hợp nhất, không phải LNST.
+    # Bind nhầm làm biên lợi nhuận ròng thấp hơn thực tế một cách hệ thống.
+    # Doc 154 đề xuất 3 chuỗi exact; đo trên A6 cho thấy 3 chuỗi đó chỉ phủ
+    # 1.063/1.553 — còn "… phân bổ cho cổ đông …", "… thuộc về cổ đông …",
+    # "lợi nhuận sau thuế công ty mẹ" (không có "của") nằm ngoài. Dùng định ngữ
+    # thay vì liệt kê chuỗi: cùng một luật kế toán, không phải danh sách vá.
+    forbidden_contains:
+      - "co dong"
+      - "cong ty me"
+      - "phan bo cho"
+      - "thuoc ve"
+      - "khong kiem soat"
+      - "thieu so"
+
+  - metric_id: profit_before_tax
+    aliases: ["tong loi nhuan ke toan truoc thue", "loi nhuan truoc thue"]
+    statement_types: [income_statement]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: []
+
+  - metric_id: cogs
+    aliases: ["gia von hang ban"]
+    statement_types: [income_statement]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: []
+
+  - metric_id: selling_expense
+    aliases: ["chi phi ban hang"]
+    statement_types: [income_statement]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: abs
+    preferred_scope: consolidated
+    forbidden_aliases: []
+
+  - metric_id: admin_expense
+    aliases: ["chi phi quan ly doanh nghiep"]
+    statement_types: [income_statement]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: abs
+    preferred_scope: consolidated
+    forbidden_aliases: []
+
+  - metric_id: interest_expense
+    aliases: ["chi phi lai vay"]
+    statement_types: [income_statement]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: abs
+    preferred_scope: consolidated
+    forbidden_aliases: []
+
+# ── KHÔNG thuộc wave 1 — ground 0%, cần sửa alias trước ────────────────────
+deferred:
+  - metric_id: operating_profit
+    ly_do: "ground 0% với alias 'loi nhuan thuan tu hoat dong kinh doanh'"
+  - metric_id: cfo
+    ly_do: "ground 0% với alias 'luu chuyen tien thuan tu hoat dong kinh doanh'"

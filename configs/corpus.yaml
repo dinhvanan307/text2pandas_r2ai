@@ -1,0 +1,33 @@
+# corpus.yaml — khai báo nguồn corpus và quy ước định danh
+# Mọi giá trị ⏳PCV phải xác nhận trước khi khoá triển khai phụ thuộc.
+
+corpus:
+  id: vifinqa
+  root: data/external/vifinqa/financial_statements
+  file_glob: "*/*/*/*.txt"
+  encoding: utf-8
+  line_ending: LF
+
+identity:
+  # document_id = tên thư mục tài liệu (= tên tệp bỏ hậu tố _extracted.txt)
+  doc_id_from: directory_name
+  filename_suffix: _extracted.txt
+  patterns:
+    - "{ticker}_financial_statements_{year}_{basis}"
+    - "{ticker}_financial_statements_{year}"
+    - "{ticker}_{year}_{doc_kind}"          # công văn giải trình
+  basis_values: [consolidated, separate, aggregated]
+  basis_nullable: true
+
+locator:
+  # ⏳PCV — quy ước vị trí bảng trong trường relevant_tables
+  scheme: line_number
+  base: 1                                   # ⏳PCV: 1-based hay 0-based
+  table_ref_format: "{doc_id}|{line_no}"
+  page_marker_regex: '^=+ PAGE (\d+) =+$'
+
+alternates:
+  # Lưu song song để chuyển đổi được nếu quy ước locator thay đổi
+  keep_char_offset: true
+  keep_page_no: true
+  keep_table_ordinal: true

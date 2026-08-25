@@ -1,0 +1,133 @@
+# SINH TỰ ĐỘNG bởi `tools/attest_brands.py` — KHÔNG sửa tay.
+#
+# Tập con của `company_brand_v1.yaml` gồm những tên thương mại ĐÃ CHỨNG THỰC là
+# có mặt trong chính báo cáo của mã đó, tức nằm sẵn trong corpus BTC. Dùng cho
+# `load_aliases(brands="a6")` để chạy nhánh KHÔNG có tri thức ngoài A6.
+#
+# Chứng thực: 68/77 tên. Không chứng thực được (9):
+#   AAA   An Phát Xanh
+#   AAA   Nhựa An Phát
+#   ABB   ABBank
+#   ACB   ACB Bank
+#   EIB   Eximbank
+#   NAB   NamABank
+#   NVB   NCB Bank
+#   OCB   OCB Bank
+#   VIB   VIB Bank
+version: 1
+brands:
+  ACV: [Cảng hàng không
+...]
+  BAB: [BacABank
+..., Bắc Á
+...]
+  BID: [BIDV
+...]
+  BSR: [Lọc hóa dầu Bình Sơn
+..., Bình Sơn
+...]
+  CTG: [VietinBank
+...]
+  DBC: [Dabaco
+...]
+  DCM: [Đạm Cà Mau
+..., Phân bón Dầu khí Cà Mau
+...]
+  DPM: [Đạm Phú Mỹ
+..., Ure Phú Mỹ
+...]
+  DXG: [Đất Xanh
+...]
+  FOX: [FPT Telecom
+..., Viễn thông FPT
+...]
+  GAS: [PV GAS
+..., Khí Việt Nam
+...]
+  HAG: [Hoàng Anh Gia Lai
+...]
+  HDB: [HDBank
+...]
+  HHV: [Đèo Cả
+...]
+  HPG: [Hòa Phát
+..., Hoà Phát
+...]
+  HSG: [Hoa Sen
+...]
+  HT1: [Vicem Hà Tiên
+..., Xi măng Hà Tiên
+...]
+  KBC: [Đô thị Kinh Bắc
+..., Kinh Bắc
+...]
+  KLB: [KienlongBank
+..., Kiên Long
+...]
+  MBB: [MBBank
+..., MB Bank
+...]
+  MSB: [Hàng hải Việt Nam
+...]
+  MWG: [Thế giới Di động
+...]
+  NKG: [Thép Nam Kim
+..., Nam Kim
+...]
+  NLG: [Nam Long
+...]
+  NVB: [Quốc Dân
+...]
+  NVL: [Novaland
+..., Địa ốc No Va
+...]
+  OCB: [Phương Đông
+...]
+  PLX: [Petrolimex
+..., Xăng dầu Việt Nam
+...]
+  PNJ: [Phú Nhuận
+...]
+  POW: [PV Power
+...]
+  PVT: [PV Trans
+..., Vận tải Dầu khí
+...]
+  QNS: [Đường Quảng Ngãi
+...]
+  SAB: [Sabeco
+...]
+  SGB: [Saigonbank
+...]
+  SHB: [Sài Gòn - Hà Nội
+...]
+  SSB: [SeABank
+..., Đông Nam Á
+...]
+  STB: [Sacombank
+...]
+  VCB: [Vietcombank
+..., Ngoại thương Việt Nam
+...]
+  VGC: [Viglacera
+...]
+  VGT: [Vinatex
+..., Dệt May Việt Nam
+...]
+  VIC: [Vingroup
+...]
+  VJC: [Vietjet
+...]
+  VNM: [Vinamilk
+..., Sữa Việt Nam
+...]
+  VPB: [VPBank
+..., Việt Nam Thịnh Vượng
+...]
+  VPI: [Văn Phú Invest
+..., Văn Phú
+...]
+  VRE: [Vincom Retail
+...]
+  VSC: [Container Việt Nam
+...]

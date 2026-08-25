@@ -1,0 +1,1212 @@
+# metric_registry_v1 — SINH TỰ ĐỘNG từ A6 work.db (KHÔNG sửa tay file này;
+# sửa generator tools/build_metric_registry_v1.py rồi sinh lại).
+# nguồn: observations.metric_label_clean top 400 theo tần suất.
+# coverage đo được: 812/1012 câu chứa >=1 nhãn (substring, xem report).
+version: 1
+generated_by: tools/build_metric_registry_v1.py
+workdb_sha256: e9f62775a75794d770954ba1903f7a90c8b97467e5398b0baa2057bec8e67d5f
+regression_defects:  # docs/120 §fresh_holdout_v2 — PHẢI thành test, không chữa bằng nới similarity
+  metric_different_concept_false_blocks: [18, 31, 144, 252, 284]
+  derived_quantity_leak: [104]
+  register: artifacts/retrieval/bundles/verify_117_v1/fresh_holdout_v2_defect_register.jsonl
+metrics:
+  - label: "Số dư cuối năm"
+    n_obs: 39315
+    n_tickers: 93
+  - label: "Số dư đầu năm"
+    n_obs: 37491
+    n_tickers: 91
+  - label: "TỔNG CỘNG"
+    n_obs: 28143
+    n_tickers: 36
+  - label: "Cộng"
+    n_obs: 27588
+    n_tickers: 50
+  - label: "Số cuối năm"
+    n_obs: 21894
+    n_tickers: 67
+  - label: "Số đầu năm"
+    n_obs: 20672
+    n_tickers: 65
+  - label: "Khấu hao trong năm"
+    n_obs: 13399
+    n_tickers: 100
+  - label: "Khác"
+    n_obs: 12018
+    n_tickers: 82
+  - label: "Tiền gửi của khách hàng"
+    n_obs: 10349
+    n_tickers: 25
+  - label: "Tổng tài sản"
+    n_obs: 9696
+    n_tickers: 75
+  - label: "Thanh lý, nhượng bán"
+    n_obs: 9564
+    n_tickers: 84
+  - label: "Chi phí khác"
+    n_obs: 9514
+    n_tickers: 98
+  - label: "Tăng trong năm"
+    n_obs: 8411
+    n_tickers: 89
+  - label: "Tổng cộng"
+    n_obs: 8347
+    n_tickers: 61
+  - label: "Nguyên giá"
+    n_obs: 8225
+    n_tickers: 83
+  - label: "Tổng nợ phải trả"
+    n_obs: 7414
+    n_tickers: 69
+  - label: "Thu nhập khác"
+    n_obs: 6999
+    n_tickers: 100
+  - label: "Thuế thu nhập cá nhân"
+    n_obs: 6541
+    n_tickers: 83
+  - label: "Thuế thu nhập doanh nghiệp"
+    n_obs: 6222
+    n_tickers: 92
+  - label: "Bằng VND"
+    n_obs: 5980
+    n_tickers: 21
+  - label: "Chi phí dịch vụ mua ngoài"
+    n_obs: 5759
+    n_tickers: 77
+  - label: "Thuế giá trị gia tăng"
+    n_obs: 5729
+    n_tickers: 91
+  - label: "Mua trong năm"
+    n_obs: 5675
+    n_tickers: 89
+  - label: "Phát hành giấy tờ có giá"
+    n_obs: 5640
+    n_tickers: 21
+  - label: "Các khoản nợ khác"
+    n_obs: 5627
+    n_tickers: 22
+  - label: "Cổ phiếu phổ thông"
+    n_obs: 5587
+    n_tickers: 88
+  - label: "Giá trị hao mòn lũy kế"
+    n_obs: 5483
+    n_tickers: 78
+  - label: "Chi phí lãi vay"
+    n_obs: 5177
+    n_tickers: 78
+  - label: "Tài sản cố định"
+    n_obs: 5056
+    n_tickers: 84
+  - label: "Tiền và các khoản tương đương tiền"
+    n_obs: 5039
+    n_tickers: 78
+  - label: "Bằng ngoại tệ"
+    n_obs: 4940
+    n_tickers: 21
+  - label: "Tại ngày cuối năm"
+    n_obs: 4890
+    n_tickers: 49
+  - label: "Tiền gửi và vay các TCTD khác"
+    n_obs: 4887
+    n_tickers: 20
+  - label: "Tại ngày đầu năm"
+    n_obs: 4860
+    n_tickers: 50
+  - label: "Hàng tồn kho"
+    n_obs: 4651
+    n_tickers: 80
+  - label: "Tài sản cố định hữu hình"
+    n_obs: 4413
+    n_tickers: 100
+  - label: "Các loại thuế khác"
+    n_obs: 4396
+    n_tickers: 88
+  - label: "Vay ngắn hạn"
+    n_obs: 4378
+    n_tickers: 75
+  - label: "Thanh lý"
+    n_obs: 4327
+    n_tickers: 61
+  - label: "Ngắn hạn"
+    n_obs: 4280
+    n_tickers: 56
+  - label: "Phải thu ngắn hạn khác"
+    n_obs: 4150
+    n_tickers: 75
+  - label: "Chi phí quản lý doanh nghiệp"
+    n_obs: 4056
+    n_tickers: 77
+  - label: "Cho vay khách hàng (*)"
+    n_obs: 3960
+    n_tickers: 17
+  - label: "Tài sản cố định vô hình"
+    n_obs: 3902
+    n_tickers: 99
+  - label: "Lợi nhuận thuần trong năm"
+    n_obs: 3805
+    n_tickers: 69
+  - label: "Phải trả ngắn hạn khác"
+    n_obs: 3804
+    n_tickers: 75
+  - label: "Tiền"
+    n_obs: 3736
+    n_tickers: 78
+  - label: "Doanh thu hoạt động tài chính"
+    n_obs: 3648
+    n_tickers: 77
+  - label: "Nợ ngắn hạn"
+    n_obs: 3610
+    n_tickers: 98
+  - label: "Các khoản tương đương tiền"
+    n_obs: 3547
+    n_tickers: 77
+  - label: "Phải thu khác"
+    n_obs: 3543
+    n_tickers: 80
+  - label: "Chi phí bán hàng"
+    n_obs: 3514
+    n_tickers: 73
+  - label: "Tiền mặt"
+    n_obs: 3498
+    n_tickers: 86
+  - label: "Tổng"
+    n_obs: 3429
+    n_tickers: 27
+  - label: "Chi phí tài chính"
+    n_obs: 3340
+    n_tickers: 76
+  - label: "Phải thu ngắn hạn của khách hàng"
+    n_obs: 3338
+    n_tickers: 73
+  - label: "Phải trả người bán ngắn hạn"
+    n_obs: 3325
+    n_tickers: 78
+  - label: "Chi phí thuế TNDN hiện hành"
+    n_obs: 3293
+    n_tickers: 86
+  - label: "Phân loại lại"
+    n_obs: 3259
+    n_tickers: 77
+  - label: "Giảm khác"
+    n_obs: 3255
+    n_tickers: 80
+  - label: "Phải thu dài hạn khác"
+    n_obs: 3209
+    n_tickers: 75
+  - label: "Các đối tượng khác"
+    n_obs: 3195
+    n_tickers: 51
+  - label: "Chi phí khấu hao tài sản cố định"
+    n_obs: 3165
+    n_tickers: 73
+  - label: "Tài sản ngắn hạn khác"
+    n_obs: 3154
+    n_tickers: 77
+  - label: "Mức chênh thanh khoản ròng"
+    n_obs: 3137
+    n_tickers: 21
+  - label: "Thuế và các khoản phải nộp Nhà nước"
+    n_obs: 3113
+    n_tickers: 81
+  - label: "Vay dài hạn"
+    n_obs: 3106
+    n_tickers: 72
+  - label: "Phải trả người lao động"
+    n_obs: 3097
+    n_tickers: 78
+  - label: "Chi phí trả trước dài hạn"
+    n_obs: 3034
+    n_tickers: 78
+  - label: "Doanh thu bán hàng và cung cấp dịch vụ"
+    n_obs: 2979
+    n_tickers: 72
+  - label: "Lợi nhuận sau thuế chưa phân phối"
+    n_obs: 2920
+    n_tickers: 80
+  - label: "Vốn chủ sở hữu"
+    n_obs: 2915
+    n_tickers: 85
+  - label: "Dài hạn"
+    n_obs: 2881
+    n_tickers: 57
+  - label: "Chi phí trả trước ngắn hạn"
+    n_obs: 2869
+    n_tickers: 78
+  - label: "Tài sản bộ phận"
+    n_obs: 2862
+    n_tickers: 47
+  - label: "Trả trước cho người bán ngắn hạn"
+    n_obs: 2859
+    n_tickers: 74
+  - label: "Người mua trả tiền trước ngắn hạn"
+    n_obs: 2852
+    n_tickers: 76
+  - label: "Chứng khoán đầu tư (*)"
+    n_obs: 2845
+    n_tickers: 17
+  - label: "Thặng dư vốn cổ phần"
+    n_obs: 2823
+    n_tickers: 90
+  - label: "Tiền mặt, vàng bạc, đá quý"
+    n_obs: 2766
+    n_tickers: 20
+  - label: "Quỹ đầu tư phát triển"
+    n_obs: 2758
+    n_tickers: 65
+  - label: "Lợi nhuận trước thuế"
+    n_obs: 2741
+    n_tickers: 83
+  - label: "Cho vay khách hàng"
+    n_obs: 2727
+    n_tickers: 23
+  - label: "Chi phí nhân viên"
+    n_obs: 2715
+    n_tickers: 63
+  - label: "Chi phí xây dựng cơ bản dở dang"
+    n_obs: 2694
+    n_tickers: 85
+  - label: "Chi phí nhân công"
+    n_obs: 2675
+    n_tickers: 66
+  - label: "Tổng lợi nhuận kế toán trước thuế"
+    n_obs: 2671
+    n_tickers: 72
+  - label: "Chi phí phải trả ngắn hạn"
+    n_obs: 2633
+    n_tickers: 78
+  - label: "Quỹ khen thưởng, phúc lợi"
+    n_obs: 2597
+    n_tickers: 85
+  - label: "Lưu chuyển tiền thuần từ hoạt động kinh doanh"
+    n_obs: 2595
+    n_tickers: 94
+  - label: "Nợ đủ tiêu chuẩn"
+    n_obs: 2569
+    n_tickers: 23
+  - label: "Tiền lãi vay đã trả"
+    n_obs: 2521
+    n_tickers: 77
+  - label: "Phải trả dài hạn khác"
+    n_obs: 2521
+    n_tickers: 73
+  - label: "Các khoản khác"
+    n_obs: 2513
+    n_tickers: 66
+  - label: "Tiền gửi có kỳ hạn"
+    n_obs: 2461
+    n_tickers: 71
+  - label: "Đầu tư vào công ty con"
+    n_obs: 2454
+    n_tickers: 92
+  - label: "Công cụ, dụng cụ"
+    n_obs: 2428
+    n_tickers: 67
+  - label: "Cho vay khách hàng - gộp"
+    n_obs: 2413
+    n_tickers: 14
+  - label: "Các khoản phải thu dài hạn"
+    n_obs: 2398
+    n_tickers: 73
+  - label: "Đầu tư góp vốn vào đơn vị khác"
+    n_obs: 2338
+    n_tickers: 67
+  - label: "Lưu chuyển tiền thuần từ hoạt động tài chính"
+    n_obs: 2334
+    n_tickers: 85
+  - label: "Dự phòng phải thu ngắn hạn khó đòi"
+    n_obs: 2318
+    n_tickers: 66
+  - label: "Tăng khác"
+    n_obs: 2310
+    n_tickers: 70
+  - label: "Tài sản dài hạn khác"
+    n_obs: 2275
+    n_tickers: 75
+  - label: "Chứng khoán kinh doanh"
+    n_obs: 2274
+    n_tickers: 58
+  - label: "Đầu tư tài chính dài hạn"
+    n_obs: 2257
+    n_tickers: 69
+  - label: "Giá vốn hàng bán"
+    n_obs: 2240
+    n_tickers: 66
+  - label: "Tiền thu từ đi vay"
+    n_obs: 2220
+    n_tickers: 74
+  - label: "Thuế thu nhập doanh nghiệp đã nộp"
+    n_obs: 2210
+    n_tickers: 76
+  - label: "Chứng khoán đầu tư - gộp"
+    n_obs: 2204
+    n_tickers: 14
+  - label: "Các khoản giảm trừ doanh thu"
+    n_obs: 2196
+    n_tickers: 69
+  - label: "Lưu chuyển tiền thuần từ hoạt động đầu tư"
+    n_obs: 2172
+    n_tickers: 81
+  - label: "Các khoản dự phòng"
+    n_obs: 2163
+    n_tickers: 77
+  - label: "Số dư đầu năm trước"
+    n_obs: 2152
+    n_tickers: 47
+  - label: "Cổ phiếu phổ thông có quyền biểu quyết"
+    n_obs: 2146
+    n_tickers: 74
+  - label: "Tài sản khác"
+    n_obs: 2120
+    n_tickers: 40
+  - label: "Trong nước"
+    n_obs: 2119
+    n_tickers: 21
+  - label: "Nợ dài hạn"
+    n_obs: 2113
+    n_tickers: 78
+  - label: "Trong đó: Chi phí lãi vay"
+    n_obs: 2106
+    n_tickers: 72
+  - label: "Lãi cơ bản trên cổ phiếu"
+    n_obs: 2100
+    n_tickers: 92
+  - label: "Tài sản Có khác"
+    n_obs: 2083
+    n_tickers: 22
+  - label: "Tài sản Có khác (*)"
+    n_obs: 2073
+    n_tickers: 16
+  - label: "Chi phí phải trả"
+    n_obs: 2072
+    n_tickers: 59
+  - label: "Số dư cuối năm nay"
+    n_obs: 2063
+    n_tickers: 42
+  - label: "Tài sản thuế thu nhập hoãn lại"
+    n_obs: 2054
+    n_tickers: 78
+  - label: "Thành phẩm"
+    n_obs: 2038
+    n_tickers: 55
+  - label: "Tiền gửi tại NHNN"
+    n_obs: 2018
+    n_tickers: 20
+  - label: "Dự phòng giảm giá hàng tồn kho"
+    n_obs: 1995
+    n_tickers: 60
+  - label: "Cổ phiếu quỹ"
+    n_obs: 1981
+    n_tickers: 55
+  - label: "Thuế và các khoản khác phải thu Nhà nước"
+    n_obs: 1978
+    n_tickers: 72
+  - label: "Doanh thu thuần"
+    n_obs: 1965
+    n_tickers: 54
+  - label: "Giảm trong năm"
+    n_obs: 1943
+    n_tickers: 56
+  - label: "Tiền mặt và vàng"
+    n_obs: 1928
+    n_tickers: 13
+  - label: "Số dư đầu năm nay"
+    n_obs: 1928
+    n_tickers: 44
+  - label: "Vốn tài trợ, ủy thác đầu tư, cho vay TCTD chịu rủi ro"
+    n_obs: 1925
+    n_tickers: 18
+  - label: "Đầu tư nắm giữ đến ngày đáo hạn"
+    n_obs: 1912
+    n_tickers: 72
+  - label: "Thu nhập từ hoạt động dịch vụ"
+    n_obs: 1908
+    n_tickers: 22
+  - label: "Giá vốn hàng bán và dịch vụ cung cấp"
+    n_obs: 1904
+    n_tickers: 58
+  - label: "Lợi nhuận trong năm"
+    n_obs: 1892
+    n_tickers: 60
+  - label: "Phải thu về cho vay ngắn hạn"
+    n_obs: 1884
+    n_tickers: 60
+  - label: "Tiền trả nợ gốc vay"
+    n_obs: 1877
+    n_tickers: 69
+  - label: "Đầu tư nằm giữ đến ngày đáo hạn"
+    n_obs: 1850
+    n_tickers: 74
+  - label: "Bảo lãnh khác"
+    n_obs: 1833
+    n_tickers: 22
+  - label: "Doanh thu chưa thực hiện ngắn hạn"
+    n_obs: 1827
+    n_tickers: 64
+  - label: "Tiền gửi ngân hàng"
+    n_obs: 1826
+    n_tickers: 65
+  - label: "Khẩu hao trong năm"
+    n_obs: 1816
+    n_tickers: 86
+  - label: "Nợ phải trả bộ phận"
+    n_obs: 1809
+    n_tickers: 34
+  - label: "TÀI SẢN DÀI HẠN"
+    n_obs: 1807
+    n_tickers: 66
+  - label: "Phân bổ trong năm"
+    n_obs: 1787
+    n_tickers: 51
+  - label: "Chi phí thuế thu nhập doanh nghiệp hiện hành"
+    n_obs: 1782
+    n_tickers: 68
+  - label: "Vay và nợ thuê tài chính ngắn hạn"
+    n_obs: 1779
+    n_tickers: 66
+  - label: "Trên 5 năm"
+    n_obs: 1755
+    n_tickers: 65
+  - label: "Phải trả khác"
+    n_obs: 1717
+    n_tickers: 69
+  - label: "Lợi nhuận khác"
+    n_obs: 1707
+    n_tickers: 64
+  - label: "Hàng hóa"
+    n_obs: 1707
+    n_tickers: 58
+  - label: "Các khoản phải thu"
+    n_obs: 1691
+    n_tickers: 48
+  - label: "Các khách hàng khác"
+    n_obs: 1690
+    n_tickers: 54
+  - label: "Các công cụ tài chính phải sinh và các tài sản tài chính khác"
+    n_obs: 1680
+    n_tickers: 22
+  - label: "VỐN CHỦ SỞ HỮU"
+    n_obs: 1676
+    n_tickers: 66
+  - label: "Dự phòng đầu tư tài chính dài hạn"
+    n_obs: 1675
+    n_tickers: 62
+  - label: "Tổng Tài sản"
+    n_obs: 1667
+    n_tickers: 10
+  - label: "Số lượng cổ phiếu đang lưu hành"
+    n_obs: 1653
+    n_tickers: 76
+  - label: "Tiền chi khác cho hoạt động kinh doanh"
+    n_obs: 1638
+    n_tickers: 72
+  - label: "Thuế TNDN"
+    n_obs: 1628
+    n_tickers: 46
+  - label: "VIII"
+    n_obs: 1624
+    n_tickers: 20
+  - label: "Lợi nhuận thuần từ hoạt động kinh doanh"
+    n_obs: 1618
+    n_tickers: 65
+  - label: "Vốn góp của chủ sở hữu"
+    n_obs: 1612
+    n_tickers: 62
+  - label: "Thuế thu nhập hoãn lại phải trả"
+    n_obs: 1604
+    n_tickers: 69
+  - label: "Tiền và tương đương tiền đầu năm"
+    n_obs: 1589
+    n_tickers: 65
+  - label: "Lợi ích cổ đông không kiểm soát"
+    n_obs: 1580
+    n_tickers: 70
+  - label: "Thu nhập từ hoạt động khác"
+    n_obs: 1574
+    n_tickers: 22
+  - label: "Lợi nhuận gộp về bán hàng và cung cấp dịch vụ"
+    n_obs: 1563
+    n_tickers: 58
+  - label: "NỘ PHẢI TRẢ"
+    n_obs: 1562
+    n_tickers: 65
+  - label: "Hao mòn trong năm"
+    n_obs: 1562
+    n_tickers: 44
+  - label: "Doanh thu thuần về bán hàng và cung cấp dịch vụ"
+    n_obs: 1559
+    n_tickers: 59
+  - label: "Tổng doanh thu"
+    n_obs: 1539
+    n_tickers: 38
+  - label: "TỔNG CỘNG TÀI SẢN"
+    n_obs: 1537
+    n_tickers: 53
+  - label: "Doanh thu cung cấp dịch vụ"
+    n_obs: 1526
+    n_tickers: 53
+  - label: "Vay dài hạn đến hạn trả"
+    n_obs: 1525
+    n_tickers: 59
+  - label: "Vay và nợ thuê tài chính dài hạn"
+    n_obs: 1522
+    n_tickers: 63
+  - label: "Thuế tài nguyên"
+    n_obs: 1510
+    n_tickers: 32
+  - label: "Thuế GTGT được khấu trừ"
+    n_obs: 1503
+    n_tickers: 60
+  - label: "Thuế giá trị gia tăng được khấu trừ"
+    n_obs: 1491
+    n_tickers: 69
+  - label: "Tổng tài sản (1)"
+    n_obs: 1478
+    n_tickers: 8
+  - label: "TỔNG TÀI SẢN"
+    n_obs: 1477
+    n_tickers: 40
+  - label: "Chi phí khác bằng tiền"
+    n_obs: 1472
+    n_tickers: 45
+  - label: "Chi phí nguyên liệu, vật liệu"
+    n_obs: 1469
+    n_tickers: 48
+  - label: "Các khoản phải thu ngắn hạn"
+    n_obs: 1462
+    n_tickers: 59
+  - label: "Nợ có khả năng mất vốn"
+    n_obs: 1461
+    n_tickers: 23
+  - label: "Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động"
+    n_obs: 1456
+    n_tickers: 67
+  - label: "Doanh nghiệp có vốn đầu tư nước ngoài"
+    n_obs: 1455
+    n_tickers: 20
+  - label: "Giá trị khấu hao lũy kế"
+    n_obs: 1450
+    n_tickers: 42
+  - label: "Đầu tư dài hạn khác"
+    n_obs: 1435
+    n_tickers: 56
+  - label: "Chênh lệch tỷ giá"
+    n_obs: 1422
+    n_tickers: 24
+  - label: "Lưu chuyển tiền thuần trong năm"
+    n_obs: 1411
+    n_tickers: 72
+  - label: "II. Tài sản cố định"
+    n_obs: 1404
+    n_tickers: 63
+  - label: "Total"
+    n_obs: 1401
+    n_tickers: 11
+  - label: "Chi phí hoạt động khác"
+    n_obs: 1400
+    n_tickers: 26
+  - label: "TỔNG CỘNG NGUỒN VỐN"
+    n_obs: 1391
+    n_tickers: 52
+  - label: "Lợi nhuận sau thuế TNDN"
+    n_obs: 1390
+    n_tickers: 54
+  - label: "Lãi từ hoạt động đầu tư"
+    n_obs: 1385
+    n_tickers: 61
+  - label: "Tài sản Có khác - gộp"
+    n_obs: 1383
+    n_tickers: 13
+  - label: "Các khoản phải thu khác"
+    n_obs: 1373
+    n_tickers: 65
+  - label: "Các cổ đông khác"
+    n_obs: 1372
+    n_tickers: 37
+  - label: "Chứng khoán đầu tư – gộp"
+    n_obs: 1367
+    n_tickers: 13
+  - label: "Tiền gửi không kỳ hạn"
+    n_obs: 1365
+    n_tickers: 27
+  - label: "Mức chênh nhạy cảm với lãi suất nội bảng"
+    n_obs: 1361
+    n_tickers: 19
+  - label: "Giao dịch kỳ hạn tiền tệ"
+    n_obs: 1360
+    n_tickers: 20
+  - label: "Trái phiếu"
+    n_obs: 1358
+    n_tickers: 45
+  - label: "Dự phòng phải trả dài hạn"
+    n_obs: 1346
+    n_tickers: 51
+  - label: "Nguyên liệu, vật liệu"
+    n_obs: 1337
+    n_tickers: 48
+  - label: "II. Nợ dài hạn"
+    n_obs: 1332
+    n_tickers: 63
+  - label: "Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia"
+    n_obs: 1325
+    n_tickers: 61
+  - label: "Tiền gửi tại NHNNVN"
+    n_obs: 1325
+    n_tickers: 13
+  - label: "Trạng thái tiền tệ nội bảng"
+    n_obs: 1323
+    n_tickers: 22
+  - label: "Cho vay khách hàng – gộp"
+    n_obs: 1321
+    n_tickers: 15
+  - label: "Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ"
+    n_obs: 1317
+    n_tickers: 61
+  - label: "III. Các khoản phải thu ngắn hạn"
+    n_obs: 1316
+    n_tickers: 61
+  - label: "Others"
+    n_obs: 1314
+    n_tickers: 18
+  - label: "Các khoản lãi, phí phải thu"
+    n_obs: 1313
+    n_tickers: 22
+  - label: "TỔNG NỘ PHẢI TRẢ"
+    n_obs: 1312
+    n_tickers: 24
+  - label: "Số lượng cổ phiếu đăng ký phát hành"
+    n_obs: 1310
+    n_tickers: 51
+  - label: "Các công cụ tài chính phải sinh và các khoản nợ tài chính khác"
+    n_obs: 1308
+    n_tickers: 22
+  - label: "Nợ dưới tiêu chuẩn"
+    n_obs: 1304
+    n_tickers: 23
+  - label: "Thuế khác"
+    n_obs: 1282
+    n_tickers: 47
+  - label: "Tiền gửi tại và cho vay các TCTD khác"
+    n_obs: 1280
+    n_tickers: 12
+  - label: "Đầu tư vào công ty liên doanh, liên kết"
+    n_obs: 1273
+    n_tickers: 49
+  - label: "Vay và nợ"
+    n_obs: 1269
+    n_tickers: 25
+  - label: "Nợ cần chú ý"
+    n_obs: 1266
+    n_tickers: 23
+  - label: "Chi phí khấu hao TSCĐ"
+    n_obs: 1262
+    n_tickers: 45
+  - label: "Chi phí tài chính khác"
+    n_obs: 1260
+    n_tickers: 66
+  - label: "Đầu tư tài chính ngắn hạn"
+    n_obs: 1253
+    n_tickers: 53
+  - label: "IV. Hàng tồn kho"
+    n_obs: 1247
+    n_tickers: 61
+  - label: "Doanh nghiệp tư nhân"
+    n_obs: 1242
+    n_tickers: 19
+  - label: "Đầu tư vào công ty liên kết"
+    n_obs: 1235
+    n_tickers: 55
+  - label: "Nợ nghi ngờ"
+    n_obs: 1230
+    n_tickers: 23
+  - label: "Chứng khoán đầu tư sẵn sàng để bán"
+    n_obs: 1226
+    n_tickers: 22
+  - label: "Số dư cuối năm trước"
+    n_obs: 1223
+    n_tickers: 33
+  - label: "Nguyên vật liệu"
+    n_obs: 1220
+    n_tickers: 39
+  - label: "Opening balance"
+    n_obs: 1217
+    n_tickers: 11
+  - label: "Nợ phải trả khác"
+    n_obs: 1213
+    n_tickers: 16
+  - label: "Lợi nhuận sau thuế thu nhập doanh nghiệp"
+    n_obs: 1212
+    n_tickers: 49
+  - label: "Cam kết trong nghiệp vụ L/C"
+    n_obs: 1208
+    n_tickers: 18
+  - label: "Closing balance"
+    n_obs: 1201
+    n_tickers: 9
+  - label: "Biến động khác"
+    n_obs: 1197
+    n_tickers: 22
+  - label: "Phải thu về cho vay dài hạn"
+    n_obs: 1193
+    n_tickers: 53
+  - label: "Chi phí hoạt động dịch vụ"
+    n_obs: 1182
+    n_tickers: 22
+  - label: "Các khoản cho vay"
+    n_obs: 1175
+    n_tickers: 17
+  - label: "Thuế GTGT"
+    n_obs: 1173
+    n_tickers: 38
+  - label: "Chuyển từ xây dựng cơ bản dở dang"
+    n_obs: 1172
+    n_tickers: 28
+  - label: "Cung cấp dịch vụ"
+    n_obs: 1171
+    n_tickers: 18
+  - label: "Chi phí khấu hao"
+    n_obs: 1171
+    n_tickers: 52
+  - label: "Cổ tức"
+    n_obs: 1169
+    n_tickers: 39
+  - label: "Tài sản dở dang dài hạn"
+    n_obs: 1168
+    n_tickers: 56
+  - label: "Cổ tức, lợi nhuận được chia"
+    n_obs: 1159
+    n_tickers: 47
+  - label: "Vốn cổ phần"
+    n_obs: 1158
+    n_tickers: 44
+  - label: "Các nhà cung cấp khác"
+    n_obs: 1157
+    n_tickers: 43
+  - label: "Tiền và tương đương tiền cuối năm"
+    n_obs: 1154
+    n_tickers: 58
+  - label: "Ngoại tệ"
+    n_obs: 1149
+    n_tickers: 9
+  - label: "Số lượng cổ phiếu đã bán ra công chúng"
+    n_obs: 1134
+    n_tickers: 57
+  - label: "Xây dựng"
+    n_obs: 1131
+    n_tickers: 23
+  - label: "Ten aging ty Iken kef"
+    n_obs: 1130
+    n_tickers: 1
+  - label: "Thu nhập lãi và các khoản thu nhập tương tự"
+    n_obs: 1128
+    n_tickers: 22
+  - label: "Doanh thu khác"
+    n_obs: 1126
+    n_tickers: 57
+  - label: "Bảo lãnh vay vốn"
+    n_obs: 1126
+    n_tickers: 19
+  - label: "Đầu tư xây dựng cơ bản hoàn thành"
+    n_obs: 1122
+    n_tickers: 47
+  - label: "Doanh thu chưa thực hiện dài hạn"
+    n_obs: 1119
+    n_tickers: 48
+  - label: "Lợi nhuận chưa phân phối"
+    n_obs: 1114
+    n_tickers: 29
+  - label: "Trạng thái tiền tệ nội, ngoại bảng"
+    n_obs: 1106
+    n_tickers: 20
+  - label: "Chênh lệch tỷ giá hối đoái"
+    n_obs: 1101
+    n_tickers: 49
+  - label: "Dự phòng chung"
+    n_obs: 1092
+    n_tickers: 22
+  - label: "Lợi nhuận kế toán trước thuế"
+    n_obs: 1089
+    n_tickers: 58
+  - label: "Dự phòng rủi ro cho vay khách hàng"
+    n_obs: 1084
+    n_tickers: 22
+  - label: "Lợi nhuận sau thuế chưa phân phối năm nay"
+    n_obs: 1081
+    n_tickers: 56
+  - label: "Đối tượng khác"
+    n_obs: 1071
+    n_tickers: 23
+  - label: "Tổng Nợ phải trả"
+    n_obs: 1069
+    n_tickers: 13
+  - label: "Tổng nợ phải trả (2)"
+    n_obs: 1064
+    n_tickers: 8
+  - label: "Trong vòng một năm"
+    n_obs: 1060
+    n_tickers: 42
+  - label: "Tiền gửi tại Ngân hàng Nhà nước"
+    n_obs: 1060
+    n_tickers: 17
+  - label: "Chi phí liên quan trực tiếp đến hoạt động kinh doanh"
+    n_obs: 1051
+    n_tickers: 13
+  - label: "Phải thu khách hàng"
+    n_obs: 1050
+    n_tickers: 44
+  - label: "Mua hàng hóa"
+    n_obs: 1048
+    n_tickers: 15
+  - label: "II. Đầu tư tài chính ngắn hạn"
+    n_obs: 1048
+    n_tickers: 58
+  - label: "Dự phòng phải trả ngắn hạn"
+    n_obs: 1040
+    n_tickers: 49
+  - label: "Thu nhập lãi thuần"
+    n_obs: 1039
+    n_tickers: 20
+  - label: "Doanh thu"
+    n_obs: 1038
+    n_tickers: 32
+  - label: "Tiền và các khoản tương đương tiền đầu năm"
+    n_obs: 1037
+    n_tickers: 54
+  - label: "Tập đoàn Dầu khí Việt Nam"
+    n_obs: 1028
+    n_tickers: 6
+  - label: "Kết quả kinh doanh bộ phận"
+    n_obs: 1028
+    n_tickers: 17
+  - label: "Tại ngày 31 tháng 12 năm 2023"
+    n_obs: 1025
+    n_tickers: 17
+  - label: "Tại ngày 31 tháng 12 năm 2022"
+    n_obs: 1024
+    n_tickers: 17
+  - label: "Hàng bán bị trả lại"
+    n_obs: 1020
+    n_tickers: 49
+  - label: "Các khoản phải trả và công nợ khác"
+    n_obs: 1020
+    n_tickers: 22
+  - label: "Các khoản phải trả khác"
+    n_obs: 1015
+    n_tickers: 47
+  - label: "Cổ tức, lợi nhuận đã trả cho chủ sở hữu"
+    n_obs: 1009
+    n_tickers: 57
+  - label: "GIÁ TRỊ THUÀN"
+    n_obs: 1007
+    n_tickers: 21
+  - label: "Ký cược, ký quỹ"
+    n_obs: 1002
+    n_tickers: 39
+  - label: "Các khoản lãi, phí phải trả"
+    n_obs: 1002
+    n_tickers: 22
+  - label: "Quỹ khác thuộc vốn chủ sở hữu"
+    n_obs: 986
+    n_tickers: 39
+  - label: "Hợp tác xã và liên hiệp hợp tác xã"
+    n_obs: 986
+    n_tickers: 16
+  - label: "Chi phí lãi"
+    n_obs: 986
+    n_tickers: 13
+  - label: "Vay ngân hàng"
+    n_obs: 980
+    n_tickers: 28
+  - label: "Phải trả người bán"
+    n_obs: 979
+    n_tickers: 50
+  - label: "Chi phí thuế TNDN hoãn lại"
+    n_obs: 973
+    n_tickers: 63
+  - label: "Tiền gửi ngân hàng không kỳ hạn"
+    n_obs: 968
+    n_tickers: 48
+  - label: "Doanh thu thuần về bán hàng và cung cấp dịch vụ ra bên ngoài"
+    n_obs: 958
+    n_tickers: 6
+  - label: "Tiền gửi và cho vay các TCTD khác"
+    n_obs: 957
+    n_tickers: 16
+  - label: "Giao dịch hoán đổi tiền tệ"
+    n_obs: 957
+    n_tickers: 21
+  - label: "Cam kết mua ngoại tệ"
+    n_obs: 951
+    n_tickers: 21
+  - label: "Chứng khoán đầu tư"
+    n_obs: 949
+    n_tickers: 19
+  - label: "Đầu tư XDCB hoàn thành"
+    n_obs: 948
+    n_tickers: 38
+  - label: "Thanh lý trong năm"
+    n_obs: 947
+    n_tickers: 33
+  - label: "Các khoản vay"
+    n_obs: 947
+    n_tickers: 18
+  - label: "Cam kết bán ngoại tệ"
+    n_obs: 945
+    n_tickers: 22
+  - label: "Cổ tức phải trả"
+    n_obs: 943
+    n_tickers: 50
+  - label: "Tại ngày 31 tháng 12 năm 2024"
+    n_obs: 942
+    n_tickers: 17
+  - label: "Góp vốn, đầu tư dài hạn"
+    n_obs: 942
+    n_tickers: 19
+  - label: "Chia cổ tức"
+    n_obs: 938
+    n_tickers: 55
+  - label: "Chi phí dự phòng rủi ro tín dụng"
+    n_obs: 938
+    n_tickers: 22
+  - label: "Tại ngày 31 tháng 12 năm 2021"
+    n_obs: 930
+    n_tickers: 17
+  - label: "Tiền gửi tại và cho vay các TCTD khác (*)"
+    n_obs: 925
+    n_tickers: 10
+  - label: "Chứng khoán đầu tư giữ đến ngày đáo hạn"
+    n_obs: 925
+    n_tickers: 22
+  - label: "TÀI SẢN NGĂN HẠN"
+    n_obs: 914
+    n_tickers: 62
+  - label: "Các khoản nợ Chính phủ và NHNN"
+    n_obs: 912
+    n_tickers: 15
+  - label: "Chi phí lãi tiền gửi"
+    n_obs: 912
+    n_tickers: 17
+  - label: "Phải thu khách hàng, phải thu khác"
+    n_obs: 909
+    n_tickers: 13
+  - label: "Tiền chi đầu tư góp vốn vào đơn vị khác"
+    n_obs: 908
+    n_tickers: 66
+  - label: "Các khoản tương đương tiền (*)"
+    n_obs: 908
+    n_tickers: 59
+  - label: "Chi phí cho nhân viên"
+    n_obs: 908
+    n_tickers: 30
+  - label: "Chi phí phải trả khác"
+    n_obs: 902
+    n_tickers: 46
+  - label: "Tiền gửi và vay các tổ chức tín dụng khác"
+    n_obs: 898
+    n_tickers: 14
+  - label: "Chiết khấu thương mại"
+    n_obs: 892
+    n_tickers: 41
+  - label: "Trả trước cho người bán"
+    n_obs: 891
+    n_tickers: 49
+  - label: "Dự phòng giảm giá đầu tư dài hạn"
+    n_obs: 889
+    n_tickers: 27
+  - label: "VI. Tài sản dài hạn khác"
+    n_obs: 887
+    n_tickers: 46
+  - label: "IV. Tài sản dở dang dài hạn"
+    n_obs: 882
+    n_tickers: 47
+  - label: "Góp vốn, đầu tư dài hạn (*)"
+    n_obs: 879
+    n_tickers: 15
+  - label: "Tổng doanh thu thuần"
+    n_obs: 873
+    n_tickers: 13
+  - label: "Lợi nhuận sau thuế chưa phân phối lũy kế đến cuối năm trước"
+    n_obs: 873
+    n_tickers: 53
+  - label: "Chi phí thuế TNDN"
+    n_obs: 871
+    n_tickers: 50
+  - label: "Tại ngày 31/12/2015"
+    n_obs: 859
+    n_tickers: 15
+  - label: "Lãi suy giảm trên cổ phiếu"
+    n_obs: 858
+    n_tickers: 57
+  - label: "Cam kết giao dịch hối đoái"
+    n_obs: 858
+    n_tickers: 22
+  - label: "Công ty cổ phần khác"
+    n_obs: 853
+    n_tickers: 15
+  - label: "Tiền gửi của và vay từ NHNN và các TCTD khác"
+    n_obs: 852
+    n_tickers: 7
+  - label: "Lợi nhuận gộp"
+    n_obs: 851
+    n_tickers: 24
+  - label: "Bất động sản đầu tư"
+    n_obs: 851
+    n_tickers: 45
+  - label: "Lãi tiền gửi, tiền cho vay"
+    n_obs: 843
+    n_tickers: 43
+  - label: "Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác"
+    n_obs: 840
+    n_tickers: 53
+  - label: "Số dư cuối kỳ"
+    n_obs: 840
+    n_tickers: 32
+  - label: "Lãi thuần từ hoạt động dịch vụ"
+    n_obs: 838
+    n_tickers: 20
+  - label: "Chi phí lãi và các chi phí tương tự"
+    n_obs: 837
+    n_tickers: 22
+  - label: "Đã khấu hao hết"
+    n_obs: 835
+    n_tickers: 25
+  - label: "Tạm ứng"
+    n_obs: 835
+    n_tickers: 42
+  - label: "Trạng thái tiền tệ nội bằng"
+    n_obs: 835
+    n_tickers: 22
+  - label: "Lãi tiền gửi"
+    n_obs: 835
+    n_tickers: 51
+  - label: "Xóa số"
+    n_obs: 834
+    n_tickers: 28
+  - label: "Tiền thu hồi đầu tư góp vốn vào đơn vị khác"
+    n_obs: 828
+    n_tickers: 55
+  - label: "Kinh phí công đoàn"
+    n_obs: 828
+    n_tickers: 47
+  - label: "III. Bất động sản đầu tư"
+    n_obs: 825
+    n_tickers: 42
+  - label: "Công cụ và dụng cụ"
+    n_obs: 824
+    n_tickers: 24
+  - label: "Tiền gửi tại các TCTD khác"
+    n_obs: 821
+    n_tickers: 21
+  - label: "Khai khoáng"
+    n_obs: 819
+    n_tickers: 19
+  - label: "Lãi chênh lệch tỷ giá"
+    n_obs: 818
+    n_tickers: 47
+  - label: "Doanh thu lãi"
+    n_obs: 818
+    n_tickers: 12
+  - label: "Lợi thế thương mại"
+    n_obs: 816
+    n_tickers: 59
+  - label: "Lợi nhuận sau thuế của cổ đông không kiểm soát"
+    n_obs: 816
+    n_tickers: 60
+  - label: "Các cam kết khác"
+    n_obs: 816
+    n_tickers: 19
+  - label: "Sử dụng trong năm"
+    n_obs: 811
+    n_tickers: 37
+  - label: "Mua sắm tài sản cố định"
+    n_obs: 811
+    n_tickers: 41
+  - label: "Trích quỹ khen thưởng, phúc lợi"
+    n_obs: 810
+    n_tickers: 49
+  - label: "Lỗ chênh lệch tỷ giá"
+    n_obs: 810
+    n_tickers: 50
+  - label: "Phải trả người bán và phải trả khác"
+    n_obs: 804
+    n_tickers: 20
+  - label: "Cổ phiếu niêm yết"
+    n_obs: 803
+    n_tickers: 6
+  - label: "Nợ phải trả khách hàng bên ngoài"
+    n_obs: 801
+    n_tickers: 10
+  - label: "Công nghiệp chế biến, chế tạo"
+    n_obs: 799
+    n_tickers: 18
+  - label: "Kết quả kinh doanh theo bộ phận"
+    n_obs: 796
+    n_tickers: 10
+  - label: "Xây dựng cơ bản dở dang"
+    n_obs: 794
+    n_tickers: 41
+  - label: "Các khoản phải trả, phải nộp khác"
+    n_obs: 794
+    n_tickers: 42
+  - label: "Chi phí phát hành trái phiếu"
+    n_obs: 787
+    n_tickers: 37
+  - label: "Lãi thuần từ hoạt động khác"
+    n_obs: 785
+    n_tickers: 20
+  - label: "Chưa niêm yết"
+    n_obs: 785
+    n_tickers: 17
+  - label: "Dự phòng rủi ro chứng khoán đầu tư"
+    n_obs: 784
+    n_tickers: 22
+  - label: "Dịch vụ khác"
+    n_obs: 782
+    n_tickers: 20
+  - label: "Cổ phiếu chưa niêm yết"
+    n_obs: 779
+    n_tickers: 8
+  - label: "Chi phí dự phòng"
+    n_obs: 779
+    n_tickers: 49
+  - label: "Thuế nhà đất, tiền thuê đất"
+    n_obs: 774
+    n_tickers: 26
+  - label: "Dự phòng cụ thể"
+    n_obs: 771
+    n_tickers: 21
+  - label: "Doanh thu hoạt động tài chính khác"
+    n_obs: 770
+    n_tickers: 55
+  - label: "Bất động sản"
+    n_obs: 769
+    n_tickers: 22
+  - label: "Các dự án khác"
+    n_obs: 766
+    n_tickers: 32
+  - label: "Thu nhập lãi và các khoản thu nhập tương tự nhận được"
+    n_obs: 765
+    n_tickers: 22
+  - label: "Giá trị hao mòn luỹ kế"
+    n_obs: 760
+    n_tickers: 27
+  - label: "Chi phí sản xuất kinh doanh dở dang"
+    n_obs: 758
+    n_tickers: 49
+  - label: "Tiền mặt bằng ngoại tệ"
+    n_obs: 750
+    n_tickers: 22
+  - label: "Tại ngày 1 tháng 1 năm 2021"
+    n_obs: 748
+    n_tickers: 13
+  - label: "Thuế nhà thầu"
+    n_obs: 748
+    n_tickers: 23
+  - label: "Dự phòng trích lập trong năm"
+    n_obs: 748
+    n_tickers: 23
+  - label: "Trích lập các quỹ"
+    n_obs: 747
+    n_tickers: 32
+  - label: "Cổ tức được chia"
+    n_obs: 747
+    n_tickers: 39

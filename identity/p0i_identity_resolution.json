@@ -1,0 +1,32 @@
+{
+  "official_submission_id": 3241,
+  "official_score": {
+    "execution_accuracy": 0.1225,
+    "answer_accuracy": 0.1225,
+    "tables_f2": 0.3538,
+    "docs_f2": 0.7536
+  },
+  "reported_original_zip_sha256": "aa8a942a5d31d1ff726c6d1ca7d928a773d0851343e50b00310bee6e5c1de436",
+  "reported_original_zip_available": false,
+  "root_cause_original_lost": "docs/103 F1: 10_bao_cao_h0.py:52 goi 06_dong_goi.py ghi de zipfile mode 'w' -> timestamp restamp -> SHA doi. Tuyen bo: artifact_identity/missing_artifact_declaration.md",
+  "packet_zip_path": "data/submissions/submission_P0I.zip",
+  "packet_zip_sha256": "a68580bd83d1edfdb7dd991d65b554bd6b9ff13b5e2e4abbd92d0f7a0553b5d7",
+  "submission_json_sha256": "fa27e15d3badc17dd39db4b09261ae042c78712581627988e9d4ffa7d1ab7f1a",
+  "semantic_member_manifest_sha256": "0514b94d08e9720059d61fb5f73f1a821815a4b25fbfd601674230bd23bb289f",
+  "n_members": 983,
+  "relationship": "SEMANTICALLY_IDENTICAL_REPACK",
+  "control_identity_name": "C0_SEMANTIC_CONTROL_3241",
+  "evidence": [
+    "submission.json sha256 fa27e15d... KHOP so do doc lap tren may review (125 §1.1)",
+    "doc 103 §1: replay metrics trung official 'toi chu so cuoi' (TABLES F2 0,3538 / DOCS F2 0,7536)",
+    "RUN_MANIFEST.json (artifacts/execution/h0/) ghi P0I=a685... cung official metrics",
+    "member manifest: identity/p0i_member_manifest.json",
+    "official score gan qua historical dashboard evidence, KHONG qua byte-exact zip"
+  ],
+  "superseded_reports": [
+    "docs/command_log.md (P0I=aa8a...)",
+    "artifacts/execution/h0/replay_report.json (P0I=aa8a...)",
+    "docs/20_CAU_HOI_BAT_BUOC.md (P0I=aa8a...)"
+  ],
+  "measured_on": "build machine, 2026-08-20"
+}

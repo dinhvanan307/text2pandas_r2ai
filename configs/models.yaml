@@ -1,0 +1,27 @@
+# models.yaml — khai báo model
+# RÀNG BUỘC BẮT BUỘC KIỂM TRƯỚC KHI THÊM BẤT KỲ MODEL NÀO:
+#   C05 — chỉ open-weight, cấm model đóng
+#   C06 — tối đa 14B tham số
+#   C07 — ngày phát hành TRƯỚC 01/06/2026
+# Mỗi mục phải ghi bằng chứng ngày phát hành. Thiếu bằng chứng ⇒ không được dùng.
+
+embedding:
+  name: null
+  release_date: null
+  params_b: null
+  license: null
+  evidence_url: null
+
+reranker:
+  name: null
+  release_date: null
+  params_b: null
+  license: null
+  evidence_url: null
+
+coder:
+  name: null
+  release_date: null
+  params_b: null
+  license: null
+  evidence_url: null

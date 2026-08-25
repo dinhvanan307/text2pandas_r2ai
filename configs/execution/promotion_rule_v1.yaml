@@ -1,0 +1,99 @@
+# promotion_rule_v1 — MỘT rule preregistered duy nhất cho mọi candidate.
+#
+# Review 131 §6.1 bác cách viết cũ của doc 130:
+#   "McNemar cặp bất đồng >=8, p<0,05 nếu đủ n; nếu không net >=+3"
+# Ba lỗi trong một câu:
+#   1. discordant >= 8 KHÔNG tự sinh p < 0,05 — còn phụ thuộc tách b/c thế nào;
+#   2. "nếu đủ n" là điều khoản mở, cho phép đổi luật sau khi thấy số;
+#   3. net >= +3 trên DEV ~35 câu có thể chỉ là ba ca và rất nhạy với một nhãn sai.
+#
+# Quy tắc ở đây KHOÁ TRƯỚC khi chạy thí nghiệm. Đổi nó sau khi đã nhìn kết quả
+# là làm hỏng chính thứ nó bảo vệ; muốn đổi thì tăng version và ghi lý do.
+
+version: 1
+locked_at: "2026-08-21"
+locked_before_experiment: true
+supersedes: "cách diễn đạt rời rạc trong docs/126 và docs/130"
+
+# ── Cấp 1 · CONTRACT / P0 — không có ngoại lệ, không có 'gần đạt' ───────────
+contract_p0:
+  sign_regression: 0
+  unit_regression: 0
+  multiplicity_regression: 0
+  p0_suite: P0_GREEN                 # tools/run_p0_suite_v1.py exit 0
+  reference_evaluator_O6: PASS       # tools/reference_eval_v1.py --self-check
+  replay_answer_eq_eval_query: "100% QID có query"
+  format_valid: true
+  first_cell_usage_query_moi: 0      # `.values[0]` trong query MỚI sinh
+  field_diff: "chỉ execution fields đổi; retrieval fields bất biến"
+  ghi_chu: >
+    NOT_MEASURED KHÔNG phải PASS. Một dòng chưa đo được thì cổng đỏ, kể cả khi
+    mọi dòng khác xanh.
+
+# ── Cấp 2 · DEV paired (tập phát triển có nhãn người) ───────────────────────
+dev_paired:
+  bat_buoc_bao_cao:
+    - discordant_table            # b = improved, c = regressed
+    - mcnemar_exact_p_hai_phia    # LUÔN báo, không phụ thuộc n
+    - wilson_ci95
+    - effect_size_delta_acc
+    - phan_ra_theo_intent
+    - phan_ra_theo_submission_path
+  dieu_kien_promote:
+    improved_gt_regressed: true
+    net_delta_min: 3              # khoá trước; không đổi sau khi thấy số
+  min_evaluable_cases_per_intent: 5
+  neu_duoi_nguong: EXPERIMENTAL   # bật được nhưng KHÔNG dùng net của intent đó để promote
+  ghi_chu: >
+    p <= 0,05 KHÔNG phải hard gate duy nhất khi n nhỏ — với n ~35 nó gần như
+    không bao giờ đạt và sẽ biến thành lý do bỏ qua luật. Bắt buộc BÁO p, CI và
+    effect size; quyết định theo `dieu_kien_promote` đã khoá.
+
+# ── Cấp 3 · Gold45 — CHỈ regression, không bao giờ là bằng chứng promote ────
+gold45:
+  evaluation_mode: TRAIN_FIT / REGRESSION-ONLY
+  vi_sao: >
+    45/45 câu mang leakage_flag=row_label_exact; V1.1 đã tune trên chính tập này;
+    phủ 4,4% corpus; thiếu hẳn multi_table/ratio/max_min/count.
+  dieu_kien:
+    khong_giam_tong: true
+    khong_tao_P0_regression: true
+  cam:
+    - dung_de_du_bao_diem_official
+    - dung_lam_bang_chung_generalization
+    - chon_sieu_tham_so_roi_goi_la_da_kiem_chung
+
+# ── Cấp 4 · Public leaderboard ──────────────────────────────────────────────
+public:
+  role: external adaptive validation
+  khong_phai: true_held_out
+  vi_sao: >
+    Sau khi quan sát điểm và dùng nó để chọn candidate, tập public không còn
+    held-out theo nghĩa thống kê. Mỗi lượt nộp làm nó thêm adaptive.
+  dung_de: xác nhận hướng lớn (thay đổi kiến trúc)
+  khong_dung_de: tune ngưỡng nhỏ theo từng điểm trả về
+
+private:
+  role: final held-out (gần đúng)
+  quy_tac: chỉ chạy pipeline đã public-tested và frozen; KHÔNG tune
+
+# ── Một candidate — một giả thuyết ──────────────────────────────────────────
+attribution:
+  quy_tac: mỗi public candidate bật ĐÚNG một nhóm hành vi
+  thang_arithmetic:
+    C2A: percentage_change
+    C2B: C2A + difference
+    C3: C2B + sum + argmax_year + average
+  neu_buoc_phai_gop: >
+    preregister giả thuyết ở cấp BUNDLE và thừa nhận mất causal attribution.
+    KHÔNG được vừa gộp vừa tuyên bố "mỗi bản chỉ đổi một nhóm hành vi".
+
+# ── Ghi metric ──────────────────────────────────────────────────────────────
+metric_reporting:
+  bat_buoc_moi_con_so:
+    - dataset
+    - denominator
+    - evaluation_mode        # TRAIN_FIT | DEV | AUDIT | OFFICIAL
+    - provenance
+    - train_fit_hay_independent
+  cam: "trích một con số trần không kèm 5 trường trên"

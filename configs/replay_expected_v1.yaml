@@ -1,0 +1,337 @@
+contract_version: '2.2'
+amendments:
+- id: AMD-R01
+  case: '05'
+  cell: db1eef73e23c516e
+  field: scale_exponent
+  from: '0'
+  to: '6'
+  decided_by: team data + reviewer, 13/08/2026
+  reason: >
+    Gia tri gold nay duoc dong bang TU RC1, va RC1 SAI. Nhan cot cua chinh o do
+    trong tai lieu goc ghi "31/12/2022Trieu VND" — tuc TRIEU VND, bac 10^6.
+    RC1 ghi bac 0, doc 95.333.180 nhu 95 trieu VND thay vi 95.333.180 trieu VND
+    (~95,3 nghin ty). Voi VCB, khoan "Tong chung khoan dau tu giu den ngay dao
+    han" ~95,3 nghin ty la hop ly; 95,3 trieu thi vo ly.
+  evidence:
+    col_path_text: 31/12/2022Trieu VND
+    same_table_all_cells_scale_6: 12/12 o cua bang 017fd9cc92f97d73
+    rc2_rule: RC-04 bien trai regex bac — 172.373 cot duoc them bac tren toan corpus
+    contract_cells_affected: 1/14
+  khong_phai_fit_theo_output: >
+    Sua nay KHONG lay tu output cua A3. No lay tu NHAN COT trong tai lieu nguon,
+    va tai lieu nguon la trong tai cao hon ca gold lan output. A3 chi tinh co
+    trung voi tai lieu.
+  hai_snapshot:
+    build_source_snapshot_id: source_hash=6788201595443465 config_hash=bc0b52771f8a83e6
+    note: >
+      Sua tep nay doi `config_hash`, nen cay nguon SAU sua khong con tai lap
+      duoc build_id 7aa8b4c22984bf5f bang mot config_hash duy nhat. Doc 52 §5.1
+      doi khai rieng hai snapshot; xem artifacts/rc2/source_snapshot/SNAPSHOT_DECLARATION.json
+status: VALUES_FROZEN
+supersedes: 2.0 (khung đóng băng, 1/10 ca có expected)
+frozen_at_phase: P3 (khung) · RC-02 (giá trị) · B0-04b (điền đủ 10 ca)
+fixture_version: '1.1'
+evidence_db: artifacts/rc1_baseline/silver.db
+evidence_db_sha256: fe4e75ce9ada37c0eb8fa6ad82fe487c196e6ef7a3ecf288da5e436ce4e00eaa
+frozen_at_declared: '2026-08-12'
+frozen_at_note: HANG SO KHAI BAO, khong phai phep do. Phai co dinh de contract sinh lai
+  cho ra tep y het - tep nay di vao config_hash.
+filled_from_db_sha256: fe4e75ce9ada37c0eb8fa6ad82fe487c196e6ef7a3ecf288da5e436ce4e00eaa
+selector: tools/pick_replay_fixtures.py
+selector_determinism: sắp xếp theo UID rồi lấy đầu; chạy lại cho cùng kết quả
+provenance: Kỳ vọng lấy TỪ RC1 release DB, KHÔNG từ output RC2. Đây là điều kiện để C5 không phải bài
+  thi tự ra đề.
+cases:
+- id: '01'
+  name: lookup_one_metric_one_period
+  intent: một chỉ tiêu một kỳ
+  abstain: false
+  doc_id: SCR_financial_statements_2017_consolidated
+  table_uid: a4904f9c1414fca5
+  row_uid: cafca31764c744e2
+  column_uid: cce6848aa2cc0a19
+  expected:
+    observation_uid: 00005acb8c164032
+    source_cell_uid: abd25f488ca516d8
+    evidence_ref: SCR_financial_statements_2017_consolidated|line:849
+    metric_label_clean: Công ty Cổ phần Đầu tư Tín Nghĩa Á Châu
+    period_end: '2017-12-31'
+    value_decimal_text: '4500000000'
+    unit_kind: money
+    currency: VND
+    scale_exponent: '0'
+  selection_rule: nhãn xuất hiện ĐÚNG MỘT LẦN trong bảng, và bảng chỉ có ĐÚNG MỘT kỳ — không có cách lấy
+    nhầm ô mà vẫn đúng nhãn
+- id: '02'
+  name: compare_two_periods
+  intent: cùng chỉ tiêu, hai kỳ
+  abstain: false
+  expected_cells:
+  - doc_id: PC1_financial_statements_2018_separate
+    table_uid: 0001b7de6d6d8643
+    row_uid: 12abe4f04134fac5
+    column_uid: 1700c0982f379c67
+    expect:
+      observation_uid: bc91af6922bb2bcb
+      source_cell_uid: 3b2b98a1960c48ec
+      evidence_ref: PC1_financial_statements_2018_separate|line:1292
+      metric_label_clean: Phải trả các ban chỉ huy công trình
+      period_end: '2017-12-31'
+      value_decimal_text: '63672487'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  - doc_id: PC1_financial_statements_2018_separate
+    table_uid: 0001b7de6d6d8643
+    row_uid: 12abe4f04134fac5
+    column_uid: 8158cf165d489419
+    expect:
+      observation_uid: 0ec04ed7f22acfe3
+      source_cell_uid: 2da05684f57e459e
+      evidence_ref: PC1_financial_statements_2018_separate|line:1292
+      metric_label_clean: Phải trả các ban chỉ huy công trình
+      period_end: '2018-12-31'
+      value_decimal_text: '51748767'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  selection_rule: cùng (table_uid,row_uid), đúng 2 kỳ, mỗi (dòng,kỳ) một ô
+- id: '03'
+  name: growth
+  intent: tăng trưởng giữa hai kỳ
+  abstain: false
+  expected_cells:
+  - doc_id: PC1_financial_statements_2018_separate
+    table_uid: 0001b7de6d6d8643
+    row_uid: 12abe4f04134fac5
+    column_uid: 1700c0982f379c67
+    expect:
+      observation_uid: bc91af6922bb2bcb
+      source_cell_uid: 3b2b98a1960c48ec
+      evidence_ref: PC1_financial_statements_2018_separate|line:1292
+      metric_label_clean: Phải trả các ban chỉ huy công trình
+      period_end: '2017-12-31'
+      value_decimal_text: '63672487'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  - doc_id: PC1_financial_statements_2018_separate
+    table_uid: 0001b7de6d6d8643
+    row_uid: 12abe4f04134fac5
+    column_uid: 8158cf165d489419
+    expect:
+      observation_uid: 0ec04ed7f22acfe3
+      source_cell_uid: 2da05684f57e459e
+      evidence_ref: PC1_financial_statements_2018_separate|line:1292
+      metric_label_clean: Phải trả các ban chỉ huy công trình
+      period_end: '2018-12-31'
+      value_decimal_text: '51748767'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  derived:
+    kind: growth
+    formula: (later - earlier) / earlier
+    expected_decimal: '-0.1872664405271306584899063232758601057942'
+  selection_rule: mẫu số khác 0; giá trị Decimal, không làm tròn
+- id: '04'
+  name: ratio
+  intent: tỷ số hai chỉ tiêu
+  abstain: false
+  expected_cells:
+  - doc_id: VSC_financial_statements_2023_consolidated
+    table_uid: cb036e419517058e
+    row_uid: da174029d61f205e
+    column_uid: 303b6cd64fcb3742
+    expect:
+      observation_uid: 0000123939b135cf
+      source_cell_uid: b40dbd84b9e2bc12
+      evidence_ref: VSC_financial_statements_2023_consolidated|line:1217
+      metric_label_clean: Phải thu khác
+      period_end: '2023-12-31'
+      value_decimal_text: '14825797590'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  - doc_id: VSC_financial_statements_2023_consolidated
+    table_uid: cb036e419517058e
+    row_uid: 524d6dac618e16a0
+    column_uid: 303b6cd64fcb3742
+    expect:
+      observation_uid: 38ea4aeffe271a32
+      source_cell_uid: bf0f542c209fee03
+      evidence_ref: VSC_financial_statements_2023_consolidated|line:1217
+      metric_label_clean: Phải thu liên quan đến việc điều chỉnh giá chuyển nhượng Công ty TNHH Cảng Nam
+        Hải Đình Vũ ("Cảng Nam Hải Đình Vũ") (iv)
+      period_end: '2023-12-31'
+      value_decimal_text: '45183083604'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  derived:
+    kind: ratio
+    formula: numerator / denominator
+    expected_decimal: '0.3281271752042946289567279884406359562019'
+  selection_rule: HAI DÒNG KHÁC NHAU, giá trị khác nhau, mẫu số ≠ 0 — tỷ số = 1 không kiểm được gì
+- id: '05'
+  name: aggregation_excluding_totals
+  intent: cộng dòng con, loại subtotal
+  abstain: false
+  expected_cells:
+  - doc_id: VCB_financial_statements_2022_separate
+    table_uid: 017fd9cc92f97d73
+    row_uid: 845517e4adac0161
+    column_uid: 025e03cf4e097fcf
+    expect:
+      observation_uid: cf74df30242164a7
+      source_cell_uid: db1eef73e23c516e
+      evidence_ref: VCB_financial_statements_2022_separate|line:1251
+      metric_label_clean: Tổng chứng khoán đầu tư giữ đến ngày đáo hạn
+      period_end: '2022-12-31'
+      value_decimal_text: '95333180'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '6'
+  derived:
+    kind: sum_children
+    expected_decimal: '95333180'
+    n_children: 4
+    children_observation_uids:
+    - f2ddc8dd1ae710fe
+    - 4653d551f886b236
+    - f3f0799b3bccc79b
+    - cc896dabae1c825e
+    rule: LOAI dong tong khoi phep cong; tong con PHAI bang dong tong
+  selection_rule: đúng một dòng tổng; tổng các dòng con KHỚP CHÍNH XÁC
+- id: '06'
+  name: multi_table_same_document
+  intent: hai bảng trong cùng tài liệu
+  abstain: false
+  expected_cells:
+  - doc_id: AAA_financial_statements_2015_consolidated
+    table_uid: 16dbc69c68757d77
+    row_uid: cf5e19efc07eb4c2
+    column_uid: 9adf565bf6da6fe5
+    expect:
+      observation_uid: 89039e46270bf763
+      source_cell_uid: f5431efade58d8bf
+      evidence_ref: AAA_financial_statements_2015_consolidated|line:1143
+      metric_label_clean: Trong vòng một năm
+      period_end: '2014-12-31'
+      value_decimal_text: '28098304720'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  - doc_id: AAA_financial_statements_2015_consolidated
+    table_uid: 20899cf42c91ee6e
+    row_uid: 6f91af443d78fc44
+    column_uid: 6f91af443d78fc44
+    expect:
+      observation_uid: b84287613e2238d9
+      source_cell_uid: 913919048607efe3
+      evidence_ref: AAA_financial_statements_2015_consolidated|line:1010
+      metric_label_clean: Vay ngắn hạn
+      period_end: '2015-12-31'
+      value_decimal_text: '438769898696'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  derived:
+    kind: join_by_table_uid
+    rule: join theo table_uid; CAM tron ky giua hai bang
+  selection_rule: join theo table_uid; CẤM trộn kỳ giữa hai bảng
+- id: '07'
+  name: multi_document
+  intent: nhiều tài liệu cùng doanh nghiệp
+  abstain: false
+  expected_cells:
+  - doc_id: AAA_financial_statements_2015_separate
+    table_uid: 0d9838ea25e24995
+    row_uid: 4d8780fce1e0d770
+    column_uid: e8c547f902b04b32
+    expect:
+      observation_uid: eb13d64533d59774
+      source_cell_uid: f21fc1dc625297c8
+      evidence_ref: AAA_financial_statements_2015_separate|line:279
+      metric_label_clean: Doanh thu bán hàng và cung cấp dịch vụ
+      period_end: '2015-12-31'
+      value_decimal_text: '1523377869886'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  - doc_id: AAA_financial_statements_2016_consolidated
+    table_uid: 01f1079ae44efaf4
+    row_uid: 8d0e973d9772d70d
+    column_uid: 844be36145ffefde
+    expect:
+      observation_uid: 09af26e6a69b9d59
+      source_cell_uid: 44469247dc4a04f0
+      evidence_ref: AAA_financial_statements_2016_consolidated|line:242
+      metric_label_clean: NỘ PHẢI TRẢ
+      period_end: '2016-12-31'
+      value_decimal_text: '2122863876413'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  derived:
+    kind: key_by_ticker_year_basis
+    rule: khoa theo (ticker, doc_year, basis)
+  selection_rule: khoá theo (ticker, doc_year, basis)
+- id: 08
+  name: no_header_table
+  intent: bảng không có header
+  abstain: true
+  doc_id: DPM_financial_statements_2022_separate
+  table_uid: 048aa27ec9d0df7f
+  expected_abstain_reason: bảng không có header nên nhãn cột không địa chỉ hoá được một ô duy nhất — hệ
+    thống phải TỪ CHỐI thay vì đoán
+  evidence_ref: DPM_financial_statements_2022_separate|line:1358
+- id: 09
+  name: duplicate_label_with_dimension
+  intent: nhãn trùng, phân biệt bằng chiều
+  abstain: false
+  expected_cells:
+  - doc_id: OCB_financial_statements_2025_separate
+    table_uid: 009037c09ccde26f
+    row_uid: 0c10215fc90ba052
+    column_uid: 91617b7118bab0bf
+    expect:
+      observation_uid: 0773fb7165f46e5c
+      source_cell_uid: 5e37706063c740df
+      evidence_ref: OCB_financial_statements_2025_separate|line:2012
+      metric_label_clean: Chưa niêm yết
+      period_end: '2024-12-31'
+      value_decimal_text: '65554809147'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  - doc_id: OCB_financial_statements_2025_separate
+    table_uid: 009037c09ccde26f
+    row_uid: 35fba862829e26b4
+    column_uid: 91617b7118bab0bf
+    expect:
+      observation_uid: 66c72121aa5be7ef
+      source_cell_uid: 3c2700f9d5011a59
+      evidence_ref: OCB_financial_statements_2025_separate|line:2012
+      metric_label_clean: Chưa niêm yết
+      period_end: '2024-12-31'
+      value_decimal_text: '33437339090357'
+      unit_kind: money
+      currency: VND
+      scale_exponent: '0'
+  derived:
+    kind: must_distinguish_by_row_path
+    rule: PHAI phan biet bang row_path/column_uid; khong phan biet duoc thi abstain
+  selection_rule: hai ô CÙNG nhãn CÙNG kỳ nhưng KHÁC row_path — phải phân biệt được, không phân biệt được
+    thì abstain
+- id: '10'
+  name: unresolved_must_abstain
+  intent: fact mơ hồ phải từ chối trả lời
+  abstain: true
+  doc_id: VIF_financial_statements_2024_separate
+  table_uid: 4f28c8d2139755c3
+  expected_abstain_reason: collision_class=missing_label_or_split — fact mơ hồ KHÔNG được vào execution_ready;
+    hệ thống phải từ chối
+  collision_class: missing_label_or_split
+  evidence_ref: VIF_financial_statements_2024_separate|line:309

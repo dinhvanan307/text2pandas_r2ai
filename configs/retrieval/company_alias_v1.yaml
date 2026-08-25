@@ -1,0 +1,321 @@
+# Sinh bởi src/retrieval/build_alias.py — KHÔNG sửa tay.
+# Nguồn: data/external/vifinqa/code_stock.csv (100 mã).
+# Biến thể mơ hồ đã bị loại; xem `rejected` ở cuối.
+version: 1
+n_tickers: 100
+n_aliases: 207
+aliases:
+  AAA:
+    - "CTCP Nhựa An Phát Xanh"
+    - "nhua an phat xanh"
+  ABB:
+    - "Ngân hàng TMCP An Bình"
+    - "an binh"
+  ACB:
+    - "Ngân hàng TMCP Á Châu"
+  ACV:
+    - "Tổng Công ty Cảng Hàng không Việt Nam - CTCP"
+    - "cang hang khong viet nam ctcp"
+    - "cang hang khong viet nam"
+  ASM:
+    - "CTCP Tập đoàn Sao Mai"
+    - "sao mai"
+  BAB:
+    - "Ngân hàng TMCP Bắc Á"
+  BAF:
+    - "CTCP Nông nghiệp BAF Việt Nam"
+    - "nong nghiep baf viet nam"
+    - "nong nghiep baf"
+  BID:
+    - "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam"
+    - "dau tu va phat trien viet nam"
+    - "dau tu va phat trien"
+  BSR:
+    - "CTCP - Tổng Công ty Lọc hóa dầu Việt Nam"
+    - "loc hoa dau viet nam"
+    - "loc hoa dau"
+  BVH:
+    - "Tập đoàn Bảo Việt"
+    - "bao viet"
+  CEO:
+    - "CTCP Tập đoàn C.E.O"
+  CRE:
+    - "CTCP Bất động sản Thế Kỷ"
+    - "bat dong san the ky"
+  CTG:
+    - "Ngân hàng TMCP Công Thương Việt Nam"
+    - "cong thuong viet nam"
+  DBC:
+    - "CTCP Tập đoàn Dabaco Việt Nam"
+    - "dabaco viet nam"
+    - "dabaco"
+  DCM:
+    - "CTCP - Tổng công ty Phân bón Dầu khí Cà Mau"
+    - "phan bon dau khi ca mau"
+  DIG:
+    - "Tổng Công ty cổ phần Đầu tư Phát triển Xây dựng"
+    - "dau tu phat trien xay dung"
+  DLG:
+    - "CTCP Tập đoàn Đức Long Gia Lai"
+    - "duc long gia lai"
+  DNH:
+    - "CTCP Thủy điện Đa Nhim - Hàm Thuận - Đa Mi"
+    - "thuy dien da nhim ham thuan da mi"
+  DPM:
+    - "Tổng công ty Phân bón và Hóa chất Dầu khí - CTCP"
+    - "phan bon va hoa chat dau khi ctcp"
+    - "phan bon va hoa chat dau khi"
+  DTK:
+    - "Tổng Công ty Điện lực TKV - CTCP"
+    - "dien luc tkv ctcp"
+    - "dien luc tkv"
+  DXG:
+    - "CTCP Bluemarq Group"
+    - "bluemarq group"
+  DXS:
+    - "CTCP Dịch vụ Bất động sản Đất Xanh"
+    - "dich vu bat dong san dat xanh"
+  EIB:
+    - "Ngân hàng TMCP Xuất nhập khẩu Việt Nam"
+    - "xuat nhap khau viet nam"
+  EVF:
+    - "Công ty Tài chính Tổng hợp Cổ phần Điện lực"
+    - "tai chinh tong hop co phan dien luc"
+  FIT:
+    - "CTCP Tập đoàn F.I.T"
+  FOX:
+    - "CTCP Viễn thông FPT"
+    - "vien thong fpt"
+  FPT:
+    - "CTCP FPT"
+  FTS:
+    - "CTCP Chứng khoán FPT"
+    - "chung khoan fpt"
+  GAS:
+    - "Tổng Công ty Khí Việt Nam - CTCP"
+  GEE:
+    - "CTCP Điện lực Gelex"
+    - "dien luc gelex"
+  GEG:
+    - "CTCP Điện Gia Lai"
+    - "dien gia lai"
+  GEX:
+    - "CTCP Tập đoàn GELEX"
+  GVR:
+    - "Tập đoàn Công nghiệp Cao su Việt Nam - CTCP"
+    - "cong nghiep cao su viet nam ctcp"
+    - "cong nghiep cao su viet nam"
+  HAG:
+    - "CTCP Hoàng Anh Gia Lai"
+  HBC:
+    - "CTCP Tập đoàn Xây dựng Hòa Bình"
+    - "xay dung hoa binh"
+  HDB:
+    - "Ngân hàng TMCP Phát triển Thành phố Hồ Chí Minh"
+    - "phat trien thanh pho ho chi minh"
+  HDG:
+    - "CTCP Tập đoàn Hà Đô"
+  HHS:
+    - "CTCP Đầu tư Dịch vụ Hoàng Huy"
+    - "dau tu dich vu hoang huy"
+  HHV:
+    - "CTCP Đầu tư Hạ tầng Giao thông Đèo Cả"
+    - "dau tu ha tang giao thong deo ca"
+  HND:
+    - "CTCP Nhiệt điện Hải Phòng"
+    - "nhiet dien hai phong"
+  HNG:
+    - "CTCP Nông nghiệp Quốc tế Hoàng Anh Gia Lai"
+    - "nong nghiep quoc te hoang anh gia lai"
+  HPG:
+    - "CTCP Tập đoàn Hòa Phát"
+    - "hoa phat"
+  HPX:
+    - "CTCP Đầu tư Hải Phát"
+    - "dau tu hai phat"
+  HSG:
+    - "CTCP Tập đoàn Hoa Sen"
+    - "hoa sen"
+  HT1:
+    - "CTCP Xi Măng Vicem Hà Tiên"
+    - "xi mang vicem ha tien"
+  HUT:
+    - "CTCP Tasco"
+  IJC:
+    - "CTCP Phát triển Hạ tầng Kỹ thuật"
+    - "phat trien ha tang ky thuat"
+  KBC:
+    - "Tổng Công ty Phát triển Đô thị Kinh Bắc - CTCP"
+    - "phat trien do thi kinh bac ctcp"
+    - "phat trien do thi kinh bac"
+  KHG:
+    - "CTCP Tập đoàn Khải Hoàn Land"
+    - "khai hoan land"
+  KLB:
+    - "Ngân hàng TMCP Kiên Long"
+    - "kien long"
+  MBB:
+    - "Ngân hàng TMCP Quân đội"
+    - "quan doi"
+  MBS:
+    - "CTCP Chứng khoán MB"
+    - "chung khoan mb"
+  MCH:
+    - "CTCP Hàng tiêu dùng Masan"
+    - "hang tieu dung masan"
+  MML:
+    - "CTCP Masan MeatLife"
+    - "masan meatlife"
+  MPC:
+    - "CTCP Tập đoàn Thủy sản Minh Phú"
+    - "thuy san minh phu"
+  MSB:
+    - "Ngân hàng TMCP Hàng hải Việt Nam"
+    - "hang hai viet nam"
+    - "hang hai"
+  MSN:
+    - "CTCP Tập đoàn Masan"
+  MSR:
+    - "CTCP Masan High-Tech Materials"
+    - "masan high tech materials"
+  MWG:
+    - "CTCP Đầu tư Thế giới Di động"
+    - "dau tu the gioi di dong"
+  NAB:
+    - "Ngân hàng TMCP Nam Á"
+  NKG:
+    - "CTCP Thép Nam Kim"
+    - "thep nam kim"
+  NLG:
+    - "CTCP Đầu tư Nam Long"
+    - "dau tu nam long"
+  NVB:
+    - "Ngân hàng TMCP Quốc Dân"
+    - "quoc dan"
+  NVL:
+    - "CTCP Tập đoàn Đầu tư Địa ốc No Va"
+    - "dau tu dia oc no va"
+  OCB:
+    - "Ngân hàng TMCP Phương Đông"
+    - "phuong dong"
+  OGC:
+    - "CTCP Tập đoàn Đại Dương"
+    - "dai duong"
+  PC1:
+    - "CTCP Tập Đoàn PC1"
+  PDR:
+    - "CTCP Phát triển Bất động sản Phát Đạt"
+    - "phat trien bat dong san phat dat"
+  PLX:
+    - "Tập đoàn Xăng Dầu Việt Nam"
+    - "xang dau viet nam"
+    - "xang dau"
+  PNJ:
+    - "CTCP Vàng bạc Đá quý Phú Nhuận"
+    - "vang bac da quy phu nhuan"
+  POW:
+    - "Tổng Công ty Điện lực Dầu khí Việt Nam - CTCP"
+    - "dien luc dau khi viet nam ctcp"
+    - "dien luc dau khi viet nam"
+  PRT:
+    - "Tổng Công ty Sản xuất - Xuất nhập khẩu Bình Dương - CTCP"
+    - "san xuat xuat nhap khau binh duong ctcp"
+    - "san xuat xuat nhap khau binh duong"
+  PVT:
+    - "Tổng Công ty cổ phần Vận tải Dầu khí"
+    - "van tai dau khi"
+  QNS:
+    - "CTCP Đường Quảng Ngãi"
+    - "duong quang ngai"
+  SAB:
+    - "Tổng Công ty cổ phần Bia - Rượu - Nước giải khát Sài Gòn"
+    - "bia ruou nuoc giai khat sai gon"
+  SAM:
+    - "CTCP SAM Holdings"
+    - "sam holdings"
+  SCR:
+    - "CTCP Địa ốc Sài Gòn Thương Tín"
+    - "dia oc sai gon thuong tin"
+  SGB:
+    - "Ngân hàng TMCP Sài Gòn Công Thương"
+    - "sai gon cong thuong"
+  SHB:
+    - "Ngân hàng TMCP Sài Gòn - Hà Nội"
+    - "sai gon ha noi"
+  SJG:
+    - "Tổng Công ty Sông Đà - CTCP"
+    - "song da ctcp"
+    - "song da"
+  SNZ:
+    - "Tổng Công ty cổ phần Phát triển Khu Công nghiệp"
+    - "phat trien khu cong nghiep"
+  SSB:
+    - "Ngân hàng TMCP Đông Nam Á"
+    - "dong nam a"
+  SSH:
+    - "CTCP Phát triển Sunshine Homes"
+    - "phat trien sunshine homes"
+  SSI:
+    - "CTCP Chứng khoán SSI"
+    - "chung khoan ssi"
+  STB:
+    - "Ngân hàng TMCP Sài Gòn Tài Lộc"
+    - "sai gon tai loc"
+  TTF:
+    - "CTCP Tập đoàn Kỹ nghệ gỗ Trường Thành"
+    - "ky nghe go truong thanh"
+  VAB:
+    - "Ngân hàng TMCP Việt Á"
+  VCB:
+    - "Ngân hàng TMCP Ngoại thương Việt Nam"
+    - "ngoai thuong viet nam"
+    - "ngoai thuong"
+  VGC:
+    - "Tổng Công ty Viglacera - CTCP"
+    - "viglacera ctcp"
+    - "viglacera"
+  VGT:
+    - "Tập đoàn Dệt May Việt Nam"
+    - "det may viet nam"
+    - "det may"
+  VIB:
+    - "Ngân hàng TMCP Quốc tế Việt Nam"
+    - "quoc te viet nam"
+  VIC:
+    - "Tập đoàn VINGROUP - CTCP"
+    - "vingroup ctcp"
+    - "vingroup"
+  VIF:
+    - "Tổng Công ty Lâm nghiệp Việt Nam - CTCP"
+    - "lam nghiep viet nam ctcp"
+    - "lam nghiep viet nam"
+  VJC:
+    - "CTCP Hàng không Vietjet"
+    - "hang khong vietjet"
+  VNM:
+    - "CTCP Sữa Việt Nam"
+    - "sua viet nam"
+  VPB:
+    - "Ngân hàng TMCP Việt Nam Thịnh Vượng"
+    - "viet nam thinh vuong"
+  VPI:
+    - "CTCP Phát triển Bất động sản Văn Phú"
+    - "phat trien bat dong san van phu"
+  VRE:
+    - "CTCP Vincom Retail"
+    - "vincom retail"
+  VSC:
+    - "CTCP Container Việt Nam"
+    - "container viet nam"
+    - "container"
+  VSF:
+    - "Tổng Công ty Lương thực Miền Nam - CTCP"
+    - "luong thuc mien nam ctcp"
+    - "luong thuc mien nam"
+rejected:
+  - {ticker: CTG, alias: "cong thuong", clashes_with: SGB}
+  - {ticker: VIB, alias: "quoc te", clashes_with: HNG}
+  - {ticker: GAS, alias: "khi viet nam ctcp", clashes_with: POW}
+  - {ticker: GAS, alias: "khi viet nam", clashes_with: POW}
+  - {ticker: EIB, alias: "xuat nhap khau", clashes_with: PRT}
+  - {ticker: HAG, alias: "hoang anh gia lai", clashes_with: HNG}

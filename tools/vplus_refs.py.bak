@@ -1,0 +1,89 @@
+"""V+ bước 1 · Dựng lại danh sách xếp hạng đầy đủ cho 1.012 câu.
+
+Chỉ đọc. `src/retrieval/**` không đổi. Dùng đúng đường S0→S1→S2→S3(identity)
+mà `submission_adapter` dùng, độ sâu 300 để cả hai nhánh X (cap 30) và Z
+(cap 10) đều lấy được từ CÙNG một thứ tự.
+
+Tự kiểm: lấy `k=3, cap=30` từ danh sách này phải **trùng khít** `relevant_tables`
+của `submission_P0G2.zip`. Trùng thì chứng minh bộ sinh này tương đương bộ đã
+sinh ra P0E/P0G2, và nhánh Z vì thế so sánh được với nhánh X.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import sqlite3
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+from retrieval.alias_store import load_aliases                 # noqa: E402
+from retrieval.evalkit.cli import _load_cfg                    # noqa: E402
+from retrieval.evalkit.stages import (Bm25StructuralRanker,    # noqa: E402
+                                      HardFilterGenerator)
+from retrieval.question_intent import parse_intent             # noqa: E402
+
+OUT = ROOT / "artifacts" / "retrieval" / "vplus" / "refs_1012.json"
+DEPTH = 300
+
+
+def main(argv):
+    ap = argparse.ArgumentParser(prog="vplus_refs")
+    ap.add_argument("--db", required=True)
+    ap.add_argument("--questions",
+                    default=str(ROOT / "data/external/vifinqa/questions/questions.jsonl"))
+    a = ap.parse_args(argv)
+
+    cfg = _load_cfg("base", {})
+    alias = load_aliases(brands=cfg.brands)
+    conn = sqlite3.connect(f"file:{os.path.abspath(a.db)}?mode=ro", uri=True)
+    conn.execute("PRAGMA cache_size=-200000")
+    u2r = {u: ev.replace("|line:", "|") for u, ev in conn.execute(
+        "SELECT table_uid,evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL")}
+
+    s1 = HardFilterGenerator(basis_mode=cfg.basis_mode, year_slack=cfg.year_slack)
+    s2 = Bm25StructuralRanker(alias, top_k=max(cfg.top_k_rank, DEPTH),
+                              use_hints=cfg.use_hints, basis_mode=cfg.basis_mode,
+                              stop_mode=cfg.stop_mode)
+
+    Q = [json.loads(l) for l in open(a.questions, encoding="utf-8") if l.strip()]
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    done = json.loads(OUT.read_text()) if OUT.is_file() else {}
+    t0 = time.time()
+    n = 0
+    for r in Q:
+        qid = str(r["id"])
+        if qid in done:
+            continue
+        q = r["question"]
+        it = parse_intent(q, alias)
+        o1 = s1.generate(conn, q, it)
+        o2 = s2.rank(conn, q, it, o1)
+        done[qid] = {"o": max(1, len(it.targets)) * max(1, len(it.years)),
+                     "n_s1": len(o1.uids),
+                     "refs": [u2r[x.table_uid] for x in o2.ranked[:DEPTH]
+                              if x.table_uid in u2r]}
+        n += 1
+        if n % 100 == 0:
+            OUT.write_text(json.dumps(done))
+            print(f"  ..{n} câu · {time.time()-t0:.0f}s", flush=True)
+    OUT.write_text(json.dumps(done))
+
+    cfg_fp = hashlib.sha256(json.dumps({
+        "brands": str(cfg.brands), "stop_mode": cfg.stop_mode,
+        "basis_mode": cfg.basis_mode, "year_slack": cfg.year_slack,
+        "top_k_rank": cfg.top_k_rank, "use_hints": cfg.use_hints,
+        "depth": DEPTH}, sort_keys=True).encode()).hexdigest()[:16]
+    print(f"xong {n} câu mới · tổng {len(done)}/1012 · {time.time()-t0:.0f}s")
+    print(f"config fingerprint = {cfg_fp}")
+    print(f"  brands={cfg.brands} stop_mode={cfg.stop_mode} basis_mode={cfg.basis_mode} "
+          f"year_slack={cfg.year_slack} top_k_rank={cfg.top_k_rank} depth={DEPTH}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

@@ -1,0 +1,611 @@
+# RC2 · HỢP ĐỒNG ĐÓNG BĂNG Ở P3 — khoá TRƯỚC khi implement RC-02…RC-10
+#
+# Vì sao tệp này tồn tại: review 28 §5 chỉ ra map v2 đặt policy work SAU build.
+# Hệ quả là candidate A/B thiếu remediation và phải build lại. Tệp này khoá
+# semantics để P4 chỉ còn là thi công, không phải quyết định lại.
+#
+# ĐÂY LÀ DỮ LIỆU, KHÔNG PHẢI MÃ. Sửa tệp này = sửa hợp đồng, phải bump version.
+
+contract_version: "1.0"
+frozen_at_phase: P3
+frozen_against_baseline: b927c3e8f90aed74
+supersedes: []
+
+# ═══════════════════════ C4 · governance / safety gate ═══════════════════════
+# Plan 17 §1.4 và §RC-20 đòi C4 PASS nhưng không định nghĩa. Review 28 §RC-20
+# chốt định nghĩa; đây là bản khoá, machine-checkable, đo TRÊN RC2.
+c4_gate:
+  description: >
+    Không một fact nào vừa được phép tính tự động vừa mang rủi ro đã biết.
+  # Mọi biểu thức dưới đây phải cho ra 0. Tên trường map vào bảng
+  # `observation_readiness` (RC-02) và `observations` (schema hiện có).
+  invariants:
+    - id: C4-01
+      assert: "COUNT(execution_ready=1 AND execution_candidate=0) = 0"
+      rationale: ready ⇒ candidate. Một fact không đủ field mà vẫn ready là mâu thuẫn.
+    - id: C4-02
+      assert: "COUNT(execution_ready=1 AND confidence='low') = 0"
+      rc1_baseline: 181160
+    - id: C4-03
+      assert: "COUNT(execution_ready=1 AND blocking_reasons_json <> '[]') = 0"
+    - id: C4-04
+      assert: "COUNT(execution_ready=1 AND collision_class IS NOT NULL) = 0"
+      note: gồm cả unknown và mọi lớp đã phân loại — §A.6 cấm fact mơ hồ vào ready.
+    - id: C4-05
+      assert: "COUNT(execution_ready=1 AND flag 'tiny_money_unresolved') = 0"
+    - id: C4-06
+      assert: "COUNT(execution_ready=0 AND blocking_reasons_json='[]' AND execution_candidate=1) = 0"
+      rationale: mọi not-ready phải nói được LÝ DO, nếu không thì không audit được.
+    - id: C4-07
+      assert: "COUNT(active risk code NOT IN defect_taxonomy.reverse_index) = 0"
+    - id: C4-08
+      assert: "COUNT(observation_readiness.policy_version <> <current>) = 0"
+    - id: C4-09
+      assert: "COUNT(known ambiguous fact IN execution_ready) = 0"
+      note: hợp của C4-04 và C4-05; giữ riêng vì Plan 17 §1.4 nêu đích danh.
+    - id: C4-10
+      assert: "COUNT(observations WHERE value_kind='money' AND unit_kind NOT IN (money, unknown, NULL)) = 0"
+      note: >
+        RC2-036 · bất biến NỘI TẠI, thêm sau khi differential bắt được 20.378
+        bản ghi tự mâu thuẫn trên bản dựng 4c86c9e43915694a: ô mang TIỀN nhưng
+        `unit_kind` là `rate`/`shares`/`days`/`count`. Nguyên nhân:
+        `classify_value_kind` có cổng hình dạng `_shape_allows`, còn
+        `unit_resolver._find_kind` thì không — nên một TỪ KHOÁ trong nhãn cột
+        lật được đơn vị mà không lật được loại giá trị.
+        `unknown`/NULL KHÔNG vi phạm: "chưa xác định" là trạng thái trung thực;
+        chỉ một loại đơn vị KHÁC mới là mâu thuẫn.
+        Cổng G4 có đo tỷ lệ này nhưng ngưỡng 93% không phân biệt được "chưa
+        biết" với "biết sai" — RC2 đạt 93,41% và vẫn PASS trong khi RC1 đạt
+        94,11%. Một tỷ lệ có ngưỡng không thay được một bất biến ngưỡng 0.
+
+# ═══════════════════ Precedence — KHÔNG để thứ tự code quyết ═════════════════
+# Review 28 §RC-02: "precedence giữa blocking và warning phải cố định".
+policy_precedence:
+  order: [NON_CANDIDATE, BLOCKING, WARNING, PASS]
+  rules:
+    - Một observation thiếu field bắt buộc là NON_CANDIDATE; không xét blocking nữa.
+    - NON_CANDIDATE ⇒ execution_candidate=0 ⇒ execution_ready=0.
+    - Có ≥1 blocking reason ⇒ execution_ready=0, kể cả khi là candidate.
+    - Warning KHÔNG hạ execution_ready, nhưng BẮT BUỘC xuất hiện ở warning_reasons_json.
+    - blocking_reasons_json và warning_reasons_json là JSON canonical (mảng chuỗi
+      đã sort, không trùng). Cấm kiểm bằng LIKE trên chuỗi tự do.
+
+# ═════════════ C4 · hai cờ đánh giá THEO BẰNG CHỨNG, không theo nhãn ═════════
+# Không ai phải chọn blocking/warning cho cả 377.406 hay 94.071 ca.
+conditional_flag_policy:
+  period_from_table:
+    rc1_in_ready: 377406
+    warning_if_all:
+      - "period_end IS NOT NULL"
+      - "period_source IS NOT NULL AND period_source <> 'none'"
+      - "confidence IN ('high','medium')"
+      - "không có value_unit_period_conflict"
+    blocking_otherwise: true
+  generic_row_label:
+    rc1_in_ready: 94071
+    warning_if_all:
+      - "collision_class IS NULL"
+      - "row_path_text <> '' AND row_path_text <> metric_label_clean"
+      - "row_path đủ phân biệt trong phạm vi (table_uid, column_uid)"
+    blocking_otherwise: true
+
+# ═══════════════════════ RC-15 · no-loss bằng TẬP UID ════════════════════════
+# CẤM: observations + dropped = source_cells. Hai tập có semantic khác nhau —
+# 6.212.883 là MỌI ô, 3.413.207 là tập digit-bearing đã xử lý.
+no_loss_contract:
+  sets:
+    U_source:      "mọi source_cell_uid trong source_cells"
+    U_digit:       "source cell thoả digit_bearing rule (có version)"
+    U_observation: "DISTINCT source_cell_uid trong observations"
+    U_dropped:     "DISTINCT source_cell_uid trong dropped_cells"
+  invariants:
+    - "U_observation ∩ U_dropped = ∅"
+    - "U_digit = U_observation ∪ U_dropped"
+    - "U_digit − (U_observation ∪ U_dropped) = ∅"
+    - "duplicate source_cell_uid trong observations = 0"
+    - "duplicate source_cell_uid trong dropped_cells = 0"
+  digit_bearing_rule:
+    name: has_decimal_digit
+    version: "1.0"
+    # Nguồn sự thật là `observation_builder._HAS_DIGIT`, dùng cho `_drop()`.
+    definition: "re.search(r'\\d', text_clean) — ô có ít nhất một chữ số thập phân"
+    note: >
+      Ô CHỮ THUẦN không bao giờ là ứng viên số liệu, nên không vào U_digit và
+      cũng không vào dropped_cells. Đó là lý do U_digit ≪ U_source.
+  report_must_contain: [row_count, distinct_uid_count, digit_bearing_rule_version]
+  eligible_financial_source_cells:
+    status: "CHƯA ĐỊNH NGHĨA"
+    action: "Nếu RC-15 cần trường này thì định nghĩa RIÊNG, KHÔNG trộn vào U_digit."
+  rc1_locally_verified:
+    observations_rows: 2646976
+    observations_distinct_source_cell_uid: 2646976
+    observations_null_source_cell_uid: 0
+    dropped_rows: 766231
+    dropped_distinct_source_cell_uid: 766231
+    dropped_null_source_cell_uid: 0
+    overlap: 0
+    source_cells_build_db: 6212883
+    note: "source_cells KHÔNG có trong release slim — C1 của RC2 phải chạy trên build DB RC2."
+
+# ═══════════════════════ RC-07 · hợp đồng sửa mojibake ═══════════════════════
+# Bỏ chiến lược "sửa từng đoạn mã hoá được" — nó có thể phá tiếng Việt đúng
+# lân cận. Chỉ sửa trong CỬA SỔ ỨNG VIÊN và chỉ khi validate đạt.
+mojibake_contract:
+  pipeline: [preserve_raw, detect_candidate_window, attempt_repair, validate, accept_or_reject, audit_trace]
+  accept_only_if_all:
+    - "round-trip sloppy-CP1252 → UTF-8 hợp lệ"
+    - "mojibake score GIẢM THẬT SỰ"
+    - "NFC/Unicode validity không giảm"
+    - "vùng tiếng Việt đúng lân cận KHÔNG đổi một ký tự nào"
+  must_not:
+    - "quét mù toàn chuỗi"
+    - "sửa token ASCII/Latin hợp lệ"
+    - "thay đổi text_source (DI-04)"
+  acceptance:
+    mojibake_regression: 0
+    false_positive: 0
+    nfc_violation: 0
+    control_character_violation: 0
+  fixture_categories:
+    - id: MJ-01
+      name: ca thật RC1
+      input: "7 J1001 C TRÁC HÃ¹ Tổng Công ty Viglacera - CTCP Địa chỉ: Tò"
+      damaged_window: "HÃ¹"
+      expected_window_repair: "Hù"
+      note: >
+        Bản C07 hiện tại TRẢ NGUYÊN VĂN cho ca này. Root cause: `_sloppy_encode`
+        đòi TOÀN BỘ chuỗi mã hoá được, mà `ổ` (U+1ED5) nằm ngoài Latin-1.
+        Đây là ca chặn của RC-07.
+    - id: MJ-02
+      name: hỗn hợp tiếng Việt đúng + mojibake
+      requirement: "phần đúng phải không đổi một ký tự"
+    - id: MJ-03
+      name: ASCII/Latin hợp lệ  (Résumé · naïve · Ø 12mm · ©2024 ABC)
+      expected: không đụng
+    - id: MJ-04
+      name: dấu câu Unicode  (« » · ± · °)
+      expected: không đụng
+    - id: MJ-05
+      name: tiếng Việt đã đúng
+      expected: không đụng
+  rc1_baseline: {DQ-ENC-MOJIBAKE: 1}
+
+# ═════════════════════ RC-08 · hợp đồng readiness cấp bảng ═══════════════════
+# Review 28 §RC-08: map v2 SAI khi đòi retrieval_ready phải giảm.
+table_readiness_contract:
+  fields: [retrieval_ready, has_observations, execution_candidate_obs,
+           execution_ready_obs, has_execution_candidate, has_execution_ready,
+           review_required_obs, not_ready_reason_counts_json]
+  semantics:
+    retrieval_ready: "có locator + có nội dung tìm được. ĐỘC LẬP với execution."
+    has_observations: "n_observations > 0"
+    has_execution_ready: "execution_ready_obs > 0"
+  invariants:
+    - "table_cards 1:1 với tables"
+    - "SUM(execution_ready_obs) = COUNT(observation_readiness.execution_ready=1)"
+    - "n_observations = 0 ⇒ execution_ready_obs = 0"
+    - "locator IS NOT NULL AND evidence_ref IS NOT NULL"
+  explicitly_allowed:
+    - "retrieval_ready = 146.246/146.246 VẪN HỢP LỆ nếu mỗi bảng thoả policy."
+  must_end: "consumer không phân biệt được retrieval readiness với execution readiness"
+  rc1_baseline: {retrieval_ready: 146246, zero_observation_tables: 12353, zero_ready_tables: 27144}
+
+# ═══════════════════════ RC-10 · hợp đồng manifest ═══════════════════════════
+manifest_contract:
+  build_id:
+    deterministic_inputs: [source_hash, config_hash, corpus_hash, component_versions, schema_version, counts]
+    must_not_depend_on: [timestamp, absolute_path, random_uuid, hostname, username]
+    config_hash_scope: "configs/*.yaml (SỐ NHIỀU) — đã vá; RC1 băm nhầm config/ (số ít)"
+  nondeterministic_fields_excluded_from_canonical_comparison:
+    - created_at
+    - checksum_seconds
+    - "*.seconds"
+    - logs/*
+  required_keys: [release_label, acceptance_status, build_id, source_commit, source_hash,
+                  corpus_hash, config_hash, schema_version, component_versions,
+                  readiness_policy_version, defect_taxonomy_version, created_at,
+                  counts, gate_summary, blocking_failures, allowed_blocked_gates, files]
+  rc1_missing_keys: [acceptance_status, source_commit, source_hash, config_hash,
+                     readiness_policy_version, defect_taxonomy_version, allowed_blocked_gates]
+  allowed_blocked_gates: [SG, C2, C3]
+  acceptance_status_rule: "chỉ ghi rc_ready SAU KHI gate thật sự pass"
+  generation_order: [final_db, exports, reports, docs, counts, manifest, SHA256SUMS, package, verify]
+  checksum_scope: "SHA256SUMS chứa MỌI tệp trong release TRỪ chính SHA256SUMS — tránh vòng lặp."
+
+# ═══════════════════ Tương thích schema — append-only ════════════════════════
+schema_compatibility_contract:
+  frozen_fields_must_keep_name_type_semantics:
+    [table_uid, row_uid, column_uid, source_cell_uid, observation_uid, doc_id,
+     table_locator, locator, evidence_ref, value_raw, value_decimal_text]
+  rule: "field mới CHỈ được append. Cấm rename cho đẹp. Cấm migrate rộng hơn scope RC2."
+  observed_conflict:
+    id: SC-01
+    finding: "table_cards.locator = 'line:10' còn evidence_ref = '{doc_id}|line:{n}'"
+    impact: "Hai quy ước khác nhau cho cùng khái niệm vị trí trong CÙNG một bảng."
+    decision: "GHI NHẬN, KHÔNG SỬA ở RC2 — đổi sẽ phá C20 và legacy consumer."
+
+# ═══════════════════════ Sở hữu fixture ══════════════════════════════════════
+fixture_ownership:
+  - {task: RC-02, fixture: tests/test_rc2_readiness_and_safety.py, purpose: readiness policy + bất biến}
+  - {task: RC-03, fixture: artifacts/policy/tiny_money_rc1_cohort.json, purpose: cohort đóng băng 2.836}
+  - {task: RC-03, fixture: tests/test_tiny_money_wiring.py, purpose: classifier + wiring}
+  - {task: RC-04, fixture: configs/defect_taxonomy_v1.yaml, purpose: map 14 rule → hệ quả policy}
+  - {task: RC-05, fixture: tests/test_fts_normalization.py, purpose: 7 cặp có/không dấu, CHƯA TỒN TẠI}
+  - {task: RC-06, fixture: tests/test_rc2_batch1.py::RC-06, purpose: phân loại tài liệu phi bảng}
+  - {task: RC-07, fixture: tests/test_rc2_batch1.py::RC-07, purpose: mojibake ±, THIẾU ca MJ-01}
+  - {task: RC-08, fixture: tests/test_consumer_contract.py, purpose: hợp đồng table card}
+  - {task: RC-09, fixture: configs/defect_taxonomy_v1.yaml, purpose: D-01…D-09 + reverse index}
+  - {task: RC-10, fixture: tests/test_release_gating.py, purpose: manifest + gate}
+  - {task: RC-19, fixture: configs/replay_expected_v1.yaml, purpose: 10 ca expected, CHƯA ĐỦ}
+
+# ═══════════ RC-04 / RC-09 · KIỂM KÊ TOÀN BỘ RULE ĐANG HOẠT ĐỘNG ════════════
+# Review 28 §RC-04: "inventory toàn bộ active quality flags/rules, không chỉ
+# sáu flag được nêu" và "unmapped active rule = 0".
+# Nguồn: `quality_rule_totals` của RC1 — 14 rule, ĐẾM ĐẦY ĐỦ (không phải mẫu).
+active_rule_inventory:
+  source: "artifacts/rc1_baseline/silver.db · quality_rule_totals"
+  count: 14
+  note: >
+    `total_count` là số ĐÚNG. `quality_issues` bị cắt ở 5.000/rule — 7 rule
+    chạm trần. RC-18 phải dùng total_count, KHÔNG dùng COUNT(*) quality_issues.
+  rules:
+    - {id: Q-OBS-GENERIC-LABEL,      total: 202557, sampled: 5000, truncated: true,  defect: D-04, consequence: warning_conditional}
+    - {id: Q-OBS-UNIT-NO-EVIDENCE,   total: 144402, sampled: 5000, truncated: true,  defect: D-07, consequence: warning}
+    - {id: Q-COL-ROLE-UNKNOWN,       total: 121407, sampled: 5000, truncated: true,  defect: D-03, consequence: blocking}
+    - {id: Q-COL-PERIOD-FROM-TABLE,  total:  72607, sampled: 5000, truncated: true,  defect: D-06, consequence: warning_conditional}
+    - {id: Q-COL-PERIOD-UNRESOLVED,  total:  17619, sampled: 5000, truncated: true,  defect: D-06, consequence: non_candidate}
+    - {id: Q-TAB-NO-HEADER,          total:  10489, sampled: 5000, truncated: true,  defect: D-01, consequence: warning}
+    - {id: Q-TAB-HEADER-CONSUME,     total:   5420, sampled: 5000, truncated: true,  defect: D-01, consequence: blocking}
+    - {id: Q-TAB-GLOBAL-HEADER,      total:   4838, sampled: 4838, truncated: false, defect: D-01, consequence: warning}
+    - {id: Q-COL-DEMOTED-REF,        total:   3192, sampled: 3192, truncated: false, defect: D-03, consequence: warning}
+    - {id: Q-OBS-TINY-MONEY,         total:   2836, sampled: 2836, truncated: false, defect: D-09, consequence: blocking_until_classified}
+    - {id: Q-TAB-HEADER-SMALL-NUM,   total:   2168, sampled: 2168, truncated: false, defect: D-01, consequence: warning}
+    - {id: Q-OBS-SCALE-REJECTED,     total:   1996, sampled: 1996, truncated: false, defect: D-07, consequence: blocking}
+    - {id: Q-TAB-NOT-DATA,           total:   1011, sampled: 1011, truncated: false, defect: D-02, consequence: warning}
+    - {id: Q-ARITH-BROKEN,           total:     75, sampled:   75, truncated: false, defect: D-05, consequence: warning}
+  acceptance:
+    - "unmapped_active_rule = 0 — mọi rule ở trên phải có `defect` và `consequence`"
+    - "mọi consequence=blocking phải có ≥1 test dương và ≥1 test âm"
+    - "mọi consequence=warning phải có downstream consequence được ghi tài liệu"
+
+# ═══════════ Readiness policy — trạng thái đóng băng và delta cho P4 ═════════
+readiness_policy_freeze:
+  frozen_file: configs/readiness_policy_v1.yaml
+  frozen_version: "2.0"
+  status: FROZEN_AS_IS
+  rationale: >
+    P3 KHÔNG sửa tệp mà mã đang đọc (§27 cấm modify readiness implementation).
+    Precedence và conditional policy được khoá ở CHÍNH TỆP NÀY; RC-02 ở P4 sẽ
+    hợp nhất chúng vào `readiness_policy_v1.yaml` và bump lên 2.1.
+  delta_to_apply_at_p4:
+    - "thêm `precedence:` theo policy_precedence ở trên"
+    - "thêm bất biến `execution_ready ⇒ execution_candidate`"
+    - "chuyển period_from_table / generic_row_label sang conditional (hiện là warning phẳng)"
+    - "khai blocking_reasons_json / warning_reasons_json là JSON canonical đã sort"
+    - "bump policy_version → 2.1 và cập nhật test khoá phiên bản"
+
+# ═══════════ SỬA ĐỔI HỢP ĐỒNG · RC-02 ═══════════════════════════════════════
+# Hợp đồng đóng băng ở P3 KHÔNG phải là bất khả xâm phạm — nó là thứ không được
+# sửa TRONG IM LẶNG. Mỗi sửa đổi phải nói: sửa mục nào, vì sao, bằng chứng đâu,
+# giá bao nhiêu, ai duyệt. Bản ghi dưới đây là hình mẫu cho mọi sửa đổi sau.
+amendments:
+  - id: AMD-A5-01
+    amends: readiness_policy.confidence.low_if_conditions
+    phase: A5
+    approved_by: chủ dự án (yêu cầu trực tiếp — "data phải tốt nhất có thể")
+    evidence_doc: docs/62_A5_PLAN.md
+    finding: >
+      Tập execution_ready của A4 CHỈ chứa ô tiền. 103.193 ô percentage, 22.016
+      share_count, 73 interest_rate, 9 days đều là candidate mà 0 ô ready. Đo
+      được nguyên nhân duy nhất: 100,00% trong số đó có confidence='low' vì
+      đúng một vế `scale_source IN ('assumed','none')`, không có nguyên nhân
+      thứ hai. Vế đó là proxy của bậc nhân TIỀN; với percent/shares/days thì
+      không có bậc nhân nào để biết, nên `none` là trạng thái ĐÚNG chứ không
+      phải bằng chứng còn thiếu.
+    change: >
+      Thu hẹp vế đó còn `AND unit_kind NOT IN ('percent','shares','days')`.
+      Viết dạng NOT IN để unit kind mới thêm sau mặc định RƠI VÀO diện phải có
+      bằng chứng — fail closed. Kèm cờ chặn percent_value_implausible
+      (|v| >= 1.000) vì nếu không thì 445 ô tiền bị gán nhầm % sẽ vào ready.
+    new_reason_class: null
+    new_quality_flag: percent_value_implausible
+    scope: >
+      Guard cho TIỀN không đổi một chữ: 1.654 ô money có scale_source='none'
+      vẫn low, vẫn bị chặn. `rate` CỐ Ý không được miễn.
+    measured_on_a4:
+      simulation_fidelity_confidence: "mismatch 0/2.633.554 = 100,00%"
+      control_ready_on_cohort: "stored 0 = simA 0"
+      ready_before: 1673840
+      ready_after_predicted: 1795684
+      delta: 121844
+      by_kind: "percentage 101.189 · share_count 20.646 · days 9 · money 0 (không đổi)"
+      guard_flag_cells: 696
+      guard_blocks_candidates: 445
+      rejected_alternative: >
+        Bỏ hẳn vế scale khỏi low_if_conditions: chạm cả 1.654 ô money
+        scale_source='none' — sai đúng loại lỗi mà luật này sinh ra để chặn.
+        Mở `rate`: 3/73 ca đọc tay cho Tiền gửi khách hàng ra 545 · 580 · 780,
+        lãi suất 545% không thể; nguyên nhân chưa xác định nên không mở.
+        Đặt trần percent ở 100 thay vì 1.000: loại thêm 22.299 ô mà phần lớn
+        là tỷ lệ sở hữu 100% và nợ/vốn > 100% hợp lệ.
+    residual: >
+      2 ô percentage ở dải [1e3,1e4) có thể là tỷ lệ thật bị cờ chặn. Chúng
+      KHÔNG mất dữ liệu — vẫn là candidate, chỉ không tự động tính.
+
+  - id: AMD-A5-02
+    amends: differential_change_reason_classes
+    phase: A5
+    approved_by: chủ dự án (yêu cầu trực tiếp)
+    evidence_doc: docs/62_A5_PLAN.md
+    finding: >
+      185.385 ô có period_source='none' ∧ period_end IS NULL ∧ doc_year NOT
+      NULL, trong đó 152.455 `note` và 27.064 `equity_change`. Đọc mẫu cho
+      thấy đây là bảng biến động vốn chủ sở hữu bố cục CHUYỂN VỊ: cột mang
+      cấu phần vốn, DÒNG mang ngày (`Số dư tại ngày 31/12/2015`).
+      resolve_period() chỉ đọc nhãn cột và ngữ cảnh bảng — không bao giờ nhìn
+      row_path_text. Cùng hình dạng lỗi với RC2-039 ở A4.
+    change: >
+      Thêm resolve_row_period(): chỉ NGÀY TUYỆT ĐỐI, dùng chính _DMY và
+      _DMY_WORDS của bộ phân giải, giữ nguyên ngữ nghĩa P-OPENING-0101. Chạy
+      như phương án CUỐI CÙNG, chỉ khi cột không có kỳ.
+    new_reason_class: period_recovered_from_row_path
+    new_quality_flag: period_from_row_path
+    scope: >
+      `period_end` nằm trong MEASURED và MEASURED đổi là chặn cứng. Miễn trừ
+      này CHỈ nhận NULL → giá trị, đòi đủ sáu điều kiện (xem
+      _period_recovered_from_row). period_end đi từ giá trị này sang giá trị
+      KHÁC vẫn chặn cứng. Đây là thu hẹp phạm vi, không phải nới ngưỡng.
+      Cờ `period_unresolved` BẮT BUỘC biến mất trong cùng thay đổi — ô vừa có
+      kỳ mà vẫn mang cờ "chưa giải được kỳ" là dữ liệu tự mâu thuẫn. Đó là cờ
+      DUY NHẤT được phép mất; mọi cờ khác biến mất vẫn chặn cứng.
+    measured_on_a4:
+      cells_recovered: 9528
+      becoming_candidate: 6598
+      tiers_deferred: "MM/YYYY 331 · năm trần 18.057 · không tín hiệu 157.465"
+      new_collisions_created: 19
+      old_cells_pulled_into_collision: 41
+      ready_cells_lost: 8
+      rejected_alternative: >
+        Gán doc_year cho 157.465 ô không có tín hiệu ngày: SAI cho các dòng
+        biến động thuộc năm trước trong bảng trải nhiều năm, và tạo trùng khoá
+        ngữ nghĩa. Cần suy kỳ theo khoảng giữa hai dòng mốc — để A6, cần gold.
+        Nhận cả năm trần (18.057 ô): năm trong nhãn dòng thường là số hiệu văn
+        bản; _mask_legal_ref che được dạng `12/2015/NĐ-CP` chứ không che được
+        năm đứng một mình.
+    residual: >
+      8 ô đang execution_ready sẽ mất ready vì va chạm mới. Mất là ĐÚNG —
+      chúng thật sự trở nên không địa chỉ hoá được. Không né, chỉ khai báo.
+
+  - id: AMD-A4-01
+    amends: differential_change_reason_classes
+    phase: A4
+    approved_by: chủ dự án (phê duyệt Doc 58, sau kiểm toán độc lập Doc 56)
+    evidence_doc: docs/58_A4_PLAN.md
+    finding: >
+      Luật phân loại đơn vị chỉ đọc NHÃN CỘT. Đo trên 7aa8b4c22984bf5f: trong
+      65 ô execution_ready mang tín hiệu đếm tường minh, 50 ô có tín hiệu CHỈ ở
+      nhãn dòng và 0 ô chỉ ở nhãn cột. Nhãn "Số lượng cổ phiếu được mua lại"
+      nói rõ đơn vị là cổ phiếu, còn nhãn cột chỉ ghi kỳ báo cáo.
+    change: >
+      classify_value_kind đọc thêm row_path cho nhánh ĐẾM. Tín hiệu mạnh
+      (số lượng cổ phiếu · số cổ phiếu · cổ phiếu quỹ · đơn vị tính: cổ phiếu)
+      áp cho cả hai nhãn; tín hiệu yếu (cổ phiếu thường/phổ thông/ưu đãi) giữ ở
+      nhãn cột. Loại trừ dấu hiệu TIỀN giữ nguyên phạm vi nhãn cột.
+    new_reason_class: unit_kind_from_row_path_count_signal
+    scope: >
+      Chỉ nhận thay đổi money → share_count khi bản ghi MỚI nhất quán và nhãn
+      dòng thật sự mang tín hiệu đếm mạnh. Mọi hình dạng khác vẫn rơi xuống
+      factual_changed_NEEDS_REVIEW.
+    measured_on_a3:
+      simulation_fidelity_vs_db: "2633473/2633530 = 100.00%"
+      cells_reclassified: 5889
+      pct_of_observations: 0.2236
+      direction: "money → share_count, MỘT chiều"
+      reviewer_cases_reclassified: "3/4"
+      money_cases_preserved: "40/40 (Dự phòng giảm giá chứng khoán › Cổ phiếu niêm yết)"
+      rejected_alternative: >
+        Mở tín hiệu 'về số lượng' chạm 126 ô nhưng 48/126 có ≥10 chữ số — thị
+        trường VN chưa tới 10^11 cổ phiếu nên đó là TIỀN. Tín hiệu 'số lượng'
+        chung chạm 8.281 ô. Cả hai bị loại vì tạo lỗi ngược chiều.
+    residual: >
+      Phần dư không kết luận được mang cờ unit_ambiguous_share_column, bị
+      readiness chặn theo blocking_until_classified (D-10). Ca thứ tư của
+      reviewer (055a9c7d34af7fa4) nằm trong nhóm này.
+
+  - id: AMD-01
+    amends: conditional_flag_policy.period_from_table.warning_if
+    phase: RC-02
+    approved_by: chủ dự án (quyết định trực tiếp, xem to_read/32 §5)
+    evidence_doc: to_read/32_DECISION_value_unit_period_conflict.md
+    finding: >
+      Cả bốn vế của điều kiện đóng băng đều là HẰNG ĐÚNG, đo trên RC1:
+      `period_end IS NOT NULL` đã là điều kiện candidate; `confidence` đã lọc ở
+      tầng trên; `NOT value_unit_period_conflict` là rule chặn 0 ca; và
+      `period_source NOT IN ('','none')` cho 325.183/325.183 = 'table_context'
+      — cờ được phát ra CHÍNH KHI period_source='table_context', nên vế đó chỉ
+      lặp lại chính cái cờ. Kết quả: 325.183/325.183 xuống warning. Chính sách
+      "có điều kiện" trên thực tế là một công tắc luôn bật.
+    replaced_by: requires_col_path_discriminative
+    rationale: >
+      Bám theo cách bài toán chấm điểm — đáp án là MỘT ô của
+      `relevant_tables[0]`, exact-match với ANSWER_ABS_TOL=1e-2 và rel_tol=0,
+      không có điểm một nửa. Rủi ro của kỳ suy từ ngữ cảnh bảng không phải là
+      kỳ SAI mà là kỳ không địa chỉ hoá được một ô duy nhất.
+    measured_on_rc1:
+      period_from_table_in_base: 325183
+      in_tables_with_ge2_cols_single_period: 305353   # 93,9% — nhưng LÀNH
+      col_path_empty: 0
+      col_path_duplicated_within_table_row_period: 1550   # 0,48% — rủi ro thật
+      note: >
+        93,9% "gộp kỳ" không phải rủi ro: các cột vẫn có nhãn riêng
+        ("Số dư đầu năm"/"Tăng"/"Giảm") nên vẫn địa chỉ hoá được. Chỉ 1.550 ca
+        có ≥2 cột CÙNG nhãn, cùng dòng, cùng kỳ. Cả 1.550 ca đó có
+        collision_class IS NULL — hệ đụng độ không bắt được vì nó định nghĩa
+        trên (bảng, dòng, cột) VẬT LÝ, còn đây là đụng độ khoá NGỮ NGHĨA.
+    cost:
+      execution_ready_delta: -1550
+      execution_ready_pct: -0.09
+    symmetry: >
+      Đối xứng hoàn toàn với `requires_row_path_discriminative` của
+      `generic_row_label` (RC-02): cùng một nguyên tắc "khoá phải trỏ tới đúng
+      một ô", chỉ đổi trục — dòng phân biệt trong phạm vi cột, và cột phân biệt
+      trong phạm vi dòng.
+
+  - id: AMD-02
+    amends: manifest_contract.rc1_missing_keys
+    phase: RC-10
+    finding: >
+      Danh sách khai 7 khoá thiếu. Kiểm bằng máy (đọc `required_keys` rồi soi
+      `_md_manifest`) ra **12**: 5 khoá nữa tồn tại dưới TÊN KHÁC hoặc không
+      tồn tại — `build_id` (có dưới tên `source_build_id`), `gate_summary`
+      (có dưới tên `quality_gates`), `blocking_failures` (nằm lồng trong
+      `dq_summary.blocking`), `corpus_hash` và `schema_version` (không có).
+    lesson: >
+      Bản liệt kê tay đếm thiếu 5/12. Đây là lý do acceptance phải là một test
+      đọc hợp đồng rồi soi mã, không phải một danh sách người ta đối chiếu
+      bằng mắt.
+    resolution: >
+      Bổ sung cả 5, GIỮ NGUYÊN tên cũ bên cạnh (append-only) vì đổi tên là
+      breaking change với người tiêu thụ đã đọc manifest RC1.
+    implemented_by: tests/test_rc10_manifest_keys.py::test_moi_khoa_BAT_BUOC_deu_duoc_sinh
+
+  - id: AMD-03
+    amends: corpus_identity_scope
+    phase: RC2-016
+    approved_by: chủ dự án (quyết định trực tiếp, 11/08/2026)
+    decision: GIU_NGUYEN_SCOPE_VA_KHAI_RUI_RO
+    finding: >
+      `corpus_id` được băm trên 5.931 tệp trong cây `CORPUS.parent`, trong khi
+      corpus thật chỉ có 1.973 tài liệu. `cmd_snapshot` quét thư mục cha chứ
+      không lọc theo mẫu tên.
+    why_it_matters: >
+      `corpus_id` là hạt giống của TOÀN BỘ chuỗi định danh:
+      document_uid = make_uid(corpus_id, rel) -> table_uid -> row_uid/column_uid
+      -> observation_uid. Đổi scope = đổi định danh của mọi observation.
+    decision_rationale: >
+      Thu hẹp scope ở RC2 làm mọi UID của RC2 lệch khỏi RC1. Nhưng C1 no-loss
+      và RC-16 differential đều so theo TẬP UID giữa RC1 và RC2 — thu hẹp bây
+      giờ là tự bỏ mất khả năng đối chiếu, đúng vào lúc cần nó nhất. Giữ
+      nguyên ở RC2, xét lại ở RC3 khi RC2 đã có baseline riêng.
+    risk_accepted: >
+      `corpus_id` nhạy cảm với tệp KHÔNG thuộc corpus nằm cùng cây. Thêm hoặc
+      bớt một tệp rác trong data/external/vifinqa/ sẽ đổi `corpus_id`, đổi
+      `build_id`, và làm C0 đỏ với lý do gây hiểu nhầm.
+    mitigation:
+      - "Runbook §5 bước 3 bắt buộc kiểm corpus_file_count = 1973 trước build B."
+      - "OUTPUT của build PHẢI nằm ngoài data/external/ — nếu không, output của
+         build A trở thành đầu vào của build B và C0 đỏ sai lý do."
+      - "Manifest ghi cả corpus_id và số tệp đã băm để hậu kiểm."
+    revisit_at: RC3
+    open_issue: RC2-016
+
+  - id: AMD-04
+    amends: corpus_identity_scope
+    supersedes: AMD-03
+    phase: RC2-016
+    approved_by: chủ dự án — sau khi phương án C được trình bày đầy đủ (11/08/2026)
+    decision: TACH_uid_namespace_id_VA_corpus_content_hash
+    supersede_reason: >
+      AMD-03 (giữ nguyên scope) được duyệt KHI CHƯA có phương án C trên bàn.
+      Sau khi đo lại, rủi ro của AMD-03 là hiện thực chứ không lý thuyết: cây
+      data/external/vifinqa/ từng có 6.258 tệp ở một thời điểm và 5.931 ở thời
+      điểm khác. Chỉ cần cache ghi thêm một .lock giữa build A và build B là
+      corpus_id đổi -> build_id đổi -> C0 đỏ với lý do gây hiểu nhầm.
+    design:
+      uid_namespace_id: >
+        Hạt giống DUY NHẤT của make_uid(). ĐÓNG BĂNG bằng corpus_id của RC1
+        (sha256:ca033190...). Nhờ vậy document_uid/table_uid/row_uid/column_uid/
+        observation_uid của RC2 TRÙNG RC1, và C1 no-loss + RC-16 differential
+        vẫn so được theo TẬP UID.
+      corpus_content_hash: >
+        Băm CHỈ tệp thuộc corpus thật (financial_statements/**/*_extracted.txt).
+        Đi vào build_id/manifest/differential. Miễn nhiễm với .cache và tệp rác.
+    rejected_alternatives:
+      - id: A
+        what: giữ nguyên scope 5.931 tệp (AMD-03)
+        why_rejected: corpus_id vẫn phụ thuộc cây đang sống -> build_id không ổn định
+      - id: B
+        what: thu hẹp corpus_id về đúng 1.973 tệp
+        why_rejected: >
+          đổi mọi UID của RC2 -> mất mốc so với RC1, đúng lúc C1 và RC-16 cần nó nhất
+    implemented_by:
+      - src/data_pipeline/manifest.py (RC1_UID_NAMESPACE_ID, is_corpus_report, build_manifest)
+      - src/data_pipeline/cli.py (_uid_namespace_from_config, cmd_snapshot)
+      - configs/vifinqa_silver_v1.yaml (corpus.uid_namespace_id)
+    tests: tests/test_rc2_016_uid_namespace.py
+    revisit_at: RC3 (chỉ khi cần migration namespace, kèm mapping UID cũ -> mới)
+    open_issue: RC2-016
+
+# ═══════════ Rule đã NGHỈ HƯU — kèm bằng chứng, không xoá âm thầm ═══════════
+# Một rule bị bỏ mà không để lại gì thì lần sau không ai biết vì sao nó biến
+# mất, và người ta sẽ cài lại nó. Mỗi mục ở đây phải có `proof_assertions`
+# CHẠY ĐƯỢC trên RC2: nếu giả định "đã bị thâu tóm" sai, test đỏ ngay.
+retired_rules:
+  - flag: value_unit_period_conflict
+    status: RETIRED_AS_SUBSUMED
+    retired_at: RC-02
+    evidence_doc: to_read/32_DECISION_value_unit_period_conflict.md
+    finding: >
+      Cờ ghép ba trục. Tách ra đo riêng trên RC1 thì cả ba đều đã có người bắt,
+      phần dư bằng 0. Cài rule như khai sẽ đổi trạng thái đúng 0 observation.
+    subsumed_by:
+      - axis: period
+        by: STRUCTURALLY_IMPOSSIBLE
+        measured: 0
+        note: >
+          `observations.period_*` được SAO từ `columns.period_*` khi dựng. Hai
+          "tầng bằng chứng" thực ra là MỘT tầng, nên không thể nói ngược nhau.
+          Không phải "chưa xảy ra" mà là không thể xảy ra.
+      - axis: scale
+        by: scale_rejected_implausible
+        measured: 1996
+        overlap: 1996        # giao 100%
+        note: cài thêm nghĩa là hai tên gọi cho cùng một tập → RC-16 phải giải thích lý do trùng
+      - axis: unit
+        by: confidence_low
+        measured: 55181
+        overlap: 55181       # giao 100%
+        note: >
+          Và chúng KHÔNG phải lỗi: percent-trong-cột-money 39.808,
+          shares-trong-cột-money 12.422 — tinh chỉnh cấp dòng hợp lệ của báo
+          cáo tài chính. Dòng đúng, cột không sai.
+    proof_assertions:
+      - id: RET-01
+        axis: period
+        assert: "COUNT(o.period_end <> k.period_end) = 0"
+        sql_scope: observations o JOIN columns k USING (table_uid, grid_col_idx)
+      - id: RET-02
+        axis: scale
+        assert: "COUNT(o.scale_exponent <> k.scale_exponent AND r.execution_ready = 1) = 0"
+      - id: RET-03
+        axis: unit
+        assert: "COUNT(o.unit_kind <> k.unit_kind AND r.execution_ready = 1) = 0"
+    why_stronger_than_keeping: >
+      Giữ nguyên: cờ chặn 0 ca và KHÔNG AI BIẾT — cảm giác có lớp bảo vệ mà
+      thực tế không có. Sau khi nghỉ hưu kèm RET-01..03: nếu RC2 sinh ra dù chỉ
+      MỘT ca lệch mà vẫn ready, test đỏ ngay. Lớp bảo vệ bây giờ mới có thật.
+
+# ═══════════ RC-09 mở rộng — kiểm HAI CHIỀU ═════════════════════════════════
+# Lý do `value_unit_period_conflict` sống sót được ba pha: không có gì kiểm
+# chiều ngược. RC-09 chỉ hỏi "rule đang chạy có được map không". Chiều còn lại
+# — "rule được map có thật sự chạy không" — không ai hỏi.
+rule_inventory_bidirectional:
+  direction_a:
+    id: RC09-A
+    assert: "COUNT(active_rule_code NOT IN policy_mapping) = 0"
+    status: đã khai ở active_rule_inventory.acceptance
+  direction_b:
+    id: RC09-B
+    assert: "COUNT(policy_flag NOT IN code_emitted_flags) = 0"
+    exempt: retired_rules[].flag
+    status: ĐÃ CÀI ở RC-04
+    implemented_by: tests/test_rc04_rule_inventory.py::test_B_moi_rule_TRONG_SO_deu_duoc_code_phat_ra
+    registry: configs/rule_inventory_v1.yaml
+    scope_note: >
+      Sổ khoá theo MÃ (26 rule quality.py phát ra), không theo mẫu RC1 (14 rule
+      đã nổ). 12 rule nổ 0 lần trên RC1 vẫn phải có defect + consequence, nếu
+      không thì lần đầu chúng nổ trên RC2 sẽ là `unmapped_active_rule`.
+    rationale: >
+      Với vế B, mọi cờ khai trong policy mà không dòng mã nào phát ra sẽ làm đỏ
+      test — TRỪ KHI nó có bản ghi nghỉ hưu kèm proof_assertions. Muốn bỏ một
+      rule thì phải chứng minh vì sao được bỏ. Không thể có cờ chết im lặng nữa.

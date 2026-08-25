@@ -1,0 +1,197 @@
+# RC-04 · SỔ ĐĂNG KÝ RULE — khoá theo MÃ, không theo mẫu RC1.
+#
+# Hợp đồng P3 `active_rule_inventory` liệt kê **14** rule. Đó là 14 rule đã NỔ
+# trên corpus RC1 — một mẫu, không phải bộ luật. `quality.py` phát ra **26**.
+# 12 rule còn lại nổ 0 lần trên RC1 và vì thế không có mặt trong inventory; nếu
+# một trong số đó nổ trên RC2, nó sẽ là **rule không có defect, không có
+# consequence, không ai kiểm** — đúng định nghĩa `unmapped_active_rule`.
+#
+# Vì vậy sổ này khoá theo thứ mã CÓ THỂ phát ra, không theo thứ dữ liệu tình cờ
+# làm nó phát ra. Đây cũng là vế A của RC-09.
+#
+# `consequence` dùng đúng từ vựng của `readiness_policy_v1.yaml`:
+#   non_candidate         thiếu field bắt buộc → không tính được
+#   blocking              tính được nhưng chưa đủ an toàn
+#   warning_conditional   warning HAY blocking tuỳ bằng chứng (conditional_flags)
+#   warning               vẫn ready, nhưng người tiêu thụ phải biết hệ quả
+#   build_failure         không được phép tồn tại trong một build đạt
+#   informational         ghi nhận trạng thái hợp lệ, không hạ readiness
+
+inventory_version: "1.0"
+source_of_truth: src/data_pipeline/quality.py
+supersedes_scope: >
+  Mở rộng `active_rule_inventory` của rc2_contracts_v1.yaml từ 14 rule đã nổ
+  trên RC1 lên toàn bộ 26 rule mà mã có thể phát ra.
+
+acceptance:
+  - "mọi mã `Q-*` trong quality.py phải có mặt ở đây (RC-09 vế A)"
+  - "mọi mã ở đây phải tồn tại trong quality.py, trừ `retired` (RC-09 vế B)"
+  - "mọi rule `blocking` / `non_candidate` phải có ≥1 test dương và ≥1 test âm"
+  - "mọi rule `warning` phải ghi `downstream` — hệ quả với người tiêu thụ"
+
+rules:
+
+  # ── CRITICAL · không được tồn tại trong build đạt ────────────────────────
+  - id: Q-OBS-NO-SOURCE
+    severity: critical
+    defect: D-08
+    consequence: build_failure
+    rc1_total: 0
+    downstream: observation không neo được về ô nguồn thì C20 evidence sụp
+  - id: Q-OBS-ZERO-FROM-DASH
+    severity: critical
+    defect: D-06
+    consequence: build_failure
+    rc1_total: 0
+    downstream: DI-06 — dash là KHUYẾT, không phải 0. 444.863 ô dash ở RC1, 0 ca vi phạm
+  - id: Q-OBS-REAL-DECIMAL
+    severity: critical
+    defect: D-05
+    consequence: build_failure
+    rc1_total: 0
+    downstream: DI-05 — REAL cho tiền mất chữ số ở 10^15
+  - id: Q-TAB-NO-STATUS
+    severity: critical
+    defect: D-02
+    consequence: build_failure
+    rc1_total: 0
+
+  # ── ERROR ───────────────────────────────────────────────────────────────
+  - id: Q-OBS-SPAN-DUP
+    severity: error
+    defect: D-08
+    consequence: blocking
+    rc1_total: 0
+    maps_to_flag: physical_duplicate
+  - id: Q-OBS-IMPLAUSIBLE-RAW
+    severity: error
+    defect: D-05
+    consequence: blocking
+    rc1_total: 0
+  - id: Q-OBS-IMPLAUSIBLE-NORMALIZED
+    severity: error
+    defect: D-07
+    consequence: blocking
+    rc1_total: 0
+    note: đo SAU khi áp scale — cùng lớp lỗi "đo sai đại lượng" với Q-OBS-TINY-MONEY
+  - id: Q-COL-INVALID-DATE
+    severity: error
+    defect: D-06
+    consequence: non_candidate
+    rc1_total: 0
+  - id: Q-OBS-INVALID-DATE
+    severity: error
+    defect: D-06
+    consequence: non_candidate
+    rc1_total: 0
+  - id: Q-TAB-HEADER-CONSUME
+    severity: error
+    defect: D-01
+    consequence: blocking
+    rc1_total: 5420
+  - id: Q-TAB-PARSE-FAIL
+    severity: error
+    defect: D-02
+    consequence: non_candidate
+    rc1_total: 0
+
+  # ── WARNING ─────────────────────────────────────────────────────────────
+  - id: Q-COL-ROLE-UNKNOWN
+    severity: warning
+    defect: D-03
+    consequence: blocking
+    rc1_total: 121407
+    maps_to_flag: column_role_unknown
+  - id: Q-OBS-SCALE-REJECTED
+    severity: warning
+    defect: D-07
+    consequence: blocking
+    rc1_total: 1996
+    maps_to_flag: scale_rejected_implausible
+  - id: Q-OBS-TINY-MONEY
+    severity: warning
+    defect: D-09
+    consequence: blocking_until_classified
+    rc1_total: 2836
+    maps_to_flag: tiny_money_unresolved
+    reconciliation: reports/rc03_tiny_money_reconciliation.json
+  - id: Q-OBS-UNIT-NO-EVIDENCE
+    severity: warning
+    defect: D-07
+    consequence: warning
+    rc1_total: 144402
+    downstream: ô tiền không biết bậc — cấm cộng ngang bảng
+  - id: Q-OBS-UNIT-ASSUMED
+    severity: warning
+    defect: D-07
+    consequence: blocking
+    rc1_total: 0
+    maps_to_flag: unit_scale_assumed_no_evidence
+  - id: Q-COL-PERIOD-UNRESOLVED
+    severity: warning
+    defect: D-06
+    consequence: non_candidate
+    rc1_total: 17619
+  - id: Q-TAB-HEADER-SMALL-NUM
+    severity: warning
+    defect: D-01
+    consequence: warning
+    rc1_total: 2168
+    downstream: dòng tiêu đề có thể là dữ liệu thật — kiểm trước khi cộng cột
+  - id: Q-TAB-TOO-LARGE
+    severity: warning
+    defect: D-02
+    consequence: warning
+    rc1_total: 0
+    downstream: bảng vượt ngưỡng kích thước, có thể bị cắt
+
+  # ── INFO ────────────────────────────────────────────────────────────────
+  - id: Q-OBS-GENERIC-LABEL
+    severity: info
+    defect: D-04
+    consequence: warning_conditional
+    rc1_total: 202557
+    maps_to_flag: generic_row_label
+    downstream: chỉ định danh được nhờ row_path — xem RC-02 requires_row_path_discriminative
+  - id: Q-COL-PERIOD-FROM-TABLE
+    severity: info
+    defect: D-06
+    consequence: warning_conditional
+    rc1_total: 72607
+    maps_to_flag: period_from_table
+    downstream: kỳ suy từ ngữ cảnh — xem AMD-01 requires_col_path_discriminative
+  - id: Q-COL-DEMOTED-REF
+    severity: info
+    defect: D-03
+    consequence: warning
+    rc1_total: 3192
+    downstream: cột đã hạ xuống tham chiếu — không dùng làm cột giá trị
+  - id: Q-TAB-NO-HEADER
+    severity: info
+    defect: D-01
+    consequence: warning
+    rc1_total: 10489
+    downstream: col_label rơi về `col:<idx>` — truy vấn theo nhãn cột phải abstain
+  - id: Q-TAB-GLOBAL-HEADER
+    severity: info
+    defect: D-01
+    consequence: warning
+    rc1_total: 4838
+    downstream: đoạn tiêu đề phủ toàn bảng, đã loại khỏi phân loại vai trò
+  - id: Q-TAB-NOT-DATA
+    severity: info
+    defect: D-02
+    consequence: warning
+    rc1_total: 1011
+    maps_to_flag: table_not_classified_as_data
+    downstream: kiểm lại trước khi tổng hợp ngang nhiều bảng
+  - id: Q-ARITH-BROKEN
+    severity: info
+    defect: D-05
+    consequence: warning
+    rc1_total: 75
+    downstream: tổng con không khớp dòng tổng — không dùng bảng đó cho phép cộng
+
+# Rule đã nghỉ hưu — xem `retired_rules` trong rc2_contracts_v1.yaml.
+# Chúng được MIỄN khỏi vế B của RC-09.
+retired: []

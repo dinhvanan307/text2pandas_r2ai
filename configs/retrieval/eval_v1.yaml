@@ -1,0 +1,143 @@
+# Cấu hình khung đo tầng Retrieval · v1
+#
+# ĐẶT Ở `configs/retrieval/` (thư mục CON) — KHÔNG phải `configs/*.yaml`.
+# `config_hash = sha256(configs/*.yaml)` chỉ băm tệp Ở CẤP GỐC, nên tệp này
+# không đổi `build_id` của gói Silver A6. ĐÃ KIỂM BẰNG MÁY sau khi thêm evalkit:
+#   source_hash = f5fea1fa4e7c94c3 · config_hash = 805af5ca8ef9b4ac  (không đổi)
+#
+# Mọi khoá ở đây đi vào `cfg_sha` (trừ `budget_s` — ngân sách thời gian không
+# đổi kết quả). Đổi một khoá là một CẤU HÌNH KHÁC, checkpoint khác, không trộn.
+
+defaults:
+  basis_mode: soft          # soft = basis là điểm cộng ở S2 · hard = lọc cứng ở S1
+  use_hints: code_single    # none | stmt | code | both | code_single
+  brands: true              # nạp thêm lớp tên thương mại curated
+  top_k_rank: 50            # S2 cắt ở đây
+  top_k_rerank: 10          # S3 cắt ở đây — khớp `retrieval_k` của BTC
+  year_slack: 1             # doc_year BETWEEN min(y) AND max(y)+slack
+  gold_source: proxy_v2     # proxy_v2 | manual | manual_then_proxy
+  gold_raw_limit: 400       # trần quét cụm ĐÃ thu hẹp mã+kỳ; chạm trần ⇒ không tin
+  gold_max_trusted: 60      # |gold| lớn hơn ⇒ cụm quá phổ thông ⇒ không tin
+  gold_max_tier: T4_anycol_2gram   # nới tới tier nào: T1|T2|T3|T4
+  free_scan: false          # (đã bỏ dùng — entity_suspect nay do goldset xác lập)
+  ks: [1, 2, 3, 5, 10, 20, 50]
+  budget_s: 35.0            # tự dừng trước khi máy build cắt tiến trình ~45 s
+
+# ── profile ─────────────────────────────────────────────────────────────────
+# Mỗi profile ghi đè `defaults`. Dùng cho A/B ĐÚNG MỘT BIẾN — đổi hai biến thì
+# delta không quy được cho biến nào.
+profiles:
+
+  base: {}
+
+  # ĐỐI CHỨNG P0-1 · CÙNG cấu hình `base`, nhưng chạy bằng CÂY CODE TRƯỚC KHI SỬA
+  # (`$HOME/p0/oldtree`, `drop` thiếu tên công ty). Tồn tại để phép so trước/sau
+  # chỉ khác MỘT biến là code — không lẫn thêm biến nền tảng (sqlite/máy chạy).
+  # `tag` không vào `cfg_sha`, nên tệp này mang đúng sha của `base` cũ (evalkit-1).
+  base_precode_fix: {}
+
+  # ── A/B về THƯỚC ĐO (đổi gold, không đổi hệ) ──────────────────────────────
+  # Dùng để biết một kết luận có phụ thuộc vào độ nới của gold hay không.
+  gold_t1:
+    gold_max_tier: T1_row_ngram
+  gold_t2:
+    gold_max_tier: T2_row_2gram
+  gold_t3:
+    gold_max_tier: T3_row_and2
+
+  # ── A/B về HỆ (đổi hệ, giữ nguyên gold) ───────────────────────────────────
+  stopdau:                  # STOP đối chiếu dạng CÓ DẤU — sửa va chạm bỏ dấu
+    stop_mode: dau          # ("tài sản", "bất động sản", "cổ phiếu" hết bị nuốt)
+
+  brand_a6:                 # CHỈ tên thương mại chứng thực được trong corpus BTC
+    brands: a6              # (tools/attest_brands.py) — nhánh KHÔNG tri thức ngoài A6
+
+  nobrand:                  # lớp tên thương mại có giá trị bao nhiêu
+    brands: false
+  basis_hard:               # basis làm lọc cứng có thật tệ hơn không
+    basis_mode: hard
+  hints_none:
+    use_hints: none
+  hints_all_code:
+    use_hints: code
+  hints_stmt:
+    use_hints: stmt
+  slack0:                   # bỏ nới năm — kiểm giả định "báo cáo N chứa cột N-1"
+    year_slack: 0
+
+
+  # ── A/B về TRỌNG SỐ S2 · nút thắt đã xác định (116 câu rớt top-10) ────────
+  # 11 hằng số xếp hạng chưa từng được hiệu chỉnh trên gold nào. Ba profile dưới
+  # đây trả lời câu hỏi cơ bản nhất: chúng có giúp gì không, và bao nhiêu.
+  #
+  # Lưu ý số học: BM25 sau chuẩn hoá min-max nằm trong [0,1], còn tổng bonus tối
+  # đa là 0.35+0.15+0.10+0.30+0.45 = 1.25 > 1.0. Nghĩa là tín hiệu CẤU TRÚC có
+  # thể lấn hoàn toàn tín hiệu VĂN BẢN. Đó là giả thuyết cần đo, không phải kết luận.
+  s2_nobonus:               # BM25 THUẦN — đường cơ sở để biết bonus đóng góp bao nhiêu
+    bonuses: {period: 0.0, unit: 0.0, stmt: 0.0, basis: 0.0, code: 0.0,
+              clean_floor: 1.0, clean_span: 0.0}
+  s2_bonus_third:           # bonus chia 3 → BM25 lấy lại quyền quyết định
+    bonuses: {period: 0.117, unit: 0.05, stmt: 0.033, basis: 0.10, code: 0.15,
+              clean_floor: 0.70, clean_span: 0.30}
+  s2_bm25_only_weights:     # dồn toàn bộ trọng số vào row_labels
+    weights: [0.0, 0.0, 0.0, 0.0, 4.0, 0.0]
+  s2_row_softer:            # giảm ưu thế row_labels — kiểm chính thiên lệch của proxy
+    weights: [0.0, 0.0, 2.0, 1.0, 2.0, 1.5]
+
+  # ── HAI CAN THIỆP MỚI · nhắm đúng nút thắt đã đo ─────────────────────────
+  # (1) chuẩn hoá theo HẠNG · bỏ phụ thuộc kích thước pool.
+  #     Giả thuyết: lấy được +0,0080 hit@1 của `basis_hard` mà KHÔNG mất
+  #     0,0219 cand_hit, vì nó không loại bảng nào — chỉ đổi cách chấm điểm.
+  s2_rank_norm:
+    norm: rank
+  # ĐÃ ĐO VÀ BỊ BÁC BỎ: hit@1 0,6551 → 0,4851 (−0,1700). `rank` nén đỉnh phân
+  # bố xuống dưới mức bonus (khoảng cách hạng1↔hạng2 = 1/n) ⇒ bonus lấn BM25
+  # còn nặng hơn min-max. Giữ profile lại làm bằng chứng, KHÔNG dùng.
+  s2_maxnorm:
+    norm: maxnorm
+
+  # (2) quota theo mã cho screen/compare · sửa "top-K toàn cục sai đơn vị đo".
+  #     Nhóm `screen` F2@10 = 0,299 (thấp nhất mọi mode) dù cand_hit = 1,000.
+  s2_fanout1:
+    per_ticker_k: 1
+  s2_fanout2:
+    per_ticker_k: 2
+
+  # (3) cả hai — chỉ chạy SAU khi từng cái đã đo riêng, nếu không thì không
+  #     quy được cải thiện cho ai.
+  s2_rank_fanout:
+    norm: rank
+    per_ticker_k: 2
+
+  # ── E2 · tiên nghiệm lớp báo cáo (docs/118, feedback docs/119) ────────────
+  # KHÔNG phải mặc định. Đây là CẤU HÌNH THÍ NGHIỆM. Default production giữ
+  # `primary_boost: 0.00` cho tới khi held-out PASS theo acceptance 119 §7.3.
+  s2_primary:
+    primary_boost: 0.60
+  # Negative control 119 §7.4 — boost chỉ áp cho mode KHÔNG được target.
+  # Kỳ vọng: no-op tuyệt đối trên gold (không câu nào đổi điểm).
+  s2_primary_nullmode:
+    primary_boost: 0.60
+    primary_modes: ["nonexistent_mode"]
+
+  # ── khi đã có gold gán tay ────────────────────────────────────────────────
+  manual:
+    gold_source: manual
+    ks: [1, 2, 3, 5, 10]
+  manual_mixed:
+    gold_source: manual_then_proxy
+
+# ── trọng số xếp hạng S2 ────────────────────────────────────────────────────
+# Để `null` = dùng mặc định trong `rank_s2.py`. Ghi đè ở profile để A/B trọng số.
+#   weights: [table_uid, ticker, section_text, context_clean, row_labels, col_labels]
+#   bonuses: {period, unit, stmt, basis, code, clean_floor, clean_span}
+rank_s2_default:
+  weights: [0.0, 0.0, 2.0, 1.0, 4.0, 1.5]
+  bonuses:
+    period: 0.35
+    unit: 0.15
+    stmt: 0.10
+    basis: 0.30
+    code: 0.45
+    clean_floor: 0.70
+    clean_span: 0.30

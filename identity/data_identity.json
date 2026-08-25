@@ -1,0 +1,33 @@
+{
+  "gold_dap_an_v1": {
+    "path": "data/dev/gold_dap_an/gold_dap_an_v1.jsonl",
+    "sha256": "d3641f26babfb9fbae7786c61ed130efaf372ef649083ae70006a00aaaa831f9",
+    "n_labeled": 45,
+    "sample_n": 150,
+    "seed": 20260819,
+    "use": "A/B relative only"
+  },
+  "phan_loai_1012": {
+    "path": "data/dev/so_hoc/phan_loai.jsonl",
+    "n": 1012
+  },
+  "silver_release_zip_legacy": {
+    "path": "silver_release.zip",
+    "sha256": "11159af3bb5929c0e7b58a1f544a35448c957fad8a6e6992f27a336f974c7b10",
+    "note": "ban release 06/08 CU HON A6 run1 - khong phai SSOT"
+  },
+  "a6_package": {
+    "build_id": "b3e9684004679ffb",
+    "release_label": "silver-v1.0.0-rc2",
+    "package": "artifacts/rc2/packagesa6/silver_v1_rc2_b3e9684004679ffb_a6_run1.zip",
+    "package_sha256": "23c3b96e4338e8785c2dcfcdfebf147dc7b7dfb6438c46c590be1ecbfe2453be",
+    "verified_same_sha_on_review_machine": true,
+    "corpus_id": "sha256:ca033190f2e9e99f8384bf59749484b0668c573e0a84e02a055d173d99de0cb9"
+  },
+  "work_db": {
+    "path": "artifacts/retrieval/work.db",
+    "sha256": "e9f62775a75794d770954ba1903f7a90c8b97467e5398b0baa2057bec8e67d5f",
+    "size_bytes": 4240060416,
+    "status": "DERIVED artifact - PROVENANCE cam dung lam bang chung du lieu"
+  }
+}

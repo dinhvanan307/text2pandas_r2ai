@@ -1,0 +1,50 @@
+{
+  "_schema": "access_log v1 — nhật ký MỌI lần chạm vào tài nguyên bị niêm phong (review 127 §4.4 và §7)",
+  "muc_dich": "Trả lời được câu 'ai/khi nào đã đọc AUDIT?' bằng bản ghi, không bằng trí nhớ. Một dòng trống ở đây là bằng chứng mạnh hơn một lời khẳng định.",
+
+  "tai_nguyen_bi_niem_phong": [
+    {
+      "id": "AUDIT40_SELECTION",
+      "file": "data/dev/execution_gold/audit40_selection.json",
+      "seal": "identity/AUDIT_SELECTION_SEAL.json",
+      "trang_thai": "SEALED",
+      "doc_duoc_phep": "chỉ để SINH dossier blind; QID list không được dùng để lọc/tune"
+    },
+    {
+      "id": "AUDIT40_LABELS",
+      "file": "data/dev/execution_gold/audit40_labels.jsonl",
+      "seal": "identity/AUDIT_LABELS_SEAL.json",
+      "trang_thai": "CHUA_TON_TAI",
+      "doc_duoc_phep": "MỘT lần duy nhất ở D10"
+    }
+  ],
+
+  "quy_uoc_ghi": {
+    "truong": ["ts_utc", "resource_id", "actor", "hanh_dong", "ly_do", "commit", "tool"],
+    "hanh_dong": ["SEAL", "READ_FOR_DOSSIER", "READ_FOR_SCORING", "UNSEAL", "RESEAL"],
+    "bat_buoc": "ghi TRƯỚC khi đọc, không ghi sau"
+  },
+
+  "entries": [
+    {
+      "ts_utc": "2026-08-20T00:00:00Z",
+      "resource_id": "AUDIT40_SELECTION",
+      "actor": "build machine (Cong)",
+      "hanh_dong": "SEAL",
+      "ly_do": "khoá 40 QID + sinh dossier blind trước khi bắt đầu code D4",
+      "commit": "fbd36c8f3e187686a99cd5a574cba475f53e0d8b",
+      "tool": "tools/select_dev_audit_v1.py + tools/build_label_dossier_v1.py"
+    },
+    {
+      "ts_utc": "2026-08-21T00:00:00Z",
+      "resource_id": "AUDIT40_SELECTION",
+      "actor": "build machine (Cong)",
+      "hanh_dong": "RESEAL",
+      "ly_do": "đổi tên seal final_audit_seal.json -> AUDIT_SELECTION_SEAL.json theo review 127 §4.4; nội dung selection KHÔNG đổi, selection_sha256 giữ nguyên 34f17e99…",
+      "commit": "fbd36c8f3e187686a99cd5a574cba475f53e0d8b (dirty)",
+      "tool": "thủ công"
+    }
+  ],
+
+  "khang_dinh": "Tính đến 21/08/2026 KHÔNG có entry READ_FOR_SCORING nào. Chưa ai đọc nhãn AUDIT — vì nhãn AUDIT chưa tồn tại."
+}

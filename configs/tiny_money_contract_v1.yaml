@@ -1,0 +1,65 @@
+# RC-03 · HỢP ĐỒNG PHÂN LOẠI TINY-MONEY — khoá ở P3, thi công ở P4
+#
+# Cohort đã đóng băng: artifacts/policy/tiny_money_rc1_cohort.json
+#   2.836 bản ghi · sha256 8ac516dfe73c9b39 · mẫu số = 2.836
+#   completeness: quality_rule_totals.total_count = sampled_count = 2836 < limit 5000
+#                 → cohort ĐẦY ĐỦ, không bị cắt như 7 rule khác
+
+contract_version: "1.0"
+frozen_at_phase: P3
+cohort_file: artifacts/policy/tiny_money_rc1_cohort.json
+cohort_sha256: "8ac516dfe73c9b39"
+denominator: 2836
+
+# ── Phân bố RC1 đo được trên cohort — mẫu số gốc, không thể lấy lại sau build ──
+rc1_distribution:
+  scale_exponent: {"0": 1639, "6": 692, "null": 453, "9": 44, "3": 8}
+  unit_kind:      {money: 2383, unknown: 453}
+  confidence:     {low: 1039, high: 987, medium: 810}
+  statement_type: {income_statement: 1145, balance_sheet: 896, cash_flow: 795}
+
+# ── Ba lớp đầu ra. Tổng PHẢI bằng 2.836, unclassified = 0 ──
+classification_contract:
+  false_tiny_money:
+    meaning: giá trị KHÔNG phải số tiền — mã số, số hiệu thuyết minh, số thứ tự
+    outcome: rời `observations`, vào `dropped_cells` kèm lineage đầy đủ
+    reason_codes: [metric_code_false_value, note_reference_false_value, ordinal_false_value]
+  legitimate_small_value:
+    meaning: là tiền thật, chỉ nhỏ sau khi áp scale — hoặc đại lượng trên mỗi cổ phiếu/tỷ lệ
+    outcome: GIỮ trong `observations`, không hạ readiness
+    reason_codes: [legitimate_small_money, legitimate_per_share_or_rate_value]
+  unresolved:
+    meaning: không tín hiệu nào đủ mạnh
+    outcome: GIỮ observation, cờ `tiny_money_unresolved`, execution_ready = 0
+    reason_codes: [parse_or_column_role_unresolved]
+
+required_per_record: [reason_code, evidence, rule_version]
+
+# ── Điều kiện đóng RC-03 (Plan 17) ──
+acceptance:
+  - "legitimate + false_value + unresolved = 2836"
+  - "unclassified = 0"
+  - "unresolved ∧ execution_ready = 0"
+  - "false_value còn tồn tại trong observations = 0"
+  - "mọi false_value có mặt trong dropped_cells với source_cell_uid khớp cohort"
+  - "mọi legitimate GIỮ NGUYÊN observation_uid và value_decimal_text so với RC1"
+
+# ── Thước đo phải sửa TRƯỚC khi kết tội dữ liệu ──
+measurement_fix:
+  old_rule: "ABS(value) < 1000 trên giá trị THÔ"
+  defect: "bảng khai `triệu đồng`, ô ghi `3` → 3.000.000 VND, hoàn toàn hợp lệ"
+  new_rule: "so ngưỡng SAU khi áp scale_exponent"
+  expected_effect: "nhóm scale 6 (692) + scale 9 (44) + scale 3 (8) = 744 ca phần lớn chuyển sang legitimate_small_money"
+  note: "744 là CẬN TRÊN theo phân bố scale, không phải dự đoán kết quả. Số thật đo ở P7."
+
+fixtures:
+  positive:
+    - {id: TM-P1, input_hint: "nhãn cột `Mã số` kể cả bản OCR hỏng (Másố · M8 số · Mã sơ)", expect: metric_code_false_value}
+    - {id: TM-P2, input_hint: "giá trị hình dạng `5.1` / `5.18`", expect: note_reference_false_value}
+    - {id: TM-P3, input_hint: "nhãn cột STT", expect: ordinal_false_value}
+    - {id: TM-P4, input_hint: "cột ≤3 chữ số cạnh cột ≥6 chữ số", expect: metric_code_false_value}
+  negative:
+    - {id: TM-N1, input_hint: "ô `3` trong bảng khai triệu đồng", expect: legitimate_small_money}
+    - {id: TM-N2, input_hint: "Lãi cơ bản trên cổ phiếu", expect: legitimate_per_share_or_rate_value}
+    - {id: TM-N3, input_hint: "giá trị 0", expect: KHÔNG vào cohort — 0 là số liệu hợp lệ (DI-06)}
+    - {id: TM-N4, input_hint: "không tín hiệu nào", expect: parse_or_column_role_unresolved}

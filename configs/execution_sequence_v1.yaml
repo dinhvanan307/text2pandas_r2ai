@@ -1,0 +1,291 @@
+# B0-08 · THỨ TỰ THỰC THI — NGUỒN SỰ THẬT DUY NHẤT
+#
+# Vì sao tệp này tồn tại: thứ tự trước đây nằm rải trong văn xuôi của runbook 37,
+# `status/NEXT_EXECUTION_SEQUENCE.md` và doc 43. Ba nơi chép ba kiểu và đã lệch
+# nhau thật — bản trong gói còn ghi `release → package → verify → differential/
+# replay/gate`, tức đóng gói TRƯỚC khi có báo cáo acceptance.
+#
+# Mọi tài liệu phải sinh/đối chiếu từ đây. `tests/test_rc2_execution_sequence.py`
+# kiểm tô-pô hợp lệ và năm bất biến chặn ở cuối tệp.
+#
+# ── v1.1 · RC2-031 · SỬA VÒNG LẶP PHỤ THUỘC ────────────────────────────────
+#
+# Bản v1.0 khai `replay (P8) → rc20_gate (P8) → release (P9)`. Nhưng
+# `tools/replay_report.py` đọc `SELECT * FROM v_long_dataframe`, và view đó CHỈ
+# tồn tại trong release DB (`src/data_pipeline/release.py` sinh nó). Đo trực
+# tiếp trên bản dựng 5ffc07216708d9fd: build DB có `v_execution_ready`,
+# `v_retrieval_ready` — KHÔNG có `v_long_dataframe`.
+#
+# Nghĩa là: `replay` — MỘT trong năm report BẮT BUỘC của RC-20 — chỉ sinh ra
+# được bởi `release`, chính là bước mà RC-20 đang gác. Thứ tự v1.0 không chạy
+# được.
+#
+# Test tô-pô cũ không bắt được vì nó chỉ duyệt cạnh `must_follow` KHAI trong
+# YAML. Đồ thị khai báo phi chu trình; đồ thị THẬT — nơi cạnh là "bước X đọc
+# artifact do bước Y sinh" — thì có chu trình. Test kiểm cái được viết ra, chứ
+# không kiểm cái thực sự xảy ra.
+#
+# v1.1 sửa hai thứ:
+#   1. `release` chuyển thành ĐẦU VÀO của RC-20, không phải đầu ra.
+#   2. Mỗi bước khai thêm `artifacts_consumed`. SEQ-05 khẳng định bằng máy rằng
+#      mọi artifact được tiêu thụ đều do một bước TRONG CHUỖI TIỀN NHIỆM sinh.
+#      Đó là bất biến đáng ra phải bắt được RC2-031 ngay từ đầu.
+#
+# SEQ-01 không đổi: ĐÓNG GÓI vẫn nằm sau RC-20.
+
+sequence_version: "1.1"
+supersedes: "v1.0 (thứ tự có vòng lặp replay↔release) · văn xuôi trong to_read/37 §5 và status/NEXT_EXECUTION_SEQUENCE.md"
+
+steps:
+  - id: env_check
+    phase: P2
+    command: make dp-env-check
+    gate: RC-00
+    exit_criteria:
+      - corpus_file_count khớp manifest immutable
+      - disk_free_gb >= 40
+      - lock_matches_installed = true
+      - lock_has_hashes = true
+      - lock_covers_imports = true
+      - untracked_in_source_paths = []
+      - source_tree_dirty = false
+    must_follow: []
+    artifacts_consumed: []
+    artifacts_produced: [env_check.json, env_check.log]
+
+  - id: tests
+    phase: P2
+    command: make dp-test REPORT_DIR=<dir>
+    gate: RC-11
+    exit_criteria: [failed = 0, errors = 0]
+    must_follow: [env_check]
+    artifacts_consumed: []
+    artifacts_produced: [test_report.json, junit.xml]
+
+  - id: freeze_input
+    phase: P3
+    command: python tools/corpus_freeze_check.py --out <dir>/corpus_freeze_RC2.json
+    gate: null
+    exit_criteria:
+      - corpus_content_hash ổn định giữa hai lần đọc
+      - uid_namespace_id đúng hằng số đóng băng (AMD-04)
+      - so với manifest mốc RC1 - added = 0, removed = 0, changed = 0
+    must_follow: [tests]
+    artifacts_consumed: []
+    artifacts_produced: [corpus_freeze_RC2.json, manifest.json]
+
+  - id: build_a
+    phase: P4
+    command: make dp-build FINALIZE=1 CONFIG= INPUT= OUTPUT=<A>
+    gate: null
+    exit_criteria: [exit 0, completion_marker.json có finalized=true]
+    must_follow: [freeze_input]
+    artifacts_consumed: [corpus_freeze_RC2.json]
+    # `quality_report.json` do stage `quality` sinh, va stage do nam TRONG
+    # `dp-build FINALIZE=1` — khong phai o buoc `readiness_c4`. `readiness_c4`
+    # la buoc DANH GIA cong C4, no TIEU THU tep nay chu khong tao ra no.
+    artifacts_produced: [silver.sqlite, completion_marker.json, build.log,
+                         build_invocation.json, quality_report.json]
+
+  - id: build_b
+    phase: P4
+    command: (SHELL/PROCESS MỚI) make dp-build FINALIZE=1 ... OUTPUT=<B>
+    gate: null
+    exit_criteria: [exit 0, build_id trùng A, completion_marker.json finalized=true]
+    must_follow: [freeze_input]
+    artifacts_consumed: [corpus_freeze_RC2.json]
+    artifacts_produced: [silver.sqlite, completion_marker.json, build.log,
+                         build_invocation.json, quality_report.json]
+
+  - id: publish
+    phase: P4
+    command: (nằm trong `dp-build FINALIZE=1`; stage `publish` của cli)
+    gate: DI-10
+    exit_criteria:
+      - manifest BẢN DỰNG tồn tại ở <silver_dir>/<build_id>/manifest.json
+      - manifest có build_id, counts, silver_sha256, blocked_gates
+      - không còn gate quality FAILED (BLOCKED được phép, hạ nhãn release-candidate)
+    must_follow: [build_a, build_b]
+    artifacts_consumed: [silver.sqlite, quality_report.json]
+    artifacts_produced: [build_manifest.json, published_silver.sqlite]
+
+  - id: c0_final
+    phase: P5
+    command: python tools/rebuild_check.py --build-a <A> --build-b <B> --mode final
+    gate: C0
+    exit_criteria:
+      - mọi bảng trong hợp đồng bản dựng cuối khớp
+      - build_id A = B
+      - KHÔNG dùng --mode core làm acceptance
+      - bảng chỉ có ở release (documents/pages/tables/table_cards) KHÔNG thuộc phạm vi C0
+    must_follow: [build_a, build_b]
+    artifacts_consumed: [silver.sqlite, completion_marker.json]
+    artifacts_produced: [rebuild_check.json]
+
+  - id: c1_no_loss
+    phase: P6
+    command: python tools/no_loss_check.py --db <build_db> --check-unicode-digits
+    gate: C1
+    exit_criteria: [10/10 kiểm PASS, probe unicode-digit = 0 lệch]
+    must_follow: [c0_final]
+    artifacts_consumed: [silver.sqlite]
+    artifacts_produced: [c1_no_loss.json]
+
+  - id: readiness_c4
+    phase: P6
+    command: (gates C4 qua quality/gate_report)
+    gate: C4
+    exit_criteria:
+      - đủ 10 bất biến C4-01..C4-10, không cái nào FAIL
+      - "phán quyết C4 đi tới RC-20 qua `--quality`, không sinh tệp riêng"
+    must_follow: [c0_final]
+    artifacts_consumed: [silver.sqlite, quality_report.json]
+    artifacts_produced: []
+
+  # SEQ-05 bắt được: `rc20_gate` tiêu thụ `readiness_report.json` mà KHÔNG bước
+  # nào trong bản khai sinh ra nó. Công cụ `tools/readiness_report.py` có thật
+  # và chuỗi acceptance vẫn chạy nó, nhưng bản khai thiếu — nên đồ thị phụ
+  # thuộc trên giấy khác đồ thị thật. Đây là lần thứ hai SEQ-05 bắt đúng loại
+  # lỗi đó, và cả hai lần đều là lỗi mô hình của người viết chứ không phải lỗi
+  # công cụ.
+  - id: readiness_rc17
+    phase: P6
+    command: python tools/readiness_report.py --db <A> --taxonomy configs/defect_taxonomy_v1.yaml --report <out>
+    gate: RC-17
+    exit_criteria:
+      - observations = observation_readiness 1:1
+      - bốn bất biến an toàn đều 0
+      - taxonomy đọc được ≥1 mã — rỗng hoặc parser lỗi thì FAIL (fail-closed)
+    must_follow: [c0_final]
+    artifacts_consumed: [silver.sqlite]
+    artifacts_produced: [readiness_report.json, readiness_by_reason.csv]
+
+  - id: differential
+    phase: P8
+    command: python tools/differential_audit.py <rc1_build_db> <rc2_build_db>
+    gate: RC-16
+    exit_criteria:
+      - mọi added/removed/changed có reason
+      - ba đẳng thức reason accounting đúng
+      - unknown = 0
+      - mốc là DB BẢN DỰNG của RC1, không phải release DB (schema khác)
+    must_follow: [c1_no_loss]
+    artifacts_consumed: [silver.sqlite]
+    artifacts_produced: [differential_audit.json]
+
+  - id: unresolved
+    phase: P8
+    command: python tools/unresolved_registry.py --db <db> --cases <csv>
+    gate: RC-18
+    exit_criteria: [n_query_errors = 0, có distinct_unresolved_entity_uids]
+    must_follow: [c1_no_loss]
+    artifacts_consumed: [silver.sqlite]
+    artifacts_produced: [unresolved.json, unresolved_cases.csv]
+
+  - id: release
+    phase: P8
+    command: make dp-release DB= BRONZE= QUALITY= OUTPUT= REPORT_DIR=
+    gate: RC-21
+    exit_criteria:
+      - exit 0
+      - readiness 1:1
+      - SHA256SUMS sinh sau manifest
+      - "DB trỏ vào bản ĐÃ PUBLISH: manifest cạnh nó phải có build_id (không phải manifest corpus)"
+    # RC2-031 · `release` là ĐẦU VÀO của RC-20, không phải đầu ra. Nó sinh
+    # release DB — nơi DUY NHẤT có `v_long_dataframe` mà C5 cần đọc.
+    must_follow: [publish, c0_final, c1_no_loss, differential, unresolved]
+    artifacts_consumed: [build_manifest.json, published_silver.sqlite, quality_report.json]
+    artifacts_produced: [release_dir, release_silver.db, readiness_reconciliation.json]
+
+  - id: replay
+    phase: P8
+    command: python tools/replay_report.py <release_db> --expected configs/replay_expected_v1.yaml
+    gate: C5
+    exit_criteria: [10/10 PASS, 0 skip, 0 error]
+    # `replay_report.py` đọc `v_long_dataframe`, chỉ có trong release DB.
+    must_follow: [release]
+    artifacts_consumed: [release_silver.db]
+    artifacts_produced: [replay_report.json]
+
+  - id: rc20_gate
+    phase: P8
+    command: python tools/gate_report.py <db> --rebuild-check ... --no-loss ... --differential ... --unresolved ... --replay ... --readiness ... --require-all
+    gate: RC-20
+    exit_criteria:
+      - exit 0
+      # B2 · Doc 56 P0-03 · readiness là report thứ SÁU và BẮT BUỘC. Bản trước
+      # có tham số `--readiness` nhưng không đưa vào REQUIRED_INPUTS, và
+      # `_verdict_of` không có nhánh cho nó — nên thiếu readiness hoặc readiness
+      # FAIL thì RC-20 vẫn exit 0. Một cổng không đọc kết luận của input bắt
+      # buộc thì không phải cổng.
+      - đọc đủ 6 report bắt buộc (rebuild_check, no_loss, differential, replay, unresolved, readiness)
+      - build_id khớp giữa mọi report
+      - chỉ SG/C2/C3 được BLOCKED
+    must_follow: [c0_final, c1_no_loss, readiness_c4, readiness_rc17, differential, unresolved, replay, release]
+    artifacts_consumed:
+      - rebuild_check.json
+      - c1_no_loss.json
+      - differential_audit.json
+      - unresolved.json
+      - readiness_report.json
+      - replay_report.json
+      - quality_report.json
+    artifacts_produced: [gate_report.json]
+
+  - id: package
+    phase: P9
+    command: make dp-package DIR= OUT=  (chạy HAI LẦN)
+    gate: RC-23
+    exit_criteria: [hai lần đóng cùng sha256]
+    must_follow: [rc20_gate]
+    artifacts_consumed: [release_dir, gate_report.json]
+    artifacts_produced: [silver_rc2.zip]
+
+  - id: verify
+    phase: P9
+    command: make dp-verify PACKAGE=<zip> TYPE=release
+    gate: RC-24
+    exit_criteria: [exit 0 từ bản giải nén sạch]
+    must_follow: [package]
+    artifacts_consumed: [silver_rc2.zip]
+    artifacts_produced: [verify.log]
+
+  - id: cleanup
+    phase: P10
+    command: rm buildA/silver.sqlite ; rm -rf buildB
+    gate: null
+    exit_criteria: [đã bàn giao xong]
+    must_follow: [verify]
+    artifacts_consumed: []
+    artifacts_produced: []
+
+# ═══════════════════ BẤT BIẾN — test kiểm bằng máy ═══════════════════
+invariants:
+  - id: SEQ-01
+    rule: package.must_follow phải dẫn (gián tiếp) tới rc20_gate
+    rationale: >
+      Đóng gói trước RC-20 làm mọi báo cáo acceptance nằm NGOÀI manifest và
+      SHA256SUMS của gói. Người nhận gói sẽ không có checksum cho chính bằng
+      chứng chấp nhận nó.
+  - id: SEQ-02
+    rule: c0_final.must_follow phải chứa cả build_a và build_b
+    rationale: C0 cần cả hai bản; và cả hai phải đã finalize (B0-06).
+  - id: SEQ-03
+    rule: cleanup phải là bước CUỐI, sau verify
+    rationale: >
+      rebuild_check đọc <build_a>/silver.sqlite. Dọn trước C0 thì C0 không chạy
+      được và phải build lại — lỗi thật đã gặp (B0-12/RC2-012).
+  - id: SEQ-04
+    rule: rc20_gate.must_follow phải chứa đủ 5 cổng đầu vào
+    rationale: RC-20 không được kết luận khi thiếu bất kỳ report bắt buộc nào.
+  - id: SEQ-05
+    rule: >
+      Mọi artifact trong `artifacts_consumed` của một bước phải được sinh bởi
+      MỘT bước nằm trong chuỗi tiền nhiệm (`must_follow` bắc cầu) của bước đó.
+    rationale: >
+      SEQ-01..04 chỉ kiểm cạnh ĐƯỢC KHAI. Chúng không thấy quan hệ thật "bước X
+      đọc artifact do bước Y sinh", nên đồ thị khai báo có thể phi chu trình
+      trong khi đồ thị thật thì không. Đó chính là RC2-031: v1.0 xếp `replay`
+      trước `release`, nhưng `replay_report.py` đọc `v_long_dataframe` — view
+      chỉ tồn tại trong release DB. Thứ tự khai chạy qua mọi test và vẫn không
+      thực thi được. SEQ-05 khoá đúng khoảng trống đó.

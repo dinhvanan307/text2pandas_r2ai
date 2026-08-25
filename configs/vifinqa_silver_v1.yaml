@@ -1,0 +1,115 @@
+# RC-00 · §3.1 — Config dựng Silver v1, MỘT tệp duy nhất cho một lần chạy.
+#
+# Vì sao tệp này ra đời: `cli.py` đang hard-code đường dẫn ở đầu module —
+# `ROOT`, `CORPUS`, `BRONZE_OUT`, `SILVER_DIR`. Nghĩa là `make dp-build
+# CONFIG= INPUT= OUTPUT=` mà §3.2 đòi thì **không có gì để đọc**, và §3.2 cũng
+# cấm "absolute path của máy dev trong code/config". Đường dẫn suy từ vị trí
+# tệp mã nguồn tuy không tuyệt đối nhưng cùng một hệ quả: người review không
+# đổi được input/output mà không sửa mã.
+#
+# Ba tệp cũ được hợp nhất vào đây, KHÔNG xoá bản gốc:
+#   configs/corpus.yaml     → khối `corpus` và `identity`, `locator`
+#   configs/default.yaml    → khối `paths` và `determinism`
+#   cli.py (hằng số module) → khối `paths` (đường dẫn thật đang dùng)
+#
+# `config_hash` trong manifest băm CHÍNH tệp này. Đổi một ngưỡng ở đây là đổi
+# build_id — đúng như mong muốn.
+
+config_version: "1.0"
+config_name: vifinqa_silver_v1
+
+# ── Nguồn ───────────────────────────────────────────────────────────────────
+corpus:
+  # RC2-016 / AMD-04 · hạt giống định danh, ĐÓNG BĂNG theo RC1.
+  # Đổi giá trị này = đổi MỌI observation_uid. Chỉ đổi ở một major release,
+  # kèm bảng mapping UID cũ -> mới.
+  uid_namespace_id: "sha256:ca033190f2e9e99f8384bf59749484b0668c573e0a84e02a055d173d99de0cb9"
+  id: vifinqa
+  # Tương đối với repository root. `dp-build INPUT=` ghi đè giá trị này.
+  root: data/external/vifinqa/financial_statements
+  file_glob: "*/*/*/*.txt"
+  encoding: utf-8
+  line_ending: LF
+
+identity:
+  doc_id_from: directory_name
+  filename_suffix: _extracted.txt
+  patterns:
+    - "{ticker}_financial_statements_{year}_{basis}"
+    - "{ticker}_financial_statements_{year}"
+    - "{ticker}_{year}_{doc_kind}"
+  basis_values: [consolidated, separate, aggregated]
+  basis_nullable: true
+
+# ── Định vị bằng chứng · ràng buộc C20 ──────────────────────────────────────
+locator:
+  scheme: line_number
+  base: 1
+  # XÁC NHẬN bằng bằng chứng, không còn ⏳PCV: cả 3 gói đã nộp đều dùng
+  # `<doc_id>|<line_no>` — 9.910 mục ở CARD/ROWPATH, 19.808 ở N20, 0 mục có
+  # tiền tố `line:`. Bản trước của tệp này chép nhầm biến thể `|line:` từ
+  # `release_schema.evidence_ref`; nếu nối thẳng Silver vào đường nộp thì
+  # 100% `relevant_tables` sai định dạng và C20 về 0.
+  table_ref_format: "{doc_id}|{line_no}"
+  # `evidence_ref` NỘI BỘ vẫn giữ `line:` để đọc được bằng mắt. Tầng xuất bài
+  # nộp phải BỎ tiền tố — đó là việc của adapter, không phải của Silver.
+  internal_evidence_ref_format: "{doc_id}|line:{line_no}"
+  page_marker_regex: '^=+ PAGE (\d+) =+$'
+  keep_char_offset: true
+  keep_page_no: true
+  keep_table_ordinal: true
+
+# ── Đường dẫn · tương đối repo root, `dp-build` ghi đè được ─────────────────
+paths:
+  bronze_catalog: data/bronze/catalog_v2.sqlite
+  work_dir: /tmp/dp_work
+  silver_dir: data/silver/vifinqa
+  reports_dir: reports
+
+# ── Chính sách tham chiếu · tách tệp vì chúng đổi độc lập ───────────────────
+policies:
+  readiness: configs/readiness_policy_v1.yaml
+  defect_taxonomy: configs/defect_taxonomy_v1.yaml
+
+# ── Tất định · RC-13 ────────────────────────────────────────────────────────
+#
+# Build A và build B phải cho cùng `build_id`. Năm mục dưới đây là toàn bộ
+# nguồn phi tất định đã biết trong đường ống này.
+determinism:
+  seed: 42
+  python_hash_seed: 0
+  timezone: UTC
+  locale: C.UTF-8
+  # Duyệt corpus theo thứ tự đã SẮP, không theo thứ tự hệ tệp trả về.
+  sorted_input_traversal: true
+  sorted_exports: true
+  # Trường được phép khác nhau giữa hai lần dựng. Khai ra để `rebuild_check`
+  # loại chúng khỏi so sánh canonical — §RC-14 cấm dùng "SQLite thường khác"
+  # để bỏ toàn bộ checksum test.
+  nondeterministic_fields:
+    - build_meta.released_at
+    - manifest.created_at
+    - logs/*
+  # Dấu thời gian cố định cho nội dung archive, để zip tái lập byte-for-byte.
+  source_date_epoch: 1735689600      # 2025-01-01T00:00:00Z
+
+# ── Ngưỡng phân loại bảng ───────────────────────────────────────────────────
+# Hiệu chỉnh trên `tests/fixtures/`, KHÔNG hardcode trong mã (§ default.yaml).
+catalog:
+  version: v1
+  data_table_min_numeric_ratio: 0.15
+  data_table_min_rows: 2
+  max_grid_cells: 200000            # trần lưới; vượt thì `table_too_large`
+
+# ── Chặn phát hành · doc 17 §12 stop conditions ─────────────────────────────
+# Ngưỡng ở đây là ĐIỀU KIỆN PHÁT HÀNH, không phải mục tiêu mong muốn.
+release_gates:
+  unexplained_source_cell_drop: 0
+  unexplained_differential_delta: 0
+  known_ambiguous_in_execution_ready: 0
+  physical_duplicate: 0
+  replay_pass_required: 10
+  replay_total: 10
+  # Cổng được phép BLOCKED ở RC2, phải khai rõ trong release notes.
+  allowed_blocked_gates: [SG, C2, C3]
+  required_pass_gates: [C0, C1, C4, C5]

@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Chạy khung đo tầng Retrieval bằng ĐÚNG interpreter có dependency của dự án.
+#
+# VÌ SAO CẦN WRAPPER NÀY
+# ----------------------
+# Dự án có nhiều interpreter cùng tồn tại: venv của dự án, python Homebrew,
+# python hệ thống, python của máy build. Đã xảy ra thật: venv `(text2pandas)`
+# hiện trên prompt nhưng `python3` phân giải về
+# `/opt/homebrew/opt/python@3.14/bin/python3.14`, nên `pip install pyyaml` cài
+# vào một môi trường còn `python3 cli.py` đọc môi trường khác. Lỗi trông như
+# "thiếu gói" trong khi nguyên nhân là "sai interpreter".
+#
+# Thứ tự ưu tiên dưới đây CÓ CHỦ ĐÍCH: `$VIRTUAL_ENV` trước `PATH`, vì venv đang
+# bật là ý định của người dùng còn `PATH` chỉ là hệ quả của thứ tự cài đặt.
+#
+#   tools/evalkit collect --tag base --loop --budget-s 300
+#   tools/evalkit report  --tag base
+#   tools/evalkit ab --a base --b basis_hard
+#   tools/evalkit diag --tag base --sample 200
+#   tools/evalkit gold sample --n 120   |  gold sheet  |  gold check
+#   tools/evalkit doctor            # chỉ chẩn đoán môi trường, không chạy đo
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Ứng viên, theo thứ tự ưu tiên. Chỉ nhận interpreter NÀO IMPORT ĐƯỢC `yaml`.
+ung_vien=()
+[[ -n "${VIRTUAL_ENV:-}"  ]] && ung_vien+=("$VIRTUAL_ENV/bin/python")
+[[ -n "${CONDA_PREFIX:-}" ]] && ung_vien+=("$CONDA_PREFIX/bin/python")
+[[ -n "${EVALKIT_PYTHON:-}" ]] && ung_vien=("$EVALKIT_PYTHON" "${ung_vien[@]:-}")
+ung_vien+=("$ROOT/.venv/bin/python" "$ROOT/venv/bin/python")
+ung_vien+=(python3 python /usr/bin/python3)
+
+chon=""
+for p in "${ung_vien[@]}"; do
+  [[ -z "$p" ]] && continue
+  command -v "$p" >/dev/null 2>&1 || continue
+  if "$p" -c 'import sys,yaml; sys.exit(0 if sys.version_info>=(3,10) else 1)' \
+       >/dev/null 2>&1; then
+    chon="$p"; break
+  fi
+done
+
+if [[ -z "$chon" ]]; then
+  echo "✗ không tìm được interpreter nào vừa có PyYAML vừa ≥ 3.10." >&2
+  echo "  đã thử:" >&2
+  for p in "${ung_vien[@]}"; do
+    [[ -z "$p" ]] && continue
+    if command -v "$p" >/dev/null 2>&1; then
+      ver="$("$p" -c 'import sys;print("%d.%d"%sys.version_info[:2])' 2>/dev/null || echo '?')"
+      y="$("$p" -c 'import yaml' 2>/dev/null && echo 'có yaml' || echo 'THIẾU yaml')"
+      printf '    %-46s  py%-5s %s\n' "$(command -v "$p")" "$ver" "$y" >&2
+    fi
+  done
+  echo "" >&2
+  echo "  sửa: <interpreter của dự án> -m pip install pyyaml pytest" >&2
+  echo "  hoặc: export EVALKIT_PYTHON=/duong/dan/python" >&2
+  exit 2
+fi
+
+cmd="${1:-report}"; shift || true
+case "$cmd" in
+  doctor)
+    echo "interpreter đã chọn : $("$chon" -c 'import sys;print(sys.executable)')"
+    "$chon" - <<'PY'
+import sys, os, sqlite3, importlib.util
+from pathlib import Path
+print(f"phiên bản           : {sys.version.split()[0]}")
+# venv: sys.prefix != sys.base_prefix.  conda: HAI GIÁ TRỊ NÀY BẰNG NHAU —
+# conda env là bản Python đầy đủ, không phải lớp phủ. Nên phải so sys.prefix
+# với $CONDA_PREFIX/$VIRTUAL_ENV, nếu không thì báo sai 100% cho conda.
+env = os.environ.get("VIRTUAL_ENV") or os.environ.get("CONDA_PREFIX")
+kind = "venv" if os.environ.get("VIRTUAL_ENV") else (
+       "conda env" if os.environ.get("CONDA_PREFIX") else "(không)")
+dung = env is None or Path(sys.prefix).resolve() == Path(env).resolve()
+print(f"môi trường đang bật : {kind}  {env or ''}")
+print(f"ĐANG DÙNG môi trường: {'CÓ' if dung else 'KHÔNG — lệch!'}")
+print(f"sys.prefix          : {sys.prefix}")
+print(f"sqlite3             : {sqlite3.sqlite_version}")
+for m in ("yaml", "pytest", "pandas", "lxml", "pyarrow"):
+    print(f"  {m:10s}        : {'có' if importlib.util.find_spec(m) else '—'}")
+PY
+    db="$ROOT/artifacts/retrieval/work.db"
+    if [[ -f "$db" ]]; then
+      echo "work.db             : $(du -h "$db" | cut -f1)"
+    else
+      echo "work.db             : THIẾU → tools/build_retrieval_workdb.sh"
+    fi
+    # Đánh dấu tệp nào CHÍNH DANH cho tag của nó. `migrate` giữ lại tệp cũ (mount
+    # không xoá được), nên một tag có thể có nhiều tệp mà chỉ MỘT khớp `cfg_sha`
+    # hiện tại. Không đánh dấu thì rất dễ đọc số từ tệp của cấu hình cũ — và đó
+    # đúng là bug vừa tìm thấy ở `diag_nogold` (nó lấy `glob(...)[-1]`).
+    echo "checkpoint          : ✓ = chính danh (khớp cfg_sha hiện tại)"
+    "$chon" "$ROOT/src/retrieval/evalkit/ck_list.py" || true
+    ;;
+  diag) exec "$chon" "$ROOT/src/retrieval/evalkit/diag_nogold.py" "$@" ;;
+  gold) exec "$chon" "$ROOT/src/retrieval/evalkit/goldkit.py" "$@" ;;
+  migrate) exec "$chon" "$ROOT/src/retrieval/evalkit/migrate_ck.py" "$@" ;;
+  *)    exec "$chon" "$ROOT/src/retrieval/evalkit/cli.py" "$cmd" "$@" ;;
+esac

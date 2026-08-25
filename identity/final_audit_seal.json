@@ -1,0 +1,9 @@
+{
+  "_schema": "DEPRECATED POINTER — không đọc tệp này",
+  "deprecated": "2026-08-21",
+  "ly_do": "Tên `final_audit_seal` sai bản chất: thứ được khoá là SELECTION (40 QID + dossier blind), không phải LABELS. Review 127 §4.4 + câu hỏi §8 số 13.",
+  "thay_bang": "identity/AUDIT_SELECTION_SEAL.json",
+  "selection_sha256_khong_doi": "34f17e99fc45beff80198cacc13ca06728b3c193c53eee3ed296cc9110c56d70",
+  "labels_seal_tuong_lai": "identity/AUDIT_LABELS_SEAL.json (chưa tồn tại — sinh cuối D7)",
+  "giu_lai_vi": "SHA 34f17e99… đã được trích trong docs/126 và EXECUTION_STATUS; xoá tệp sẽ làm đứt lineage. Giữ làm con trỏ."
+}

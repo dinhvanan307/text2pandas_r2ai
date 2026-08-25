@@ -1,0 +1,49 @@
+{
+  "authoritative_machine": "build machine (Cong). Packet paths are RELATIVE to packet root.",
+  "authoritative_source_root": ".",
+  "source_commit": "fbd36c8f3e187686a99cd5a574cba475f53e0d8b",
+  "dirty": true,
+  "patch_file": "identity/dirty_worktree_20260821.patch",
+  "patch_sha256": "266ec5f6c00efe50bb6bbab099df7b5fdc31124336d51067f7ea293f83354f34",
+  "patch_note": "patch chi phu tracked-modified; untracked dong FULL vao packet source/. Ban 20/08 phu 14 file trong khi worktree co 15 -> DA CU, thay bang ban 21/08.",
+  "retrieval_source_root": "src/retrieval",
+  "execution_source_root": "src/text2pandas",
+  "retrieval_entrypoint": "src/retrieval/pipeline.py:RetrievalPipeline (primary_boost default 0.00 line 56)",
+  "evalkit_entrypoint": "src/retrieval/evalkit/runner.py (primary_boost default 0.00 line 96)",
+  "answer_evaluator": "tools/eval_answer_v1.py",
+  "submission_builder": "tools/rewrite_submission.py + tools/validate_submission.py",
+  "tests_root": "tests/",
+  "config_roots": [
+    "configs/retrieval/",
+    "configs/execution/"
+  ],
+  "work_db": {
+    "path": "artifacts/retrieval/work.db",
+    "sha256": "e9f62775a75794d770954ba1903f7a90c8b97467e5398b0baa2057bec8e67d5f",
+    "size_bytes": 4240060416,
+    "status": "DERIVED artifact - PROVENANCE cam dung lam bang chung du lieu"
+  },
+  "a6_release": {
+    "build_id": "b3e9684004679ffb",
+    "release_label": "silver-v1.0.0-rc2",
+    "package": "artifacts/rc2/packagesa6/silver_v1_rc2_b3e9684004679ffb_a6_run1.zip",
+    "package_sha256": "23c3b96e4338e8785c2dcfcdfebf147dc7b7dfb6438c46c590be1ecbfe2453be",
+    "verified_same_sha_on_review_machine": true,
+    "corpus_id": "sha256:ca033190f2e9e99f8384bf59749484b0668c573e0a84e02a055d173d99de0cb9"
+  },
+  "non_authoritative_lineages": {
+    "to_team_v3 (review machine)": "handoff packet cu - khong build tu day",
+    "root src/ (review machine)": "prototype cu - khong build tu day",
+    "execution_c1_packet_lite/source": "snapshot dong goi C1/P0I - doi chieu, khong phat trien tiep"
+  },
+  "_revised": "2026-08-21 — sửa theo review 127 §1.4/§8: dirty_file_count cũ (122) không khớp git status thực tế; patch cũ đã cũ hơn worktree",
+  "dirty_file_count_v1_20260820": 122,
+  "dirty_tracked_modified": 17,
+  "dirty_untracked_paths": 142,
+  "patch_file_v1": "identity/dirty_worktree_20260820.patch",
+  "patch_sha256_v1": "1d10a07130dc8d84d8ab53e70a4bde44f11678a626da54f0cc4eb13634228180",
+  "patch_covers_n_files": 15,
+  "source_identity_file": "identity/source_identity.json",
+  "source_tree_sha256": "f80eeaa26acd12d0d24cf5a32f65060d264f4899be7e56e535fb62cc47aed08f",
+  "audit_seal_file": "identity/AUDIT_SELECTION_SEAL.json (doi ten tu final_audit_seal.json)"
+}

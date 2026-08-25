@@ -1,0 +1,10 @@
+# requirements.txt — download_vifinqa.py
+# Python >= 3.11 (khuyến nghị 3.12)
+#
+# Phạm vi: CHỈ phục vụ tải và kiểm kê dataset.
+# Không có thư viện xử lý dữ liệu / ML / NLP nào ở đây — đúng theo giới hạn phạm vi.
+
+huggingface_hub>=0.26.0    # snapshot_download: idempotent + resumable
+tqdm>=4.66.0               # thanh tiến trình khi kiểm kê
+
+# pathlib, logging, json, csv, argparse, subprocess: thư viện chuẩn, không cần cài.

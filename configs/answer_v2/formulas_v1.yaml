@@ -1,0 +1,187 @@
+# formula_registry wave 1 — AG1_R2_FORMULA
+#
+# 8 formula SAFE. ROE/ROA/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
+# chúng thuộc nhóm NEEDS DOMAIN CONFIRMATION (biến thể cuối kỳ vs bình quân,
+# EBIT vs LNTT+lãi vay) — đưa vào deterministic registry khi chưa phân xử sẽ tạo
+# sai số CÓ HỆ THỐNG trên toàn bộ lớp câu, tệ hơn là không trả lời.
+#
+# `expression` viết bằng ĐÚNG 8 node của IR v1. Không có node PercentChange/CAGR.
+#
+# `output.kind` phải khớp `answer_type_v1.Contract.kind` mà verifier semantic
+# dùng: ratio → LAN, percentage → PCT.
+
+version: 1
+
+formulas:
+  - formula_id: debt_to_equity
+    variant_id: default
+    aliases: ["d/e", "no tren von chu so huu", "no phai tra tren von chu so huu",
+              "he so no tren von chu", "don bay tai chinh", "ty le no tren von chu so huu"]
+    leaves: [total_liabilities, equity]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: total_liabilities}
+      den: {node: FactRef, metric_id: equity}
+
+  - formula_id: debt_to_assets
+    variant_id: default
+    aliases: ["no tren tong tai san", "he so no", "ty le no tren tong tai san",
+              "no phai tra tren tong tai san"]
+    leaves: [total_liabilities, total_assets]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: total_liabilities}
+        den: {node: FactRef, metric_id: total_assets}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: current_ratio
+    variant_id: default
+    aliases: ["ty so thanh toan hien hanh", "he so thanh toan hien hanh",
+              "kha nang thanh toan hien hanh", "ty le thanh toan hien hanh"]
+    leaves: [current_assets, current_liabilities]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: current_assets}
+      den: {node: FactRef, metric_id: current_liabilities}
+
+  - formula_id: quick_ratio
+    variant_id: default
+    aliases: ["ty so thanh toan nhanh", "he so thanh toan nhanh",
+              "kha nang thanh toan nhanh"]
+    leaves: [current_assets, inventory, current_liabilities]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num:
+        node: Subtract
+        left: {node: FactRef, metric_id: current_assets}
+        right: {node: FactRef, metric_id: inventory}
+      den: {node: FactRef, metric_id: current_liabilities}
+
+  - formula_id: gross_margin
+    variant_id: default
+    aliases: ["bien loi nhuan gop", "bien lai gop", "ty suat loi nhuan gop",
+              "ty le loi nhuan gop"]
+    leaves: [gross_profit, net_revenue]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: gross_profit}
+        den: {node: FactRef, metric_id: net_revenue}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: net_margin
+    variant_id: default
+    aliases: ["bien loi nhuan rong", "bien loi nhuan sau thue", "ty suat loi nhuan rong",
+              "bien lai rong", "ty suat loi nhuan sau thue"]
+    leaves: [profit_after_tax, net_revenue]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: profit_after_tax}
+        den: {node: FactRef, metric_id: net_revenue}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: inventory_to_assets
+    variant_id: default
+    aliases: ["ty trong hang ton kho tren tong tai san", "hang ton kho tren tong tai san",
+              "ty le hang ton kho tren tong tai san"]
+    leaves: [inventory, total_assets]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: inventory}
+        den: {node: FactRef, metric_id: total_assets}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: sga_intensity
+    variant_id: default
+    aliases: ["chi phi ban hang va quan ly tren doanh thu",
+              "ty le chi phi ban hang va quan ly doanh nghiep tren doanh thu",
+              "ty trong chi phi ban hang va quan ly"]
+    leaves: [selling_expense, admin_expense, net_revenue]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    # sign_policy abs: chi phí có thể ghi âm (ngoặc kế toán) tuỳ báo cáo.
+    # Cường độ chi phí là đại lượng KHÔNG dấu — lấy trị tuyệt đối TỪNG hạng,
+    # không phải của tổng, để hai hạng trái dấu không triệt tiêu nhau.
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        # Dạng KHỐI, không inline: map lồng trong map inline là thứ parser tối
+        # giản không đọc được, và đã lặng lẽ hỏng ở lần đầu (child bị cắt thành
+        # chuỗi "{node: FactRef"). Khối thì không có chỗ cho lỗi đó.
+        num:
+          node: Add
+          left:
+            node: Abs
+            child: {node: FactRef, metric_id: selling_expense}
+          right:
+            node: Abs
+            child: {node: FactRef, metric_id: admin_expense}
+        den: {node: FactRef, metric_id: net_revenue}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+# ── NEEDS DOMAIN CONFIRMATION — KHÔNG implement trong AG1 ──────────────────
+needs_domain_confirmation:
+  - formula_id: roe
+    cau_hoi_chua_tra_loi: "vốn chủ sở hữu CUỐI KỲ hay BÌNH QUÂN đầu-cuối kỳ?"
+  - formula_id: roa
+    cau_hoi_chua_tra_loi: "tổng tài sản CUỐI KỲ hay BÌNH QUÂN?"
+  - formula_id: interest_coverage
+    cau_hoi_chua_tra_loi: "EBIT hay (LNTT + chi phí lãi vay)? dấu của chi phí lãi vay?"
+  - formula_id: cagr
+    cau_hoi_chua_tra_loi: "n_periods = số năm hay số kỳ? câu hỏi có nêu rõ không?"
+  - formula_id: working_capital
+    cau_hoi_chua_tra_loi: "ra money — cần đơn vị câu hỏi, không phải ratio"
+
+# ── DEFER — grounding chưa đủ (operating_profit / CFO ground 0%) ───────────
+deferred:
+  - operating_margin
+  - cfo_margin
+  - cfo_to_current_debt
+  - cfo_to_net_profit
+  - asset_turnover

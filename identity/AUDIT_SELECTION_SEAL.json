@@ -1,0 +1,39 @@
+{
+  "_schema": "AUDIT_SELECTION_SEAL v1 — ĐỔI TÊN từ identity/final_audit_seal.json theo review 127 §4.4 và câu hỏi §8 số 13",
+  "seal_kind": "SELECTION_SEAL",
+  "khong_phai": "LABELS_SEAL",
+  "vi_sao_doi_ten": [
+    "Bản cũ tên `final_audit_seal.json` hàm ý 'nhãn cuối đã khoá'. Sai: tại thời điểm seal (20/08) CHƯA có một nhãn nào.",
+    "Thứ đã khoá là DANH SÁCH 40 QID + bộ dossier blind — tức selection, không phải labels.",
+    "Doc 126 vừa nói 'AUDIT đã sealed, mở một lần D10' vừa xếp lịch gán nhãn D5–D7. Hai mệnh đề đó chỉ nhất quán khi tách thành HAI seal."
+  ],
+
+  "sealed_at": "2026-08-20",
+  "selection_sha256": "34f17e99fc45beff80198cacc13ca06728b3c193c53eee3ed296cc9110c56d70",
+  "selection_file": "data/dev/execution_gold/audit40_selection.json",
+  "n_qid": 40,
+  "seed": 20260820,
+  "overlap_voi_gold45": 0,
+  "overlap_voi_dev60": 0,
+  "dossier_dir": "data/dev/execution_gold/dossiers_audit40_blind",
+  "dossier_blind": true,
+  "dossier_blind_nghia_la": "KHÔNG chứa candidate/prediction/ranking/score của bất kỳ phiên bản pipeline nào; chỉ câu hỏi + bảng nguồn thô để người gán tự phân xử.",
+
+  "quy_trinh_hai_seal": {
+    "1_AUDIT_SELECTION_SEAL": "TỆP NÀY. Khoá QID set + dossier blind TRƯỚC khi code/tune D4→D9. Đã đóng.",
+    "2_gan_nhan": "Người gán đọc dossier blind ở D5–D7. Được phép — vì selection đã khoá, nhãn chưa tồn tại nên không có gì để rò rỉ vào tuning.",
+    "3_AUDIT_LABELS_SEAL": "Khoá file nhãn cuối D7 → `identity/AUDIT_LABELS_SEAL.json`. CHƯA TỒN TẠI.",
+    "4_mo_de_cham": "Chỉ mở labels MỘT lần ở D10 để score, ghi `access_log`."
+  },
+
+  "cam_ket_khong_ro_ri": {
+    "trong_luc_gan_nhan": "người gán KHÔNG được xem output của emitter/resolver trên 40 QID này",
+    "trong_luc_tune": "không tool nào trong tools/execution/ được đọc audit40 labels; đường dẫn nhãn AUDIT không nằm trong bất kỳ config nào của D4–D9",
+    "kiem_chung": "grep 'audit40' trên tools/ + configs/ phải chỉ trả về select_dev_audit_v1.py, build_label_dossier_v1.py và tệp seal này"
+  },
+
+  "statistical_claim_limit": "directional only — Wilson CI với n=40 quá rộng để tuyên bố ngưỡng 0,65 (plan 124 §4). Báo cáo D10 ghi point estimate + CI, KHÔNG claim lower-bound.",
+  "open_policy": "mở đúng MỘT lần tại D10",
+  "access_log_file": "identity/access_log.json",
+  "access_log": []
+}

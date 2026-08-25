@@ -1,0 +1,3939 @@
+{
+ "zip": "data/submissions/submission_P0I.zip",
+ "n_members": 983,
+ "manifest_sha256": "0514b94d08e9720059d61fb5f73f1a821815a4b25fbfd601674230bd23bb289f",
+ "members": [
+  {
+   "name": "data/ACB_financial_statements_2023_consolidated_line2297.csv",
+   "sha256": "160d086668b90479e83649243329961275529f7dcee8523eb068f9ede6499664"
+  },
+  {
+   "name": "data/ACB_financial_statements_2025_consolidated_line2420.csv",
+   "sha256": "ff793b7050c1caf5ab4652053880b8513e2f12082a7498e4d4109663d5c764f5"
+  },
+  {
+   "name": "data/ACB_financial_statements_2025_separate_line2015.csv",
+   "sha256": "a003e4ad710c5d677ad556e99e5a897bf05ca9b6cf7c775f511273df67e665b3"
+  },
+  {
+   "name": "data/ACV_financial_statements_2022_consolidated_line212.csv",
+   "sha256": "a0c31488b979d7eb0fefdeeb0c7efaabbc8daf10c5970ffee7faede8c8b907ff"
+  },
+  {
+   "name": "data/ACV_financial_statements_2024_separate_line267.csv",
+   "sha256": "067a4081d15c3b6ae88565ee6106762b45ff10d510d03ec9832d57608b92f2a8"
+  },
+  {
+   "name": "data/BAF_financial_statements_2023_separate_line229.csv",
+   "sha256": "63efa71775cee04f8d22d61016b6ad1936c53d2217c48645fc65f4d87777b4ea"
+  },
+  {
+   "name": "data/BAF_financial_statements_2023_separate_line322.csv",
+   "sha256": "e1d8dbc248814dac6ec8b9ca0f0881d986393d1624595f3d563f1635b2e78973"
+  },
+  {
+   "name": "data/BAF_financial_statements_2025_consolidated_line1859.csv",
+   "sha256": "ffa64b5fec7a8b6b31891b7975c04d74cb6811a066f915b3adb400bfe34c3d0c"
+  },
+  {
+   "name": "data/BAF_financial_statements_2025_separate_line821.csv",
+   "sha256": "ba27abc7755b92bb5434cc824445106df20bad7f5d6083fdb186c58c2bd1bd99"
+  },
+  {
+   "name": "data/BID_financial_statements_2022_separate_line1132.csv",
+   "sha256": "923cebcfa594c10283e6c3cb422ede3c8d893e64ded9d325276de22e716ba1bc"
+  },
+  {
+   "name": "data/DIG_financial_statements_2016_separate_line279.csv",
+   "sha256": "27734273b6b4bacdb3a298b622679119cc9f5b632593e4a35090893a268f234c"
+  },
+  {
+   "name": "data/DIG_financial_statements_2022_consolidated_line1255.csv",
+   "sha256": "84114c4692dad0348e4bbf417ed884f7c5ba01be3c0b708e66ff985f19966641"
+  },
+  {
+   "name": "data/DIG_financial_statements_2023_consolidated_line1380.csv",
+   "sha256": "172167ebe5ad9b86151c54cea9777af0848baef7364fb31b996c1462944adccf"
+  },
+  {
+   "name": "data/DLG_financial_statements_2021_consolidated_line439.csv",
+   "sha256": "6b3fbb16cf143ad8639dca16a33340a5ee579051d96589caa4dbfba309b0f0a8"
+  },
+  {
+   "name": "data/DLG_financial_statements_2022_consolidated_line393.csv",
+   "sha256": "87b17b9b381e3ab8fbde487668e10f422aabf7e75f8c4e136c8ca65ef5b82621"
+  },
+  {
+   "name": "data/DLG_financial_statements_2023_consolidated_line1878.csv",
+   "sha256": "17d6d65b290b90275bd394dad7e0db8bb8a40e0a6500391e96594e382b71860d"
+  },
+  {
+   "name": "data/DLG_financial_statements_2023_consolidated_line393.csv",
+   "sha256": "08e406f82b04385ec4017f5119874e5784d0cb6435d39b0236c094067bd4316f"
+  },
+  {
+   "name": "data/DPM_financial_statements_2019_consolidated_line337.csv",
+   "sha256": "ee7a9dcd41dc42bec686e86f893c1f5a7c74987c0e847686398dcb1e8645687f"
+  },
+  {
+   "name": "data/DXG_financial_statements_2016_separate_line273.csv",
+   "sha256": "a75425586f2d20c4c57412faf630fe576c3c766186ee81e0d652db685f330881"
+  },
+  {
+   "name": "data/DXG_financial_statements_2024_separate_line341.csv",
+   "sha256": "61dbdb646070b1ec9d9abe187c6408b822ff9e1821e014570b48ca1f32fb854b"
+  },
+  {
+   "name": "data/DXS_financial_statements_2025_separate_line415.csv",
+   "sha256": "036fcc5150e50f9f6d3d773ad42e3758d9f8848a75d4589f06c768cc16861726"
+  },
+  {
+   "name": "data/EIB_financial_statements_2025_separate_line1377.csv",
+   "sha256": "28fd6bd2b7d891680432231de2cdfe752183cac7784f55ee6edaea3cdfd41c6d"
+  },
+  {
+   "name": "data/FOX_financial_statements_2016_separate_line181.csv",
+   "sha256": "e6a0a4759a4e9b0cb6b6a4b698e5501d7b4ea7bfb8aad6e89bec4cb12e261aa2"
+  },
+  {
+   "name": "data/FOX_financial_statements_2019_separate_line211.csv",
+   "sha256": "efee06c4f9ca4ada3625f77b53e9c6f74417f252705dd77714a4fae2395435cc"
+  },
+  {
+   "name": "data/FOX_financial_statements_2020_separate_line233.csv",
+   "sha256": "5afa4cdef55801075bc0cb5879230d79fa6c9ad7352c409d15324cb53fd38436"
+  },
+  {
+   "name": "data/FOX_financial_statements_2025_consolidated_line175.csv",
+   "sha256": "69c5c93ff208ffc8096e3f002a0b3d7726271affd4740f7b206e88d2646d846d"
+  },
+  {
+   "name": "data/GAS_financial_statements_2021_separate_line1148.csv",
+   "sha256": "52d3876643862452c83c8a3b4dd1cb9cd18406e49f44ee1d24d20e756179d1c1"
+  },
+  {
+   "name": "data/GAS_financial_statements_2023_separate_line1522.csv",
+   "sha256": "b679cdd96661beca6d50bb13ed81c4a83e1b8000b403599f4ea52c3aac1d589a"
+  },
+  {
+   "name": "data/GAS_financial_statements_2024_separate_line1193.csv",
+   "sha256": "e4738acd169ee94c277693dac6dd548b8d82014ef3d93247dbd18149d3a78878"
+  },
+  {
+   "name": "data/GEG_financial_statements_2025_consolidated_line493.csv",
+   "sha256": "abcbc0e8b5b83a9f690922706bdcded1bb73f039e3b39a9c6666d7a2a5d5d737"
+  },
+  {
+   "name": "data/GVR_financial_statements_2023_consolidated_line1848.csv",
+   "sha256": "1ab97a8fe83461c04bac6502899f04f2c4b3076c4d840a1426e8e35576093287"
+  },
+  {
+   "name": "data/HBC_financial_statements_2022_separate_line1578.csv",
+   "sha256": "82eabbcd823f9e6a77c96991d61da390edd722c335c1712e49bb8aedc97bbfb0"
+  },
+  {
+   "name": "data/HHS_financial_statements_2023_separate_line1307.csv",
+   "sha256": "ac4f5bfe4997fe1256aa4ed348e855861d534d855ec6f969df2c180713615b10"
+  },
+  {
+   "name": "data/HPX_financial_statements_2024_consolidated_line365.csv",
+   "sha256": "e41df93eace96e16cbb72f59123060a47452792770fe941e5ad4bbae23b4ba87"
+  },
+  {
+   "name": "data/HSG_financial_statements_2018_consolidated_line238.csv",
+   "sha256": "170c46734b4270c847d3a1ddbe8cf8e6d04e0f2bcaa345d7030f14c5ebcea455"
+  },
+  {
+   "name": "data/HT1_financial_statements_2018_separate_line1130.csv",
+   "sha256": "c071c4358ad444ca6cf8b17d2c5c4f1e06e6f48d8f724c0c5a7521d30ce501c9"
+  },
+  {
+   "name": "data/HT1_financial_statements_2021_separate_line334.csv",
+   "sha256": "dfc2b2ad2be91ebb1916bd3f237c20f1fdd3516d8e884bde4853d6227e9bd39b"
+  },
+  {
+   "name": "data/HUT_financial_statements_2020_consolidated_line1192.csv",
+   "sha256": "5274aa0a59767a39d553c5375cf67b07323bcc37a3f99280cb9ae24e090c1c1a"
+  },
+  {
+   "name": "data/IJC_financial_statements_2018_separate_line438.csv",
+   "sha256": "8dcf12d6ec26d13caeb9dadef75af8ad5813db6ef0a3be9cda8aee89505ecf04"
+  },
+  {
+   "name": "data/IJC_financial_statements_2020_separate_line439.csv",
+   "sha256": "b1da933f87e65fdf4b338755a7b0c63b5a3e28ea4c3f32f8dfb0a0ed0f851084"
+  },
+  {
+   "name": "data/IJC_financial_statements_2022_separate_line483.csv",
+   "sha256": "8f09a4bc7250226f6cd7d37528d6b916b8463361d250a2579133eefcb64d36d7"
+  },
+  {
+   "name": "data/KBC_financial_statements_2017_consolidated_line301.csv",
+   "sha256": "e728671725d9844c67668a3fff13e02b54ffaa6efab845bfa5cc69f4eae05e62"
+  },
+  {
+   "name": "data/KHG_financial_statements_2020_consolidated_line790.csv",
+   "sha256": "c653ef3aa77d3cca0b200584ee77b44ea2a110457aa822ff682d4960f724c3e8"
+  },
+  {
+   "name": "data/KHG_financial_statements_2021_consolidated_line1025.csv",
+   "sha256": "2ef02e767c23d8f6104f55cd69390c1d9fd2d76530fd1637adcdae11e4d3ddc7"
+  },
+  {
+   "name": "data/KHG_financial_statements_2025_separate_line1095.csv",
+   "sha256": "d34ff33381c0d4ea68e961dcb4af0022290e4b625326170e1efa92a6505c1c23"
+  },
+  {
+   "name": "data/MML_financial_statements_2018_consolidated_line225.csv",
+   "sha256": "0c9f03ae8f135a419ef120db66dd32197d3a596842f55d14327b75b3c0e1791e"
+  },
+  {
+   "name": "data/MML_financial_statements_2018_consolidated_line258.csv",
+   "sha256": "153e487d12240b828df474dc5facaf7a5967a70872277bc2e4ca0602dbfa3269"
+  },
+  {
+   "name": "data/MPC_financial_statements_2018_consolidated_line1320.csv",
+   "sha256": "9922337f63d66e59b1e69cfcbc297ddb9ef1e3099a4fb71ccbfd7e7a3b7f9487"
+  },
+  {
+   "name": "data/MPC_financial_statements_2021_consolidated_line1451.csv",
+   "sha256": "f291a98a5d7c606665e01352a944682aa945e1f5959737e5d12f7eaa5a6ef550"
+  },
+  {
+   "name": "data/MPC_financial_statements_2022_consolidated_line1526.csv",
+   "sha256": "d766b06c6aa7342e4c66e35405cadeb56dafc5cfbb06dc56f81b0acd8da56ff3"
+  },
+  {
+   "name": "data/NKG_financial_statements_2020_separate_line1162.csv",
+   "sha256": "59ab6b28ffa96c25751befa82315951342b0f0dd5de3230584456102a4375bcd"
+  },
+  {
+   "name": "data/NLG_financial_statements_2021_consolidated_line306.csv",
+   "sha256": "3c7f714563890cb42102922b29718feb9accece9c473f64a49704598b0656feb"
+  },
+  {
+   "name": "data/NVB_financial_statements_2021_consolidated_line1291.csv",
+   "sha256": "38f2976ced0b9c2473c856fd986089c6e1efd7bfbecf8074e1a70fe3b92d3c7a"
+  },
+  {
+   "name": "data/NVB_financial_statements_2021_consolidated_line288.csv",
+   "sha256": "3f0137ffe5e1d950f8c11e965e4b2820bd5d6f4bf9afa95524e7e0f797cc66c5"
+  },
+  {
+   "name": "data/NVB_financial_statements_2022_consolidated_line327.csv",
+   "sha256": "9a1e61a690a49207b6df55895f592f5a1eeab9530e242c19777f5671596dc193"
+  },
+  {
+   "name": "data/NVL_financial_statements_2016_consolidated_line170.csv",
+   "sha256": "0ca366a4b88db2ac0f3045253c2cd0e70de6466858d4e8bb8382320bfd33d0f2"
+  },
+  {
+   "name": "data/NVL_financial_statements_2025_consolidated_line467.csv",
+   "sha256": "02adae84f91e33beea70df07a94ea54800d2838624faed894d8a7d21907b92f2"
+  },
+  {
+   "name": "data/PC1_financial_statements_2023_separate_line216.csv",
+   "sha256": "99dc3a700d5e22f8b26cb0c61da3967e94d40c2f7427de23ba4c1c4a76e59dfe"
+  },
+  {
+   "name": "data/PDR_financial_statements_2017_separate_line236.csv",
+   "sha256": "37a18053c6f6b8b44ffd6e10d7871f2b4dad59b3d8eb6b34d723181513581113"
+  },
+  {
+   "name": "data/PLX_financial_statements_2018_consolidated_line217.csv",
+   "sha256": "ce933bd8865f4032c7f17002b064f8023637435d32584f226ea44786ffea58e8"
+  },
+  {
+   "name": "data/PLX_financial_statements_2022_consolidated_line205.csv",
+   "sha256": "54101294642c6933ea968fd017d8fb1b0a4a8be4d914c07eae9fff8b15890564"
+  },
+  {
+   "name": "data/PLX_financial_statements_2024_consolidated_line216.csv",
+   "sha256": "606d431b6832e124cc23f4c81ac322c325594d2622c230b03a8436d3fe27a0cc"
+  },
+  {
+   "name": "data/PVT_financial_statements_2017_consolidated_line812.csv",
+   "sha256": "9c7d9b832fed798ca680e53c0b2302125d815bff9ae379f1f1270afc00649f65"
+  },
+  {
+   "name": "data/PVT_financial_statements_2018_consolidated_line949.csv",
+   "sha256": "971c5c75fbd201bc330d74b31bc0946a1e8c11f1a29afaa183f447b2c36aae19"
+  },
+  {
+   "name": "data/QNS_financial_statements_2019_consolidated_line413.csv",
+   "sha256": "fe0f64d122941cadd9697893daa9f6c7662151f85d28265509a9ad80d7bc5150"
+  },
+  {
+   "name": "data/QNS_financial_statements_2020_consolidated_line476.csv",
+   "sha256": "539d22bf5e1017d8cee9a927fb65b4ba4d070e21d98e682961f706573709be4d"
+  },
+  {
+   "name": "data/QNS_financial_statements_2022_consolidated_line461.csv",
+   "sha256": "949ab018fea3eec42cd4a74048fe39b3491252e96971f508b14536522fba5ef0"
+  },
+  {
+   "name": "data/QNS_financial_statements_2023_consolidated_line585.csv",
+   "sha256": "44fff378ce476ff4ba22c5988e91d64a4f9dce463e8b8c777aad6346e821f36b"
+  },
+  {
+   "name": "data/SCR_financial_statements_2025_consolidated_line254.csv",
+   "sha256": "c2fc964d6134164db20c620da5d9453655ae9b6456d9ab504c1b886e2ce09bb9"
+  },
+  {
+   "name": "data/SHB_financial_statements_2024_separate_line303.csv",
+   "sha256": "68b7dd1bb8fe7d973914bf9222d1770925d8a438e93f37c89f3e2f7ddf829343"
+  },
+  {
+   "name": "data/SHB_financial_statements_2025_separate_line299.csv",
+   "sha256": "1a1efd12994225c47a0b6caaa8d29926326d4dece2578c41065656567484f79c"
+  },
+  {
+   "name": "data/SJG_financial_statements_2019_consolidated_line362.csv",
+   "sha256": "27a777c7a13a6716d5dae64a1fbc8a98aa5f993b9d8dbf149f264ece63288f71"
+  },
+  {
+   "name": "data/SJG_financial_statements_2020_consolidated_line389.csv",
+   "sha256": "90a60ac1523a5c608f8a45a9adbb3957361b30d1c796ea4e213a979c5067dd36"
+  },
+  {
+   "name": "data/SJG_financial_statements_2021_consolidated_line358.csv",
+   "sha256": "428fa1cfa3944d07c24b5ccec7d98ff923b8d23fd7bc5a0355e99d7292fe99ee"
+  },
+  {
+   "name": "data/SNZ_financial_statements_2022_consolidated_line2034.csv",
+   "sha256": "572bad01d23412de7fe2e8714a1a5e6cb5f2432152a67479c2328ef8b4b15f53"
+  },
+  {
+   "name": "data/STB_financial_statements_2016_separate_line1653.csv",
+   "sha256": "882f4933d12ed9d7b5a5ab1d5face39128aebb3217a562e47ff933dd45315a46"
+  },
+  {
+   "name": "data/STB_financial_statements_2022_separate_line1791.csv",
+   "sha256": "b75d766aa45d45dc8b41022cb5bb33cbc578635d8a614740a6eb0361739c45be"
+  },
+  {
+   "name": "data/TTF_financial_statements_2020_consolidated_line236.csv",
+   "sha256": "ab17772662d1a906725f843e8b3ee7a734bea61ee4051b06f770c8be9c338f19"
+  },
+  {
+   "name": "data/VGT_financial_statements_2016_separate_line167.csv",
+   "sha256": "b4baabb264663e129c936f964b22c9e5fdeb4dc5f25566d5ffd1e74e207e5552"
+  },
+  {
+   "name": "data/VGT_financial_statements_2018_separate_line162.csv",
+   "sha256": "495317aedabfe6459e85eb4752ec192ac0f2df4d1bf4c2b93e3e6a9f6b5403b8"
+  },
+  {
+   "name": "data/VGT_financial_statements_2021_consolidated_line283.csv",
+   "sha256": "25f6c69c76a9692c7518bb7c1a767d5a7a2d2cf84d62108487203c59badf2340"
+  },
+  {
+   "name": "data/VGT_financial_statements_2021_separate_line150.csv",
+   "sha256": "5ed23fc709312a42f19acbdbde2c180669a12062a34d0b947e4fb7161d720356"
+  },
+  {
+   "name": "data/VGT_financial_statements_2022_consolidated_line300.csv",
+   "sha256": "8c30c684678331c1fecf1ca48f45db5ad7a91d2be20fd8817ae7f87a0e24cda0"
+  },
+  {
+   "name": "data/VGT_financial_statements_2022_separate_line230.csv",
+   "sha256": "cfcce518b3ee13d654ffd00aa6d6e4050da37ba617c01597cc6ae4a9bf84b1bc"
+  },
+  {
+   "name": "data/VIB_financial_statements_2020_separate_line242.csv",
+   "sha256": "30a364ba62e45ee6eaee0751c4b2f96202cfa732df98d903f96bae30d5b22770"
+  },
+  {
+   "name": "data/VIC_financial_statements_2024_separate_line214.csv",
+   "sha256": "f582335052057418abeddebe3d68931bfac940f9519cb1cd177f5f9f2001eb68"
+  },
+  {
+   "name": "data/VIF_financial_statements_2022_consolidated_line1564.csv",
+   "sha256": "d9aa0e7954b84ee2a12ee36629b4609e10b2573066c1072054193b0d2a0fb7d0"
+  },
+  {
+   "name": "data/VIF_financial_statements_2024_consolidated_line335.csv",
+   "sha256": "246a585f38dc5aa61e209550f10d4a63a7cb61082280af1d10c322e9e836351d"
+  },
+  {
+   "name": "data/VJC_financial_statements_2022_separate_line1512.csv",
+   "sha256": "077322b24a1359485c042c5a85d2d459f8b7ac4caf3db1a7757623ad13e8e198"
+  },
+  {
+   "name": "data/VJC_financial_statements_2025_separate_line1833.csv",
+   "sha256": "435b72ea6b21d7683111fd5d5d87da45268e71701484bd4cee5edd95e1d4d4ba"
+  },
+  {
+   "name": "data/VNM_financial_statements_2017_consolidated_line310.csv",
+   "sha256": "e2e10158f6b3080ea9160793ef75b5a275124b26007fb4075c03d965b7a53585"
+  },
+  {
+   "name": "data/VNM_financial_statements_2022_separate_line223.csv",
+   "sha256": "b895d8eab36365f1683abc6ada6207f9f8645f8d8250fc5affe0455633a654fb"
+  },
+  {
+   "name": "data/VPI_financial_statements_2016_consolidated_line167.csv",
+   "sha256": "8a32022d403c7857151ce3febc433e89942c42ecdf3e08e39fa836d24db41951"
+  },
+  {
+   "name": "data/VPI_financial_statements_2017_consolidated_line168.csv",
+   "sha256": "f2c0667d1036ad8c8962ef10e7cdf8bc3a4c9c33abe2bcaea52066d0e590f116"
+  },
+  {
+   "name": "data/VPI_financial_statements_2017_separate_line181.csv",
+   "sha256": "1e1067e4863b4673723c887936add392a98d00414c5e37b1777e3217971a41bb"
+  },
+  {
+   "name": "data/VPI_financial_statements_2019_consolidated_line336.csv",
+   "sha256": "9783a2f2e92c9146049a82d792d7e87b10ab452fb803712a93b39532962d5102"
+  },
+  {
+   "name": "data/VPI_financial_statements_2022_consolidated_line1498.csv",
+   "sha256": "433b200b960eaa42dac28274a06bfd7bc0e59ccf601e5f939d52db24495e6672"
+  },
+  {
+   "name": "data/VRE_financial_statements_2017_separate_line1718.csv",
+   "sha256": "f5c31d92f0741f52639a94df1261436c35d391679ac203f4a8d4dcdf1ed2e766"
+  },
+  {
+   "name": "data/a6_AAA_financial_statements_2017_consolidated_line234.csv",
+   "sha256": "fe1d7a4551fe7f540dc08756f5109447c7c15956037b92d8cc1318c88fc0c049"
+  },
+  {
+   "name": "data/a6_AAA_financial_statements_2017_consolidated_line805.csv",
+   "sha256": "a4f7ac7ef62104c84e36714204e04fe33216408d45a6e68f6144325c09b9dc22"
+  },
+  {
+   "name": "data/a6_AAA_financial_statements_2019_consolidated_line1616.csv",
+   "sha256": "7c7cd7952252df63c6f153c7f3afeb7903621a099f664998e0ef7f81ba043e1e"
+  },
+  {
+   "name": "data/a6_AAA_financial_statements_2021_separate_line1075.csv",
+   "sha256": "0664a5c73340974a9c376d7fde9edd5d26e31277f4c3e1707b7ac13bf551723a"
+  },
+  {
+   "name": "data/a6_AAA_financial_statements_2022_consolidated_line2308.csv",
+   "sha256": "8cf42b65211241500b8208f73078c0e1e3b680f493aaf90e36a5f4fc5875493f"
+  },
+  {
+   "name": "data/a6_AAA_financial_statements_2023_separate_line972.csv",
+   "sha256": "f9d0d5675437e2a1692b4e737b5b2f08cddb3749af8027ad3ed342567ad01dcb"
+  },
+  {
+   "name": "data/a6_AAA_financial_statements_2025_consolidated_line1244.csv",
+   "sha256": "849b1cee7f4f2b5113e08fd1f9356cbc7b11bbeb3ab487a2629d876f5f6fde29"
+  },
+  {
+   "name": "data/a6_AAA_financial_statements_2025_consolidated_line279.csv",
+   "sha256": "79757dc1e95a3d4782d7d5ce682945f9a428a56f8b6a0130e2b23fb55efa37f8"
+  },
+  {
+   "name": "data/a6_ABB_financial_statements_2021_separate_line316.csv",
+   "sha256": "5c52170b55409a01d3692e04d23c484def199b05d5dc13748c8434d2a3c6750b"
+  },
+  {
+   "name": "data/a6_ABB_financial_statements_2022_separate_line1340.csv",
+   "sha256": "c5315d5e1537581816f9785c61d48706037ed33d2aca657e8d71eeaff22ce828"
+  },
+  {
+   "name": "data/a6_ABB_financial_statements_2023_separate_line1408.csv",
+   "sha256": "b0287fe00f4b6345c4f228cde7ca724944e939545b1ab077d73f0e53a715846a"
+  },
+  {
+   "name": "data/a6_ABB_financial_statements_2023_separate_line1468.csv",
+   "sha256": "19e95aa312e382ddcb9230c183899a1c2f3d2245a4ecdf0960cd7e0f5fbacc20"
+  },
+  {
+   "name": "data/a6_ABB_financial_statements_2023_separate_line296.csv",
+   "sha256": "3bbc72652f9445222ae8dfad4eb7bc8857ffae685291c427f4d84c0e4ff348af"
+  },
+  {
+   "name": "data/a6_ABB_financial_statements_2024_consolidated_line291.csv",
+   "sha256": "24b976f64a8a337ef072a3f52396537581c4432140b73d2862b7f1fe1b0ae7a2"
+  },
+  {
+   "name": "data/a6_ABB_financial_statements_2025_separate_line2176.csv",
+   "sha256": "ffdb34998d3c123b1c075466668996199a741f98e29bc432f507790975aac191"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2015_separate_line2906.csv",
+   "sha256": "0b8cf9d110c1e76ea8c1b22116e2d11142af48b0ed8f7d4d4af93a7292c58fa8"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2017_consolidated_line228.csv",
+   "sha256": "b7e856af22e6b848f4c5325a0a703b5b21b77a37323d1011fc3ff5f636a7b1f0"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2019_consolidated_line171.csv",
+   "sha256": "47ab612e0fdcf8256bc549cc25502731f42a98572dc7cc447caac5bf9c88e109"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2019_consolidated_line2511.csv",
+   "sha256": "b1e3e1d81db333f553e2f5f3dde66c855a345e757a13c920f7489e902d899ccf"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2020_separate_line1767.csv",
+   "sha256": "9fa61289a356b0909eaf055db29b03ae0ddc3b01acc9e3cb03d57c184c515f86"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2020_separate_line251.csv",
+   "sha256": "4ab84c4bbf701fe4225d62d2081b871d9181a0b0146cb64fb2a10329a24659bf"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2022_separate_line1504.csv",
+   "sha256": "32c458af5e8324e12f8bf326aad8af0411a4db9ef232f9accb9c053661445da6"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2022_separate_line1842.csv",
+   "sha256": "0ac75f0800efc22f7db3ee7340bebb62af9dca542367a829e782c432649d103f"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2022_separate_line1947.csv",
+   "sha256": "81ed9873ad9a78412fb67aa4a970b040471b33d0b40724b48a04351c43c3ba5e"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2024_consolidated_line2798.csv",
+   "sha256": "c9118c71e5247a682c4e758b08c4de0d81b173206f3291c9c42ee9eff09aabcc"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2024_separate_line1060.csv",
+   "sha256": "914dde5d138525e8314a6b43d3cf53438e837173e0ecc7c39814a696855f1437"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2024_separate_line2084.csv",
+   "sha256": "db70de4e6c654320d783ee749b87c8cdb6cd03557c3dc5b43bc69c15aa813e1c"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2025_consolidated_line2220.csv",
+   "sha256": "30ec0cd72df6f70d4fab78fdd5fc77153a699dbf8c618064c7d61bb706047514"
+  },
+  {
+   "name": "data/a6_ACB_financial_statements_2025_consolidated_line2617.csv",
+   "sha256": "4fc6ce99a387ec7ca2b3e70bac55782571b09ebefdf80ee9faf4ce75953dd28c"
+  },
+  {
+   "name": "data/a6_ACV_financial_statements_2015_consolidated_line1307.csv",
+   "sha256": "99cb0f816a6ae75650f12b5a83e9d0eb4d97908e6cd8e58ba138faa06d602ea6"
+  },
+  {
+   "name": "data/a6_ACV_financial_statements_2015_consolidated_line1491.csv",
+   "sha256": "a089e38341b18e471fe9a7b9cd830dbd6beeda262d7776614804115061932a1a"
+  },
+  {
+   "name": "data/a6_ACV_financial_statements_2019_consolidated_line1538.csv",
+   "sha256": "318dfa8987e4bf600e7a7e4f8ac225659c19d8148576d43b73891ac7571184b7"
+  },
+  {
+   "name": "data/a6_ACV_financial_statements_2019_separate_line1271.csv",
+   "sha256": "24251861f07f185ab0135c590560a83a23a8a1e4f1d56541269c243cdbcced7e"
+  },
+  {
+   "name": "data/a6_ACV_financial_statements_2022_aggregated_line276.csv",
+   "sha256": "5eaf788357d0b1e8df94e75a9aa71644efec9bf95cbcf81111ec2b6759421db5"
+  },
+  {
+   "name": "data/a6_ACV_financial_statements_2023_consolidated_line1024.csv",
+   "sha256": "b0d2e5ae1b16f6fab5bdeabbf81d1014173dc0248b939dd4535f39c23f16a942"
+  },
+  {
+   "name": "data/a6_ACV_financial_statements_2023_separate_line1210.csv",
+   "sha256": "9f6c1aeba682ec488dc5a44d0d5e3496736877700059788beeed31411768558d"
+  },
+  {
+   "name": "data/a6_ACV_financial_statements_2024_consolidated_line252.csv",
+   "sha256": "dacda9a478b6eaac7fa8ac0e638fd10a5e65ccb0f154c72e45892d19dc907b5b"
+  },
+  {
+   "name": "data/a6_ACV_financial_statements_2025_separate_line1201.csv",
+   "sha256": "b662dc6749fa4c5a171bcd424befc1113e8fde8f26e8a8fdcbb7c75a1048a130"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2018_consolidated_line1392.csv",
+   "sha256": "20a329f39cfab09def414ac9dd870b5fe03bfe12fb61ae42fb601ee91b3c8922"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2018_consolidated_line372.csv",
+   "sha256": "4a825fc7da4623fa2ef41c07adbe57835bc1206be33e6ac77553ef6d6689e8d8"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2020_consolidated_line1248.csv",
+   "sha256": "3233911682e2a665f4ae2d7c1af6b39efd2a74bcd33c433cdce230ff5326cacd"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2024_consolidated_line2451.csv",
+   "sha256": "f404f7a549062d54dee673b8571594c81f77991635e2d1151f37f80b970123af"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2024_separate_line1853.csv",
+   "sha256": "178f7b72c8dd74bb65415ff2cb4597e655074473c0637d06485f393e1921550a"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2025_consolidated_line2094.csv",
+   "sha256": "214f9b6d067906380b069531ddfb62dd5efb3a2eef9c083f89a1473c17f7ed44"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2025_consolidated_line426.csv",
+   "sha256": "1284dadfa2e3391707003c80556fe4146f4c29f4d48724352dd0c6cd4ca7caab"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2025_consolidated_line467.csv",
+   "sha256": "ce77ead0f1a76b06bad6c73dd602a7d0fdf172c4de0033ff6e69483049d52946"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2025_separate_line1781.csv",
+   "sha256": "1c3b7a9647f2b293d5bb7e6e52924cb8719c4ec42d3b9c04f69dc98c9743c192"
+  },
+  {
+   "name": "data/a6_ASM_financial_statements_2025_separate_line410.csv",
+   "sha256": "fbfe4adf8044e96354f14ad74c8d4b492639e84451d1ef86dc25616024967471"
+  },
+  {
+   "name": "data/a6_BAB_financial_statements_2020_separate_line196.csv",
+   "sha256": "6f6e9bcfb95a36df35f9ed4861f551a3a71d98281bb8815ab79976d7c4f82baf"
+  },
+  {
+   "name": "data/a6_BAB_financial_statements_2024_consolidated_line1326.csv",
+   "sha256": "03390f3dc5c6ac419aed8689497acc487e20f6af48c54dafb007a09f8a70bb6c"
+  },
+  {
+   "name": "data/a6_BAB_financial_statements_2024_consolidated_line301.csv",
+   "sha256": "fbb8dd02ebc74256526cc8d7971f454881be3ad421241d3c7b8ce4f7ca199582"
+  },
+  {
+   "name": "data/a6_BAB_financial_statements_2025_consolidated_line193.csv",
+   "sha256": "033b7109ccec502f8edbbc4adac62389f11f331304d5d63dd45268742b01f8c4"
+  },
+  {
+   "name": "data/a6_BAB_financial_statements_2025_separate_line1038.csv",
+   "sha256": "038b0e17cd2090f08649c9ad375e752430ad33453c4c7a5c86e2e3dc4e12ed62"
+  },
+  {
+   "name": "data/a6_BAF_financial_statements_2020_consolidated_line1197.csv",
+   "sha256": "b2aaf3dced788f36f417c3076f87f7a9f5f42e67925c82589723cd7bb7be77ab"
+  },
+  {
+   "name": "data/a6_BAF_financial_statements_2020_separate_line1300.csv",
+   "sha256": "aad980f3e9e5a3bb6f66ff116bc7d0c2c7a9c8612a69dde1192c69d01cac48a0"
+  },
+  {
+   "name": "data/a6_BAF_financial_statements_2023_consolidated_line288.csv",
+   "sha256": "a77bc5983a63ce2ccc75ffdcd72b8312e2cb18410dba69e9f792e840ee18ca64"
+  },
+  {
+   "name": "data/a6_BAF_financial_statements_2024_consolidated_line268.csv",
+   "sha256": "d7988a5d1e387d8d3e31e20aca885b4f7ba46325c72ae068738174214672b98a"
+  },
+  {
+   "name": "data/a6_BAF_financial_statements_2024_consolidated_line854.csv",
+   "sha256": "ace3113f6e33b7c3e8736ceedfba2bd115b67ab83eb32176d40f5aed01906e44"
+  },
+  {
+   "name": "data/a6_BAF_financial_statements_2025_separate_line240.csv",
+   "sha256": "a57f207634ba6e57f8b7b006d896cd9128da400d216c65e35dbfca20328f0ffb"
+  },
+  {
+   "name": "data/a6_BAF_financial_statements_2025_separate_line357.csv",
+   "sha256": "1cd6eb6659559ad9639b44bd862287e572873d88a29dd6a868bda9f5c181754e"
+  },
+  {
+   "name": "data/a6_BID_financial_statements_2016_consolidated_line1250.csv",
+   "sha256": "640047c1e0bf8755e81b6b0d94cc30b4288c1a2b71b14b352b197cf59f0d92d0"
+  },
+  {
+   "name": "data/a6_BID_financial_statements_2016_consolidated_line279.csv",
+   "sha256": "36dbb244b9d882ab304c321aa08f992bfb58e82fac36b616d6ba0792b97c86a4"
+  },
+  {
+   "name": "data/a6_BID_financial_statements_2018_separate_line665.csv",
+   "sha256": "135c94bd13a733bd65e3bf5a65c4a0c7fc14f51da9d9a8fc38e9664a099eadad"
+  },
+  {
+   "name": "data/a6_BID_financial_statements_2022_separate_line1586.csv",
+   "sha256": "ff18877a4881205fc45eb4351aea85cba03a3bdcbbda6699f54a1b5df29e6579"
+  },
+  {
+   "name": "data/a6_BID_financial_statements_2023_separate_line1167.csv",
+   "sha256": "3a0ec669e8acee60f70cd90e21bbc95fdf380f0b57420539cd2ea9d63457222b"
+  },
+  {
+   "name": "data/a6_BID_financial_statements_2025_consolidated_line1516.csv",
+   "sha256": "52c9cd8f04416965be24009bd50985499670834022e190fe32b218fa790099c2"
+  },
+  {
+   "name": "data/a6_BID_financial_statements_2025_consolidated_line1520.csv",
+   "sha256": "6b68d41e8e7b93237352633dd31a2dfede9f35bc2c6b366253618b15628a27d3"
+  },
+  {
+   "name": "data/a6_BID_financial_statements_2025_consolidated_line1638.csv",
+   "sha256": "d28ba35289fe29a02a6a5f28551b581ab44bf22c17262ba1cff4b514b822e8af"
+  },
+  {
+   "name": "data/a6_BSR_financial_statements_2019_consolidated_line1157.csv",
+   "sha256": "fb053106a91c933edb5c35dd7edd7b2ca9c66ff499a0bfc2c900870c74d6e1bf"
+  },
+  {
+   "name": "data/a6_BSR_financial_statements_2020_separate_line330.csv",
+   "sha256": "f1b033f3f3925d86549581b323287cf69e0311e259d4605dcb615b8ee6bb5ca6"
+  },
+  {
+   "name": "data/a6_BSR_financial_statements_2025_consolidated_line368.csv",
+   "sha256": "d3da44562d7d803c9fea2b71f1ec389fb65db909aa755e259ef598b13e75b6e4"
+  },
+  {
+   "name": "data/a6_BSR_financial_statements_2025_consolidated_line439.csv",
+   "sha256": "7b33b3a26432de2663c617de68b154171439f53bbe0c4f85287acdbab5932047"
+  },
+  {
+   "name": "data/a6_BSR_financial_statements_2025_separate_line1120.csv",
+   "sha256": "ed364fdc5a4e92a2588eb4d64c6d4eb65a3629506edb1b0ab599a91701e12a13"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2015_separate_line1232.csv",
+   "sha256": "ab5563dd25ada0565c2491c5ca36d53f753ce754d1128760ebb2097d9a8f8ae6"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2016_consolidated_line1888.csv",
+   "sha256": "7510c78902c841d5e309c04cba1eb31b53f875445101d3b4d66fa123b2fa5986"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2018_consolidated_line2249.csv",
+   "sha256": "80cfdc939586b766387cd66728d23a67654f7b4dab9472f9e37f17c25948d801"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2019_consolidated_line3278.csv",
+   "sha256": "25fed6d5d53f7a541dbd1779fe85461fae0223eb18ab8b9fb6fcb10be42c3a12"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2019_separate_line1508.csv",
+   "sha256": "ea238311dde8b4cd8947130de136e1b1c22390adf9ca4b924514a93d652d6465"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2019_separate_line1636.csv",
+   "sha256": "7115dd188fe7be7ef6d866e611f865d8cda51060055b7c747d210ac60e61dec0"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2019_separate_line372.csv",
+   "sha256": "236ea6f71122472492d62a5b1ac716c1e41c794799dd43b735c7260670df9446"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2021_separate_line973.csv",
+   "sha256": "cd02da25c380d34b91b303c12ebaf0c4857bf38ddc8545fb715f4c95d9868c01"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2021_separate_line990.csv",
+   "sha256": "347bdd5367f16adc7491f0af01e41c694db72568ce06a5aa8c51f4f007fd2c18"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2022_consolidated_line378.csv",
+   "sha256": "09413530387815e4dd2be6beb7c7662fd4e3f0408af56189623cbe094b505323"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2024_consolidated_line317.csv",
+   "sha256": "507f95577586edb1522dd7b72d53f2238d15f041af36748b506004070559c996"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2025_consolidated_line466.csv",
+   "sha256": "9e478e2b34139fef30f4d3d01c1a98ad05956e813290b2a497243ebeaa680fee"
+  },
+  {
+   "name": "data/a6_BVH_financial_statements_2025_separate_line1115.csv",
+   "sha256": "87fddf85a9a6872acdcde97ef45f5422be26a0d643be674611eb33f993ec96af"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2017_consolidated_line1712.csv",
+   "sha256": "71159562a0f98b8e7317b56a5a02bc4e4943ed124302bade0bb91901ecc96e32"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2017_consolidated_line1772.csv",
+   "sha256": "54c51a270f7b02673f7f6264942c628d060b72d24ad34ecec19aa7018d266589"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2017_consolidated_line264.csv",
+   "sha256": "72f776190f4fc68b7a8e3db1cfdf3da5d6bd7d22aa578790b52fe7e3feba8774"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2018_consolidated_line217.csv",
+   "sha256": "2a332306ba949ee35f95cc75325aad22fe46e80d5fda46d737160298f791257b"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2018_separate_line246.csv",
+   "sha256": "a8765428395742d84f39b6849a0e54089bbe35c2348b97b4d0547927cab534fe"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2022_consolidated_line1685.csv",
+   "sha256": "bc4c4e01ba4f197de4ec7ac8213d3ea6dcb46ff62a1e9abe60509f57f5a88afd"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2022_separate_line1593.csv",
+   "sha256": "4ddce7241980360c55155ce55828a46b1e5d28b24ed055885c0da1f5bd712197"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2024_consolidated_line1214.csv",
+   "sha256": "03d4009c385c811087e2c81f607f97fa04461c997cd4628eaca2433ae268a9f5"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2024_consolidated_line1801.csv",
+   "sha256": "bdb7c8cd32d162e54e585fbb9b1e6dbaafa1c134db0759fd1e3dd94774839b7f"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2024_consolidated_line268.csv",
+   "sha256": "5a78840cebeff81e0c54710252e962219c01724c2c1c9455df88b5b00b4fff7b"
+  },
+  {
+   "name": "data/a6_CEO_financial_statements_2025_separate_line274.csv",
+   "sha256": "9ebeadce4c0adf7ad1baee61c602cfe62c02c1d9de8a031e849459e21f68b7d1"
+  },
+  {
+   "name": "data/a6_CRE_financial_statements_2019_separate_line349.csv",
+   "sha256": "fa58d5e8f005dee3bdf366671b9fd880ca59eb68c64e45cbc1c7b100f08fc00e"
+  },
+  {
+   "name": "data/a6_CRE_financial_statements_2021_consolidated_line351.csv",
+   "sha256": "7ae6da31a4c64b5ae84cade50817026edbbac65c1b7897eb0d456fd4cd170c13"
+  },
+  {
+   "name": "data/a6_CRE_financial_statements_2023_consolidated_line263.csv",
+   "sha256": "fad1a4f9814eabb41c35e2eef885a77edd51889435f8ac89fc6bd09038d22df8"
+  },
+  {
+   "name": "data/a6_CRE_financial_statements_2025_consolidated_line240.csv",
+   "sha256": "991986ede980e1005f24a48eb82c6d149c5d620845cef19b8c7c801c7d8cec3a"
+  },
+  {
+   "name": "data/a6_CRE_financial_statements_2025_separate_line1797.csv",
+   "sha256": "293117df2c8a48471bfa674991756b2ef91a9e281dc2e0be5afcbe69adfd72b7"
+  },
+  {
+   "name": "data/a6_CTG_financial_statements_2019_separate_line1212.csv",
+   "sha256": "5b270d840790c7fe673844f6910f7f3d3f8f97c49e1fe84a9a79384c988e289b"
+  },
+  {
+   "name": "data/a6_CTG_financial_statements_2019_separate_line331.csv",
+   "sha256": "4605eb7eed2c1ce59a949e6fd8981a01607d6186ad5e80af811c67006cad33a0"
+  },
+  {
+   "name": "data/a6_CTG_financial_statements_2020_consolidated_line1405.csv",
+   "sha256": "1bcdde81a03d3927486ed37edec5dc8910285b6298f6f31d37840e3e97211e35"
+  },
+  {
+   "name": "data/a6_CTG_financial_statements_2022_consolidated_line1441.csv",
+   "sha256": "0ac2f5027d9e5dbd78285948c4cecb4e4bda812e666c10a7d54a96594058f910"
+  },
+  {
+   "name": "data/a6_CTG_financial_statements_2022_separate_line1609.csv",
+   "sha256": "c85e09e39fa5dd3befb9cdd969109c261568936030be813276af72eb5de80a05"
+  },
+  {
+   "name": "data/a6_CTG_financial_statements_2024_separate_line1364.csv",
+   "sha256": "e1318b51b69dafb2d13281b291fa4ecb9ff8e832f293348dc98ef45e0ef09d8e"
+  },
+  {
+   "name": "data/a6_CTG_financial_statements_2025_separate_line2039.csv",
+   "sha256": "577a0b6272d65ca742e46b8a782fca8db5e309e90190611d3b4f205db2b3ac4d"
+  },
+  {
+   "name": "data/a6_DBC_financial_statements_2018_separate_line314.csv",
+   "sha256": "5d8d3d0420e62d628743ef1193b0007de6e9a0f1992d3834b84e1ed7a1612a76"
+  },
+  {
+   "name": "data/a6_DBC_financial_statements_2019_consolidated_line1026.csv",
+   "sha256": "13cf94c7e62d9ef83661b2e675f046ea608cb9237c87f4fac5ea2e398b42b58e"
+  },
+  {
+   "name": "data/a6_DBC_financial_statements_2021_consolidated_line311.csv",
+   "sha256": "3ae059cb28172c98b04f245496fbc105831979aaa9930498b3991a27580e6aa5"
+  },
+  {
+   "name": "data/a6_DBC_financial_statements_2023_separate_line1079.csv",
+   "sha256": "34d55562c37d95e3de4bd694e8b7eed58447faf3c5193d208f6ea490c119af10"
+  },
+  {
+   "name": "data/a6_DBC_financial_statements_2024_consolidated_line1135.csv",
+   "sha256": "a6c41c6dc99b7de73ae40c80f711740a55efeb5446d5fe2a3c892339aea088a2"
+  },
+  {
+   "name": "data/a6_DBC_financial_statements_2024_consolidated_line358.csv",
+   "sha256": "a591748f6d2a3ebd3748000f51746b1840d52073aab6a4d69882e16196c90904"
+  },
+  {
+   "name": "data/a6_DBC_financial_statements_2025_separate_line1017.csv",
+   "sha256": "741171e7757e6e09917c15c421f30328d19aee405ac08568d6017687f20ca1aa"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2016_separate_line1016.csv",
+   "sha256": "bed2225d4fb7796f56b43afb52a732f0a1ed41ef88ea69c1f16ade740eea0b1e"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2016_separate_line345.csv",
+   "sha256": "05c590bc4140b84471ae2b708a8f11f37eb713b4fe77be37e1454ee5c178b234"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2017_consolidated_line335.csv",
+   "sha256": "85062181691ff1f6c49075533a0ac379897ddff3e9fc7164da6089a3e56d23a5"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2017_consolidated_line367.csv",
+   "sha256": "0e0ea7bfdee9d5e84b85fdc1dfa20629c663e00784adc11e7a598d85d2110c09"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2017_consolidated_line397.csv",
+   "sha256": "3b4c890144323898253592db2449b40d827ea0af5bcff8f305011ec7e2d0153d"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2019_consolidated_line335.csv",
+   "sha256": "64f7e4b1a710728fa250c80ea3616adcf7f0f5200915b07df1ad171c78913054"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2019_consolidated_line882.csv",
+   "sha256": "806b8f1cd6411a4a56a9e86d2c7db8ce38d9e7cc4c8cd7b5f0b7a204155b915d"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2019_separate_line815.csv",
+   "sha256": "ce05b0ac93cd73fe702c09d9439930e48190454584c8a98115953ea5250f076d"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2021_consolidated_line482.csv",
+   "sha256": "0eb591f9419b1dd401d8d539393fc80288bd390ed15c4b15436810cca2b61310"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2021_consolidated_line501.csv",
+   "sha256": "75a641656a6aae8e60e0b4c079e6639f6d5e5578701b446c6de6573dd2410696"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2022_consolidated_line443.csv",
+   "sha256": "a3d87eb20d3aac3ee8a2984c33911c0ed618e9139f56dee43286e0729e81f531"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2022_consolidated_line483.csv",
+   "sha256": "65941839a439d7fe6391808b226e4b2017bae7205fd46004ab6bbcdade329522"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2022_consolidated_line943.csv",
+   "sha256": "524d7b00a4de378466300a32f38aaf48b20c3bdb26292e7a1a6bda868c471cb9"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2023_consolidated_line463.csv",
+   "sha256": "4bab9ca720eda37f05f2bf4ec5fff0ef51bc171bb1ed86411839354b2ce6e40c"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2024_consolidated_line1827.csv",
+   "sha256": "aa830ba7c2ed3b917d63b67b719412fc3506c384e25332e4e8624ea3d6afae07"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2024_consolidated_line584.csv",
+   "sha256": "cf13b4ded8e22e01f967341b6426f78140cade767e90371676d4e238107e6072"
+  },
+  {
+   "name": "data/a6_DCM_financial_statements_2025_separate_line1041.csv",
+   "sha256": "2a44294832ec34309eeee921b9e2f1b51ad4eae140aebe641bf530188b07e737"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2018_consolidated_line1030.csv",
+   "sha256": "3e920013f105c89cb3d8454f92486755ad6f2cfc06c9bb5f3857e4f22994b51b"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2023_consolidated_line1384.csv",
+   "sha256": "17eb1792028017bb1429f5edf54a324d65d7be51fd9d7dbe7cc3f0b277b65541"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2024_consolidated_line1094.csv",
+   "sha256": "3fb8c4bfce9604ad86c770dec14899268395966d9070d5bfdc1c5b842cb4b8fa"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2024_consolidated_line371.csv",
+   "sha256": "08c469252db240d6d136b4ff986c0a56e40a432caddda08975776d0e3ae25bcd"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2024_separate_line1167.csv",
+   "sha256": "7c744e925042dab770b7ebdc9789fe13afd51769c35303c5d460c860138987b0"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2024_separate_line397.csv",
+   "sha256": "8cae55a379c20f04d9bf6178a40fb161ebe593ff1dff33acfb62d4e561d34da7"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2025_consolidated_line1242.csv",
+   "sha256": "6153a866561da3615c80d9dbef966c8f9bd34c5c502f7d9a496e1d3c7466eb01"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2025_consolidated_line421.csv",
+   "sha256": "947d5ece04c9e60cef8cfa9386477ed6236a57e315f8fd0d13e9c0ce63932572"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2025_separate_line1490.csv",
+   "sha256": "0cf7647e755f170012e412fc4a66df9c599d494a4f583d3c31b3c31019fe2de2"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2025_separate_line423.csv",
+   "sha256": "59ca3e0d63ac59cc6efe6ff773186302cd7acabf695400b4bde98da4a5fe71e2"
+  },
+  {
+   "name": "data/a6_DIG_financial_statements_2025_separate_line971.csv",
+   "sha256": "644c5140afa676d9e8afa85846cbbba835205a6af56ba0307da2dc968ef32bb0"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2016_consolidated_line1498.csv",
+   "sha256": "29cb60d1af64870fed5504d9c23c578351ef488d3fb8b58368ea7b33572ff2ef"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2016_separate_line1156.csv",
+   "sha256": "18b47484bbe525f640bfd937894049f4e2ef116c31f934e32d7af10594bed19a"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2017_separate_line1311.csv",
+   "sha256": "26c91c26cfb88ea411b4ee8a55f85edad58603a78a40472c56be5451ec96b6e1"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2019_separate_line1190.csv",
+   "sha256": "299fe55881ff26916a751341932695852bb89efb1ce9ad65efb53c2c409aa91c"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2020_consolidated_line1830.csv",
+   "sha256": "a56b6df1511430e1e3bc276338fd5b396fd6c6ac0ba6402a8cdea46d841453ab"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2020_consolidated_line2196.csv",
+   "sha256": "41b21bdcbefce57edcab3f67e9afe1b637512019a27d9b691bf8b9cad82cba54"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2021_consolidated_line1365.csv",
+   "sha256": "2431008531bd3cb20f325633e4544fb5145bd9757f8679d9bcc4c569cfa92082"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2021_consolidated_line1892.csv",
+   "sha256": "050fd8b4485bc0ffef9fa2a0f559824c67fed170ee1f8d81d7d63a9b869b2810"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2022_separate_line455.csv",
+   "sha256": "8eaae2afc4281414e06e9d9fefe3253ed745f8414f7090358414b54e4b8d4e2b"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2024_consolidated_line392.csv",
+   "sha256": "3b8c2fa25c495497e2a1dff3bc3041a4e45f2799ff8d20708adfc71ab1b3adc0"
+  },
+  {
+   "name": "data/a6_DLG_financial_statements_2024_separate_line390.csv",
+   "sha256": "9da82d79db96d9e162fb29a4d53213bb28e275a1f590e234c3a22fbdc960ff27"
+  },
+  {
+   "name": "data/a6_DNH_financial_statements_2016_consolidated_line1107.csv",
+   "sha256": "386a43dbe8453a512ebb305af87c8708b2624d19c6536427e0fa00bd57a78c1f"
+  },
+  {
+   "name": "data/a6_DNH_financial_statements_2017_separate_line921.csv",
+   "sha256": "d4fd2175e78a4ce0773372b43dffac4e824f60d187fb687e207a764b2bdfbdf0"
+  },
+  {
+   "name": "data/a6_DNH_financial_statements_2019_consolidated_line1158.csv",
+   "sha256": "262c33ca5924ce45891b120592029b779b077cc7ce90d3891006f8c28c007275"
+  },
+  {
+   "name": "data/a6_DNH_financial_statements_2021_separate_line815.csv",
+   "sha256": "b06024ecb3f88f7faa678326afb2479980e1a75b327714ceb6b580541f554203"
+  },
+  {
+   "name": "data/a6_DNH_financial_statements_2022_separate_line273.csv",
+   "sha256": "a714c128bfb8b9593511bbe50137db03b0fba8dd40e913443723c87a3b9d10a2"
+  },
+  {
+   "name": "data/a6_DNH_financial_statements_2023_separate_line260.csv",
+   "sha256": "e368313ba6f1e4213dd21de5aada6589e858a9c2694852d155f1b09b24f902cf"
+  },
+  {
+   "name": "data/a6_DNH_financial_statements_2025_separate_line292.csv",
+   "sha256": "bb0502b75c464abac5c567e3ba4a3df176933386ad4ab830e239d3959b809151"
+  },
+  {
+   "name": "data/a6_DNH_financial_statements_2025_separate_line919.csv",
+   "sha256": "3b959881445237bf741668d25dbf6d4681ad7e83b2103bb18e62a04d64e89716"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2017_separate_line1112.csv",
+   "sha256": "e30ab1083740808a1b897d2fa7df5e2c1042c6a126ece4f36ec8df34b70483e1"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2017_separate_line258.csv",
+   "sha256": "91835114f05bfa4514b56c55c8b93b59dd391136db1551e8251538f0e76a5439"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2017_separate_line945.csv",
+   "sha256": "7d0d4088330650e3cd832d9e03a215f659a7d8cea2b3d9e73d0d722e37576ced"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2018_consolidated_line1089.csv",
+   "sha256": "5e2b9757ff479a7e0be9dcdf5343647ecdacae790876349ea214f5c9dd0a8a9d"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2020_consolidated_line503.csv",
+   "sha256": "70323e7e3198497954be881d2e4d499e087b636c46ef4af75bae1cc78928cb48"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2021_consolidated_line638.csv",
+   "sha256": "c1c947e7470c53687aa94a11a2dcb66ca5ccd29fec61c84cc6bdda6435e46cd3"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2021_separate_line1311.csv",
+   "sha256": "59f5b2be25686a2e61d80cc3275005ced31dba1124c0ec060f58df35f01a479d"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2022_consolidated_line800.csv",
+   "sha256": "5825ba15b1f801a63192e3ecdd052da4b705734ee9b6dd3dc9ccadd076a02252"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2023_consolidated_line1809.csv",
+   "sha256": "39d1f528a38433d515afe5271a775852db34ba58f8b3ff2a052476cce7068818"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2024_consolidated_line1115.csv",
+   "sha256": "9eb0c67dc04a8d6f0d401d5b5e0ceb475f0788cf3aaf7a5cb868483ad20fc25d"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2025_consolidated_line1415.csv",
+   "sha256": "42e5d00691e70447aa4cec905e48fee9b5de76ef1039c413d87289be47a68810"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2025_consolidated_line1419.csv",
+   "sha256": "68d2143bc66cfa7c4618c9b10bec87b1474de704dc6acda588fd8e8610fccf12"
+  },
+  {
+   "name": "data/a6_DPM_financial_statements_2025_consolidated_line326.csv",
+   "sha256": "f94af97ae48ab3d4bd77cba6a0f6eab900f594efebcc263775a1353c53b968a2"
+  },
+  {
+   "name": "data/a6_DTK_financial_statements_2015_separate_line317.csv",
+   "sha256": "0994ed12846e9c433bce44941ed943e4ad9af63565de48a383bf0d39552df791"
+  },
+  {
+   "name": "data/a6_DTK_financial_statements_2017_separate_line450.csv",
+   "sha256": "98bcca27f34c66e71ee2b610e1c5b60638e6fab34841b63b91f69d112571f611"
+  },
+  {
+   "name": "data/a6_DTK_financial_statements_2022_consolidated_line1118.csv",
+   "sha256": "1e977b16d1f38701e2536fe03a1c3905355f384f5c1d6c993f488a770330bcb6"
+  },
+  {
+   "name": "data/a6_DTK_financial_statements_2024_separate_line477.csv",
+   "sha256": "c77c2241231abda006d750fd5229fc69fcc3855af92b194c0b4b7cb0e612f4a4"
+  },
+  {
+   "name": "data/a6_DTK_financial_statements_2025_consolidated_line1343.csv",
+   "sha256": "f941e203add8bffb1d67efbc45a883709eb17a65399abe8a182d8032bd8549ee"
+  },
+  {
+   "name": "data/a6_DTK_financial_statements_2025_consolidated_line2843.csv",
+   "sha256": "cc73bee7b9ba281f766f7f7fbc2c2e6a9f4e14313ef5b0608bf37d76e8c4cffb"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2016_consolidated_line303.csv",
+   "sha256": "21f436c1c6ed22893e629fb15cdf8f08b05499f994bb3b169ec2e78e8f3e0468"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2017_consolidated_line252.csv",
+   "sha256": "ad65ec6c64e85a543f60ec015138881d44d963a5c43a6f8fb37fceaa64aa7c87"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2018_consolidated_line268.csv",
+   "sha256": "a67f50534243682da7d4f88076ef78f47c6b7efbadc4aaa9eb2b0e11935ada2d"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2019_consolidated_line966.csv",
+   "sha256": "fc80a0c3313f3ea6d6f56346adb571f8ca18786787a0873fc3339c3c85daf808"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2020_consolidated_line180.csv",
+   "sha256": "09508972991d189fbf98fcf326587bce31b5a3f9dd7f4fd587a31fce79491eff"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2021_consolidated_line428.csv",
+   "sha256": "30b9cd195f2f39c876fcb63fa8d562f519750d4240a5a654c9f688bad05c67df"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2024_consolidated_line357.csv",
+   "sha256": "4b0fa22dfe21ff073b223d6736756da9005784f0de19eba7a787c7e135e7dd45"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2025_consolidated_line2276.csv",
+   "sha256": "e359da5c1da4d6a2789d6beeadf7668c273f42714db45edddca9e2126198eabd"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2025_separate_line222.csv",
+   "sha256": "1187e8bc40e9bf93f9044f7e98700745aa9ec491234920d5007e32e76a3f5cfd"
+  },
+  {
+   "name": "data/a6_DXG_financial_statements_2025_separate_line952.csv",
+   "sha256": "c1875486a3cb487b1c3e6eba2f1de3ba87dd76d6772ef300ba9b2f7ca0d975f0"
+  },
+  {
+   "name": "data/a6_DXS_financial_statements_2021_consolidated_line473.csv",
+   "sha256": "0ab8fa0467085643e80023c4b52a2a8835cd9831bbc884e8d5cd8fa3c9fddab0"
+  },
+  {
+   "name": "data/a6_DXS_financial_statements_2022_consolidated_line1005.csv",
+   "sha256": "9d5878b312b254130682f70aa9c8295efd5aed77cb0c4d2eb549d82058c77050"
+  },
+  {
+   "name": "data/a6_DXS_financial_statements_2022_consolidated_line1091.csv",
+   "sha256": "4bc248ea6e400b33e02f9a119f86d59a0853f0cd25f0b64efe241b2c7b233851"
+  },
+  {
+   "name": "data/a6_DXS_financial_statements_2023_consolidated_line1535.csv",
+   "sha256": "87fc6e869dbe371c500c6fa104e921a1c742b46a5a797f8755f4cdb81586528f"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2016_consolidated_line1796.csv",
+   "sha256": "23b0a989d1d229533cc0b28f692bee97db9938765316b43411801cf8eb9e36da"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2019_consolidated_line2069.csv",
+   "sha256": "15dd22251c6c98bbff36715f835414305d492b908c87a4ca9929734c6205a0ca"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2019_separate_line2947.csv",
+   "sha256": "6752ef7ac7fee857930640da5aa5474dde212ba3a06c20d3b20f25e30e5d57fc"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2020_consolidated_line1237.csv",
+   "sha256": "13a96b7780bc996e5edf1c36bb07539683fe817a9646d1b4819078641ec8793b"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2020_consolidated_line1655.csv",
+   "sha256": "44997d618e9bc7db31296453799320354393043015ce0a7fc781fbeda9eaeade"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2020_separate_line2068.csv",
+   "sha256": "7bc14082b4ae1e8fb55db052d57430ef9b9c70eee3583d7d5b541d0729e6addb"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2020_separate_line269.csv",
+   "sha256": "6c2030674154f452240979c808dcbf433c51fd9540b8c7fcd41e251ea4d24311"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2021_consolidated_line2019.csv",
+   "sha256": "17faf50b8a15a39147432348eb72f69f065fda7a2d0b9f16449349cf9dce5259"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2022_separate_line1732.csv",
+   "sha256": "27acdcad3b8fcfff8b166e725ec4c1f546758c46e1c8808bcfa9204d975f194f"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2023_consolidated_line1548.csv",
+   "sha256": "0eab4b5c314c57dc318184723217379e5d247e65cec9d5433f833b31fb778b50"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2023_separate_line1526.csv",
+   "sha256": "9e5856bccaed9e964f0cea0d35f93a8562ee73dbbffceff805fd1dfb975e43c6"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2023_separate_line1752.csv",
+   "sha256": "6365d60a458c0730e3c359dbefb1edc1cb1a0d79479eb6d493015e25cd678f47"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2024_consolidated_line1957.csv",
+   "sha256": "ea50d274f875edd87106b3d489dce79b6485067be18fedf02769806991534619"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2025_consolidated_line1163.csv",
+   "sha256": "efae0d046814e3e6919aa6c2421299e10bcc227f56ef14ab0284c5f306398ec7"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2025_consolidated_line1293.csv",
+   "sha256": "18e2806ec03d1283099251482585b2855876fba38f9142c3eeecb34b30c456cb"
+  },
+  {
+   "name": "data/a6_EIB_financial_statements_2025_consolidated_line1356.csv",
+   "sha256": "99aea0b845da1a48c3a218e81fe7fd0b75c04628d5d71ffc17c0bcbb1947d3a8"
+  },
+  {
+   "name": "data/a6_EVF_financial_statements_2025_line246.csv",
+   "sha256": "21a17c91262171972c5ed58a4923e528bc9e13a8236de9cb5b837d2b05a5ce29"
+  },
+  {
+   "name": "data/a6_EVF_financial_statements_2025_line347.csv",
+   "sha256": "fd910bb06a9a0dbf0f64e6cd01789349c332b4c1f4ed4e3216712957f7b53527"
+  },
+  {
+   "name": "data/a6_FIT_financial_statements_2016_consolidated_line218.csv",
+   "sha256": "d5c4319dff6c78b54911a4dd6ddaff36cb9b30768eae80a74557f0227b22654e"
+  },
+  {
+   "name": "data/a6_FIT_financial_statements_2018_consolidated_line909.csv",
+   "sha256": "4317eff19f45531103294897d1fcd5d680fe681ac4e425d8da56823ae3fa3e36"
+  },
+  {
+   "name": "data/a6_FIT_financial_statements_2021_separate_line237.csv",
+   "sha256": "94317a4c1f7f9a6792f22a47363a7ffa63d8ac610c5b1cf006247ae279f7b9ea"
+  },
+  {
+   "name": "data/a6_FIT_financial_statements_2022_consolidated_line247.csv",
+   "sha256": "db28d937bc3af0d96b76e5e36f4aab3fae0421b6be3961e5f6b5c810a18393f5"
+  },
+  {
+   "name": "data/a6_FIT_financial_statements_2023_consolidated_line1946.csv",
+   "sha256": "c48f2f600071657a66a2a92f88e5dc8bb0674aaf99a004485ce0e64d07c771ea"
+  },
+  {
+   "name": "data/a6_FIT_financial_statements_2023_separate_line241.csv",
+   "sha256": "785e54d777468ac3d209453790e2717b7e904ad383cd62bf7913dcad59ff69c7"
+  },
+  {
+   "name": "data/a6_FOX_financial_statements_2016_consolidated_line235.csv",
+   "sha256": "7d384241327c9f988ac5d7be73c9f9e5a202fe92aaa61b6ce427824bf536f23c"
+  },
+  {
+   "name": "data/a6_FOX_financial_statements_2020_consolidated_line959.csv",
+   "sha256": "c747b6765880c26b77c51575bcf75fa9a0c3ad8f98f10a3e04c2aa9aafc17c21"
+  },
+  {
+   "name": "data/a6_FOX_financial_statements_2020_separate_line816.csv",
+   "sha256": "78892ee59ca779642da58322e3e583ee19f534a9ef8d3badc4f9a239ed989644"
+  },
+  {
+   "name": "data/a6_FOX_financial_statements_2022_separate_line783.csv",
+   "sha256": "68a72d2c329c89c61c865a8e55ba085bd096c6c59ac9f8763cc0a79fbfcf6ecd"
+  },
+  {
+   "name": "data/a6_FPT_financial_statements_2016_consolidated_line366.csv",
+   "sha256": "7d39e26af0b40f8d6205183e9d408faa0bd0467118f2ae0af1f634f5048d2d82"
+  },
+  {
+   "name": "data/a6_FPT_financial_statements_2022_consolidated_line1061.csv",
+   "sha256": "8f02b2925e06e5aa81d7967425b903cc1473f75a86eab87dc6f5fafa2f1a2685"
+  },
+  {
+   "name": "data/a6_FPT_financial_statements_2024_consolidated_line445.csv",
+   "sha256": "cb10d7e59c979f0583e30d32b61ec5c0486e71b47c02ba62d66eaa6698ed2519"
+  },
+  {
+   "name": "data/a6_FPT_financial_statements_2024_separate_line1056.csv",
+   "sha256": "b6db7cec25c18ba7955e6a9a62406cba23cbd7b10b9141aaa15b9d67ac138ada"
+  },
+  {
+   "name": "data/a6_FPT_financial_statements_2025_consolidated_line1280.csv",
+   "sha256": "65caab434527332d9cccce93938b628a09bcaa431a158346f1aa5ccabce00d16"
+  },
+  {
+   "name": "data/a6_FPT_financial_statements_2025_consolidated_line1472.csv",
+   "sha256": "a33018a576be97544072c056e1406105316567d97049967d156fa00a03897802"
+  },
+  {
+   "name": "data/a6_FPT_financial_statements_2025_consolidated_line284.csv",
+   "sha256": "3021398e6900537fde6c784bc47591d2febc6890faefc769dd28dcf8ce635864"
+  },
+  {
+   "name": "data/a6_FTS_financial_statements_2020_line424.csv",
+   "sha256": "b1a2d5567627d272f2e529bc4d5966bc576a5c256da720d3d97f55252ccbd34d"
+  },
+  {
+   "name": "data/a6_FTS_financial_statements_2021_line1330.csv",
+   "sha256": "fa4264f54a8138e13d988adb03af04dca91234c81cf8fc3139e90ac3fb241f9c"
+  },
+  {
+   "name": "data/a6_FTS_financial_statements_2023_line1463.csv",
+   "sha256": "9c6471aa2d45a000c20ac598517c13be72dff730abfb4bbab17f81978895328c"
+  },
+  {
+   "name": "data/a6_FTS_financial_statements_2023_line414.csv",
+   "sha256": "d131533eb99113738acc0dbaeaa266897da3998e42339a391ca130c1c68e97fe"
+  },
+  {
+   "name": "data/a6_FTS_financial_statements_2024_line1132.csv",
+   "sha256": "3fe1337e3a76c1ccf17a18b45e256d353710efd32a824d356b8e89a50ec76a20"
+  },
+  {
+   "name": "data/a6_FTS_financial_statements_2024_line261.csv",
+   "sha256": "2c890d724efc40c8ee8d77c954b54edd3d4c51223777f8db9dcf699b70ecd739"
+  },
+  {
+   "name": "data/a6_FTS_financial_statements_2024_line278.csv",
+   "sha256": "752a5b63054dc253514af080aa3b5f51331a9e41aa18461da9c8ac8398e07e4e"
+  },
+  {
+   "name": "data/a6_GAS_financial_statements_2016_consolidated_line389.csv",
+   "sha256": "23a95adeacfcdc967942ae637b9bedb1c68f4c2c7e932a56d45c827f55f41007"
+  },
+  {
+   "name": "data/a6_GAS_financial_statements_2017_consolidated_line889.csv",
+   "sha256": "407e20a17e6f5a35540e71b69e828645e143671232808cd2db26be38db99e39d"
+  },
+  {
+   "name": "data/a6_GAS_financial_statements_2017_separate_line738.csv",
+   "sha256": "d1127b62d70b71d4377199f639d969550aa64cb680efc95dd5cad4b5a08477e4"
+  },
+  {
+   "name": "data/a6_GAS_financial_statements_2020_consolidated_line208.csv",
+   "sha256": "a4c0bcfaaeb9efc89bdb83e9850ef714e633f3c81150957d02a1592345792905"
+  },
+  {
+   "name": "data/a6_GAS_financial_statements_2022_consolidated_line1737.csv",
+   "sha256": "a32ead6e3cef7175bd1565d113dd573481e220b708b81bcc7e93370ce972275b"
+  },
+  {
+   "name": "data/a6_GAS_financial_statements_2022_separate_line1130.csv",
+   "sha256": "ff6e05766fd63649c2e5663cafc035b8309a203c1476c10337f62f4aa363a1ac"
+  },
+  {
+   "name": "data/a6_GAS_financial_statements_2025_separate_line419.csv",
+   "sha256": "681746f034a14722d0e0b8403b1f99c039f7437c54f88d8a978d97354886982f"
+  },
+  {
+   "name": "data/a6_GEE_financial_statements_2020_consolidated_line867.csv",
+   "sha256": "c3cf74b8d6be3f2a513db1f2d31df99142b701bd7fe122688eb140944cd2566d"
+  },
+  {
+   "name": "data/a6_GEE_financial_statements_2023_separate_line1182.csv",
+   "sha256": "062e261eb48c51ae2134a5e543f2e45f2586ade0dcf556d17062c0b94216765f"
+  },
+  {
+   "name": "data/a6_GEE_financial_statements_2023_separate_line1224.csv",
+   "sha256": "3c014154c3e85f651e32e9287d93795f511a8fb04b6bea6415dd3a91e90783f4"
+  },
+  {
+   "name": "data/a6_GEE_financial_statements_2025_consolidated_line1357.csv",
+   "sha256": "aea17fc434ca36c92d717674bae0f30a22133706b66d3e03faea0902ee369833"
+  },
+  {
+   "name": "data/a6_GEE_financial_statements_2025_consolidated_line1606.csv",
+   "sha256": "e549d7a4b0d59396c1c694d6b86efeff5416a5072b861f8f5e50d4cc9fb8e82f"
+  },
+  {
+   "name": "data/a6_GEE_financial_statements_2025_separate_line975.csv",
+   "sha256": "d35c7962811af0f94c09df99b92cbf502f3b3563fb9cdc1d57f768ba309cdd9b"
+  },
+  {
+   "name": "data/a6_GEG_financial_statements_2018_consolidated_line1255.csv",
+   "sha256": "f986776de2f105be4418eb1b54915d75e1d5f106f4ba2d379e980c0b1d01d94e"
+  },
+  {
+   "name": "data/a6_GEG_financial_statements_2019_separate_line1101.csv",
+   "sha256": "79136c6d363aaf7364975fad147f2b2f99872dec120dc709e4f372b5e16caf0b"
+  },
+  {
+   "name": "data/a6_GEG_financial_statements_2020_consolidated_line2158.csv",
+   "sha256": "3502aaa11c99ae9722962d14959195451addd0f431e96cd7caefe63c72104318"
+  },
+  {
+   "name": "data/a6_GEG_financial_statements_2022_consolidated_line430.csv",
+   "sha256": "9ef4c7513fb5938c2e2190353819760c7cee96c233a007071325df1bb29dc5a9"
+  },
+  {
+   "name": "data/a6_GEG_financial_statements_2023_separate_line366.csv",
+   "sha256": "79744e478dc88809b9ed21de8107e0b787433a4c39f36a6e6b3a37b25c66eeb7"
+  },
+  {
+   "name": "data/a6_GEG_financial_statements_2025_consolidated_line396.csv",
+   "sha256": "e0be92b176822150181f36c2c714a2de22e02f1b79799a823801800f8c44b6b9"
+  },
+  {
+   "name": "data/a6_GEG_financial_statements_2025_consolidated_line454.csv",
+   "sha256": "62ccc7ba42002f6b7f9b8804fe36a589dfdd14451cee3f244272c07da2c09ca4"
+  },
+  {
+   "name": "data/a6_GEG_financial_statements_2025_separate_line457.csv",
+   "sha256": "0e994b5ad8a84d3116f6f885a4c8a7494fe9f9a97425d1765066643351922345"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2017_separate_line1571.csv",
+   "sha256": "7f42ef79e13d847833ad3a8166a8cb0d7465ee364bab6a5dc79f5da8bf0c83a5"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2018_separate_line369.csv",
+   "sha256": "438931eba8147ce0a5239ded7e4dc7b16c2011af256e612d6add59f0ac6af688"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2019_separate_line1517.csv",
+   "sha256": "30925f9dbad0eb3f3735d3b90dddb5afcdd5243c29819552fbb6f605acf77df9"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2020_separate_line1258.csv",
+   "sha256": "cefc742feef9ec2a1b72738a1c305d90812dfbed4110e7fdf31d24fee1ea719d"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2022_consolidated_line1906.csv",
+   "sha256": "ad63ff22330a4ab476bac51bc936341bb08be816bdc64db3576a9dc04982dbc8"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2022_consolidated_line396.csv",
+   "sha256": "8c37a4379aad72e2fbb16f7e74ff56c80f9195ba2f1ca90eb5804016acb981bc"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2023_consolidated_line586.csv",
+   "sha256": "04ac8a4db90438aae415e48938dd926aa4499228d4a37b87530535e4885a9c7a"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2024_consolidated_line2194.csv",
+   "sha256": "9b37a8676f3cae45aa0d3cb133ce581eab635965fc8d25e4ea1ded19fd46cc31"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2024_consolidated_line692.csv",
+   "sha256": "01b81f17129a210b2906f79cb6121700ce0c1784a1067a0b899909a6cade85bb"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2024_separate_line1280.csv",
+   "sha256": "bb5e9c24ac42c833fca97acde47a5c86504667d21e5232ea3c568374fb24bca2"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2025_separate_line1421.csv",
+   "sha256": "84c697a02a604ffd6e771dfd4e9ff7d10174a571098b0d46d813b382458897c0"
+  },
+  {
+   "name": "data/a6_GEX_financial_statements_2025_separate_line1807.csv",
+   "sha256": "9212c2d7592246653d65ecb56faf4f41e9408fdd3abb96b8a0bc24e6bc232a2a"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2015_consolidated_line2386.csv",
+   "sha256": "6c404c39a46556e12d650eebb933eab9576c30e665d2c78b7cf9161c05feed98"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2015_separate_line226.csv",
+   "sha256": "7fe4ec6baaf3f235d2e587998c7f7d41727bf65a1b35a7befe9b4ebc48182099"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2017_separate_line222.csv",
+   "sha256": "f77e77f439ade2b6b1e730363d190a904ee442208f983001a5a3bd45d0d02938"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2018_consolidated_line202.csv",
+   "sha256": "feb0c2aa78d01eef164148ae53a83e97ae866cc41c3d252693984808a489f301"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2019_separate_line256.csv",
+   "sha256": "3f1c6e03d9a595e467e7e6b043ad50deeb1197e85db50e89ba4e1d87850c44a5"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2019_separate_line948.csv",
+   "sha256": "84bc22ede231545582a0c07533169005ba69a49397d27420e494ef2d3b2debf9"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2020_consolidated_line1982.csv",
+   "sha256": "89709cffd92b19dfde2008c3e318bd93e3053b48ae81b2c12733908c075e0510"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2020_consolidated_line700.csv",
+   "sha256": "fc56c75a8a3cadd2f3c98721a6decfc8e9a8c5e949083d17d55ba418de823450"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2020_separate_line1626.csv",
+   "sha256": "fabb90eb61eeb3b0efae09559127a742e480892935792d20c49f1c3569c0b46d"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2022_consolidated_line1968.csv",
+   "sha256": "31ea94b04233940f5f55703515a44911cbdfadd20c432c64bc945edc2b35fa82"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2022_consolidated_line750.csv",
+   "sha256": "0f4160c1684ffd217d0364a2dabd9cd55b9b685a69578181e3402e2953232579"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2023_consolidated_line356.csv",
+   "sha256": "33d2349dc075f8cf12bfa1ac5b7c2f6d7b09abbbfe369018d8bb444e1776926d"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2024_consolidated_line349.csv",
+   "sha256": "7b779cbec2e8d802520a20270ad92da8dedf4dd0ded6d4fc2df213abc456e2d3"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2024_consolidated_line386.csv",
+   "sha256": "8937b5c0e69e7225a27f333e795c470afb535b4c4b7bbc752eae507bc157b2b7"
+  },
+  {
+   "name": "data/a6_GVR_financial_statements_2024_separate_line325.csv",
+   "sha256": "5c1353c58c16812589d4631ec0b801bbe8a31cf8c4e63ad774efb4bc95b88eb2"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2017_consolidated_line369.csv",
+   "sha256": "f266414522dbbe70a28e5920e2fab1c022ef5c4d353b63f26e2d07b5da6c52e8"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2019_consolidated_line1139.csv",
+   "sha256": "a686712bbed6e1252c927dc88f2b865473b76c9321e6ea1d2670a7b20bd81b69"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2019_consolidated_line2904.csv",
+   "sha256": "c4106d5594447833aac85b0c4e21fd98b91ddfb8009b7e1276cf8dfd574572c6"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2020_consolidated_line411.csv",
+   "sha256": "2eacf2dae02125875991e3aa193662e219e4ca5ece50c15b0a826a4c00645296"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2020_separate_line1655.csv",
+   "sha256": "39fcd66702406eae0761fcf6c2a5146b3027e85b3cc23b78baae9b56ade16ee5"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2021_consolidated_line1421.csv",
+   "sha256": "cf8024221370b195df5ce988c1f318a4ee75d977f5e9698bec778c5f179a8175"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2022_separate_line365.csv",
+   "sha256": "bb483f25a3535f876cb1f82e2db918c77e8a50db26869d6338e95f5e3b900339"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2023_consolidated_line1622.csv",
+   "sha256": "66b3db1c6acaaa29e24a6a47450833cbd098cca4ab859b9720944a716e5c7352"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2023_consolidated_line2446.csv",
+   "sha256": "24150adec4e8204a80e921716f080fbaef1e82d2cd1dc3d3f56261ef485b5828"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2023_consolidated_line334.csv",
+   "sha256": "3bb626cb741554e8ed140f3c0bc334d9adc1c5e88c83eaf7dd9a026d3e2d9b13"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2024_consolidated_line1149.csv",
+   "sha256": "936b6a480e71ee5f0ffedb0f0f8487122c467603d7f0a307fe54f10b91f376ef"
+  },
+  {
+   "name": "data/a6_HAG_financial_statements_2025_separate_line303.csv",
+   "sha256": "d56e81ba204f37e3c837c1a8d0f7f896d143fb552dd0cfbd50ebf5448664bd07"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2015_consolidated_line1339.csv",
+   "sha256": "81f29bdd3da3e476760f72e5f308f56e76582f3f98e5f58508e0a0d26914813a"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2016_consolidated_line1683.csv",
+   "sha256": "3d1b7a58a5f8ea3ade29941af59f0d3122b465352f48557681c5f843b97d6eb7"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2016_consolidated_line231.csv",
+   "sha256": "5427e09114c179b1383a78d49c55d1fc8340d031552eedc20189232a31ba287b"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2016_separate_line1309.csv",
+   "sha256": "99594f69eb7f40852557a3df211955fd23ccb11cb412b2f72d8f1b07e71d0d0e"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2018_consolidated_line204.csv",
+   "sha256": "b11959d12d23f01400bc3abb8ad666f157eeabb4569f17153dac53f83fdac5df"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2020_separate_line762.csv",
+   "sha256": "8edd1e7a828dc2a4455e1bdcc5f297c32e7c8b2ea218d1c69b256ef126bd8ed4"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2020_separate_line918.csv",
+   "sha256": "81075c8a6a0d28c8423300054c3b882b4551b21873d0064448ebdda531441673"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2021_separate_line231.csv",
+   "sha256": "7d518982689afeff4351b67032ae59b170bf38f9dd197e833092bfd37694119a"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2022_consolidated_line417.csv",
+   "sha256": "93c9a309ae4a4a3b2b29df0b59de5914d09ea647fca1ec89958278d75c64debd"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2025_consolidated_line344.csv",
+   "sha256": "b46406bcecb1c0095f3a8870fcdad6614679e39e466b2a79ddf254f11c19dfc9"
+  },
+  {
+   "name": "data/a6_HBC_financial_statements_2025_separate_line1065.csv",
+   "sha256": "b96b64e15d5e1838518a7c8661a4cc367f17b4dafe76b257d690cc19b4e6fe63"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2018_consolidated_line211.csv",
+   "sha256": "ad2d83204244600f84e06cf43834b37ffe1da22c44e76bed540014032540bf04"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2018_separate_line1637.csv",
+   "sha256": "749f7034cccc548d098219033710c59d79a8f4a39aa36bb3a0c00aef9b66b353"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2021_separate_line1455.csv",
+   "sha256": "370b29c7acccc4e1e640febd98a4f108469981b60b26b721114268f74ff7e414"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2022_consolidated_line1296.csv",
+   "sha256": "e79210a291f7369457d718fe5412ed3be2ed468b36822dfa77f985818755e2dd"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2022_consolidated_line1421.csv",
+   "sha256": "2e78e991b9615c8a62edaae11230002563aff7dfeb396f0b5cd56a8e910e4ef4"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2022_consolidated_line1619.csv",
+   "sha256": "b3294e8eb458997b2b27b2e321fcd8d293d97bad97500e2cd96f068304b0b3c8"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2022_consolidated_line2328.csv",
+   "sha256": "01f23c9069e2523543f6e03f0ba67c5db74458535007c8fc8e23a081deaa7d9a"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2024_consolidated_line2059.csv",
+   "sha256": "1a5136cd95ebe48f7c2bd7806c1f5b211f21e146dffcb79164daec3a93502e0a"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2024_consolidated_line2270.csv",
+   "sha256": "5bc2caa2e8855347bcb8ee4f7a85823d74e623bc133225dbfabaf22b0f993144"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2025_consolidated_line1882.csv",
+   "sha256": "c88eae9a537f1d87bc9babed3fb36cb65a73f82f817bba08bac7194a4ea7e1f3"
+  },
+  {
+   "name": "data/a6_HDB_financial_statements_2025_consolidated_line2174.csv",
+   "sha256": "0943a87e44756c6d697945b4e4b70bb75af908f91403853417b690ca2ed373c8"
+  },
+  {
+   "name": "data/a6_HDG_financial_statements_2015_consolidated_line1538.csv",
+   "sha256": "d789198420fb3e51414bfe9aa7c54f07b88f9a5735bea6ef204166d88841978e"
+  },
+  {
+   "name": "data/a6_HDG_financial_statements_2015_consolidated_line188.csv",
+   "sha256": "24313b8a5a13558e7f7ac7e77dcb454394d2f3f07f1a903d66af3aafebed0b9a"
+  },
+  {
+   "name": "data/a6_HDG_financial_statements_2016_separate_line163.csv",
+   "sha256": "9732c3510f5964ca71d04a96e44ab9710df3d2dd71e08926ed15202dab733964"
+  },
+  {
+   "name": "data/a6_HDG_financial_statements_2019_consolidated_line247.csv",
+   "sha256": "1235251a0ac7c14149ce05cea86b2a63d336ab0f4568d3c692d412b6142e0418"
+  },
+  {
+   "name": "data/a6_HDG_financial_statements_2019_separate_line1087.csv",
+   "sha256": "4dfd5168e93d3f5bbbd017863bd7cf0100fa1b66b68793dd12424752a15b8468"
+  },
+  {
+   "name": "data/a6_HDG_financial_statements_2025_consolidated_line1652.csv",
+   "sha256": "cacfff7f25443d57bed3b276b8ce2126d2692bef62f15b900517812db4cc8b4c"
+  },
+  {
+   "name": "data/a6_HDG_financial_statements_2025_separate_line1469.csv",
+   "sha256": "363728ad66cdef5518e1fe3625ce2e34ae3d0a2cbef0b8ba543e7a434a1f984b"
+  },
+  {
+   "name": "data/a6_HDG_financial_statements_2025_separate_line268.csv",
+   "sha256": "93baba28d24a4a5ab1b35bdd1279b4ee59fb76b6b22ed0fde23dfa5a93a44f74"
+  },
+  {
+   "name": "data/a6_HHS_financial_statements_2016_consolidated_line687.csv",
+   "sha256": "1d2cfaf64dc5fce7015db2f20e12643ec5616eff2671cf7bbbca61e0736ad6a4"
+  },
+  {
+   "name": "data/a6_HHS_financial_statements_2019_separate_line1055.csv",
+   "sha256": "3063a931fcc43d9189461a1e852379b6f3c6baeb3c8c9b9680010b15fef95a52"
+  },
+  {
+   "name": "data/a6_HHS_financial_statements_2020_consolidated_line1229.csv",
+   "sha256": "58e50694d0f75f6ecb7b06409703e5b71596d98aff91e8454f198c97b636a57d"
+  },
+  {
+   "name": "data/a6_HHS_financial_statements_2021_consolidated_line893.csv",
+   "sha256": "5b320727c9f52f58f997be61c301c7b6a99a9d777f8292d1d47af8c53d0674fa"
+  },
+  {
+   "name": "data/a6_HHS_financial_statements_2021_separate_line200.csv",
+   "sha256": "3c7117b1ace1871a460e811ea944d481258b6c5d43ea9e62cb763104a12eeadc"
+  },
+  {
+   "name": "data/a6_HHS_financial_statements_2024_separate_line1276.csv",
+   "sha256": "6d02af6972a0fb4d126cc76351368a9fc0cd32b974a7ee7a9ac864a6c49a5006"
+  },
+  {
+   "name": "data/a6_HHS_financial_statements_2025_consolidated_line224.csv",
+   "sha256": "64b90c67c0490adbfd310e434fa2b7424ff2de3613c519b89848c95740465df9"
+  },
+  {
+   "name": "data/a6_HHV_financial_statements_2022_consolidated_line3011.csv",
+   "sha256": "53d4cca784d913862f61f4b44ae4e587f56c29517a8aa2fc5bce40c368513441"
+  },
+  {
+   "name": "data/a6_HHV_financial_statements_2022_consolidated_line329.csv",
+   "sha256": "daaa50eef90fe4b273f5af6d0849e43d4a3bb17400e468b7a5b27c29ad8dbc87"
+  },
+  {
+   "name": "data/a6_HHV_financial_statements_2023_separate_line473.csv",
+   "sha256": "d43870f316aace5031a9f0a5a56895c04df172d00ce75713e35f7fa6a5ac57db"
+  },
+  {
+   "name": "data/a6_HHV_financial_statements_2023_separate_line658.csv",
+   "sha256": "5baa1a6775185d46fb36f0f9ad3d12c92438c16e5f37556da4be96b3f895b575"
+  },
+  {
+   "name": "data/a6_HHV_financial_statements_2024_consolidated_line2270.csv",
+   "sha256": "2bd68240c8732cc0676f130d4b8621da0fa58c381656bb60a8933c7086774dad"
+  },
+  {
+   "name": "data/a6_HHV_financial_statements_2024_separate_line379.csv",
+   "sha256": "63c85f40fc94c0c7ecc5dd9b469133259066dced1990a041ae16436b3d903606"
+  },
+  {
+   "name": "data/a6_HHV_financial_statements_2025_consolidated_line2632.csv",
+   "sha256": "4db2651e4a31da68099e2d37cacbdc2438f938665a8bb4175052607ea0398264"
+  },
+  {
+   "name": "data/a6_HHV_financial_statements_2025_consolidated_line2773.csv",
+   "sha256": "551fefdebef72aa5c9052dc515ce9f07d7813560dee2cf94e5ec8cd063992d31"
+  },
+  {
+   "name": "data/a6_HHV_financial_statements_2025_separate_line1925.csv",
+   "sha256": "887c61893dff62f7a4c8656edcbbf25c2fadf8f4b7e2948ccf77d5d329aa36fa"
+  },
+  {
+   "name": "data/a6_HND_financial_statements_2020_line849.csv",
+   "sha256": "40a1991b006f8a8706a91c702b7a5f93a1896714d828814dcbbf11676b632050"
+  },
+  {
+   "name": "data/a6_HND_financial_statements_2021_line205.csv",
+   "sha256": "447068948148e0172ee34c41461540dfb8e7be6e113a8a63d06396d5c584c4d8"
+  },
+  {
+   "name": "data/a6_HND_financial_statements_2022_line225.csv",
+   "sha256": "637942f580556f1e325e89207e34b8f06b717a7af1d244b060703a107b636be6"
+  },
+  {
+   "name": "data/a6_HND_financial_statements_2023_line988.csv",
+   "sha256": "414ea0ac59262e03c998a9e9a2959fd868ab5c6333c7e667f845520116e3e7ea"
+  },
+  {
+   "name": "data/a6_HND_financial_statements_2025_line718.csv",
+   "sha256": "f090a97b213b0096bb715407a13204e12fd5e7e38d0496baa5d17232347a8d06"
+  },
+  {
+   "name": "data/a6_HNG_financial_statements_2015_consolidated_line342.csv",
+   "sha256": "1d61174cf1fffa9d49ccec16ee57e5684d221fef500e93c9144f54b09e1707ec"
+  },
+  {
+   "name": "data/a6_HNG_financial_statements_2017_separate_line995.csv",
+   "sha256": "572a2a4db721a558de72cc0df22e1b40487564f52d6c0a86b625b7687016dee8"
+  },
+  {
+   "name": "data/a6_HNG_financial_statements_2019_consolidated_line1133.csv",
+   "sha256": "dfd1d1d57db9b2ca88778d678b2cddac3f03b2fe9be3cd0fcb787c8bc27ebe7e"
+  },
+  {
+   "name": "data/a6_HNG_financial_statements_2021_consolidated_line927.csv",
+   "sha256": "53c45c19f6f4aae54772d05c4b709044f66bc09942cd2952f4464f869f208781"
+  },
+  {
+   "name": "data/a6_HNG_financial_statements_2021_consolidated_line954.csv",
+   "sha256": "a233350994fdc25fe917e4d28e609d4052e6acb530f85800e5aa7415223cf890"
+  },
+  {
+   "name": "data/a6_HNG_financial_statements_2022_consolidated_line1460.csv",
+   "sha256": "d3970e025b0c30dfaa44468ab35ad732c1a0e0ffa188965e1632b69354ad40c1"
+  },
+  {
+   "name": "data/a6_HNG_financial_statements_2022_separate_line860.csv",
+   "sha256": "68ea34418e3f21defea54662b24d873bbcb93729f4136eec6c19acfe6b128bda"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2018_consolidated_line1660.csv",
+   "sha256": "4bc90259ad331a01c9fbff0797269724f10a96cd72987742753f679e1b8e21f0"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2019_consolidated_line1876.csv",
+   "sha256": "b10ea0a3881a58f6daa0428673fb6c29f95c3308c977a1d03ebc396f050fd3aa"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2021_consolidated_line169.csv",
+   "sha256": "2bec77d9ae1b226a05d2e37ecfa60fa7911d0d4f2e2361bffbed652c8adcd0a3"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2023_consolidated_line1000.csv",
+   "sha256": "22992de6d6a6cb63b5a64b78d72bf102fed805f0dcee09773892e1dca6d4c11c"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2023_consolidated_line1604.csv",
+   "sha256": "0396bb7eb837293755ce9dcd07495f0f12d83096df46301a4ca97519653d85ff"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2023_consolidated_line193.csv",
+   "sha256": "cb224c6a772af97957dd7a44fe375eedc954723481fa4c4e5c494cc2c32b3e15"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2023_consolidated_line482.csv",
+   "sha256": "0c0b4351b3abb418c1f90a794e1be22cc566d7f53b9917179b57b64f1d270dff"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2024_consolidated_line1518.csv",
+   "sha256": "82ed905eca5cafd239c9583f99a0f00b8b6c8d792af620478b52d56ccb39aef8"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2024_consolidated_line280.csv",
+   "sha256": "266bdbd31b99ee5e35e1bd2009a033adb587412b3d9a8dc19c06dec793e9567d"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2024_separate_line760.csv",
+   "sha256": "4d90e8c67727c9aa8462c082e05bd9c048e1bce5b251c777cc11b27603424ac7"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2024_separate_line927.csv",
+   "sha256": "45b303779d1a22d2f3765aef2b8d5d08264553ac8a509c2aa073468fc7e155d3"
+  },
+  {
+   "name": "data/a6_HPG_financial_statements_2025_consolidated_line351.csv",
+   "sha256": "e71dc4a8c5291d8715e6b6d95ea1d4e92c22e6dafa0388c8bf138c4777e7942b"
+  },
+  {
+   "name": "data/a6_HPX_financial_statements_2023_consolidated_line1024.csv",
+   "sha256": "52d7d9240fe9a8c7bea17619dd990842630a1c2085bb92930204cc4f3aad9124"
+  },
+  {
+   "name": "data/a6_HPX_financial_statements_2024_consolidated_line1899.csv",
+   "sha256": "fc75fee70585329c64c416737ce241b7a50b4f6e584b30bd3b01cbeb651055d8"
+  },
+  {
+   "name": "data/a6_HPX_financial_statements_2025_consolidated_line1330.csv",
+   "sha256": "689c3f2c781dfe11425eb974e214c95ea4e9f9426abf29fc48f3840b7e05970c"
+  },
+  {
+   "name": "data/a6_HPX_financial_statements_2025_consolidated_line381.csv",
+   "sha256": "fecd48e2402f5458caaf6a0ce751f7934e7a17f8a299939db2f2b7b04262b390"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2017_separate_line805.csv",
+   "sha256": "6bd051b5b99158964f7adfc1da93ee2b9a80320ee8e5f084f236a756f6c35146"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2018_separate_line181.csv",
+   "sha256": "b804ce249838e74b8f2b500f8bf04a8c082a2e071fa06de3724c18b5db49fd36"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2018_separate_line261.csv",
+   "sha256": "d57ce1727ab35f9334d046e1b770e34d25e4bd6bf7e3b79e0fbf4884c716523c"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2020_consolidated_line156.csv",
+   "sha256": "fb3fa3937a42280990f6e2cb977fae6b9c81643c7103101cd95025523de46731"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2021_consolidated_line755.csv",
+   "sha256": "d201df95f628512003176718f3f12033153d4981ed77899caf22f110c593d721"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2022_consolidated_line182.csv",
+   "sha256": "77911c8e3d172e2a747089821462f016a2d673d1f7aa7c7b2b8e119f5b1e85bb"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2023_consolidated_line155.csv",
+   "sha256": "39adc9f56e07d84a72beb3f1fb4a78fe095247ed3312073490960d4f609e7e69"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2024_consolidated_line200.csv",
+   "sha256": "02b8e27e811a1564810089ff0cb2066a9e559efb5361eb6ead28e5897134a0b5"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2024_separate_line213.csv",
+   "sha256": "8a08966beb5bf6f62c129ef55b490087b29870e23176fd624784afceac6457dc"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2025_consolidated_line1011.csv",
+   "sha256": "03d744f85580a25d0a8e8c45caea3b723c3412741eaf45ae0359d71beddb506d"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2025_consolidated_line157.csv",
+   "sha256": "b4efb2ec922a9450ab3add1d67f3cf41941cd4e96722010c4cf75373c646be13"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2025_consolidated_line808.csv",
+   "sha256": "7140336aea8ae0602d8b6a7384be05c6105dfd7d896003eea3acca3d0b2ad4ac"
+  },
+  {
+   "name": "data/a6_HSG_financial_statements_2025_separate_line1265.csv",
+   "sha256": "d5681c5e9291172f2f387e5e17adbc85fae71e5929a68244a51e70e4e937e947"
+  },
+  {
+   "name": "data/a6_HT1_financial_statements_2018_separate_line959.csv",
+   "sha256": "979cdda9a41aa7050fe8796b36cdd30ff73259e596f334f7ed056660e4c31767"
+  },
+  {
+   "name": "data/a6_HT1_financial_statements_2020_consolidated_line257.csv",
+   "sha256": "164878e832ce458ae7d662de6a2d5c7a7b17c5e0da736551f0d9fb7436f695e7"
+  },
+  {
+   "name": "data/a6_HUT_financial_statements_2024_consolidated_line1243.csv",
+   "sha256": "55742470bf5b81899ff250a22db2cefe83e3c9e06b42351bfa56d378edf3ddc6"
+  },
+  {
+   "name": "data/a6_HUT_financial_statements_2024_consolidated_line325.csv",
+   "sha256": "5864415a55f10e1e801cc53d92ab162bae0e9ba4406103d71b4d932657d691e2"
+  },
+  {
+   "name": "data/a6_HUT_financial_statements_2024_consolidated_line376.csv",
+   "sha256": "3d71f5add821144050ec9900a26ad5ae48a115afe1d14fd56090f44c7071d96d"
+  },
+  {
+   "name": "data/a6_HUT_financial_statements_2025_separate_line400.csv",
+   "sha256": "fe99959728eba78233605d3b07dc6481fe9c615f853db07403eb3dab885ba68f"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2015_consolidated_line1687.csv",
+   "sha256": "737224ebef8b1181b91c25cf04c770a1d7a36b8037057e1b085f4d985f5d9e7c"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2016_consolidated_line274.csv",
+   "sha256": "a38744c4a93bdddac50cdba68739f71fb42a732668153392646d198b6281c65f"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2016_separate_line1303.csv",
+   "sha256": "577edfe2a4d696e80227801e8b7a90ab33d299c803d9cdf6675f0bccef32f20c"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2018_separate_line392.csv",
+   "sha256": "920ae9351d472be97ce1a0bfa60af64b246f3579c0c5777e9e52e229dc4aa408"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2021_separate_line1190.csv",
+   "sha256": "c06b5681905b9d7c2b92bbcd32b083a13f83623841171a41b89d004447786611"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2021_separate_line1536.csv",
+   "sha256": "c82ca9f6275425b67f5cad7fb1edb516689675a00368e5815cbc13181db6ea41"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2022_separate_line1475.csv",
+   "sha256": "9e5cc1bbd2d94f9472b1897b7d2d2e628ef7dbb932f324dbebdf620fa8f42672"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2022_separate_line1830.csv",
+   "sha256": "9cbd3f8cbafaeb99eac63b40d8a8de7cebbd2a84be4296ca7d044e48aeeb33dc"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2024_consolidated_line2190.csv",
+   "sha256": "b7f0835b9dc23af950638e541a1dec096914c2d5b1fb1d456cf2052ee7b9604e"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2024_consolidated_line445.csv",
+   "sha256": "20bd88d93aa6887e271b33efc472a92cc13d85b2d87d91da5275afa4be03af9e"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2024_separate_line1463.csv",
+   "sha256": "a6378c2b90adc5fe24f08c16ffa029a6f333e5b928205eb86580ab79ae6f2a0c"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2024_separate_line429.csv",
+   "sha256": "8b3b6285422dc65ec974048d62691bb6262795300fd3089e2568369ede40ebf5"
+  },
+  {
+   "name": "data/a6_IJC_financial_statements_2025_separate_line550.csv",
+   "sha256": "ec335eff1f9d98831495445104fa2b5f0ba4eccee55bb088d3e1255a034bdae1"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2016_separate_line1281.csv",
+   "sha256": "78ebeaf461403b7075a982994c7f74eea9aba7f581dbde632d22bae904f4accc"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2019_consolidated_line1110.csv",
+   "sha256": "581139490f9b73f02580147538b89a043a72f265679faae30f23c63b840f77ad"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2019_separate_line1147.csv",
+   "sha256": "5c17b3ea61244a709c6f7f331e25bf2467fd9d042c452f3d945f9407bc36c4bd"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2020_consolidated_line296.csv",
+   "sha256": "99816e3fe0303b9b866cfe9a8a072c2feab6b9a70a9cc4d67bf6165375527528"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2021_consolidated_line1194.csv",
+   "sha256": "7729136d0f1352c34745284183e5e1964fd8c52adcedce81d4703e825a82ced8"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2021_consolidated_line328.csv",
+   "sha256": "e29debb6ec71b8272497dff281f95b372f3a8ceb82c182e1bc7f7a0dc0be9cd5"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2022_consolidated_line1643.csv",
+   "sha256": "62a10f592838273ac3ef63ddd4d345ae241ad33da770cdbb6bc769b2ee4496f8"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2022_separate_line1158.csv",
+   "sha256": "aee406c22f7fa9494a2c425a59cb7847470d92ced942396539eb2940cfe2a874"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2022_separate_line339.csv",
+   "sha256": "002bbc06a61ceb347c87954bdd755527061abe51023e8558cc66bb5f0839ef60"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2023_consolidated_line355.csv",
+   "sha256": "fcf86df01ee273629a93b09a15763f472fd9305e9c9e8804d42a1f76856fa54e"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2025_consolidated_line321.csv",
+   "sha256": "00f7d2e858f4c27b1b0b2273a35c40303d22f004c0804a483b906ae55070905f"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2025_consolidated_line346.csv",
+   "sha256": "3640806a36d0f43e59517b0eeda6b93dcd6c1103d2ba4e53320e0e159c07cf78"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2025_consolidated_line385.csv",
+   "sha256": "c389ca15131173b49436a36c109fa78aa637bd31e4ad5da88a99101aa3177587"
+  },
+  {
+   "name": "data/a6_KBC_financial_statements_2025_consolidated_line979.csv",
+   "sha256": "3e128ddf72ed203b8def080788a45bb11892aba13d1b09cb7101c1fcb2e4b93f"
+  },
+  {
+   "name": "data/a6_KHG_financial_statements_2023_separate_line801.csv",
+   "sha256": "249e8a612ae5fe80e02a667f574da58abe720798b81c709c4a4438706a1f4521"
+  },
+  {
+   "name": "data/a6_KHG_financial_statements_2024_separate_line611.csv",
+   "sha256": "3f5b049deba15a18254d6060f8072975c46ce380840f2e2d5edf06684b0ba9cf"
+  },
+  {
+   "name": "data/a6_KHG_financial_statements_2025_consolidated_line1012.csv",
+   "sha256": "c0d1c0e1e01e7cd06ff5ef8108afea4c6f7bc61a80ac7db9701bdd7b84972b80"
+  },
+  {
+   "name": "data/a6_KLB_financial_statements_2017_consolidated_line1460.csv",
+   "sha256": "578fbbe75dc3e999bbb48c87221379726dee4f665faff564f0e05f2f683d1461"
+  },
+  {
+   "name": "data/a6_KLB_financial_statements_2019_consolidated_line374.csv",
+   "sha256": "b682633f6fe6cf7412eef95b94e4271c1d7d8ea4b173fb0caf61706a287e34a3"
+  },
+  {
+   "name": "data/a6_KLB_financial_statements_2020_separate_line1399.csv",
+   "sha256": "bee8be3f8bd480076b0e8138d745f720d1d98c87a14ab51e8b63d92dd702e732"
+  },
+  {
+   "name": "data/a6_KLB_financial_statements_2022_consolidated_line1925.csv",
+   "sha256": "04bcde5737fab524f8ac5d1087c310d0df4a634bbddf1425abf6997e40debc21"
+  },
+  {
+   "name": "data/a6_KLB_financial_statements_2022_separate_line1081.csv",
+   "sha256": "e91e1d3b4353b3add29cffd23e86247e29107167dff0a4ec43f40c510bd1a5e5"
+  },
+  {
+   "name": "data/a6_KLB_financial_statements_2024_separate_line1398.csv",
+   "sha256": "9a8b1bb97528e741b6358bd046feca2a852b9c46f6e5c6b0545f870d6f407d62"
+  },
+  {
+   "name": "data/a6_KLB_financial_statements_2025_separate_line1571.csv",
+   "sha256": "f834d1258541673c8b4afc920c2e39bc9eb35cc78b6d00f935665e24dd6cc79d"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2015_consolidated_line1781.csv",
+   "sha256": "194b77a4642ea0c61be157f53defe9af8d53af16479c746fbb52725f6ba1d510"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2015_separate_line905.csv",
+   "sha256": "3a6b20ea42f68037e4787c82ce0ef5b2061d0724ee65b0509fe9cade89744198"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2016_consolidated_line1508.csv",
+   "sha256": "9464d949039df56e23d8149168479530ee18d85eba239a5262a79b581ddfa87c"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2018_consolidated_line1803.csv",
+   "sha256": "c06c0cc4c0adfaefa10f985d71a5c734608cef4f2de8971ab0e51abe7694c3e2"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2020_consolidated_line358.csv",
+   "sha256": "b73128b8fbfcca1215e8c48e9686a08f44551f90b6498628838b3cd31ce690c4"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2020_separate_line1860.csv",
+   "sha256": "c49d2dac9430016ccd75dcf6badbf01415d7e9235829146db67081aac2e37534"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2021_consolidated_line402.csv",
+   "sha256": "e44a255b5d38fd173149a3fb67143b5e9dec05eb33fda0c6a93dcd448f53933e"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2021_separate_line1529.csv",
+   "sha256": "b983ec2c30426eec9974ca88f3c4d7555aec695841bffcc6f69d54bc58813925"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2021_separate_line1887.csv",
+   "sha256": "0cf8799af3a45ba3f9e3f2ef7ec0c02613f8fac90232f0965fc439f2d9739d7c"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2022_consolidated_line410.csv",
+   "sha256": "aaa397e53350bbf95e7bb812e9644e49d05176c518aa2fb625785125539bf97f"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2022_separate_2_line428.csv",
+   "sha256": "0a45470b3f6edf5c05a600e4e0831f125ec8594cfa64b156f9f86c51d6999a80"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2023_consolidated_line1617.csv",
+   "sha256": "bb3f5f0a78003f398c6dc362065ffd8b7a9cae9f5200ae97142ff4ab2a927d8e"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2023_separate_line1299.csv",
+   "sha256": "40da310ef9303c47d63f6b6c39dd8727bda589adbfe53544d74b50cd61850497"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2023_separate_line1591.csv",
+   "sha256": "3714243d3a2a03fe4b01d177e2761e5ba5e4a41cbb8118fc9066838293919a44"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2023_separate_line1778.csv",
+   "sha256": "4158206c3148586992f2ae9404ff76d12ce4a91cdaa0f43d533073074781d7fd"
+  },
+  {
+   "name": "data/a6_MBB_financial_statements_2025_consolidated_line2036.csv",
+   "sha256": "32663a80b101cede6560fe2db0397262ab081d2578ceac9a9a5e7a428a02cd95"
+  },
+  {
+   "name": "data/a6_MBS_financial_statements_2022_line213.csv",
+   "sha256": "2c2ea35d5aca94779144ada9fb84d2c9c3de6db9796e0edff371acb2ab712d56"
+  },
+  {
+   "name": "data/a6_MCH_financial_statements_2018_consolidated_line127.csv",
+   "sha256": "2f26d4052f58a3482d1836953e222aa8669df2a97858ba306c19e46746014e15"
+  },
+  {
+   "name": "data/a6_MCH_financial_statements_2020_consolidated_line179.csv",
+   "sha256": "5738fb27829d92ea8dba8581f583ff72a0faf691a511d7e48c2d7f52379c62ab"
+  },
+  {
+   "name": "data/a6_MCH_financial_statements_2020_separate_line1112.csv",
+   "sha256": "22f94b3110d39fecf94574a4054b29cb3033e8d4500bdb12951e2569816f4a9e"
+  },
+  {
+   "name": "data/a6_MCH_financial_statements_2022_consolidated_line1092.csv",
+   "sha256": "d71a058beb5cb7d5c8b93a9663fab8b53f534e78ac87c02160722327d2a89c46"
+  },
+  {
+   "name": "data/a6_MCH_financial_statements_2023_consolidated_line1325.csv",
+   "sha256": "a7018ca8ae23003a5dadbc2bc151a6b6397626276245fcb912d1a4cc25a97f38"
+  },
+  {
+   "name": "data/a6_MCH_financial_statements_2025_consolidated_line1032.csv",
+   "sha256": "520f9b99e56efc1fe9c9534cff21f952579fec91dee8b8c5be8b1e14f942dd45"
+  },
+  {
+   "name": "data/a6_MCH_financial_statements_2025_consolidated_line431.csv",
+   "sha256": "d4b1a3a975a36fb12c54fab0b6d734e2002e51cad3fd373322c22de6a6094999"
+  },
+  {
+   "name": "data/a6_MCH_financial_statements_2025_separate_line184.csv",
+   "sha256": "e5ca1a4df1d0e7b6c36f85f977c10fb7a324f85e0208314c7018e76882f3a5c7"
+  },
+  {
+   "name": "data/a6_MML_financial_statements_2017_separate_line226.csv",
+   "sha256": "82b5c015cb82b62f2e078dec865698b03902e5491bf7bccc87ae02e570ecba57"
+  },
+  {
+   "name": "data/a6_MML_financial_statements_2021_separate_line165.csv",
+   "sha256": "edb5abd64c0f8f3ba3efff0504b1778184566c56fcbb550dadb01d4cbb0fc47c"
+  },
+  {
+   "name": "data/a6_MML_financial_statements_2023_consolidated_line1151.csv",
+   "sha256": "41872295604b55741d8d15e56bb358336dab3d16aedf419ca8499b23db184241"
+  },
+  {
+   "name": "data/a6_MML_financial_statements_2023_consolidated_line268.csv",
+   "sha256": "e27a74d2278cc2ce3d1c307a284eed23ffe3107f442b982d1a3f848c80e49ae8"
+  },
+  {
+   "name": "data/a6_MML_financial_statements_2025_consolidated_line395.csv",
+   "sha256": "be929c9ce5b5c16122764e8070cb021d073482081c515383f2c9856c0ff2a532"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2018_consolidated_line1291.csv",
+   "sha256": "4e0bd0b3fe93fb5101477bc617621bbc727351270759b3a672100d8fe684e9eb"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2019_consolidated_line860.csv",
+   "sha256": "e986147aea49610aeea52d979e57fbb5aa00a801e7cc340c04eabee04a20b625"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2021_consolidated_line1243.csv",
+   "sha256": "3a668ec721bf688fd807d7574b40d591e4f0c6bf37552d6f8ffc95069d1cb608"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2021_consolidated_line907.csv",
+   "sha256": "42c1e3afb4d686b9d40550f32c5a82aef98cc26a71b5c117eef51d4f0ec9a3f9"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2021_separate_line202.csv",
+   "sha256": "34733974a731ba4e6922c12dcc1b7db0156d4ba1ebd767e8f307e26d215ddb4e"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2023_consolidated_line1550.csv",
+   "sha256": "2285bdbadf7476edc1bd01ee09ea44c1ceb6c90505c8afa47ca9c5e6ec4c603d"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2023_separate_line1147.csv",
+   "sha256": "62ed4e95d8e1e44c01af3fc35dd63329c26a8e97429208e37d09986ab90d8d90"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2024_consolidated_line1449.csv",
+   "sha256": "bd7dcfa329badae09399a3c5d0ecb48d1ebca189834fbf2f8fc890bd80ed8b22"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2024_consolidated_line344.csv",
+   "sha256": "81785855443961ca26f523a388539d7d8f3901f8682fc93659491440b1040e82"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2024_consolidated_line391.csv",
+   "sha256": "d7a970754c3a3f7adf8bd57c561f2155eee65722cf371da2e27a5db510d93109"
+  },
+  {
+   "name": "data/a6_MPC_financial_statements_2024_consolidated_line952.csv",
+   "sha256": "f591c4ffc6fa78241ecd186afa2aa7aeeb04720a32e46c8736e501ba32de468e"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2017_separate_line1246.csv",
+   "sha256": "dab88f50df6d3d60618c207345255acf519cabe6e9aed4fb6421a1a2370ef8c2"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2018_consolidated_line1560.csv",
+   "sha256": "aa77fdf71a6fa8c85b03cec704255d0a120e84d54012d2a29df50f3467baef6a"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2019_consolidated_line1416.csv",
+   "sha256": "4a39210f3d3e4a631ea320b2c086cf45290581992c1d8dd02fc387c63b9e2632"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2019_consolidated_line1477.csv",
+   "sha256": "93d040f501f7853efe88617d8f380d3ca360ea388bf12fb9f2f3bf4273a90860"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2022_consolidated_line1917.csv",
+   "sha256": "8d0fb167987d57aaee23a0237eb00aa36948795b004cebfb8fa643efec0ffe93"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2022_separate_line2091.csv",
+   "sha256": "54ad6cce0735640ae5fa06a419d54f527365eec6e353d6880b961ab944403622"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2023_consolidated_line315.csv",
+   "sha256": "beb68f756351128e8255008c14ebc19ee987264111b7949b0c103d7cc25aa938"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2024_consolidated_line1100.csv",
+   "sha256": "59675bb8ee3f5c7d944c0f327a800f40d78b7a0f8de623bd4e4c5608af7bd04b"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2024_separate_line1682.csv",
+   "sha256": "62f8be566f967e0bf4469c121162fdbc150a21c33320a6bf8c8ae65f75a05108"
+  },
+  {
+   "name": "data/a6_MSB_financial_statements_2025_consolidated_line1657.csv",
+   "sha256": "9a0d2c30d04b510c9aa1ce09896f047a684ef1b421b1f6ea7018ba79efe56f9f"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2016_consolidated_line1017.csv",
+   "sha256": "e97c38103068516deaf693874fb225a255936b928304fba0be4deecf65471a2a"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2017_separate_line531.csv",
+   "sha256": "751083f5442c862995245c0bda060b8a9de5944a37df2528bff0b34f2a458e3a"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2019_consolidated_line204.csv",
+   "sha256": "3317dd7e8d1c9057dba218fb2390e84fc354d73026ffcb7074e065e01d3755a1"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2021_consolidated_line1746.csv",
+   "sha256": "6ad2459036a66b19e6c0a5c40a933bba1a6ee0e390a72c4b71fcf377907a53ef"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2021_separate_line1027.csv",
+   "sha256": "b8259216fd9ce85566c20c73a30ac62b47ac7d75997b1c3567bb30eac3a71d42"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2022_consolidated_line2034.csv",
+   "sha256": "51b79416f89af5fa420498916f3408e738a82edbdbb6dc5b95e1404c189ab92f"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2022_consolidated_line529.csv",
+   "sha256": "d349524f6cb8ceaa9e87dbb645825b51beca45670579503831a4404673647f83"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2024_consolidated_line194.csv",
+   "sha256": "1ecd564a0e9d03fbbc4026488914f07c89ad8e3ad2d8b78cd602bb3010d9e269"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2024_consolidated_line2162.csv",
+   "sha256": "91cda8ee07d7c6e04b9ecc437cc96f1a10e3504d239fa7e2d8573ff55c3be877"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2024_consolidated_line226.csv",
+   "sha256": "491724dd8a553c422132f68f1fd1ffd02891f891b5b4192b44fba7c32376c039"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2024_consolidated_line323.csv",
+   "sha256": "1995b2e4284a6fffc11ffc7e44e950838edaba017d2ce83f385478f13952cb1d"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2025_consolidated_line2162.csv",
+   "sha256": "e69c76ee9fb5d11dff717ebfa3cad883ec1d7115c3c52c855ea6b6da124749d6"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2025_consolidated_line305.csv",
+   "sha256": "dd6e5a4c37de0e26d583326cdd5ea15435fbe4946e93b94a4fe4dba1af32ef05"
+  },
+  {
+   "name": "data/a6_MSN_financial_statements_2025_consolidated_line337.csv",
+   "sha256": "555f38a9486c94192f319ef3c102b64843e15f8dfdfa42064c751c5b9420535c"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2015_separate_line271.csv",
+   "sha256": "a017b4078541261cd8bd373f1a429d8e64d1f0e641fb62fd86c3574dea917ea5"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2020_consolidated_line1140.csv",
+   "sha256": "e4974a1d5bb2962d4bb8b6e7d11c743394a868957eabd60dccaacff74c7b2eb7"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2020_consolidated_line210.csv",
+   "sha256": "b029a033a4f3dc77283fe71e1c8c1dd27da8117ff0e1441ea015e7875952ef28"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2022_consolidated_line1198.csv",
+   "sha256": "3e1aca88daeb17afddb6a5ddf3ce3918c9bdb6f77f3fb6e5ec1427847571a49d"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2022_consolidated_line357.csv",
+   "sha256": "3598b5e9f5a98383aa115b5adeda6226661c731e830bea7d39b0eb487bde5a33"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2023_consolidated_line1089.csv",
+   "sha256": "d1d6d119fa87e81f6e3968474368313ded90cc145d324aeca8749025ed8848b8"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2023_consolidated_line1103.csv",
+   "sha256": "ff2200ce771bb91d6ef0102ecd69324b679d82d38bc43f9cabaad93ae2b0da9b"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2023_consolidated_line1496.csv",
+   "sha256": "82ca2d6579cddfd884f04e38896db7db43e00923c6c8e49add30847d7207790a"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2023_consolidated_line292.csv",
+   "sha256": "e01297ede38e063c3322b5cd91f31b8f0bd532d5d9686e97ba40eb317a0d10ae"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2023_separate_line310.csv",
+   "sha256": "d72d567b4ffc8ff6677c12ea22fc7c984d1fef194efaeac2068212fcfa49e223"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2024_consolidated_line328.csv",
+   "sha256": "34e4298c3a4a270bcdf9d6911b0cc90b95f270d59316ff86027bbb52dfb28022"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2025_consolidated_line190.csv",
+   "sha256": "6b97cbe8197b2c2914a8904a1dd2d4459d610552eb140c645b3afbd8833cf3c8"
+  },
+  {
+   "name": "data/a6_MSR_financial_statements_2025_separate_line222.csv",
+   "sha256": "616c4e9d0bdba15de8ab7fa5f87367df411611f4d72b7126d3c62c84b2f525d2"
+  },
+  {
+   "name": "data/a6_MWG_financial_statements_2022_consolidated_line193.csv",
+   "sha256": "45b991ba31cb8d7b6857d0d57af3a8b5e00d4cc2320cf2d9eed1d79199624c52"
+  },
+  {
+   "name": "data/a6_MWG_financial_statements_2023_consolidated_line231.csv",
+   "sha256": "94ed6917d0ceda6d4348a38235b684764cf7c6b605cde39598b8875d4cf98e53"
+  },
+  {
+   "name": "data/a6_MWG_financial_statements_2024_consolidated_line232.csv",
+   "sha256": "51cc9de55397d9ee531ca94b4f02f50ca87f8f4afe74a85af0939d1ecf826e09"
+  },
+  {
+   "name": "data/a6_MWG_financial_statements_2025_consolidated_line263.csv",
+   "sha256": "789295bb9bf591e2845d333ba57cdf481b4c0047ffe0e3fda6363cf0117339bb"
+  },
+  {
+   "name": "data/a6_NAB_financial_statements_2022_consolidated_1_line2248.csv",
+   "sha256": "169fa0c994d443e7f214cfaf2b2ed304d4e94ba274be27ec93e2a0cbd189bdc8"
+  },
+  {
+   "name": "data/a6_NAB_financial_statements_2023_consolidated_2_line1292.csv",
+   "sha256": "dd5cc472f4ed922ddf82d48b183fbe3a8bb9e553b58f961f7d5c88865c8084ef"
+  },
+  {
+   "name": "data/a6_NAB_financial_statements_2023_consolidated_2_line278.csv",
+   "sha256": "d26b56355a95dd40220bf99cee3f0e043d57ed3367f85ac8d6caa4eebafdd260"
+  },
+  {
+   "name": "data/a6_NAB_financial_statements_2024_consolidated_line1539.csv",
+   "sha256": "4c75c94f28dd477c9de6f57fb355a89fc91515a2a6624d3009f36d1b4ac694ca"
+  },
+  {
+   "name": "data/a6_NAB_financial_statements_2025_consolidated_line1748.csv",
+   "sha256": "d5e37ae4e1360f589ec7d5fd8593636d0f915b32464f5c388dc0202ded98fcfb"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2017_consolidated_line1020.csv",
+   "sha256": "97852943d7cab350df936f9cee77abc0f0ba010bbec46b15faa5d8ca398e5c44"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2017_separate_line232.csv",
+   "sha256": "8310345e2bdc907cdb768616357f7d03f034c26dddee10c32f2bf79fbf1c0615"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2022_consolidated_line247.csv",
+   "sha256": "fd520d9a3ca91ef3ced838dcc5cdd4f161905887ae3219f20fe8a0e4298ed17b"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2022_consolidated_line997.csv",
+   "sha256": "bceb4c77ec63dd6cfb44d57405e5874c1591618c226dde9b894357ca1e0daae1"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2023_consolidated_line263.csv",
+   "sha256": "61db755fd118ccea022ac45a6f87723a44b7948f0cffac83c2f924301d928b01"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2023_consolidated_line446.csv",
+   "sha256": "f0b8f6d636e326b3403c634f0e2367c6750f019414a11830963cb1808ef86d58"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2023_separate_line393.csv",
+   "sha256": "b5a77b350189ef99a184f837b915c9dbe1d6c3c5f74c70a46415110a5f5e69b1"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2024_consolidated_line1140.csv",
+   "sha256": "ad5eee6874f93902e48e253aeb7edce9c6583e1159139e52a17b8430aba2f4f0"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2024_consolidated_line274.csv",
+   "sha256": "9d9067482ec01779b6bb213646354392d9b7c585b409e36d579c7dda2351b1df"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2025_consolidated_line203.csv",
+   "sha256": "6e2089861e256dba0de2817e8e0bfb6abdaa7f7e0f9b0643bffc9c3c65e4690e"
+  },
+  {
+   "name": "data/a6_NKG_financial_statements_2025_consolidated_line273.csv",
+   "sha256": "c0f5e226851c45e96aa83b342b3796bca864a49fda725a895a6a7a26b156261c"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2015_separate_line251.csv",
+   "sha256": "b99bd76ddb89f2ae4c2d902aba7fc6a4fa6cdb70f5934ed9793b3a0a53b11190"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2019_consolidated_line283.csv",
+   "sha256": "217d523e777cd5f1d0d281826ef6d5b4fc516d20bf1f100d09af83287de40318"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2019_separate_line268.csv",
+   "sha256": "c55076d2476794bc45e83535f035f483860da2b2eaefb3a4738a65d195cc0ff4"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2021_consolidated_line1244.csv",
+   "sha256": "406e12a27dc499180e02bd3856bdd41947ef9be48639e87fa7b0ac1da0763c50"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2021_consolidated_line1694.csv",
+   "sha256": "21f83a32fecc82af2105ef00a1e39285502ed671dcc669846728afab44ecd3b7"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2022_consolidated_line295.csv",
+   "sha256": "2f1641cbdbccad19e5b6e62ad9f4d09960b518e824f92dad632a90d45e8132da"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2022_separate_line234.csv",
+   "sha256": "17f4dc2d64f2563b36a5fd627b0fb1367edabf9fe5654395ce127bc8f5478a32"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2023_consolidated_line240.csv",
+   "sha256": "a2ab150e563f2ab06a1f646ea953cff25bfe6275d5d5ae93194e1f956e12094b"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2024_separate_line204.csv",
+   "sha256": "08b7f5c1c81fd6f88f81a6c57151db81540ca7937ebabe370716fee0bb21062c"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2024_separate_line232.csv",
+   "sha256": "c1c66c06cd4ecffcbce76695d6fa0f8662cfaf6f96ee136c7e3a18e5b4c64656"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2025_consolidated_line1175.csv",
+   "sha256": "b3ef369e0ff3dd67ab64e727c73965f291b1b7b8e255f9fe7c38a1c2ea84d37a"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2025_separate_line1048.csv",
+   "sha256": "2f974650d06a1317bdf0b8d9266b088716ffcdcb7569453d0713def5263adc05"
+  },
+  {
+   "name": "data/a6_NLG_financial_statements_2025_separate_line248.csv",
+   "sha256": "655840bfda64026fe6162515c1b6338c959a2d452b02d14386c05ee007962eb7"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2016_consolidated_line1333.csv",
+   "sha256": "8cf94c45d34c2bbdc81ed7faa6713fd6cf2aa0d3daca44636df9c8d6d3b750a6"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2016_separate_line1022.csv",
+   "sha256": "f7efae70323831f858168b61c8901dca81c5d8ea20dba2c1c14475d191ab8f92"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2016_separate_line336.csv",
+   "sha256": "fd21df912b02c4b0e2ff6e557ca36a3f5ac9045788322567d7584ce123d282db"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2017_separate_line1120.csv",
+   "sha256": "9316d3e78f48fc52d86b4f4e68f750ffabe62647b487a109419a6d944741d269"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2019_consolidated_line1125.csv",
+   "sha256": "7e8223ebb9a6fcf9e8bb49218d67aafb3201cc664ba3b8d5a9bd3af145473a4a"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2019_separate_line1550.csv",
+   "sha256": "2d06a4d0bf6168ce2fff0ca3135a7a5929fb21877dbdb1044eaa4d591f7e9fbd"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2022_separate_line1439.csv",
+   "sha256": "dc57684ea644a132468cf91b0ccb027d6912586637cf6a9dd0b85fd524319276"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2024_consolidated_line1350.csv",
+   "sha256": "3076ce6fa6b40359edb5dea7ada7ba5eec0713644ebfc49bdf26b688db6f0fd9"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2024_separate_line1734.csv",
+   "sha256": "4bbcd92c627628f440d74a98a52802afdfe7c3211e35046be3271a0c04dba849"
+  },
+  {
+   "name": "data/a6_NVB_financial_statements_2025_separate_line407.csv",
+   "sha256": "96373537098ecb783cfb75efb670cc6ebad65507f3c7ec9bb4c0ef05b6843a6e"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2016_separate_line204.csv",
+   "sha256": "52bd28529477d819ca2e326258d0188e56a344bfdaa1dfcd812f2bbb8d70943f"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2018_consolidated_line1810.csv",
+   "sha256": "0b141d28b58525f7421d5e64bbe81d02e5c0dab8f1810b9c322b9f1a6d3fdd37"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2019_consolidated_line133.csv",
+   "sha256": "439a6b7d839779ab07ef57a32498db12ebf9da4a04c802604a33850bdee3f129"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2021_consolidated_line1232.csv",
+   "sha256": "cb6f234cd11ca4a8b76e207c36780dc2f4272d3ac8711f07f70ce0d3dd4b9d1c"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2021_separate_line1169.csv",
+   "sha256": "1374098307ea06685bea85a71ff6b0840cf5c6ae26df0d35aa2823e6dc3b01c7"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2022_consolidated_line1464.csv",
+   "sha256": "70871ded3541ee50ca6d21b6c25955ac1db2970b24b0eab4835e4c2bdd7bc4f4"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2022_consolidated_line1543.csv",
+   "sha256": "5e34210f7cbf058e1c72609e50f33d3a21e99a908317532947d647401382974e"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2022_consolidated_line1838.csv",
+   "sha256": "aa8bcada80d6898557238b20cfaad70d84bd33b290e212b704620803fcdfde40"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2023_consolidated_line481.csv",
+   "sha256": "49b501c482252b1741ca60525fc383911f67d134adde98e64d61a009116b9460"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2023_separate_line1069.csv",
+   "sha256": "03f397021b3e115bd46d1c3792999dcec0d9f018ca688631b8c561687ff46a3a"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2024_consolidated_line3137.csv",
+   "sha256": "7fd287a1d66ad3a9d87d6b57b3c059e994a74a1ef582653a69d6b45c5b53b7cc"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2025_consolidated_line3050.csv",
+   "sha256": "c6ac234b968474f966a2bb12ab2652bf5ded68f0f32f53f4750c9209aea76dcb"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2025_consolidated_line3106.csv",
+   "sha256": "67b3023e86290e4105a32a0c9aab6094bd14591dcd39eb4288b16aaa1cc011bd"
+  },
+  {
+   "name": "data/a6_NVL_financial_statements_2025_separate_line2180.csv",
+   "sha256": "e64b4f728e0fec042ec18752d9de03d3555c7d11d03cd8034e05ef414aedb3bb"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2018_consolidated_line1683.csv",
+   "sha256": "688f6baa3a4e26a0998383282f3e8364dddce36603f33d06170fec2f1220d017"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2020_separate_line1603.csv",
+   "sha256": "fac8e51609fd675e7c44ef4959161c0bcbd765abdba5117439022adcc85ddb1f"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2021_separate_line1746.csv",
+   "sha256": "d271d7fb4adaf9a15edba2027fb20d0f6084ea15303e1af69bdbfdb6a4d350bf"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2022_consolidated_1_line307.csv",
+   "sha256": "04f11026be79900a7d06bbae0384006d90021e2d233ed04903a45f3f3bb243bf"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2022_consolidated_2_line1576.csv",
+   "sha256": "e25396f83b518600af86ed4b60ddf07e3da1aba60ecde0662cae7807bc4d5f55"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2022_separate_2_line1178.csv",
+   "sha256": "c79ed96eb7945db98cc12f8b398b5da0de87ca5bcb6a9a7e6955157a687e14f6"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2022_separate_2_line1407.csv",
+   "sha256": "87e792a7a184e3a18fa399fba9651002e681d16f205117b27d8a5d806d29dab6"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2022_separate_2_line297.csv",
+   "sha256": "d7bfa5f5999554c75a60e5d186ef4364c7477142971522519de2674ba847c033"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2025_separate_line1876.csv",
+   "sha256": "ec6787242c4ad5265d4005b21dfe75ab14029e945eebcaacd8afad957f89b706"
+  },
+  {
+   "name": "data/a6_OCB_financial_statements_2025_separate_line2770.csv",
+   "sha256": "f99125c267bcd1c28792cb1751a643f82b1def33b6c78038c30ac9678d24f028"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2016_consolidated_line2099.csv",
+   "sha256": "e5f59dadcd997c39467226fc086fe755573a46f8ea9aaec1c72d428d1ec409a2"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2019_consolidated_line2037.csv",
+   "sha256": "5b60eb983de33696890e89f23d4db6e22b1a5843a9fc102f820eddecf13f0465"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2020_consolidated_line333.csv",
+   "sha256": "ba3e30d13889358c3d157806abcbaab4d2af240a61a70e8eb19d977a25807ca0"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2020_separate_line344.csv",
+   "sha256": "d233ee921d1249b668cdc502170eaf8a44fe6f952ba0192c89a58de084417533"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2022_consolidated_line326.csv",
+   "sha256": "3a035a0a8d54dd372f996f9891e6055e300f5e5c0b3aaba6fdaef3a02af8e13d"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2023_consolidated_line1279.csv",
+   "sha256": "dfbb8e8db030d9d0c5f7fe6a4aa33ec934969aedf72b663aa863a8cd225f019d"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2023_consolidated_line1420.csv",
+   "sha256": "61578e8f5cbf6a3e6f2a7240f5752263d2d9ba9b4fe1c319378c77cb0f75e5a3"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2023_consolidated_line430.csv",
+   "sha256": "cc8cabcd0875aba9f99e3b9a97377031bcbfa7953108d98dfb2abed83fcf4f47"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2024_consolidated_line2028.csv",
+   "sha256": "e6b7340d534e5cf46a18eee977b9977718549f7f66cff8ba780c22e847896081"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2024_consolidated_line413.csv",
+   "sha256": "16b61394998b655afd0be1ad1e8b417469047a4f69b20474162c0bff06ce1d14"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2025_consolidated_line2038.csv",
+   "sha256": "e6829e7b4e8045989b33508f8ca7d36b349ee61d82fb93bb1ac5e34d37d5c841"
+  },
+  {
+   "name": "data/a6_OGC_financial_statements_2025_consolidated_line451.csv",
+   "sha256": "66e3ebab542a38f1cccd43c10cb2b5c364314b6ac3a95e98a69203e08d8e8970"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2018_separate_line1443.csv",
+   "sha256": "7f9287106d332019584c5186234edd68bae48d9d5fc11ed764a260a967cb0d02"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2019_consolidated_line1517.csv",
+   "sha256": "be54496252ce2b7c4099ab690f684a70e6004173e3ec0aea68f19390e94dd471"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2021_consolidated_line1113.csv",
+   "sha256": "07d86a5a1f6c4ad78adab9f6ddda2ebfd19ebce9f83357aa1228135b2a104c21"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2021_consolidated_line320.csv",
+   "sha256": "4cfb1ce167666d5a02a5028c7e5bb2ec1281a469f96de9a66d5d93d3554817cf"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2021_separate_line780.csv",
+   "sha256": "41825e8f7539f4a792d77f5aad3bde3f84a17c23200ef36b439eabb63ff3f74b"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2023_separate_line910.csv",
+   "sha256": "7d516d2d5137a8b38ddaf658a72b2698cd1689f6e1a2f5a5458b656b50b7a2bb"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2024_consolidated_line328.csv",
+   "sha256": "37c6b3593d69176e392e5d61b9302ab0b8dc24f99e126dd2ebe4eff7af1d5b5e"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2025_consolidated_line1091.csv",
+   "sha256": "a6d25a415ac8028253ede86fce8f7b8b1a1a0adddf2e3e2bca5549d2fbd5c28e"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2025_separate_line1037.csv",
+   "sha256": "e46cea5a6a8cfc9d303dd0817cf8204f55e82a05863d4889a99382e20859d7fe"
+  },
+  {
+   "name": "data/a6_PC1_financial_statements_2025_separate_line1155.csv",
+   "sha256": "60017518ff0c3de1b2cebbc99d1ea78e4c3980ed350c977dafdd06d369d5d242"
+  },
+  {
+   "name": "data/a6_PDR_financial_statements_2022_separate_line1241.csv",
+   "sha256": "5f4fffbdf717f542846fb5670923436e30327898deafd4473d93794d611923ad"
+  },
+  {
+   "name": "data/a6_PDR_financial_statements_2022_separate_line239.csv",
+   "sha256": "92bc5a192c58606d94c68232915bb58ec7b82c3f1968c7d7a7af1ccd0f8d6d63"
+  },
+  {
+   "name": "data/a6_PDR_financial_statements_2025_consolidated_line286.csv",
+   "sha256": "1db9410cef196a7636c2d86a6a2572bf45e5b6a2a6dda2c676bec1b7134afff2"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2015_consolidated_line1427.csv",
+   "sha256": "e6e0e553323db64a5dd893a4e93a59820da89d710dfcf7eba5309dc55c8b26c4"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2016_consolidated_line1001.csv",
+   "sha256": "4fe48a81e5c56aec794525145dfecf269fed6ee67e8d4dfd17b597a7cd3d0e91"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2017_consolidated_line300.csv",
+   "sha256": "a0a25fc54f43f492b58b90672024090832d18ee9a4fae51b0250329c8ab91739"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2018_consolidated_line268.csv",
+   "sha256": "0bc89648abe0b29d346e7045d50b7dc00edaecdf891614749ca93b491f24223a"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2020_consolidated_line248.csv",
+   "sha256": "ecaa1936c10530ed0cc34eaa21fdb3c61e9b0dbfce1a7d896f9f63d318acf998"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2021_separate_line183.csv",
+   "sha256": "55747aad6cbf22f9d299128039ae914fb3a229d47342dff96ab143831e114873"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2022_consolidated_line205.csv",
+   "sha256": "54101294642c6933ea968fd017d8fb1b0a4a8be4d914c07eae9fff8b15890564"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2023_consolidated_line1546.csv",
+   "sha256": "819591f2152d557ddd97386158f5d516ef31e0729ad23f5c6216f469ba146cf8"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2024_consolidated_line1196.csv",
+   "sha256": "46e77cb4c3fd8cb881c3e947de73b76585627f6b927ace9ddd06a57559ed0b79"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2024_consolidated_line216.csv",
+   "sha256": "606d431b6832e124cc23f4c81ac322c325594d2622c230b03a8436d3fe27a0cc"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2024_consolidated_line263.csv",
+   "sha256": "176a689c5a35a095dbe0e2516e9ce215932760782ef8f9408c450a37c44ea372"
+  },
+  {
+   "name": "data/a6_PLX_financial_statements_2024_consolidated_line834.csv",
+   "sha256": "fecf624becd8900d6b875d72f645f27b5b8a2073e8e4433a5fda5f8ff618bed0"
+  },
+  {
+   "name": "data/a6_PNJ_financial_statements_2019_separate_line143.csv",
+   "sha256": "35b1c4610248f7a44c3309f3769fe1d3afbb00ace1b7aa4706b64ca8cacaa411"
+  },
+  {
+   "name": "data/a6_PNJ_financial_statements_2022_consolidated_line179.csv",
+   "sha256": "a4121cd471b57e155049e200d73750f26c6adbfb22126e8fa2c6d7a1d292bc43"
+  },
+  {
+   "name": "data/a6_PNJ_financial_statements_2022_consolidated_line772.csv",
+   "sha256": "cf4c6b21b3c76bea175b9fced1a6fa98f14b4adc622e8e534406b2d3703e8feb"
+  },
+  {
+   "name": "data/a6_POW_financial_statements_2019_consolidated_line299.csv",
+   "sha256": "784e1b57cc654c6940fe4b84a36abbc86b9f43b97d54d0d92669ebe28aa2b82d"
+  },
+  {
+   "name": "data/a6_POW_financial_statements_2020_separate_line525.csv",
+   "sha256": "b3072dbdbca25215ae8d218555835a960818194dd5dd3dcb088fab5868a9720e"
+  },
+  {
+   "name": "data/a6_POW_financial_statements_2023_separate_line358.csv",
+   "sha256": "1e37d3efc2d2cb7653a78c557524f549060e0df5e17d114e8a7e7cbf070ef45b"
+  },
+  {
+   "name": "data/a6_POW_financial_statements_2024_separate_line1066.csv",
+   "sha256": "4a01ea3302c58bead5d5ea50595d21e431fd737d547e307e2ef4c16aff918da5"
+  },
+  {
+   "name": "data/a6_POW_financial_statements_2024_separate_line961.csv",
+   "sha256": "ac7ce3692498ded9187516d2ee418052d2924778ebc67a98a9fb16d2b9c7fcfd"
+  },
+  {
+   "name": "data/a6_POW_financial_statements_2025_consolidated_2_line339.csv",
+   "sha256": "749dbed96802cbe988acdca60fc689c9443e1043aa81b78a1aaf569710c451e9"
+  },
+  {
+   "name": "data/a6_PRT_financial_statements_2018_separate_line1444.csv",
+   "sha256": "d065fd0c8e47cfe22f10e47a92bd5f2196cec42d85bb88f4f9425dea1720e06c"
+  },
+  {
+   "name": "data/a6_PRT_financial_statements_2019_separate_line289.csv",
+   "sha256": "85a47f00c14317acc53b2c855a415d91f612163964d342d7c1f18d96de8f73fc"
+  },
+  {
+   "name": "data/a6_PRT_financial_statements_2022_separate_line302.csv",
+   "sha256": "3dd64dd3b940477719f29fac1ce0ff874a41d2ec4b0873da8a8fd88cb0c90f1b"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2017_consolidated_line1251.csv",
+   "sha256": "07b1a0238989546de50b127122f7299972e517abb219e79dc0013d7561323153"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2017_consolidated_line999.csv",
+   "sha256": "b6e6b1455accb98173f2ec516c0fed6abc0f19c005a8a4ea5e40a5ed81b45e10"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2017_separate_line215.csv",
+   "sha256": "4e9d03defd219782bcb43165344e4b531c46460fce526c63fa9f309e4459b044"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2019_consolidated_line1248.csv",
+   "sha256": "beff2aee99e78b2d9d14b3f5c88849b4aed456261f425d28186abcb5496eaa94"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2020_separate_line224.csv",
+   "sha256": "2f9380f45923c5c5f6ed97b7a3f81c6fefa4fdf4591bc06378d236a4230a33e0"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2020_separate_line889.csv",
+   "sha256": "7e992dcbeecdbc9b76f249afce18ad2facc9f93cd673a07530d87f5b72851601"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2022_consolidated_line1362.csv",
+   "sha256": "015acd3d3f52a9e82504040d6dd460c6974f11cac96101bbd7ca4452142c3622"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2022_separate_line1226.csv",
+   "sha256": "5f0393b5bdd1b25056854d45ecad9f1629dd37114a1f573c8dfad1f7267dd14f"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2025_consolidated_line1408.csv",
+   "sha256": "2c29291c0c4588d7868c0aacabdc28ab3fd27ec971d21775199d21c752d1f963"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2025_separate_line1242.csv",
+   "sha256": "6f63db7c1db69283f019c0bb66a60a46aeeb8caf7ab374a84a37ed0aba98f081"
+  },
+  {
+   "name": "data/a6_PVT_financial_statements_2025_separate_line342.csv",
+   "sha256": "6d348d0edc6a29614db583461d3399a64c51dda0fd766990090d78577888728a"
+  },
+  {
+   "name": "data/a6_QNS_financial_statements_2021_consolidated_line1630.csv",
+   "sha256": "94ebe82106e183f637a1c2d9f4a8ea951694925058a5af86b60a30813d77169e"
+  },
+  {
+   "name": "data/a6_QNS_financial_statements_2023_consolidated_line1695.csv",
+   "sha256": "f07b47bdcb4fea035fea071e4647e22f363378446d63cfbecfb68b41536c76c9"
+  },
+  {
+   "name": "data/a6_QNS_financial_statements_2023_separate_line1254.csv",
+   "sha256": "900385d98a29dfecef8b456ee4419cba87ee011fdafdbf50f87369b2ccde66cc"
+  },
+  {
+   "name": "data/a6_QNS_financial_statements_2024_consolidated_line1090.csv",
+   "sha256": "6319b4ad7e7ad6ab77773863f3dd41e049b7bf4163b9e9ee1281655f1da0fdac"
+  },
+  {
+   "name": "data/a6_QNS_financial_statements_2024_consolidated_line1117.csv",
+   "sha256": "9028066e16ef77eca5bc5ecf209bd345a871def4c1d6bd06f008eddd47cf817c"
+  },
+  {
+   "name": "data/a6_QNS_financial_statements_2024_consolidated_line272.csv",
+   "sha256": "7cfebb97b1c252e1f9b2ceecfbb0209b29d3cec4cdca4e60a2f9823df81dabc1"
+  },
+  {
+   "name": "data/a6_QNS_financial_statements_2024_consolidated_line368.csv",
+   "sha256": "ef76c4f4e3202e0a1c2e975eb620288b0b525fc7cefd7b667f605b16b8304cf9"
+  },
+  {
+   "name": "data/a6_QNS_financial_statements_2024_separate_line1359.csv",
+   "sha256": "b355f06f615aaf3eee04de92dfda93daf80777a15c28f4b07c1e183dcf0e3b5d"
+  },
+  {
+   "name": "data/a6_QNS_financial_statements_2024_separate_line412.csv",
+   "sha256": "f7b8415fb85ed154505a03b396bbaa05b189f93f1d0db1a5b8f7b8bad8532643"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2016_separate_line240.csv",
+   "sha256": "ade976fe02ec1b8f2c8d052c52a9574d97337a40faa100f304974723f79c9e28"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2016_separate_line301.csv",
+   "sha256": "5f35d0d647226e8f648e7b98a75f6d9d2082d3cf13e2f642875d041bf824adbc"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2017_separate_line379.csv",
+   "sha256": "7811da98b7ce3a0de53fa275e7d944cffcb5d9c8dc9cc0c294debba904aca887"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2018_consolidated_line809.csv",
+   "sha256": "d4af8d46bad5704953dc5ade23c91a216950d939c8f70fff4dd837b27a3593a0"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2020_consolidated_line1388.csv",
+   "sha256": "9f69be1b4b92918a0d9f2e6c9168c5a9777f36a1c09859eaaa81aaf418c91103"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2023_consolidated_line317.csv",
+   "sha256": "45034e827251a4dfa1aa5df512fcb4b68c7fd1db80b98aacc44d7321ea49f06d"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2023_separate_line1092.csv",
+   "sha256": "105488227ccee11754d21e32b20c4d2a2e28813b15b8c979e9cb8a72a3d39e98"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2023_separate_line1324.csv",
+   "sha256": "471aaf74b246273190e662d2b137751e6f9a69a71f634383fb07c8c16ed28b39"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2024_consolidated_line333.csv",
+   "sha256": "9997554798a41363bededcec225baee420b26e8a9bebe42527c00cdd338e2d25"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2025_consolidated_line1852.csv",
+   "sha256": "1134b387d706b8324c8344ae95ec375dfc7b673ae19ae0ccf4fc715459e24e9f"
+  },
+  {
+   "name": "data/a6_SAB_financial_statements_2025_separate_line1337.csv",
+   "sha256": "28d8a3651f0c652d4207ad07075c61e91823c23243e9fff0428e15f0becec364"
+  },
+  {
+   "name": "data/a6_SAM_financial_statements_2017_consolidated_line1490.csv",
+   "sha256": "01ac876742f0148280dce28718ce3b0edff7dc7bff15b88f1ddf7e0faf6c7cde"
+  },
+  {
+   "name": "data/a6_SAM_financial_statements_2019_consolidated_line1029.csv",
+   "sha256": "f5f0247db7bef73b116ac1c4aafd15e8872ea58c326cb66fb8853dbe1eb63e1d"
+  },
+  {
+   "name": "data/a6_SAM_financial_statements_2023_consolidated_line1165.csv",
+   "sha256": "c062af57d8cc68dc0853f6a20cd171dfa1c7e6378246ab57b077b059d81d79b3"
+  },
+  {
+   "name": "data/a6_SAM_financial_statements_2024_consolidated_line1195.csv",
+   "sha256": "305cc0800589fd98da37c5f8e215f5e6735349830fafc624e758e043fd053f70"
+  },
+  {
+   "name": "data/a6_SAM_financial_statements_2024_consolidated_line1635.csv",
+   "sha256": "7ad6d95ff592c80bcf89d0dcd3859c79ecd59d277161fb255de64225b66a1347"
+  },
+  {
+   "name": "data/a6_SAM_financial_statements_2024_consolidated_line366.csv",
+   "sha256": "0d3f1d2bb12ad37450c420eafeed014ee671736c198ba2d5ad27ba2d0ce444f9"
+  },
+  {
+   "name": "data/a6_SAM_financial_statements_2024_consolidated_line493.csv",
+   "sha256": "ad6c6dc433b4a4edab957d97923b3b9451aca0167a910e0cd86af9215b6cd5ec"
+  },
+  {
+   "name": "data/a6_SAM_financial_statements_2025_separate_line974.csv",
+   "sha256": "bf00a979496315b28635c441d3897fe4cd3c953b928e78e90648e30ff0173ad9"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2015_consolidated_line889.csv",
+   "sha256": "4703736ff430d9153b395204121068c86e0b2115461a46471557f386fd5a7bc9"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2016_consolidated_line198.csv",
+   "sha256": "8e237a9bc71fb9a4690e621769b45d4f23329098d5811c16eca62d894f5ef3d4"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2017_consolidated_line309.csv",
+   "sha256": "adfe0704f139b3c4f1fa2bf572ed765371190457779a95d4df003a6a3734d49b"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2017_separate_line1046.csv",
+   "sha256": "f3e171ca2d86f3502db87230d5613ef7b6310da7df185bcc979231c30b5735e0"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2017_separate_line1251.csv",
+   "sha256": "478206e0615c150400ffbc30079dd901490f1df90fdefdf56d4d4f1fcd580fea"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2018_separate_line837.csv",
+   "sha256": "3d0953c0c0544eef51b193bea9a467abb51406d8e267e95e0071cb034e5a4ff1"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2020_consolidated_line372.csv",
+   "sha256": "63e503557be28001b2ae9b0c7c337e5dab0d375d7d9dd0d0b8d0d8e77aefcb33"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2021_separate_line303.csv",
+   "sha256": "52c8b8b4a4e313b69ec63b7d0880368fdaaf839e45e26ed8cbbc30d0f48c4806"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2023_consolidated_line1342.csv",
+   "sha256": "c765f2dfc334686b19cb41f2d2f47e577b22114b615f6c0a65da3a1448ee3083"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2023_separate_line1198.csv",
+   "sha256": "c46264f407794830ccc3077db6b4e1ac4f0a8a42a1ee5c7857221f2f9d5ead7a"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2023_separate_line263.csv",
+   "sha256": "921e3e1020e7405dda25b16406888c1dc2c6e2feff24de57036a312f1eae8ba2"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2024_consolidated_line1643.csv",
+   "sha256": "428b7e8e41c68aa587822ec3edba22f8e963cc486989002a70e60e99d4411a99"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2024_consolidated_line1838.csv",
+   "sha256": "8448402610bfed7052c72c561acaf32c93371c0b53b5702a2e35b3d9041fc4f3"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2025_consolidated_line1680.csv",
+   "sha256": "cbb112a748fa3935cb0f498afbd98b873e7e5db94503afbc444c91345a43cb7b"
+  },
+  {
+   "name": "data/a6_SCR_financial_statements_2025_consolidated_line254.csv",
+   "sha256": "af410c7b06753eb594ff5238a3988f19cfe65d8334b0c48bbfe58a6e3c8f9a55"
+  },
+  {
+   "name": "data/a6_SGB_financial_statements_2016_separate_line303.csv",
+   "sha256": "d1f6666f89b51bcd6987fdf0fa9b27a0f276f179e40a1cdec3921acbcbb00fef"
+  },
+  {
+   "name": "data/a6_SGB_financial_statements_2018_separate_line1049.csv",
+   "sha256": "8563ea313b0a2e484823f2db04cd603f8bca0023322fa198b579a2bb5a1ba55d"
+  },
+  {
+   "name": "data/a6_SGB_financial_statements_2020_consolidated_line1998.csv",
+   "sha256": "3493ddfae9de2ceca0e106930be45a4c851a60366120cd4f126752d247de0e7a"
+  },
+  {
+   "name": "data/a6_SGB_financial_statements_2021_consolidated_line1379.csv",
+   "sha256": "3054b031c9bf40cbfc6f04eef7cc5c6324f2fa326203aa5ddc77cc4122f3f8d3"
+  },
+  {
+   "name": "data/a6_SGB_financial_statements_2024_consolidated_line279.csv",
+   "sha256": "7954f5389a3dac944c4df4b48365a65d5cb1124e0e880aff7141a9f74146966d"
+  },
+  {
+   "name": "data/a6_SGB_financial_statements_2024_consolidated_line348.csv",
+   "sha256": "8599dff6bf9b67bf77c256ab512dfa9c89cbfcb8123fe642bbfdf7b072600ee7"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2016_separate_line1479.csv",
+   "sha256": "0f37633342db8948811b28cbbb1d8d88b01a86af192baa8523616df1f40dd13f"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2016_separate_line1842.csv",
+   "sha256": "07397bce205f9d3fec40e9be5e6355506d0b2b9bbefb39d032a566fa49aad0ef"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2017_consolidated_line1308.csv",
+   "sha256": "cf85823088c6d501c92c74b3a034f00ac892c3846143797a6f6f9200b2f1c164"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2018_consolidated_line2806.csv",
+   "sha256": "ad777363971f214cffb0f9732cc73c5f7f98de178e48ccbd7d2a95910abe82df"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2018_consolidated_line3353.csv",
+   "sha256": "6ae5800a413647ac1f2e6d7df701b7a4c6ee2b8d3981b40d6823e1f6b3b1030f"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2019_consolidated_line1225.csv",
+   "sha256": "ddaccbaae59e2d1f4dea0c219da2eeaeb3a6b2ede938c4c31dd299b9cf7a43a9"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2020_consolidated_line1597.csv",
+   "sha256": "10e50af931a5cf8144f59aa67cbc10fa99b74e9660cab9c77df3302f42bc750a"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2021_separate_line1548.csv",
+   "sha256": "c5227515daeb9ebad687a3d63dde87435a4d3af05e926087f65c49d98a8d5c50"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2021_separate_line1724.csv",
+   "sha256": "66110fb87eb602342080e8120170bf6cfdf80aae41265a4685c7500611c00016"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2022_separate_line1267.csv",
+   "sha256": "36127963938a8ff4b53a64608dbd92a8a578d9879bf6097806e5442aaf17d807"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2022_separate_line1987.csv",
+   "sha256": "6bb71692b897b1870826af2ea453893eea24f6c2647ab59e4a4b4945c2c206af"
+  },
+  {
+   "name": "data/a6_SHB_financial_statements_2024_consolidated_line1696.csv",
+   "sha256": "fa7dee3b946f722637f6508d99ba57707d5302681a8852f531552a176845876a"
+  },
+  {
+   "name": "data/a6_SJG_financial_statements_2019_consolidated_line272.csv",
+   "sha256": "9aae13e822bd9a677171fcd4373b2c21acadd7f3a50c92d0bd7e037d92d7984d"
+  },
+  {
+   "name": "data/a6_SJG_financial_statements_2020_separate_line352.csv",
+   "sha256": "6d00e19ed05d28d1efbf41a8022df0323e3960b0ad037a23bed9b2078e53ad1c"
+  },
+  {
+   "name": "data/a6_SJG_financial_statements_2022_consolidated_line396.csv",
+   "sha256": "4680319902950552d481cb5da2f4c633ddf25effb125fcc1ec4c1b1a92e4305c"
+  },
+  {
+   "name": "data/a6_SJG_financial_statements_2023_consolidated_line1527.csv",
+   "sha256": "258a2d4a64fe31c9081d24398086d0baaf44ebd0a392041cc8cb3048f2ba9dfe"
+  },
+  {
+   "name": "data/a6_SJG_financial_statements_2024_consolidated_line1414.csv",
+   "sha256": "322513d5875a049538148ed8db5ce7ff09123f7283ac5bb7ee7280c3a1c10f91"
+  },
+  {
+   "name": "data/a6_SJG_financial_statements_2024_consolidated_line1834.csv",
+   "sha256": "c3913446e66f5ed2c4e4a0122c66d85a1e767d34fd9422287522a8bcee590ccf"
+  },
+  {
+   "name": "data/a6_SNZ_financial_statements_2017_consolidated_line1295.csv",
+   "sha256": "ae5a61313bd0ed3cdb93f44f20a7cefee65ffda4f62ff9ff0b1b6127377dbd8c"
+  },
+  {
+   "name": "data/a6_SNZ_financial_statements_2020_consolidated_line335.csv",
+   "sha256": "bd1b8448d04821013c31d38ffed6ce0264cdceb9d8a16662f3de8112dc30b36b"
+  },
+  {
+   "name": "data/a6_SNZ_financial_statements_2020_separate_line1220.csv",
+   "sha256": "15d4d26a856726e80ab02b8c7eb47c074619e83afab6c6265c60818972ed6aba"
+  },
+  {
+   "name": "data/a6_SNZ_financial_statements_2021_separate_line300.csv",
+   "sha256": "1d7493604ad651e4b24af61e0d939ee3f238f06f266c19e1ad3c66baff843d16"
+  },
+  {
+   "name": "data/a6_SNZ_financial_statements_2022_separate_line1369.csv",
+   "sha256": "021cdf603b1cc9ccef29483962826ccdd35dac975c378bcd995bbd310376820a"
+  },
+  {
+   "name": "data/a6_SSB_financial_statements_2020_consolidated_line1225.csv",
+   "sha256": "411e428b26bcdfc4d3d846131e8c52b28b51ad102b39bca78647d212bfcfee2a"
+  },
+  {
+   "name": "data/a6_SSB_financial_statements_2020_consolidated_line1796.csv",
+   "sha256": "220559264e8e872345ce067198669bb8c4c1fe7e9d99b68a1445f822c49b1ced"
+  },
+  {
+   "name": "data/a6_SSB_financial_statements_2021_consolidated_line2237.csv",
+   "sha256": "5c6b9160c8f855f8e4166e3b7f1d97ac912d2c536435c6e5a35c26bcf237ce63"
+  },
+  {
+   "name": "data/a6_SSB_financial_statements_2022_separate_line2075.csv",
+   "sha256": "c91224b987d1794d3936cde13e6350358a6c116b0502cad4c555213e8b9c2d20"
+  },
+  {
+   "name": "data/a6_SSB_financial_statements_2024_consolidated_line1602.csv",
+   "sha256": "57f205900a99c70bbfb655b0183a36ba01515981fc226718c9e8f33e199b83f9"
+  },
+  {
+   "name": "data/a6_SSB_financial_statements_2025_separate_line1947.csv",
+   "sha256": "d2aed036714090ee7f8a5314558fac486aed9e1c3ee43ca4663c51dbff7decd1"
+  },
+  {
+   "name": "data/a6_SSB_financial_statements_2025_separate_line270.csv",
+   "sha256": "5fa12f65ed1eba9fff878151fa63b100b522ef4c52381479ed23764675731fc6"
+  },
+  {
+   "name": "data/a6_SSH_financial_statements_2021_separate_line279.csv",
+   "sha256": "c8a36fb39a87d74e9678e1a949e4ccb627702e4f4052e8c63cb415b31d38e72f"
+  },
+  {
+   "name": "data/a6_SSH_financial_statements_2023_consolidated_line1383.csv",
+   "sha256": "3ad062834639e0253be448aff7f5701bd669cfe92a39809e6689617176fc8e63"
+  },
+  {
+   "name": "data/a6_SSH_financial_statements_2024_separate_line856.csv",
+   "sha256": "10bbe59a22d7fb689cd2f4192aa22ff0ed9e1f670df53f4ae738d334085ca001"
+  },
+  {
+   "name": "data/a6_SSH_financial_statements_2025_consolidated_line344.csv",
+   "sha256": "37f2ddacf28157986143fc00c016edec2867a9a01b8d70c8ef2ad6671044453b"
+  },
+  {
+   "name": "data/a6_SSI_financial_statements_2016_consolidated_line227.csv",
+   "sha256": "6a118715ec1bc1c9f7a996e048459e839726adc04087c9fe297aff73a66b10c5"
+  },
+  {
+   "name": "data/a6_SSI_financial_statements_2017_separate_line249.csv",
+   "sha256": "ed7cc36ab7eaa3669ca014e2669cb9f2daa5c94157cf4e3abec1c65ecd2c3bcc"
+  },
+  {
+   "name": "data/a6_SSI_financial_statements_2017_separate_line296.csv",
+   "sha256": "e7c54a7b2490061fe9a1c571cd9c09219de6797c700ba0d03e396578875b4296"
+  },
+  {
+   "name": "data/a6_SSI_financial_statements_2020_separate_line1977.csv",
+   "sha256": "2163dfe5238388c645d4f436e411f4feb721596bdf0e0860652b891f7d4192f5"
+  },
+  {
+   "name": "data/a6_SSI_financial_statements_2020_separate_line2141.csv",
+   "sha256": "a40ab8a52abfcd57a23fe4d18d9b5b2231fdff6d4d70a202515d44253b759d63"
+  },
+  {
+   "name": "data/a6_SSI_financial_statements_2024_consolidated_line2031.csv",
+   "sha256": "119f1c5fb0da719f7d717067a3db1f114a2b74be5d3b0d2f350c973a1eff8bdf"
+  },
+  {
+   "name": "data/a6_SSI_financial_statements_2024_consolidated_line2213.csv",
+   "sha256": "36479cf750ee2cf9ec6e288eb5a83d407a594fddb83a9948e952a88376fab24d"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2016_consolidated_line1565.csv",
+   "sha256": "3d484f413eeaf6abf5d097c48f3a046bc290e8543a7089452458a9a60d50b327"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2016_separate_line1345.csv",
+   "sha256": "511b147e039160f19d8ee51133298d4bd9750c6adc444fe8eb8a74c99bd746a7"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2017_consolidated_line1313.csv",
+   "sha256": "291c573f3aa4b5f83d85f4f7361c11fb9772563734e1f2733b19fb2e429978c4"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2019_consolidated_line203.csv",
+   "sha256": "5b83c33cf7423c114d8d8097be413ae5a96bfa6a69dfc26597b22760658dc5e7"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2019_consolidated_line575.csv",
+   "sha256": "38f32443b45e9cd4f62e34a1267a843c0687a557e2b1e32410fbedd2de5bb538"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2019_separate_line1617.csv",
+   "sha256": "da8dd54f10e6c69bced50816928fe6fdb66ce6a9432245f5c53798911a28c529"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2019_separate_line269.csv",
+   "sha256": "424f96c7735bdedf5135d13c0e168a690b7adcae19e86d52331dd6a0f3c078b6"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2020_consolidated_line252.csv",
+   "sha256": "aac99c2551aa4a849bf83524f9a30572abd61874f0daf0018b8ead44c6421b36"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2020_separate_line279.csv",
+   "sha256": "7143197aad300b9c9e008ab7eb2c569fd0a166483c4e8535891222416d81c91a"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2021_consolidated_line1675.csv",
+   "sha256": "32a347486c5b4328d14f7d5e14379dd57712239ceace423acfd5656553840828"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2021_consolidated_line1986.csv",
+   "sha256": "77df62e4738f53aa849b6bc2660408df37cbf3d4288960470d7e306067b89dd9"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2022_consolidated_line1259.csv",
+   "sha256": "90fb74a276e5e0279650e8577aba972516f90b46caaa3a7ff6f5a72aaa3e5fe1"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2022_separate_line214.csv",
+   "sha256": "3f91a5e5511828b265ad233d4686afc5d31ebae1f497583042ae2f16ce7b3a68"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2022_separate_line395.csv",
+   "sha256": "2b9cf6512c9ea068bba2f7d36e167fca47564a1035848be138e62f6c299a9074"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2024_consolidated_line1784.csv",
+   "sha256": "61fdc1f4c153c054c25b9b3f566c1ac23af507a7b6532677bd4d40610293d036"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2025_consolidated_line2080.csv",
+   "sha256": "424b07de3366e49ecc131316cb2b9ae762042a5fd582f2d2823f511b59a8461b"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2025_consolidated_line3048.csv",
+   "sha256": "51cd66f0d87fa6e698949b6d26affd04fea153edbbec695edc94b711d313f62c"
+  },
+  {
+   "name": "data/a6_STB_financial_statements_2025_separate_line2410.csv",
+   "sha256": "ded2101838c2ff78992e5e270d935e59daaa900af0ab151d1dbccaf0a2beb644"
+  },
+  {
+   "name": "data/a6_TTF_financial_statements_2020_consolidated_line213.csv",
+   "sha256": "0d34ffc8e717067b86abd3a316c85f3418ce14a9552b983f195288795a18a714"
+  },
+  {
+   "name": "data/a6_TTF_financial_statements_2023_separate_line1479.csv",
+   "sha256": "670dae5ab1f774589cac9bd3726dd96adf242c23f48e9f3584f00a5765d01427"
+  },
+  {
+   "name": "data/a6_TTF_financial_statements_2023_separate_line973.csv",
+   "sha256": "612c8899ed7f69a184fdd425d7b9680117f5fcc1774e4c715ee2463e29116d9b"
+  },
+  {
+   "name": "data/a6_TTF_financial_statements_2024_consolidated_line260.csv",
+   "sha256": "873c8861eebe9e0d722b7ac16dab26682ac75801b6772d17ed71e818f58b80ac"
+  },
+  {
+   "name": "data/a6_TTF_financial_statements_2024_separate_line1000.csv",
+   "sha256": "4fbdaaf337867066c0b401e5d0449a3b1d7cff1e24f647932bcb711b35912c17"
+  },
+  {
+   "name": "data/a6_TTF_financial_statements_2024_separate_line214.csv",
+   "sha256": "9bcbbff901f6fbe8c297b03d9b2aa59c666e8798e0c5bbe34f443c25289e9b1e"
+  },
+  {
+   "name": "data/a6_TTF_financial_statements_2025_consolidated_line336.csv",
+   "sha256": "4ffcbaa0935c6792aa79b058bc8a02925a6ffeec21c5f8fa6a99bfaa846a433b"
+  },
+  {
+   "name": "data/a6_TTF_financial_statements_2025_separate_line260.csv",
+   "sha256": "0fd953d67270a792a76688867d4361851c9cfb1206dab592897f41a2c87e1046"
+  },
+  {
+   "name": "data/a6_TTF_financial_statements_2025_separate_line916.csv",
+   "sha256": "683e350bd266e39835d7a35762c0365bbd90ed83648bee383d5f9966176028c6"
+  },
+  {
+   "name": "data/a6_VAB_financial_statements_2025_consolidated_line1822.csv",
+   "sha256": "923c1cb31009e84a07ea99d0a6abc645f3f1a7a192defe935c5cdea8543e6965"
+  },
+  {
+   "name": "data/a6_VAB_financial_statements_2025_consolidated_line333.csv",
+   "sha256": "7f28c2adf646067046481f558880df3a70ec17c83c06da1822e1f6189162b97f"
+  },
+  {
+   "name": "data/a6_VAB_financial_statements_2025_consolidated_line434.csv",
+   "sha256": "62913db1d9be3ebff6e32089c2e0de88a845f9c49d138b79ca96c863a679379b"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2015_separate_line1418.csv",
+   "sha256": "933aac9e3aeefd58f1added7cbd6714d22def76181b11119f371cc3c2ac411af"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2016_consolidated_line1343.csv",
+   "sha256": "690736a3ecc97246f15666191b295d3b3b82fca51b8be8643ab0f13b2546565e"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2018_consolidated_line1152.csv",
+   "sha256": "eabaaed9cd6e8cbd15ac219029b9f37930b57e1680e841421597826a50248ed8"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2018_separate_line1105.csv",
+   "sha256": "108430b254dc18bfa404a38c52773d3c03ae08bf58e5422c0ff49f2a4e7709f6"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2020_consolidated_line1311.csv",
+   "sha256": "d5eeff12a3198de0bb3fc0c302703991b9f5d8f9b2c52ad8771b74c8df63818b"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2022_separate_line1133.csv",
+   "sha256": "c66b9e7c2d4428f5fa8f0e59ad8f0a6d43e0cb9babd1b624cc4ea93a6db15875"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2023_consolidated_line1783.csv",
+   "sha256": "803551cf9712b635d9e821035edd5fd7f88176a66ee0fc164b91d1b6efa52342"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2025_separate_line1570.csv",
+   "sha256": "0c85f44481a978afc99d208b61e0d7ae17523af62493c81aecbc4279de9f8158"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2025_separate_line1780.csv",
+   "sha256": "09d83c7c240d960c5a88846b8fd9ac300ceb3f2df77b5e3f555d97f5daa650a1"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2025_separate_line1905.csv",
+   "sha256": "c7fb956630de6862082d1db2284c2ff1d252909305cec7fd4a4db81f7bc9756a"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2025_separate_line1926.csv",
+   "sha256": "1f52742cca32cfb987dfeffe028ad931ded8e8f43ca26fe48b0832433f0aa1d5"
+  },
+  {
+   "name": "data/a6_VCB_financial_statements_2025_separate_line1979.csv",
+   "sha256": "ccf11f58d7b413659bda0e90817cc64e17ca33b8ccf987eb0f5614d547877f11"
+  },
+  {
+   "name": "data/a6_VGC_financial_statements_2016_consolidated_line244.csv",
+   "sha256": "4d064500233c156908abb3bf0356c3045cdf30ccb7bb6ad951c434eaf3ac2851"
+  },
+  {
+   "name": "data/a6_VGC_financial_statements_2016_separate_line176.csv",
+   "sha256": "520a94537daca5f578be234eed6e36c496f186bae3e77acfd1a6b48b3e36c414"
+  },
+  {
+   "name": "data/a6_VGC_financial_statements_2018_consolidated_line1687.csv",
+   "sha256": "dc27110927291590c845b9e0892344033e4177d3bb89d5f4b5d15a76f66156cf"
+  },
+  {
+   "name": "data/a6_VGC_financial_statements_2024_consolidated_line1379.csv",
+   "sha256": "ca81d3e20f1cbe2e2600ce4260b56dfe96ddd40a2002cca5be58808644c029cf"
+  },
+  {
+   "name": "data/a6_VGC_financial_statements_2024_consolidated_line333.csv",
+   "sha256": "436d2760fa83c24614db8a4d6f73c33482f9749905427619d21e7154ac7b43d2"
+  },
+  {
+   "name": "data/a6_VGC_financial_statements_2025_consolidated_line1273.csv",
+   "sha256": "e5a755d993675ced8f76832d8901c37c14386591744e2442e9f8e64463d8c5c6"
+  },
+  {
+   "name": "data/a6_VGC_financial_statements_2025_consolidated_line1560.csv",
+   "sha256": "2211e44063103f6914de5cf1ef9f5b69bbcfd4668d190d637d38bde1928ffa27"
+  },
+  {
+   "name": "data/a6_VGC_financial_statements_2025_consolidated_line313.csv",
+   "sha256": "41fa3df2c72faa13d69f054ac3fd18d3f4f85508d86d38055bd621f841ff9fd7"
+  },
+  {
+   "name": "data/a6_VGC_financial_statements_2025_separate_line1205.csv",
+   "sha256": "389b0d0a01bb23d5f8846bd9ae2dae263d8f1ab185ec1d6e1df93be5a5193054"
+  },
+  {
+   "name": "data/a6_VGT_financial_statements_2020_consolidated_line168.csv",
+   "sha256": "a468a1a01bd6df5eca5e66fd7c2ebbb95211c67cd680e2ac3c1d017003a5cf77"
+  },
+  {
+   "name": "data/a6_VGT_financial_statements_2022_consolidated_line1599.csv",
+   "sha256": "714a9e141a2fdb42bf1aef1160956ce4fb6e7ad4b84e03a0afff9fe3c6a06314"
+  },
+  {
+   "name": "data/a6_VGT_financial_statements_2023_separate_line251.csv",
+   "sha256": "679640c256aeab267c0495ee40097b955a8813b9ba94f600de6fb269659d6df7"
+  },
+  {
+   "name": "data/a6_VGT_financial_statements_2024_consolidated_line1143.csv",
+   "sha256": "18582b7970599efd7b120f89689cbc8d844ce1b1014c66cc0d2aa31483bd9585"
+  },
+  {
+   "name": "data/a6_VGT_financial_statements_2024_consolidated_line1185.csv",
+   "sha256": "e06a38147e2ceed49153767b964e0931282ee3868c434313bd6883f082b106a5"
+  },
+  {
+   "name": "data/a6_VGT_financial_statements_2024_consolidated_line1749.csv",
+   "sha256": "43a25bcc61cb56dd363a433aa69a5d06c9be735d6dcd2f00dd444562c7b3fded"
+  },
+  {
+   "name": "data/a6_VGT_financial_statements_2025_consolidated_line1141.csv",
+   "sha256": "2737357e4a0c7d00977141e9bb7c9e7c08361f8662fb8c77d5d5518fabb1f13d"
+  },
+  {
+   "name": "data/a6_VGT_financial_statements_2025_consolidated_line1421.csv",
+   "sha256": "f446e5cae48debe482a837833fb7d4597e72099044e0def5da169bf68db1fc2b"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2015_consolidated_line1300.csv",
+   "sha256": "a96c89ca637ab31399d8446c40dd00c83edcbddda82a89eb5eef3071e3ad6969"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2016_consolidated_line1298.csv",
+   "sha256": "f5d7f8b875abec569f5dc709e30ce32a036172d12d79c50fd138a06562b29e1f"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2017_separate_line222.csv",
+   "sha256": "c1f9eb35ada6e661b2cb7557b3877d82211814042e21b5ff920cb4d225f6f622"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2019_consolidated_line173.csv",
+   "sha256": "55f01cd2832a306ae84908193e7f4501bc6a2340752f6caed1261a8d9c4b3eac"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2021_consolidated_line300.csv",
+   "sha256": "4f4300ebaf43c6275566385cb7bf6eb47851f2825ed827bbfdd7c78955027b72"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2023_consolidated_line1458.csv",
+   "sha256": "9759ca9319b2fdafcc475110971acde9012e0f54a1ef12293967f54d93395ef6"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2023_consolidated_line1978.csv",
+   "sha256": "fc56061746026afc8f0f43e108a335ada4c83da57f3455456549ccbb57a63f51"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2023_separate_line1486.csv",
+   "sha256": "6699a95dc40861c1e0451a606358154eb8f32ffe3c80b97cb4180badb890e02c"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2024_consolidated_line167.csv",
+   "sha256": "a4bc9fa271506d6aa6d8615df0e7f2e6d740e0aad00b6188efec8b78ffc7e7a0"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2024_consolidated_line264.csv",
+   "sha256": "e4d60ac10e65e13737ae9366336ae4afd89f52a825757276284f32a932d7fd79"
+  },
+  {
+   "name": "data/a6_VIB_financial_statements_2024_separate_line1727.csv",
+   "sha256": "73436e1f9b3a5a9ad0ad0b2313809cb5ff5d2da3af9eeeae21620f38963c28c1"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2015_consolidated_line2355.csv",
+   "sha256": "7bd87be02b5ee9f2351ec20f287e82e58caf1a40a49dc26b1310b9da4a4a6345"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2016_consolidated_line209.csv",
+   "sha256": "d8b98d9ab4aa234bba50c0738db81250350c8e5d3231ac976297f066face9cc2"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2016_separate_line1309.csv",
+   "sha256": "46d2674173dfeb359e1cf4bd862c7f260288a4725e786d230c47f658777217d9"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2018_consolidated_line1790.csv",
+   "sha256": "8adec82aae42cc81038db01aa4b1b38d09eaba6bceebb2cade2b3b7c74ae95ab"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2022_consolidated_line1304.csv",
+   "sha256": "be9f8c57bad6b903faa754ba5c8b290737246a5674faada56d9952333a49ef8c"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2023_consolidated_line1409.csv",
+   "sha256": "688b52640c84e2632d7755e2781b42f8ddd44f58424af272c699f9cff08e70f3"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2024_consolidated_line3085.csv",
+   "sha256": "1e6d0c8e66175414440545f679e94ab80d6a9023583d0c0b43671559d72edefc"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2024_consolidated_line3240.csv",
+   "sha256": "57a1c018a7f4b4e24b2f9a4e3c0455e718c4df1dbca91a1f580104716b240fa3"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2024_consolidated_line3249.csv",
+   "sha256": "709f99689b62d08d77d1a29adb70148bc31a9160c177fb9ee9766eeaf810e8a7"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2024_separate_line2057.csv",
+   "sha256": "a3bd44e4651be8bb8b8a3d501c1460520f7e7e6b5af6c9722381edf437378709"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2025_consolidated_line2378.csv",
+   "sha256": "f1afaed6ec22e231b685d82f0ec6207e2350180841ec8d3879fd431d11c671ae"
+  },
+  {
+   "name": "data/a6_VIC_financial_statements_2025_separate_line1425.csv",
+   "sha256": "6f2f5e378dd329a7f5add6c9b7b7eeac8af56c78399e233a7e29a8bda7defaaa"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2015_consolidated_line1191.csv",
+   "sha256": "0f36e4a82184b8d5603212d894eaa102cd06f063425f0a03191c44f3367847f3"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2019_consolidated_line391.csv",
+   "sha256": "002814dd95d65b1857bf1d915f691b2e8f64c411d82a68bb9164cfbae252c277"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2020_consolidated_line1183.csv",
+   "sha256": "6752bd6df7e7a204a2d002717fb2c3f8b25af3864f837ce77cb930be2d72f3c0"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2020_consolidated_line1446.csv",
+   "sha256": "04ecf2cbb109348bb96d95b3f702108ded44edc117a596111bd932f451d36349"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2021_consolidated_line1683.csv",
+   "sha256": "41f68f0c0953412eeaa06f8842290c5bdb5249063050d51f97303f48e2a1e2db"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2021_separate_line1771.csv",
+   "sha256": "57d4861629d6d8110ead1a838cb80e17b516131edd2e76d86c420ceff9d5844b"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2022_separate_line935.csv",
+   "sha256": "03488e5ed8721e0242118d22f93dafabc4386423318afe0d55ac62d593e9ed45"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2023_consolidated_line1577.csv",
+   "sha256": "86f533d1b7d7a9c96d0d5f6f129aadf99c3a1ea8b5f1bb8b60460d65cac67c57"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2024_consolidated_line987.csv",
+   "sha256": "328d7ddb8ac4346d72423338c4b1cb8a973f2fda8aab4df3bc121dfb39f1e26b"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2024_separate_line1138.csv",
+   "sha256": "40cad6f653ff16f51c0c59133c4fde8e92d9829674997933c8faff0648b32916"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2025_consolidated_line257.csv",
+   "sha256": "bd11ce5f1a831f5275f83bbd2d578f87faf484f90149a378b2e3f5fb0e91fe8a"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2025_separate_line1953.csv",
+   "sha256": "3037115e3f2b0bee6b74932862c097845167241cb3a96cec07411de0904f860b"
+  },
+  {
+   "name": "data/a6_VIF_financial_statements_2025_separate_line1986.csv",
+   "sha256": "4f840188edfa1223779548c0b7e75ff949d888cdc4f07e65d479e87a198b1b3f"
+  },
+  {
+   "name": "data/a6_VJC_financial_statements_2018_consolidated_line204.csv",
+   "sha256": "3ca14417033bab2b2bb9f14f150845305428b2f0ab1f793312c216f7d25e1694"
+  },
+  {
+   "name": "data/a6_VJC_financial_statements_2018_consolidated_line958.csv",
+   "sha256": "6c76f77eb73f65a0de372b0d71645259037a005c69d6d174639cb8f2127458ad"
+  },
+  {
+   "name": "data/a6_VJC_financial_statements_2018_separate_line229.csv",
+   "sha256": "ae49b4c498a667d99b89b91d0139e93d2ac1743cbeaabb92a4b0034845b95928"
+  },
+  {
+   "name": "data/a6_VJC_financial_statements_2020_separate_line806.csv",
+   "sha256": "e5b33420b96322730c363331a44d4d0f1a032311ee44d76cf80c6dcf382ba26e"
+  },
+  {
+   "name": "data/a6_VJC_financial_statements_2021_consolidated_line1473.csv",
+   "sha256": "5dfdd9da0d1f1693a8cf2b60031b034291a9e7aad6b5017018abe750d7b58f66"
+  },
+  {
+   "name": "data/a6_VJC_financial_statements_2022_consolidated_line1558.csv",
+   "sha256": "dcc4c50dcbccc9d4fcfccf0069163d646004ed8e7baea9c043a6626ffb5f582d"
+  },
+  {
+   "name": "data/a6_VJC_financial_statements_2025_separate_line1321.csv",
+   "sha256": "4d3812d6bb6cfebdd5d8bfa2f521b65f155a5c1c709c4bb394e70259c15b7bb8"
+  },
+  {
+   "name": "data/a6_VJC_financial_statements_2025_separate_line1772.csv",
+   "sha256": "b4d702691d7d6f7963bc39d52685fe365a179c66241ef725fd063bcd832fe390"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2015_consolidated_line235.csv",
+   "sha256": "be5582c33c37f70c9164244b40b7ba50f8fb536a0fa10cb90ebf7dedbf710bf4"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2017_consolidated_line276.csv",
+   "sha256": "cb9f003470a2cf10255e1f2e632dd663da3d008ed67d35f1cf079f010af1d732"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2018_consolidated_line1710.csv",
+   "sha256": "a8fbfd51849d260fa3ff693d6a34f0cde102def7e2cd35cb2fcd90fd0d7d0fbe"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2019_separate_line263.csv",
+   "sha256": "ad74a17af2b46aff685cf3980a7e92de74eb96bd736ac338a6ae172ea5427bc3"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2020_separate_line1624.csv",
+   "sha256": "58268b2fde454a8433ddec0299ee837229fb69879114048b5fb0f20ae57fd18e"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2021_consolidated_line1365.csv",
+   "sha256": "9dd38f48ae26049fc7264963e2e16f06e736205c33a5b1016d68c94ed3542e0d"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2021_consolidated_line2007.csv",
+   "sha256": "4b9ebe22712535f69539ef7d56424390e05414b155b12154e2c3488650c4adff"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2021_consolidated_line337.csv",
+   "sha256": "96b74ff51c800493997e59a3bb2988d658f148e247618c5da3cd2135b3d857a4"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2022_consolidated_line1938.csv",
+   "sha256": "60ecadfb07ef9f0f496a2dce4a023174fad05ad0bd16725325a54c33e27f00e1"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2022_separate_line1557.csv",
+   "sha256": "e4285b648a7606265aa92f419709db1ef4ed7161c71fb1549093b9d0ca196d49"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2024_consolidated_line255.csv",
+   "sha256": "2286b1cba68ed46abb68604911c75324c42899edc3511e672e5bb948e883acab"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2024_separate_line1631.csv",
+   "sha256": "1b08985ad0f8b594fb1b11b42d0829459de74dbca8b9159d50732070f10f4351"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2025_consolidated_line1345.csv",
+   "sha256": "53c24395736504304e21a9c7e6216697753c6312c91ad454e18936f64f9783e1"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2025_consolidated_line205.csv",
+   "sha256": "50591d9f14c986d65373360ee892d7fd8e8fc9cd07626468ddfa35784cd7c8f7"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2025_separate_line1070.csv",
+   "sha256": "2d60e228509c713606daf9217e0d443df7926c3750938c6b930c8f9295584530"
+  },
+  {
+   "name": "data/a6_VNM_financial_statements_2025_separate_line1583.csv",
+   "sha256": "3d2f120685b5595a0df701e62a6775544d80deb51d018fc9197e04dc68b542aa"
+  },
+  {
+   "name": "data/a6_VPB_financial_statements_2018_consolidated_line1747.csv",
+   "sha256": "ff1b2dda24fcac20f5734edeeec4743114fb798bb1a598b35de878c9c308381e"
+  },
+  {
+   "name": "data/a6_VPB_financial_statements_2018_separate_line1667.csv",
+   "sha256": "1a6e83c5b354ad97e2fb03ad8ae89c6b29ce4370457ad7e63c573a51b4450817"
+  },
+  {
+   "name": "data/a6_VPB_financial_statements_2019_separate_line1795.csv",
+   "sha256": "8debca750b32551f2ff45bba9325e6e5ca56e8e2d6fe628b88a20ed1fdb398b4"
+  },
+  {
+   "name": "data/a6_VPB_financial_statements_2020_consolidated_line1283.csv",
+   "sha256": "1998ee3921cfdcab1d0b21ca44963a75ebc6e78d8dcdc63b32dcce3522779dc4"
+  },
+  {
+   "name": "data/a6_VPB_financial_statements_2020_separate_line1737.csv",
+   "sha256": "4f2460808c3e76218ccf08561d170654531e45e3ed2f4a804e092060231855a7"
+  },
+  {
+   "name": "data/a6_VPB_financial_statements_2022_consolidated_line382.csv",
+   "sha256": "e348a08407123ffb30039a9c9c993c786f857d7a0740c00af6273c7f2d3e2bcb"
+  },
+  {
+   "name": "data/a6_VPB_financial_statements_2022_separate_1_line1464.csv",
+   "sha256": "85b4976bd688b9f1d616f489c46c337a14835a899fa0d709c92898fe232d1d11"
+  },
+  {
+   "name": "data/a6_VPB_financial_statements_2025_consolidated_line2142.csv",
+   "sha256": "080800f6a276b4f22082b6c0f111d248d837fd62f2c4dac0948a2a7dd9719179"
+  },
+  {
+   "name": "data/a6_VPI_financial_statements_2021_consolidated_line1475.csv",
+   "sha256": "1f9e859ae71b332d0c04f51c4664847a9490786926d2189882125ccb1a00a214"
+  },
+  {
+   "name": "data/a6_VPI_financial_statements_2022_consolidated_line181.csv",
+   "sha256": "182f7b4fd3bcda5561c1d73249733736b7577a88a03302dce96dbfc576a952a1"
+  },
+  {
+   "name": "data/a6_VPI_financial_statements_2022_separate_line1339.csv",
+   "sha256": "ff2a6841cc29f8781a480449d270ef525f667b45be6411d03159b93770a2fbb5"
+  },
+  {
+   "name": "data/a6_VPI_financial_statements_2023_consolidated_line1699.csv",
+   "sha256": "f5bfa19ce4061d323e82869e82f0893a5ebf707cf822074b7a7f599dcfaf8741"
+  },
+  {
+   "name": "data/a6_VPI_financial_statements_2024_consolidated_line283.csv",
+   "sha256": "2122ef6d55f7f480b70944a3e3fbd3e0259ccb09b148ce9e7585fb7bd775409f"
+  },
+  {
+   "name": "data/a6_VPI_financial_statements_2024_separate_line292.csv",
+   "sha256": "3cbb153ad6651b3c76ba4a596fce80878e440a895095686eb675eaf968e90f45"
+  },
+  {
+   "name": "data/a6_VPI_financial_statements_2025_consolidated_line1283.csv",
+   "sha256": "e5251bab24e28354ab8407e47820a83e7fb08d005a0df09b6778214140da660f"
+  },
+  {
+   "name": "data/a6_VPI_financial_statements_2025_separate_line1634.csv",
+   "sha256": "27684b925b13b30526597cb74676ce2332cb171e2801f4bfd45c7299ed71d7e4"
+  },
+  {
+   "name": "data/a6_VPI_financial_statements_2025_separate_line1839.csv",
+   "sha256": "3673cf7650454a7af32341f4f5542b42c08195af60ebb3f3003ea9c99e26c9f0"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2016_consolidated_line1555.csv",
+   "sha256": "d1307c82d328d1c660ad27e370f6c0812a8fda9c794af9b7fd02c6de66ecac3d"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2017_consolidated_line1252.csv",
+   "sha256": "438dbb615921b49ecc00822ca2bccc5e521014a9e90f30d99de7763420396659"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2017_consolidated_line999.csv",
+   "sha256": "5b29a7fcbdc327aeabce0609a404306de153bffb1684423bf694edda3e7cf08c"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2020_consolidated_line1241.csv",
+   "sha256": "874041ea2648f2682b3bd0e21817b12ac7921de42ed716b8257ca152680ac833"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2020_consolidated_line373.csv",
+   "sha256": "67bfc7331911b52eb8949669275216a0480a5fb67edcbe5ca3ceaa31b56fea14"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2020_separate_line1314.csv",
+   "sha256": "263f4870646f2cf48fa65f7efaa401861716427fee555a1a17bf99781c573368"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2022_separate_line1107.csv",
+   "sha256": "dea89a1061f262f0fbc7193557d3e21c1e935ae094b01a17e9e42b4cbae6c34b"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2022_separate_line1411.csv",
+   "sha256": "4ca6df79b75ccefb58936c19672fdd26b62c5a818f0313967a6af50e0fbae11c"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2023_consolidated_line414.csv",
+   "sha256": "ed205c09ff721678959ec77ae76cd975e70f8a1ba9c620a848b49a506bd78cc2"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2024_consolidated_line252.csv",
+   "sha256": "e6f2410dcdd5f08aa10ba1ea1c29aee274caaef85313580813fc3018a45636ea"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2024_separate_line1005.csv",
+   "sha256": "f16090d6177bb0c769e6d744b9f8443b0af44a9c3493f59662694f29a4ce0992"
+  },
+  {
+   "name": "data/a6_VRE_financial_statements_2024_separate_line236.csv",
+   "sha256": "f4aa4ef6d4ba12f6bdd070b52506257839ef4af75f94467ffa9e72f01ecc3dfe"
+  },
+  {
+   "name": "data/a6_VSC_financial_statements_2015_consolidated_line297.csv",
+   "sha256": "8171d2c35f262e07b1ad386f676730d638195d97a631185380095391d479e0ab"
+  },
+  {
+   "name": "data/a6_VSC_financial_statements_2017_consolidated_line775.csv",
+   "sha256": "351895a83b4901b6da9672d6aa639abb729220112825c48b6eabfc1eeef3bffe"
+  },
+  {
+   "name": "data/a6_VSC_financial_statements_2017_separate_line180.csv",
+   "sha256": "549ad2c8461a9230004b6c5febc395699a70b41b347b0af625306f2be6a9ff2e"
+  },
+  {
+   "name": "data/a6_VSC_financial_statements_2017_separate_line224.csv",
+   "sha256": "55ac802cabfeea9e885c5d82acae037f74951ef1563056b23ad9de544e84829d"
+  },
+  {
+   "name": "data/a6_VSC_financial_statements_2018_consolidated_line924.csv",
+   "sha256": "878dfdd6989e1d57c0e946b1aa0f4520929c33967990dee29fd32f16ee8aa609"
+  },
+  {
+   "name": "data/a6_VSC_financial_statements_2019_separate_line250.csv",
+   "sha256": "e5c1132a55ad4551f66703e458b00a2d9435a916b547f812f32ce26c5f945112"
+  },
+  {
+   "name": "data/a6_VSC_financial_statements_2020_consolidated_line216.csv",
+   "sha256": "ead78f1b88f17ea8a786177b7eb9d2886403edbf5956e4a6e6b27ae61e26530c"
+  },
+  {
+   "name": "data/a6_VSC_financial_statements_2022_separate_line929.csv",
+   "sha256": "20202aee724c22c02be993c002f32345471880f27cee4988bc819e29f17646d2"
+  },
+  {
+   "name": "data/a6_VSC_financial_statements_2025_consolidated_line1091.csv",
+   "sha256": "2ab4f8bfad012205cfedd0ab57ffc8b564129d44402dc95629b7cbec4779ed86"
+  },
+  {
+   "name": "data/a6_VSF_financial_statements_2019_consolidated_line1532.csv",
+   "sha256": "62efe1ac4522ff62b55be5671eea286cb31903092037c015dbd103d228cc35cf"
+  },
+  {
+   "name": "data/a6_VSF_financial_statements_2019_consolidated_line1680.csv",
+   "sha256": "840d0187fe3c3f5e2735782f181e0a857f52a889cb7527ca8f635be5234aab82"
+  },
+  {
+   "name": "data/a6_VSF_financial_statements_2022_separate_line1647.csv",
+   "sha256": "5c0d1b2d734174368200e1af4a8a697d44a39a0e6aec4851db41762c9fbbcbd6"
+  },
+  {
+   "name": "data/a6_VSF_financial_statements_2023_consolidated_line1641.csv",
+   "sha256": "01d1246ab4a42ba0f8ecd2ffc957ac4b1ef90c9629d4fb1d3cc9c287da2854bb"
+  },
+  {
+   "name": "submission.json",
+   "sha256": "fa27e15d3badc17dd39db4b09261ae042c78712581627988e9d4ffa7d1ab7f1a"
+  }
+ ]
+}

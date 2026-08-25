@@ -1,0 +1,1405 @@
+diff --git a/configs/retrieval/eval_v1.yaml b/configs/retrieval/eval_v1.yaml
+index 80b07da..5819485 100644
+--- a/configs/retrieval/eval_v1.yaml
++++ b/configs/retrieval/eval_v1.yaml
+@@ -30,6 +30,12 @@ profiles:
+ 
+   base: {}
+ 
++  # ĐỐI CHỨNG P0-1 · CÙNG cấu hình `base`, nhưng chạy bằng CÂY CODE TRƯỚC KHI SỬA
++  # (`$HOME/p0/oldtree`, `drop` thiếu tên công ty). Tồn tại để phép so trước/sau
++  # chỉ khác MỘT biến là code — không lẫn thêm biến nền tảng (sqlite/máy chạy).
++  # `tag` không vào `cfg_sha`, nên tệp này mang đúng sha của `base` cũ (evalkit-1).
++  base_precode_fix: {}
++
+   # ── A/B về THƯỚC ĐO (đổi gold, không đổi hệ) ──────────────────────────────
+   # Dùng để biết một kết luận có phụ thuộc vào độ nới của gold hay không.
+   gold_t1:
+@@ -40,6 +46,12 @@ profiles:
+     gold_max_tier: T3_row_and2
+ 
+   # ── A/B về HỆ (đổi hệ, giữ nguyên gold) ───────────────────────────────────
++  stopdau:                  # STOP đối chiếu dạng CÓ DẤU — sửa va chạm bỏ dấu
++    stop_mode: dau          # ("tài sản", "bất động sản", "cổ phiếu" hết bị nuốt)
++
++  brand_a6:                 # CHỈ tên thương mại chứng thực được trong corpus BTC
++    brands: a6              # (tools/attest_brands.py) — nhánh KHÔNG tri thức ngoài A6
++
+   nobrand:                  # lớp tên thương mại có giá trị bao nhiêu
+     brands: false
+   basis_hard:               # basis làm lọc cứng có thật tệ hơn không
+@@ -72,6 +84,42 @@ profiles:
+   s2_row_softer:            # giảm ưu thế row_labels — kiểm chính thiên lệch của proxy
+     weights: [0.0, 0.0, 2.0, 1.0, 2.0, 1.5]
+ 
++  # ── HAI CAN THIỆP MỚI · nhắm đúng nút thắt đã đo ─────────────────────────
++  # (1) chuẩn hoá theo HẠNG · bỏ phụ thuộc kích thước pool.
++  #     Giả thuyết: lấy được +0,0080 hit@1 của `basis_hard` mà KHÔNG mất
++  #     0,0219 cand_hit, vì nó không loại bảng nào — chỉ đổi cách chấm điểm.
++  s2_rank_norm:
++    norm: rank
++  # ĐÃ ĐO VÀ BỊ BÁC BỎ: hit@1 0,6551 → 0,4851 (−0,1700). `rank` nén đỉnh phân
++  # bố xuống dưới mức bonus (khoảng cách hạng1↔hạng2 = 1/n) ⇒ bonus lấn BM25
++  # còn nặng hơn min-max. Giữ profile lại làm bằng chứng, KHÔNG dùng.
++  s2_maxnorm:
++    norm: maxnorm
++
++  # (2) quota theo mã cho screen/compare · sửa "top-K toàn cục sai đơn vị đo".
++  #     Nhóm `screen` F2@10 = 0,299 (thấp nhất mọi mode) dù cand_hit = 1,000.
++  s2_fanout1:
++    per_ticker_k: 1
++  s2_fanout2:
++    per_ticker_k: 2
++
++  # (3) cả hai — chỉ chạy SAU khi từng cái đã đo riêng, nếu không thì không
++  #     quy được cải thiện cho ai.
++  s2_rank_fanout:
++    norm: rank
++    per_ticker_k: 2
++
++  # ── E2 · tiên nghiệm lớp báo cáo (docs/118, feedback docs/119) ────────────
++  # KHÔNG phải mặc định. Đây là CẤU HÌNH THÍ NGHIỆM. Default production giữ
++  # `primary_boost: 0.00` cho tới khi held-out PASS theo acceptance 119 §7.3.
++  s2_primary:
++    primary_boost: 0.60
++  # Negative control 119 §7.4 — boost chỉ áp cho mode KHÔNG được target.
++  # Kỳ vọng: no-op tuyệt đối trên gold (không câu nào đổi điểm).
++  s2_primary_nullmode:
++    primary_boost: 0.60
++    primary_modes: ["nonexistent_mode"]
++
+   # ── khi đã có gold gán tay ────────────────────────────────────────────────
+   manual:
+     gold_source: manual
+diff --git a/docs/76_KHUNG_DANH_GIA_RETRIEVAL_KET_QUA.md b/docs/76_KHUNG_DANH_GIA_RETRIEVAL_KET_QUA.md
+index 088a8ae..13a759f 100644
+--- a/docs/76_KHUNG_DANH_GIA_RETRIEVAL_KET_QUA.md
++++ b/docs/76_KHUNG_DANH_GIA_RETRIEVAL_KET_QUA.md
+@@ -1,5 +1,14 @@
+ # 76 · Khung đánh giá & chẩn đoán tầng Retrieval — đã triển khai, đã chạy, và bốn con số đổi kết luận
+ 
++> **⚠ CẢNH BÁO ĐỘ TIN CẬY — đọc `docs/79` trước.** Mọi số TUYỆT ĐỐI trong tài
++> liệu này được sinh bởi bản `evalkit` mang regression `_drop_terms` (tên công ty
++> không bị loại khỏi truy vấn BM25). Đo đủ 1.012 câu sau khi sửa: hit@1
++> `0,6551 → 0,7256`. Nên mọi con số ở đây **thấp hơn thực tế ~7 điểm hit@1**.
++> Kết luận TƯƠNG ĐỐI (A/B ghép cặp) vẫn đúng dấu — đã đo lại, xem `docs/79 §7`.
++> Riêng giải thích ở **§2 ("hiệu ứng coverage")** là **SAI**: nguyên nhân là
++> regression, không phải coverage.
++
++
+ > **Phạm vi**: CHỈ tầng truy hồi. Không sinh đáp án, không Prompt Builder, không chạm `src/text2pandas/`. `answer` để trống.
+ > **Trạng thái**: chạy end-to-end trên **1.012/1.012 câu**, 345 s một luồng, SQLite thuần, không GPU.
+ > **Cấu hình đã đo**: `cfg_sha=81e7eae67ff0415f` · 47 test offline xanh · `source_hash` **không đổi**.
+diff --git a/src/retrieval/alias_store.py b/src/retrieval/alias_store.py
+index 5abb366..b58efa9 100644
+--- a/src/retrieval/alias_store.py
++++ b/src/retrieval/alias_store.py
+@@ -1,24 +1,58 @@
+-"""Nạp bảng bí danh: lớp sinh tự động + lớp tên thương mại curated."""
++"""Nạp bảng bí danh: lớp sinh tự động + lớp tên thương mại curated.
++
++BA NHÁNH, VÌ CÓ MỘT XUNG ĐỘT SSOT THẬT
++--------------------------------------
++`company_alias_v1.yaml` sinh tự động từ `code_stock.csv` — không tranh cãi.
++`company_brand_v1.yaml` là 77 tên **gõ tay** ("Đạm Phú Mỹ", "Vinamilk"), và
++nguyên tắc dự án là *không dùng dữ liệu ngoài A6 khi chưa được cho phép*.
++
++Thay vì chọn bên, tách theo BẰNG CHỨNG (`tools/attest_brands.py`):
++
++    brands=True   ("full") · cả 77 tên — trong đó 9 tên KHÔNG có trong corpus
++    brands="a6"            · chỉ 68 tên CHỨNG THỰC ĐƯỢC trong chính báo cáo của
++                             mã đó ⇒ không có tri thức ngoài A6
++    brands=False  ("off")  · không lớp thương mại nào — đối chứng
++
++Ba nhánh này là ba `cfg_sha` khác nhau, nên "giữ hay bỏ" trả lời được bằng A/B
++ghép cặp trên đủ 1.012 câu thay vì bằng quan điểm.
++"""
+ from __future__ import annotations
+ 
+ from pathlib import Path
+ 
+ import yaml
+ 
+-__all__ = ["load_aliases", "ALIAS_V1", "BRAND_V1"]
++__all__ = ["load_aliases", "ALIAS_V1", "BRAND_V1", "BRAND_A6"]
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+ ALIAS_V1 = ROOT / "configs/retrieval/company_alias_v1.yaml"
+ BRAND_V1 = ROOT / "configs/retrieval/company_brand_v1.yaml"
++BRAND_A6 = ROOT / "configs/retrieval/company_brand_attested_v1.yaml"
++
++_NHANH = {True: BRAND_V1, "full": BRAND_V1, "a6": BRAND_A6,
++          False: None, "off": None, None: None}
++
+ 
++def load_aliases(brands: bool | str = True) -> dict[str, list[str]]:
++    """{ticker: [tên...]}. `brands` ∈ {True/"full", "a6", False/"off"}.
+ 
+-def load_aliases(brands: bool = True) -> dict[str, list[str]]:
+-    """{ticker: [tên...]}. `brands=False` để chạy hồi quy đối chứng."""
++    Giá trị lạ thì NỔ, không im lặng rơi về mặc định: một lỗi chính tả trong
++    `eval_v1.yaml` mà lặng lẽ chạy nhánh khác là một phép đo sai không dấu vết.
++    """
++    if brands not in _NHANH:
++        raise ValueError(
++            f"brands phải là True/'full' | 'a6' | False/'off', nhận {brands!r}")
+     base = yaml.safe_load(ALIAS_V1.read_text(encoding="utf-8"))["aliases"]
+     out = {t: ([n] if isinstance(n, str) else list(n)) for t, n in base.items()}
+-    if brands and BRAND_V1.is_file():
+-        extra = yaml.safe_load(BRAND_V1.read_text(encoding="utf-8"))["brands"]
+-        for t, names in extra.items():
+-            if t in out:
+-                out[t] += [n for n in names if n not in out[t]]
++    p = _NHANH[brands]
++    if p is None:
++        return out
++    if not p.is_file():
++        raise FileNotFoundError(
++            f"thiếu {p.name} cho brands={brands!r}. "
++            "Sinh lại bằng `python tools/attest_brands.py`.")
++    extra = yaml.safe_load(p.read_text(encoding="utf-8"))["brands"]
++    for t, names in extra.items():
++        if t in out:
++            out[t] += [n for n in names if n not in out[t]]
+     return out
+diff --git a/src/retrieval/evalkit/cli.py b/src/retrieval/evalkit/cli.py
+index b1a540e..9fff84b 100644
+--- a/src/retrieval/evalkit/cli.py
++++ b/src/retrieval/evalkit/cli.py
+@@ -149,6 +149,10 @@ def _load_cfg(tag: str, overrides: dict) -> EvalConfig:
+         base["ks"] = tuple(base["ks"])
+     if base.get("weights"):
+         base["weights"] = tuple(float(x) for x in base["weights"])
++    # YAML trả về list; `EvalConfig` khai tuple. Không ép kiểu thì `sha` của
++    # cùng một cấu hình sẽ khác nhau tuỳ nó đến từ YAML hay từ code.
++    if base.get("primary_modes") is not None:
++        base["primary_modes"] = tuple(base["primary_modes"])
+     known = set(EvalConfig.__dataclass_fields__)
+     unknown = set(base) - known
+     if unknown:
+diff --git a/src/retrieval/evalkit/diag_nogold.py b/src/retrieval/evalkit/diag_nogold.py
+index debdd68..93a7453 100644
+--- a/src/retrieval/evalkit/diag_nogold.py
++++ b/src/retrieval/evalkit/diag_nogold.py
+@@ -28,7 +28,7 @@ from pathlib import Path
+ ROOT = Path(__file__).resolve().parents[3]
+ sys.path.insert(0, str(ROOT / "src"))
+ 
+-from retrieval.evalkit.cli import _preflight              # noqa: E402
++from retrieval.evalkit.cli import _load_cfg, _preflight   # noqa: E402
+ 
+ _preflight()
+ 
+@@ -85,12 +85,27 @@ def main(argv) -> int:
+     ap.add_argument("--budget-s", type=float, default=38.0)
+     ns = ap.parse_args(argv)
+ 
+-    ck = sorted(OUT.glob(f"ek_{ns.tag}_*.jsonl"))
+-    if not ck:
+-        print(f"✗ chưa có checkpoint cho tag={ns.tag}")
++    # DÙNG CHECKPOINT CHÍNH DANH, không `glob(...)[-1]`.
++    #
++    # Bản trước lấy tệp CUỐI theo thứ tự chữ cái. Với tag `base` có 4 tệp
++    # (3189bebc · 52cd55a9 · 81e7eae6 · da55067a) thì "cuối" là `da55067a` —
++    # đúng tệp sinh bởi **gold builder có bug return sớm**, tức chẩn đoán chạy
++    # trên dữ liệu sai mà không một dòng nào báo. `cfg.checkpoint_name` suy ra từ
++    # `cfg_sha` của cấu hình hiện tại, nên không còn chỗ cho nhập nhằng.
++    cfg = _load_cfg(ns.tag, {})
++    ck = OUT / cfg.checkpoint_name
++    if not ck.is_file():
++        print(f"✗ chưa có checkpoint chính danh cho tag={ns.tag}: {ck.name}")
++        khac = sorted(OUT.glob(f"ek_{ns.tag}_*.jsonl"))
++        if khac:
++            print("  có tệp khác cùng tag nhưng CẤU HÌNH KHÁC — không dùng:")
++            for f in khac:
++                print(f"    {f.name}")
++        print(f"  chạy: tools/evalkit collect --tag {ns.tag} --loop --budget-s 300")
+         return 2
+     rows = list({json.loads(l)["id"]: json.loads(l)
+-                 for l in ck[-1].open(encoding="utf-8") if l.strip()}.values())
++                 for l in ck.open(encoding="utf-8") if l.strip()}.values())
++    print(f"checkpoint: {ck.name}  ({len(rows)} câu)")
+     nogold = [r for r in rows if not r.get("gold_ok")
+               and r.get("gold_reason") == "no_phrase_match"]
+     print(f"câu no_phrase_match: {len(nogold)} · lấy mẫu {min(ns.sample, len(nogold))}")
+diff --git a/src/retrieval/evalkit/goldset.py b/src/retrieval/evalkit/goldset.py
+index 4cc9ffa..f41c1a7 100644
+--- a/src/retrieval/evalkit/goldset.py
++++ b/src/retrieval/evalkit/goldset.py
+@@ -68,7 +68,12 @@ from retrieval.query_terms import content_terms
+ from .taxonomy import NoGoldReason
+ 
+ __all__ = ["GoldSet", "GoldProvider", "ProxyGoldV2", "ManualGold",
+-           "free_ticker_histogram", "TIERS"]
++           "free_ticker_histogram", "TIERS", "GOLD_ERRORS"]
++
++# Lỗi truy vấn khi DỰNG GOLD. Phải phơi ra vì gold hỏng làm hỏng THƯỚC ĐO, mà
++# thước đo hỏng thì mọi con số sau đó đều vô nghĩa mà vẫn trông bình thường.
++# `runner.collect` đọc danh sách này và kêu to ở cuối lượt chạy.
++GOLD_ERRORS: list[str] = []
+ 
+ # Thang nới, theo đúng thứ tự áp dụng. `strict` = dùng được để chốt quyết định.
+ # `T0_manual` không nằm trong kế hoạch quét — nó là gold tay, luôn strict.
+@@ -141,8 +146,10 @@ def _scoped(conn, match: str, tickers: tuple[str, ...],
+     sql += f" LIMIT {limit}"
+     try:
+         return conn.execute(sql, args).fetchall()
+-    except sqlite3.OperationalError:
+-        return None                      # cú pháp FTS không hợp lệ — KHÔNG im lặng
++    except sqlite3.OperationalError as e:
++        # `None` ≠ `[]`: caller phân biệt được "truy vấn hỏng" với "không khớp".
++        GOLD_ERRORS.append(f"_free_rows: {e} · match={match[:60]!r}")
++        return None
+ 
+ 
+ def free_ticker_histogram(conn, match: str,
+@@ -159,7 +166,11 @@ def free_ticker_histogram(conn, match: str,
+     sql += " GROUP BY t.ticker"
+     try:
+         return {tk: n for tk, n in conn.execute(sql, args)}
+-    except sqlite3.OperationalError:
++    except sqlite3.OperationalError as e:
++        # KHÔNG được im lặng. `{}` ở đây trông y hệt "không mã nào khác chứa cụm
++        # này" — tức là bằng chứng để KHÔNG gắn `entity_suspect`. Một lỗi cú
++        # pháp FTS sẽ biến thành một kết luận về phân giải thực thể.
++        GOLD_ERRORS.append(f"free_ticker_histogram: {e} · match={match[:60]!r}")
+         return {}
+ 
+ 
+diff --git a/src/retrieval/evalkit/runner.py b/src/retrieval/evalkit/runner.py
+index 2a664c5..33b1552 100644
+--- a/src/retrieval/evalkit/runner.py
++++ b/src/retrieval/evalkit/runner.py
+@@ -29,9 +29,11 @@ import time
+ from dataclasses import asdict, dataclass, field
+ from pathlib import Path
+ 
++from retrieval import rank_s2
+ from retrieval.alias_store import load_aliases
+ from retrieval.question_intent import parse_intent
+ 
++from . import goldset
+ from .goldset import GoldProvider, GoldSet, ManualGold, ProxyGoldV2, free_ticker_histogram
+ from .stages import (Bm25StructuralRanker, HardFilterGenerator, IdentityReranker,
+                      period_ends_of)
+@@ -39,7 +41,21 @@ from .taxonomy import NoGoldReason, classify
+ 
+ __all__ = ["EvalConfig", "collect", "SCHEMA_VERSION"]
+ 
+-SCHEMA_VERSION = "evalkit-1"
++# Phiên bản này vào `EvalConfig.sha`, nên đổi nó là VÔ HIỆU HOÁ mọi checkpoint cũ.
++#
++#   evalkit-1 → evalkit-2   P0-1: `drop` ở S2 nay gồm cả TÊN công ty, không chỉ mã.
++#
++# VÌ SAO PHẢI BUMP, KHÔNG PHẢI CHỈ SỬA CODE
++# -----------------------------------------
++# `cfg_sha` băm CẤU HÌNH, không băm CODE. `_done()` coi mọi dòng cùng `cfg_sha`
++# là "đã đo" và bỏ qua. Nếu sửa hành vi xếp hạng mà không bump, `collect` sẽ
++# tuyên bố "đã đo đủ 1.012 câu" và `report` in lại y nguyên số của bản CÓ LỖI —
++# một bản sửa đúng biến thành không có tác dụng gì, im lặng.
++#
++# Kỷ luật con người không giữ được bất biến này (đã hỏng một lần rồi), nên
++# `tests/test_p0_unify.py::test_behavior_fingerprint` băm AST của các module
++# quyết định hành vi S2 và đỏ lên nếu chúng đổi mà hằng số này không đổi.
++SCHEMA_VERSION = "evalkit-3"   # bump: S2 có tiên nghiệm lớp báo cáo (docs/118)
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+@@ -48,11 +64,12 @@ class EvalConfig:
+ 
+     basis_mode: str = "soft"
+     use_hints: str = "code_single"
+-    brands: bool = True
++    brands: bool | str = True   # True/"full" | "a6" | False — xem alias_store
+     top_k_rank: int = 50
+     top_k_rerank: int = 10
+     year_slack: int = 1
+     gold_source: str = "proxy_v2"       # proxy_v2 | manual | manual_then_proxy
++    gold_manual_path: str = "data/dev/gold_v2.jsonl"
+     gold_raw_limit: int = 400
+     gold_max_trusted: int = 60
+     gold_max_tier: str = "T4_anycol_2gram"   # T1|T2|T3|T4 — nới tới đâu
+@@ -61,16 +78,62 @@ class EvalConfig:
+     budget_s: float = 35.0
+     weights: tuple[float, ...] | None = None
+     bonuses: dict | None = None
++    norm: str = "minmax"              # minmax | rank | maxnorm — xem rank_s2
++    stop_mode: str = "fold"           # fold | dau — xem query_terms.STOP_DAU
++    per_ticker_k: int | None = None   # quota theo mã cho screen/compare
++    # Tiên nghiệm lớp báo cáo cho câu `screen`/`related` — docs/118 §4.
++    # ĐO trên gold_v2 (95 câu): F2(A) 0,4549 → 0,4994 · R̄ 0,5981 → 0,6545 ·
++    # hit@10 0,8737 → 0,9368 · 13 câu tốt lên / 2 câu xấu đi · `single` và
++    # `compare` BẤT BIẾN tuyệt đối (cổng theo mode).
++    # CẢNH BÁO: cùng phép đo này chấm bằng proxy_v2 cho ra −0,0248 F2(A).
++    # Mâu thuẫn ĐÃ TRUY ĐƯỢC NGUYÊN NHÂN, không phải nhiễu — nhãn proxy sinh
++    # bằng khớp cụm nên nghiêng về thuyết minh (58,9% note) trong khi gold
++    # nghiêng về báo cáo chính (67,1%). Xem docs/118 §3.
++    # MẶC ĐỊNH 0,00 = TẮT. Feedback docs/119 §5.8: +0,0446 là gain trên
++    # DEVELOPMENT set (chính 95 câu đã dùng để tìm feature, chọn kinds và quét
++    # boost). Không đổi default production trước khi có held-out PASS theo
++    # acceptance §7.3. Cấu hình thí nghiệm: profile `s2_primary` (0,60).
++    primary_boost: float = 0.00
++    primary_modes: tuple[str, ...] = ("screen", "related")
+     tag: str = "default"
+ 
+     @property
+     def sha(self) -> str:
+-        d = asdict(self)
+-        d.pop("budget_s", None)          # ngân sách thời gian không đổi kết quả
++        """Băm NGỮ NGHĨA của phép đo — chỉ những gì LỆCH KHỎI mặc định.
++
++        VÌ SAO KHÔNG BĂM TOÀN BỘ DICT — lỗi đã xảy ra thật
++        --------------------------------------------------
++        Bản đầu băm cả `asdict(self)`. Hệ quả: **thêm một trường mới với giá trị
++        mặc định trung tính cũng đổi `sha`**, và làm mồ côi mọi checkpoint cũ.
++        Đã xảy ra: thêm `norm="minmax"` + `per_ticker_k=None` — đúng bằng hành vi
++        trước đó, không đổi một con số nào — mà 4 lần chạy đủ 1.012 câu
++        (`base`, `basis_hard`, `slack0`, `hints_none`) mất hiệu lực và `ab` báo
++        thiếu checkpoint.
++
++        Băm theo ĐỘ LỆCH giải quyết trọn vẹn: cấu hình mặc định luôn cho cùng
++        một `sha` bất kể sau này thêm bao nhiêu trường, và một cấu hình chỉ đổi
++        `sha` khi thứ THẬT SỰ ảnh hưởng kết quả bị đổi.
++
++        Hai trường bị loại khỏi băm, mỗi cái một lý do:
++          `budget_s` · ngân sách thời gian, không đổi kết quả;
++          `tag`      · chỉ là nhãn, đã nằm trong tên tệp. Loại nó ra còn cho
++                       phép hai tag có cùng thiết lập nhận diện được là TRÙNG
++                       NGỮ NGHĨA thay vì bị coi là hai phép đo khác nhau.
++        """
++        goc = asdict(EvalConfig())
++        d = {k: v for k, v in asdict(self).items()
++             if k not in ("budget_s", "tag") and v != goc[k]}
+         d["_schema"] = SCHEMA_VERSION
+         blob = json.dumps(d, sort_keys=True, default=str, ensure_ascii=False)
+         return hashlib.sha256(blob.encode()).hexdigest()[:16]
+ 
++    @property
++    def deviations(self) -> dict:
++        """Những gì cấu hình này LỆCH khỏi mặc định — in ra để đọc được `sha`."""
++        goc = asdict(EvalConfig())
++        return {k: v for k, v in asdict(self).items()
++                if k not in ("budget_s", "tag") and v != goc[k]}
++
+     @property
+     def checkpoint_name(self) -> str:
+         return f"ek_{self.tag}_{self.sha}.jsonl"
+@@ -159,7 +222,7 @@ def _build_gold_provider(cfg: EvalConfig, root: Path, conn, alias: dict):
+                         max_tier=cfg.gold_max_tier)
+     if cfg.gold_source == "proxy_v2":
+         return proxy, None
+-    manual = ManualGold(root / "data/dev/gold_v1.jsonl", conn)
++    manual = ManualGold(root / cfg.gold_manual_path, conn)
+     if cfg.gold_source == "manual":
+         return manual, manual
+     return proxy, manual      # manual_then_proxy: manual thắng nếu có
+@@ -190,9 +253,16 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
+ 
+     gold_primary, gold_manual = _build_gold_provider(cfg, root, conn, alias)
+     s1 = HardFilterGenerator(basis_mode=cfg.basis_mode, year_slack=cfg.year_slack)
+-    s2 = Bm25StructuralRanker(top_k=cfg.top_k_rank, use_hints=cfg.use_hints,
++    # `alias` là tham số VỊ TRÍ ĐẦU TIÊN của ranker và không có mặc định: quên
++    # nó là `TypeError` ngay, không phải một phép đo sai âm thầm (P0-1/P0-3).
++    s2 = Bm25StructuralRanker(alias,
++                              top_k=cfg.top_k_rank, use_hints=cfg.use_hints,
+                               basis_mode=cfg.basis_mode, weights=cfg.weights,
+-                              bonuses=cfg.bonuses)
++                              bonuses=cfg.bonuses, norm=cfg.norm,
++                              per_ticker_k=cfg.per_ticker_k,
++                              stop_mode=cfg.stop_mode,
++                              primary_boost=cfg.primary_boost,
++                              primary_modes=cfg.primary_modes)
+     s3 = IdentityReranker(top_k=cfg.top_k_rerank)
+ 
+     fh = ck.open("a", encoding="utf-8")
+@@ -275,4 +345,29 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
+     da = len(xong) + n
+     print(f"đo thêm {n} câu · tổng {da}/{len(qs)} · cfg={cfg.sha} · "
+           f"{time.time()-t0:.0f}s" + ("" if da >= len(qs) else "  → gọi lại `collect`"))
++    _keu_neu_co_loi(outdir, cfg)
+     return 0
++
++
++def _keu_neu_co_loi(outdir: Path, cfg: EvalConfig) -> None:
++    """Lỗi truy vấn trong lượt chạy phải KÊU TO và để lại tệp.
++
++    Hai danh sách này (`rank_s2.LAST_ERRORS`, `goldset.GOLD_ERRORS`) trước đây
++    chỉ tồn tại trong bộ nhớ tiến trình. Một lô BM25 hỏng làm điểm THIẾU chứ
++    không làm chương trình dừng, và một truy vấn gold hỏng làm câu đó thành
++    `F0_NO_GOLD` — cả hai đều trông y hệt "kết quả bình thường" ở bảng cuối.
++
++    Đây là lớp lỗi đắt nhất của một khung đo: nó không sai to, nó sai ÍT và im.
++    """
++    loi = ([f"S2/bm25 · {e}" for e in rank_s2.LAST_ERRORS]
++           + [f"GOLD · {e}" for e in goldset.GOLD_ERRORS])
++    if not loi:
++        return
++    p = outdir / f"errors_{cfg.tag}_{cfg.sha}.txt"
++    p.write_text("\n".join(loi) + "\n", encoding="utf-8")
++    print(f"\n⚠ {len(loi)} LỖI TRUY VẤN trong lượt chạy — số đo KHÔNG đầy đủ.")
++    for e in loi[:5]:
++        print(f"    {e}")
++    if len(loi) > 5:
++        print(f"    … còn {len(loi) - 5} lỗi nữa")
++    print(f"    đầy đủ → {p}")
+diff --git a/src/retrieval/evalkit/stages.py b/src/retrieval/evalkit/stages.py
+index 22d5d8c..67649ad 100644
+--- a/src/retrieval/evalkit/stages.py
++++ b/src/retrieval/evalkit/stages.py
+@@ -31,9 +31,9 @@ from typing import Protocol, runtime_checkable
+ 
+ from retrieval.filter_s1 import Candidate, filter_tables
+ from retrieval.metric_hint import metric_codes_hint, statement_hint
+-from retrieval.query_terms import build_match, content_terms
++from retrieval.query_terms import build_match, content_terms, drop_terms
+ from retrieval.question_intent import Intent
+-from retrieval.rank_s2 import Scored, rank
++from retrieval.rank_s2 import PRIMARY_KINDS, Scored, rank
+ 
+ __all__ = [
+     "StageOutput", "RankedItem", "CandidateGenerator", "Ranker", "Reranker",
+@@ -63,10 +63,21 @@ def period_ends_of(years: tuple[int, ...]) -> tuple[str, ...]:
+ 
+ @dataclass(frozen=True, slots=True)
+ class RankedItem:
++    """`scored` mang NGUYÊN đối tượng `Scored` của tầng xếp hạng, nếu có.
++
++    Vì sao không chỉ giữ `score` + `reasons`: `pipeline.run` phải trả `Scored`
++    cho hai script cũ. Nếu ở đây bỏ mất `bm25`/`period_hit`/`unit_hit`/
++    `stmt_hit`/`basis_hit` thì `pipeline.run` buộc phải DỰNG LẠI bằng giá trị
++    giả (`0.0`/`False`) — không script nào hiện đọc chúng, nhưng một trường
++    mang giá trị giả mà trông như thật là cái bẫy y hệt lớp lỗi P0-2 vừa sửa.
++    Giữ nguyên đối tượng thì không phải nói dối.
++    """
++
+     table_uid: str
+     score: float
+     reasons: tuple[str, ...] = ()
+     cand: Candidate | None = None
++    scored: Scored | None = None
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+@@ -170,13 +181,59 @@ class Bm25StructuralRanker:
+ 
+     name = "s2_bm25_structural"
+ 
+-    def __init__(self, top_k: int = 50, use_hints: str = "code_single",
+-                 basis_mode: str = "soft", weights=None, bonuses=None):
++    def __init__(self, alias: dict[str, list[str]], *,
++                 top_k: int = 50, use_hints: str = "code_single",
++                 basis_mode: str = "soft", weights=None, bonuses=None,
++                 norm: str | None = None, per_ticker_k: int | None = None,
++                 fanout_modes: tuple[str, ...] = ("screen", "compare"),
++                 stop_mode: str = "fold",
++                 primary_boost: float = 0.0,
++                 primary_modes: tuple[str, ...] = ("screen", "related"),
++                 primary_kinds: frozenset[str] | None = None,
++                 alias_rong_co_y: bool = False):
++        # `alias` là THAM SỐ ĐẦU, BẮT BUỘC, VỊ TRÍ — không có mặc định.
++        #
++        # Bản trước để `alias=None` ở cuối danh sách keyword. Hệ quả: quên nó thì
++        # ranker vẫn dựng được, vẫn chạy, vẫn trả kết quả — chỉ là kết quả SAI
++        # (tên công ty còn trong truy vấn BM25, −0,0706 hit@1). Đó đúng là hình
++        # dạng của regression vừa mất ba phiên để tìm: một mặc định "an toàn"
++        # cho phép chạy sai âm thầm.
++        #
++        # Mặc định an toàn phải là KHÔNG CHẠY ĐƯỢC. Muốn tái hiện hành vi cũ
++        # (test cơ chế) thì phải viết ra một cờ có tên nói đúng việc nó làm.
++        if alias is None:
++            raise TypeError(
++                "Bm25StructuralRanker cần `alias` = {ticker: [tên, …]} từ "
++                "`alias_store.load_aliases`. Thiếu nó thì tên công ty còn lại "
++                "trong truy vấn BM25 và mất ~0,07 hit@1 — xem query_terms.drop_terms."
++            )
++        if not alias and not alias_rong_co_y:
++            raise ValueError(
++                "`alias` rỗng. Đây gần như luôn là lỗi nạp (sai đường dẫn, sai "
++                "cờ `brands`). Nếu CỐ Ý muốn hành vi 'không loại tên công ty' — "
++                "chỉ dùng cho test cơ chế — hãy truyền alias_rong_co_y=True."
++            )
++        self.alias = alias
++        self.alias_rong_co_y = alias_rong_co_y
+         self.top_k = top_k
+         self.use_hints = use_hints
+         self.basis_mode = basis_mode
+         self.weights = weights
+         self.bonuses = bonuses
++        self.norm = norm
++        # Fan-out CHỈ cho câu nhiều thực thể. Áp cho `single` là vô nghĩa (một
++        # mã ⇒ `_fanout_by_ticker` trả về nguyên trạng) nhưng khai tường minh để
++        # không ai phải đoán, và để A/B được từng nhóm.
++        self.per_ticker_k = per_ticker_k
++        self.fanout_modes = fanout_modes
++        # `fold` (mặc định) đối chiếu STOP với dạng bỏ dấu — nuốt oan từ nội
++        # dung ở 61,4% số câu. `dau` sửa điều đó. Xem `query_terms.STOP_DAU`.
++        self.stop_mode = stop_mode
++        # Tiên nghiệm lớp báo cáo, CHỈ cho `primary_modes`. 0.0 = tắt.
++        self.primary_boost = primary_boost
++        self.primary_modes = primary_modes
++        self.primary_kinds = (PRIMARY_KINDS if primary_kinds is None
++                              else frozenset(primary_kinds))
+ 
+     def rank(self, conn, question: str, intent: Intent,
+              upstream: StageOutput) -> StageOutput:
+@@ -184,8 +241,8 @@ class Bm25StructuralRanker:
+         if not cands:
+             return StageOutput(stage=self.name, uids=frozenset(),
+                                trace={"reason": "upstream_empty"})
+-        drop = self._drop_terms(intent)
+-        terms = content_terms(question, drop=drop)
++        drop = drop_terms(intent.targets, self.alias)
++        terms = content_terms(question, drop=drop, stop_mode=self.stop_mode)
+         don_the = intent.mode in ("single", "related")
+         dung_code = (self.use_hints in ("both", "code")
+                      or (self.use_hints == "code_single" and don_the))
+@@ -196,27 +253,45 @@ class Bm25StructuralRanker:
+             self.top_k,
+             basis_hint=None if self.basis_mode == "hard" else intent.basis,
+             code_hint=metric_codes_hint(question) if dung_code else frozenset(),
+-            weights=self.weights, bonuses=self.bonuses,
++            weights=self.weights,
++            # LỖI ĐÃ XẢY RA THẬT: bản đầu chỉ truyền `primary_kinds` mà quên đưa
++            # ĐỘ LỚN vào `bonuses`. `BONUSES["primary"]` mặc định 0.0 nên lý do
++            # "primary" vẫn hiện trong `reasons`, điểm vẫn y nguyên, và cả một
++            # lượt quét 4 giá trị boost trả về Δ = 0,0000 tuyệt đối — dấu hiệu
++            # duy nhất cho thấy knob không nối. Giữ hai thứ ở CÙNG một chỗ.
++            bonuses={**(self.bonuses or {}), "primary": self.primary_boost},
++            norm=self.norm,
++            per_ticker_k=(self.per_ticker_k
++                          if self.per_ticker_k and intent.mode in self.fanout_modes
++                          else None),
++            primary_kinds=(self.primary_kinds
++                           if self.primary_boost and intent.mode in self.primary_modes
++                           else frozenset()),
+         )
+         return StageOutput(
+             stage=self.name,
+             uids=frozenset(s.cand.table_uid for s in scored),
+-            ranked=tuple(RankedItem(s.cand.table_uid, s.score, s.reasons, s.cand)
++            ranked=tuple(RankedItem(s.cand.table_uid, s.score, s.reasons, s.cand, s)
+                          for s in scored),
+             truncated_at=self.top_k,
+             trace={
+                 "n_terms": len(terms), "terms": terms[:12],
+                 "use_hints": self.use_hints, "code_applied": dung_code,
++                "norm": self.norm or "minmax", "stop_mode": self.stop_mode,
++                "primary_boost": (self.primary_boost
++                                  if intent.mode in self.primary_modes else 0.0),
++                "fanout_k": (self.per_ticker_k
++                             if self.per_ticker_k and intent.mode in self.fanout_modes
++                             else None),
+                 "n_in": len(cands), "n_out": len(scored),
++                # Phơi ra để đọc checkpoint là biết ngay có nạp alias hay không —
++                # thiếu nó là regression mất ~7 điểm hit@1, và nó từng sống sót
++                # ba phiên vì không có dấu vết nào trong dữ liệu đo.
++                "alias_loaded": bool(self.alias),
++                "n_drop": len(drop),
+             },
+         )
+ 
+-    @staticmethod
+-    def _drop_terms(intent: Intent) -> tuple[str, ...]:
+-        # Chỉ dùng mã ở đây; alias tên do runner nạp và truyền qua `Intent`
+-        # không mang theo, nên `content_terms` tự xử phần biên từ.
+-        return tuple(intent.targets)
+-
+ 
+ class IdentityReranker:
+     """S3 · CHƯA CÓ MODEL. Đi qua không đổi thứ hạng, chỉ cắt về `top_k`.
+diff --git a/src/retrieval/pipeline.py b/src/retrieval/pipeline.py
+index 5291cca..8e7d7c7 100644
+--- a/src/retrieval/pipeline.py
++++ b/src/retrieval/pipeline.py
+@@ -1,33 +1,39 @@
+-"""S0 → S1 → S2 · một hàm, để đo và để gọi."""
++"""S0 → S1 → S2 · LỚP MỎNG gọi `evalkit.stages`, giữ nguyên API cũ.
++
++VÌ SAO TỆP NÀY KHÔNG CÒN CÀI GÌ NỮA — P0-2
++------------------------------------------
++Trước đây tệp này cài S0+S1+S2 độc lập với `evalkit/stages.py`. **Hai cài đặt
++cùng một logic, và chúng đã trôi dạt**: đo trên 30 câu, S1 giống 30/30 nhưng
++**S2 chỉ giống 12/30**. Nguyên nhân duy nhất là luật `drop` bị viết ở hai chỗ —
++`evalkit` thiếu alias tên công ty, mất **~9 điểm hit@1** (xem
++`query_terms.drop_terms`).
++
++Trôi dạt kiểu này **không ném ngoại lệ, không sai cú pháp, không test nào đỏ**.
++Nó chỉ hiện ra khi có người so hai cài đặt với nhau. Nên cách sửa không phải
++"đồng bộ lại hai bên" — đó là mời lỗi quay lại — mà là **xoá hẳn một bên**.
++
++Nay `run()` chỉ:
++  1. `parse_intent`                            (S0)
++  2. `HardFilterGenerator.generate`            (S1)
++  3. `Bm25StructuralRanker.rank`               (S2)
++và gói kết quả về `Result` để hai script cũ (`eval_retrieval.py`,
++`diag_s1_miss.py`) không phải sửa. **Không còn đường code thứ hai.**
++
++`tests/test_p0_unify.py` khoá bất biến: `run()` và stages phải cho ĐÚNG cùng
++`table_uid` + cùng thứ tự.
++"""
+ from __future__ import annotations
+ 
+ import sqlite3
+ from dataclasses import dataclass
+ 
+-from retrieval.filter_s1 import filter_tables
+-from retrieval.metric_hint import metric_codes_hint, statement_hint
+-from retrieval.query_terms import build_match, content_terms
++from retrieval.evalkit.stages import (Bm25StructuralRanker, HardFilterGenerator,
++                                      unit_kind_of)
+ from retrieval.question_intent import Intent, parse_intent
+-from retrieval.rank_s2 import Scored, rank
++from retrieval.rank_s2 import Scored
+ 
+ __all__ = ["Result", "run"]
+ 
+-_UNIT_KIND = {"tỷ đồng": "money", "triệu đồng": "money", "nghìn đồng": "money",
+-              "đồng": "money", "%": "percent", "phần trăm": "percent",
+-              "cổ phiếu": "shares", "lần": None}
+-
+-
+-def _unit_out(q: str) -> str | None:
+-    low = q.lower()
+-    for k, v in _UNIT_KIND.items():
+-        if k in low:
+-            return v
+-    return None
+-
+-
+-def _period_ends(years: tuple[int, ...]) -> tuple[str, ...]:
+-    return tuple(f"{y}-12-31" for y in years)
+-
+ 
+ @dataclass(frozen=True, slots=True)
+ class Result:
+@@ -46,7 +52,9 @@ class Result:
+ 
+ def run(conn: sqlite3.Connection, question: str, alias: dict,
+         top_k: int = 50, basis_mode: str = "soft",
+-        use_hints: str = "code_single") -> Result:
++        use_hints: str = "code_single",
++        primary_boost: float = 0.00,
++        primary_modes: tuple[str, ...] = ("screen", "related")) -> Result:
+     """Hai tham số dưới đây là hai quyết định ĐÃ ĐO, không phải sở thích.
+ 
+     `basis_mode`
+@@ -56,9 +64,9 @@ def run(conn: sqlite3.Connection, question: str, alias: dict,
+     Thể lệ BTC KHÔNG nói gì về phạm vi mặc định — định nghĩa "liên quan" của họ
+     chỉ là "bảng chứa số liệu cần để tính ra đáp án". Mặc định `hợp nhất` là
+     GIẢ ĐỊNH CỦA TA, và một giả định sai ở tầng lọc cứng thì mất trắng.
+-    Đo trên 931 câu có proxy gold tin cậy: candidate recall 97,42% → 99,68%,
+-    số câu mất hẳn ở S1 24 → 3, đổi lại Recall@1 giảm 0,86 điểm. Dưới F2
+-    (recall nặng gấp 4) đây là đổi có lãi.
++    Đo đủ 1.012 câu, ghép cặp theo id: `hard` mất **0,0219 candidate hit rate**
++    (~22 câu mất gold VĨNH VIỄN) để đổi **+0,0080 hit@1**. Dưới F2 (recall nặng
++    gấp 4) và với thực tế "mất ở lọc cứng thì không tầng nào cứu", đây là đổi lỗ.
+ 
+     `use_hints`
+       none        · chỉ BM25 + kỳ + đơn vị
+@@ -67,23 +75,40 @@ def run(conn: sqlite3.Connection, question: str, alias: dict,
+       both
+       code_single · `code`, nhưng CHỈ cho câu một thực thể  ← MẶC ĐỊNH
+ 
+-    Đo cả bốn. `stmt` LÀM TỆ ĐI và bị loại (Recall@10 0,9345 → 0,9205). `code`
+-    áp cho mọi câu cũng làm tệ đi ở nhóm `screen` (Recall@10 89,2% → 84,5%):
+-    câu sàng lọc cần NHIỀU báo cáo, đẩy một nhóm mã lên là đẩy nhóm khác
+-    xuống. Chỉ áp cho `single`/`related` thì tốt nhất ở mọi mức K nhỏ:
+-    Recall@1 0,7422 → 0,7551 · Recall@5 0,8765 → 0,8829 · MRR 0,8017 → 0,8104.
++    Đo đủ 1.012 câu: `hints_none` mất **0,0635 trên slice |gold|=1** — lớn nhất
++    trong các thí nghiệm đã chạy. `stmt` bị loại từ vòng trước (Recall@10
++    0,9345 → 0,9205).
++
++    `primary_boost` / `primary_modes`
++      Điểm cộng cho `balance_sheet` + `income_statement` (KHÔNG có `cash_flow`)
++      khi câu ở mode `screen`/`related`. **MẶC ĐỊNH 0,00 = TẮT.**
++      Giá trị thí nghiệm là 0,60 — ĐO trên 95 câu gold_v2: F2(A) 0,4549 →
++      0,4994. Nhưng đó là gain trên DEVELOPMENT set: cùng 95 câu ấy đã được
++      dùng để phát hiện feature, chọn `PRIMARY_KINDS` và quét boost. Theo
++      docs/119 §5.8 default production giữ 0,00 cho tới khi held-out PASS.
++      Cổng theo mode là BẮT BUỘC, không phải tinh chỉnh: gold của `single` là
++      thuyết minh 70% và của `compare` là 81% — áp toàn cục sẽ làm tệ đi. Đặt
++      0,0 để tắt hoàn toàn. `cash_flow` bị loại khỏi tiên nghiệm vì lift
++      GOLD/topN của nó là 0,75 < 1 (đã bị xếp CAO hơn mức đáng) — xem docs/118.
++      Số 0,60 ổn định trên cả hai nửa chia đôi của 32 câu bị tác động.
++
++    ⚠ `alias` PHẢI là `{ticker: [tên, …]}` từ `alias_store.load_aliases`.
++    Truyền `{}` hay `None` sẽ khiến tên công ty còn lại trong truy vấn BM25 và
++    mất ~9 điểm hit@1 — xem `query_terms.drop_terms`.
+     """
+     it = parse_intent(question, alias)
+-    loc_basis = it.basis if basis_mode == "hard" else None
+-    cands = filter_tables(conn, it.targets, it.years, loc_basis)
+-    drop = tuple(n for t in it.targets for n in alias.get(t, [])) + it.targets
+-    terms = content_terms(question, drop=drop)
+-    don_the = it.mode in ("single", "related")
+-    dung_code = use_hints in ("both", "code") or (use_hints == "code_single" and don_the)
+-    hits = rank(conn, cands, build_match(terms), _period_ends(it.years),
+-                _unit_out(question),
+-                statement_hint(question) if use_hints in ("both", "stmt") else None,
+-                top_k,
+-                basis_hint=None if basis_mode == "hard" else it.basis,
+-                code_hint=metric_codes_hint(question) if dung_code else frozenset())
+-    return Result(it, len(cands), hits, frozenset(c.table_uid for c in cands))
++    s1 = HardFilterGenerator(basis_mode=basis_mode)
++    s2 = Bm25StructuralRanker(alias, top_k=top_k, use_hints=use_hints,
++                              basis_mode=basis_mode,
++                              primary_boost=primary_boost,
++                              primary_modes=primary_modes)
++    o1 = s1.generate(conn, question, it)
++    o2 = s2.rank(conn, question, it, o1)
++    # `RankedItem.scored` là chính đối tượng `Scored` mà `rank_s2.rank` trả về —
++    # KHÔNG dựng lại, để không có trường nào mang giá trị giả (xem `RankedItem`).
++    hits: list[Scored] = [r.scored for r in o2.ranked if r.scored is not None]
++    return Result(it, o1.n, hits, o1.uids)
++
++
++# Giữ tên cũ cho hai script chẩn đoán; `unit_kind_of` từng là `_unit_out` ở đây.
++_unit_out = unit_kind_of
+diff --git a/src/retrieval/query_terms.py b/src/retrieval/query_terms.py
+index c565e0e..ce385a7 100644
+--- a/src/retrieval/query_terms.py
++++ b/src/retrieval/query_terms.py
+@@ -37,7 +37,8 @@ from __future__ import annotations
+ import re
+ import unicodedata
+ 
+-__all__ = ["content_terms", "build_match", "STOP", "SHORT_ALIAS_MAX"]
++__all__ = ["content_terms", "build_match", "drop_terms", "STOP",
++           "STOP_DAU", "STOP_MODES", "SHORT_ALIAS_MAX"]
+ 
+ # Từ chức năng + từ khung câu hỏi + đơn vị đích. Chúng có mặt ở mọi câu nên
+ # không phân biệt được bảng nào với bảng nào, mà lại kéo điểm BM25 lung tung.
+@@ -54,6 +55,40 @@ STOP = {
+     # "doanh thu", "giá trị", "giá vốn", "ngắn hạn", "hàng tồn kho", "thuần
+     # nhất" đều là chỉ tiêu thật. Cắt chúng là cắt đúng thứ cần tìm.
+ }
++# ── STOP DẠNG CÓ DẤU · sửa một lỗi làm mất từ nội dung ở 61,4% số câu ───────
++#
++# `STOP` ở trên được đối chiếu với dạng ĐÃ BỎ DẤU. Tokenizer FTS5 bỏ dấu, nên
++# lúc viết thì điều đó có vẻ nhất quán. Nhưng bỏ dấu làm SẬP nhiều từ tiếng Việt
++# khác nghĩa về cùng một chuỗi, và `STOP` khi đó nuốt luôn cả từ nội dung:
++#
++#     tài (tài sản)   → "tai"  ← STOP có "tai" cho **tại**     170 câu
++#     động (bất động sản, hoạt động) → "dong" ← STOP có "dong" cho **đồng**  158 câu
++#     cổ (cổ phiếu, cổ phần) → "co"  ← STOP có "co" cho **có**   129 câu
++#     sở, tư, mã, trọng, đoạn, cố, cơ, dở, dòng, hải …
++#
++# Đo trên đúng 1.012 câu của cuộc thi: **621 câu (61,4%) mất ít nhất một từ nội
++# dung** theo cách này. "Tài sản cố định" rút còn "sản"; "bất động sản đầu tư"
++# rút còn "bất sản đầu".
++#
++# `stop_mode="dau"` đối chiếu STOP với dạng CÓ DẤU đã hạ chữ thường. Vẫn giữ
++# nhánh không dấu cho token người dùng gõ thiếu dấu (`low == fold`), nên câu hỏi
++# viết "nam 2020" vẫn được lọc đúng.
++#
++# Để MẶC ĐỊNH là "fold" (hành vi cũ) cho tới khi A/B trên 1.012 câu chứng minh
++# được — nguyên tắc dự án: mọi thay đổi phải có bằng chứng, kể cả thay đổi
++# trông hiển nhiên đúng.
++STOP_DAU = {
++    "là", "bao", "nhiêu", "của", "và", "các", "trong", "năm", "cho", "với",
++    "tại", "đến", "từ", "có", "không", "được", "bị", "ở", "vào", "ra", "theo",
++    "trên", "dưới", "giữa", "số", "hay", "hoặc", "thì", "mà", "những", "này",
++    "đó", "kia", "một", "hai", "ba", "bốn", "sáu", "bảy", "tám", "chín", "mười",
++    "công", "ty", "tỷ", "mẹ", "nghiệp", "ctcp", "tmcp",
++    "tập", "đoàn", "tổng", "phần", "hợp", "riêng",
++    "đồng", "triệu", "nghìn", "vnd",
++    "tính", "xác", "định", "hỏi", "câu",
++}
++STOP_MODES = ("fold", "dau")
++
+ _YEAR = re.compile(r"(?<!\d)(19|20)\d{2}(?!\d)")
+ _NUM = re.compile(r"^\d+([.,]\d+)?$")
+ 
+@@ -71,6 +106,41 @@ def _fold(s: str) -> str:
+     return d.replace("đ", "d").replace("Đ", "D").lower()
+ 
+ 
++def drop_terms(targets, alias: dict[str, list[str]] | None = None) -> tuple[str, ...]:
++    """NGUỒN DUY NHẤT của luật "chuỗi nào phải bị loại khỏi truy vấn BM25".
++
++    Trả về: mọi **tên công ty** của các mã đã phân giải, cộng chính các **mã**.
++
++    VÌ SAO HÀM NÀY TỒN TẠI — một regression thật
++    --------------------------------------------
++    Luật này từng được viết ở HAI chỗ và **đã trôi dạt**:
++
++        pipeline.py:79          drop = alias TÊN + mã       ← đúng
++        evalkit/stages.py:230   drop = CHỈ mã               ← thiếu tên
++
++    Hệ quả đo được trên 100 câu (cùng proxy gold, cùng S1, khác duy nhất `drop`):
++    tên công ty còn lại trong truy vấn BM25, **+2,3 token nhiễu/câu** (7,8 so với
++    5,5), và **hit@1 0,7800 → 0,6900 (−0,0900)** · hit@10 0,9600 → 0,8900.
++
++    Tệ hơn con số: mọi phép đo của `evalkit` trong ba phiên trước đều mang lỗi
++    này, nên mọi số TUYỆT ĐỐI ở `docs/76`/`docs/77` thấp hơn thực tế ~9 điểm, và
++    một giải thích ở `docs/76` §2 ("hiệu ứng coverage") là SAI.
++
++    Nên luật phải nằm ở ĐÚNG MỘT chỗ, và `tests/test_p0_unify.py` khoá việc đó.
++
++    VÌ SAO PHẢI LOẠI TÊN CÔNG TY
++    ----------------------------
++    Tên công ty đã được dùng làm **bộ lọc cứng** ở S1 (`d.ticker IN (…)`), nên
++    mọi bảng còn lại trong tập ứng viên đều thuộc đúng công ty đó. Để tên trong
++    truy vấn BM25 là cộng điểm cho một thứ **không phân biệt được ứng viên nào
++    với ứng viên nào** — thuần nhiễu, và nó lấn chỗ của cụm chỉ tiêu.
++    """
++    tk = tuple(targets)
++    if not alias:
++        return tk
++    return tuple(n for t in tk for n in alias.get(t, [])) + tk
++
++
+ def _strip_alias(text: str, alias: str) -> str:
+     """Xoá một alias. Alias ngắn phải có biên từ hai bên; alias dài thì không cần."""
+     if not alias:
+@@ -81,7 +151,20 @@ def _strip_alias(text: str, alias: str) -> str:
+     return re.sub(pat, " ", text, flags=re.IGNORECASE)
+ 
+ 
+-def content_terms(question: str, drop: tuple[str, ...] = ()) -> list[str]:
++def _bi_loai(low: str, fold: str, mode: str) -> bool:
++    """Token này có phải từ chức năng cần loại không.
++
++    `fold` · đối chiếu dạng bỏ dấu — hành vi gốc, nuốt oan 61,4% số câu.
++    `dau`  · đối chiếu dạng CÓ DẤU; chỉ rơi về dạng bỏ dấu khi chính token đó
++             vốn không có dấu, để câu gõ thiếu dấu vẫn được lọc.
++    """
++    if mode == "fold":
++        return fold in STOP
++    return low in STOP_DAU or (low == fold and fold in STOP)
++
++
++def content_terms(question: str, drop: tuple[str, ...] = (),
++                  stop_mode: str = "fold") -> list[str]:
+     """Từ nội dung, giữ THỨ TỰ xuất hiện và giữ dấu (tokenizer tự bỏ dấu).
+ 
+     `drop`: chuỗi cần loại — thường là tên công ty và mã đã khớp ở S0, vì chúng
+@@ -89,7 +172,11 @@ def content_terms(question: str, drop: tuple[str, ...] = ()) -> list[str]:
+ 
+     Xoá alias DÀI trước alias NGẮN: "Hoàng Anh Gia Lai" phải mất trước khi luật
+     biên từ xét "HAG", nếu không thì thứ tự xoá đổi kết quả.
++
++    `stop_mode`: xem `_bi_loai`. Mặc định giữ hành vi cũ.
+     """
++    if stop_mode not in STOP_MODES:
++        raise ValueError(f"stop_mode phải là {STOP_MODES}, nhận {stop_mode!r}")
+     text = question
+     for d in sorted(drop, key=len, reverse=True):
+         text = _strip_alias(text, d)
+@@ -99,7 +186,8 @@ def content_terms(question: str, drop: tuple[str, ...] = ()) -> list[str]:
+         if not raw:
+             continue
+         f = _fold(raw)
+-        if len(f) < 2 or f in STOP or _NUM.match(f) or f in seen:
++        if len(f) < 2 or _bi_loai(raw.lower(), f, stop_mode) \
++                or _NUM.match(f) or f in seen:
+             continue
+         seen.add(f)
+         out.append(raw)
+diff --git a/src/retrieval/rank_s2.py b/src/retrieval/rank_s2.py
+index 3266e49..9c1cb57 100644
+--- a/src/retrieval/rank_s2.py
++++ b/src/retrieval/rank_s2.py
+@@ -39,8 +39,12 @@ from dataclasses import dataclass
+ 
+ from retrieval.filter_s1 import Candidate
+ 
+-__all__ = ["Scored", "rank", "WEIGHTS", "BONUSES", "assert_fts_arity",
+-           "LAST_ERRORS"]
++__all__ = ["Scored", "rank", "WEIGHTS", "BONUSES", "PRIMARY_KINDS",
++           "assert_fts_arity",
++           "LAST_ERRORS", "NORM_DEFAULT"]
++
++# Cách chuẩn hoá điểm BM25. "rank" bất biến với kích thước pool — xem `_norm_rank`.
++NORM_DEFAULT = "minmax"
+ 
+ # Thứ tự cột trong FTS: table_uid(UNINDEXED) · ticker · section_text ·
+ # context_clean · row_labels · col_labels
+@@ -54,11 +58,44 @@ BONUSES: dict[str, float] = {
+     "code": 0.45,        # mã chỉ tiêu VAS khớp — tín hiệu chính xác nhất ta có
+     "clean_floor": 0.70,  # hệ số nhân khi clean_ratio = 0
+     "clean_span": 0.30,   # phần cộng thêm khi clean_ratio = 1
++    # `primary` — TIÊN NGHIỆM LỚP BÁO CÁO, mặc định 0.0 ⇒ KHÔNG đổi hành vi cũ.
++    # Chỉ cộng khi caller truyền `primary_kinds` KHÁC RỖNG (xem `rank`). Cơ sở
++    # đo trên gold_v2 (95 câu, docs/118 §3): với câu `screen`, gold là báo cáo
++    # chính 77,4% nhưng top-N chỉ 60,8%; riêng `balance_sheet` lift GOLD/topN
++    # = 10,4×. Với câu `single`/`compare` gold LẠI là thuyết minh (70%/81%) —
++    # nên tiên nghiệm này BẮT BUỘC phải có điều kiện theo `mode`, áp toàn cục
++    # là làm tệ đi. `mode` sinh từ `parse_intent`, không phải nhãn tay
++    # (đã đối chiếu 95/95 câu) ⇒ không rò gold.
++    "primary": 0.00,
+ }
+ 
++# Ba lớp báo cáo chính. `note`/`equity_change`/`personnel`/`subsidiary` KHÔNG
++# nằm ở đây — thuyết minh chứa phần chi tiết, không chứa số tổng hợp mà câu
++# hỏi sàng lọc (`screen`) cần để tính tỉ số.
++# `cash_flow` CỐ Ý KHÔNG có ở đây. Lift GOLD/topN của nó trên câu `screen` là
++# 0,75 (< 1) — tức nó đã được xếp CAO HƠN mức đáng, cộng thêm là làm tệ đi.
++# Đã đo cả hai: {BS,IS,CF} cho F2(A) 0,4891 · {BS,IS} cho 0,4994. Câu q570
++# (vòng quay hàng tồn kho) là ca chẩn đoán: bonus đồng đều đẩy 8 bảng
++# `cash_flow` không liên quan lên đầu và làm mất 0,17 F2 của riêng câu đó.
++PRIMARY_KINDS: frozenset[str] = frozenset({"balance_sheet", "income_statement"})
++
+ # SQLite cũ mặc định 999. Lấy 800 để còn chỗ cho tham số khác trong cùng câu.
+ _CHUNK = 800
+ 
++# TRẦN THAM SỐ — ràng buộc bằng `assert`, không bằng trí nhớ.
++#
++# `SQLITE_MAX_VARIABLE_NUMBER` là 999 ở SQLite < 3.32 và 32.766 từ 3.32 trở đi.
++# Ta KHÔNG đọc trần thực tế của kết nối (`Connection.getlimit` chỉ có từ Python
++# 3.11; máy build chạy 3.10.12) mà chốt theo SÀN 999, vì một con số chạy được
++# trên máy này mà vỡ trên máy khác là đúng loại lỗi không tái lập được.
++#
++# Mỗi lô dùng `len(part)` tham số cho `table_uid IN (…)` cộng **1** cho `MATCH`.
++_SQLITE_VAR_FLOOR = 999
++assert _CHUNK + 1 <= _SQLITE_VAR_FLOOR, (
++    f"_CHUNK={_CHUNK} + 1 tham số MATCH vượt sàn {_SQLITE_VAR_FLOOR}. "
++    "Nâng _CHUNK là đổi hành vi trên SQLite < 3.32 — đừng nâng."
++)
++
+ # Lỗi gần nhất của truy vấn BM25. KHÔNG nuốt im lặng: tầng đo đọc được ở đây.
+ LAST_ERRORS: list[str] = []
+ 
+@@ -93,12 +130,103 @@ def assert_fts_arity(conn: sqlite3.Connection,
+ 
+ 
+ def _norm(vals: list[float]) -> list[float]:
++    """Min-max TRONG tập ứng viên của từng câu.
++
++    ⚠ PHỤ THUỘC KÍCH THƯỚC POOL. Ứng viên không khớp BM25 nhận `raw=0.0` và tham
++    gia làm `min`, nên pool càng lớn thì `lo` càng bị kéo xuống và điểm BM25 của
++    bảng đúng càng bị nén về giữa khoảng — trong khi bonus cấu trúc là HẰNG SỐ
++    cộng vào. Kết quả: pool lớn ⇒ bonus lấn BM25.
++
++    Đo được (`docs/76` §7b): `basis_hard` giảm pool 470→245 và mua được hit@1
++    +0,0080 · MRR +0,0075 **chỉ nhờ bớt loãng** — nhưng phải trả −0,0219
++    candidate hit rate. `_norm_rank` dưới đây lấy phần lợi đó mà không trả giá.
++    """
+     if not vals:
+         return []
+     lo, hi = min(vals), max(vals)
+     return [0.5] * len(vals) if hi - lo < 1e-9 else [(v - lo) / (hi - lo) for v in vals]
+ 
+ 
++def _norm_rank(vals: list[float]) -> list[float]:
++    """Chuẩn hoá THEO HẠNG — bất biến với kích thước pool và với ngoại lai.
++
++    Ý tưởng: điểm của một bảng không nên phụ thuộc vào việc có bao nhiêu bảng
++    KHÔNG khớp gì nằm cùng pool. Chỉ thứ tự tương đối trong nhóm CÓ khớp mới có
++    nghĩa.
++
++    Ba tính chất, tất cả đều cố ý:
++
++    1. **Ứng viên `raw == 0` (không khớp BM25) nhận thẳng 0,0**, không tham gia
++       xếp hạng. Trước đây chúng làm `min` và kéo cả thang xuống.
++    2. Trong nhóm `raw > 0`, điểm = `1 - (hạng-1)/n` với hạng tính theo giá trị
++       giảm dần ⇒ bảng khớp tốt nhất luôn được **1,0** bất kể pool 43 hay 3.403.
++    3. **Đồng hạng nhận cùng điểm** (dùng hạng trung bình), nếu không thì thứ tự
++       chèn quyết định điểm — một nguồn bất định không ai muốn.
++    """
++    if not vals:
++        return []
++    idx_pos = [i for i, v in enumerate(vals) if v > 0.0]
++    out = [0.0] * len(vals)
++    n = len(idx_pos)
++    if n == 0:
++        return out
++    if n == 1:
++        out[idx_pos[0]] = 1.0
++        return out
++    order = sorted(idx_pos, key=lambda i: -vals[i])
++    # Hạng trung bình cho các giá trị bằng nhau.
++    i = 0
++    while i < n:
++        j = i
++        while j + 1 < n and vals[order[j + 1]] == vals[order[i]]:
++            j += 1
++        hang_tb = (i + j) / 2.0                      # 0-based
++        diem = 1.0 - hang_tb / n
++        for k in range(i, j + 1):
++            out[order[k]] = diem
++        i = j + 1
++    return out
++
++
++def _norm_max(vals: list[float]) -> list[float]:
++    """Chia cho GIÁ TRỊ LỚN NHẤT — giữ TỶ LỆ ĐỘ LỚN, và bất biến với số ứng viên
++    không khớp.
++
++    VÌ SAO CẦN BẢN THỨ BA — `rank` đã bị dữ liệu bác bỏ
++    --------------------------------------------------
++    Tôi cho rằng min-max tệ vì phụ thuộc kích thước pool, nên thử chuẩn hoá theo
++    HẠNG. Đo trên 1.012 câu: **hit@1 0,6551 → 0,4851 (−0,1700)**, MRR −0,1496.
++    Tệ hơn hẳn, và cơ chế rõ ràng khi nhìn vào số:
++
++        `_norm_rank` cho điểm `1 − hạng/n`. Với n = 200 ứng viên có khớp:
++        hạng 0 → 1,000 · hạng 1 → 0,995 · hạng 2 → 0,990.
++        Top-10 nằm trong khoảng 0,05 — trong khi bonus là 0,35 và 0,45.
++
++    Tức là chuẩn hoá theo hạng **NÉN đỉnh phân bố**, làm bonus lấn BM25 còn
++    NẶNG HƠN min-max. Nó chữa đúng bệnh (phụ thuộc pool) bằng cách gây ra một
++    bệnh nặng hơn (mất thông tin độ lớn).
++
++    Bản này giữ cả hai tính chất cần:
++      · **bất biến với số ứng viên `raw == 0`** — chúng nhận 0,0, không tham gia
++        tính `max`, nên thêm 1.000 bảng không khớp không đổi điểm của ai;
++      · **giữ tỷ lệ độ lớn** — `[5,0 · 4,9 · 1,0] → [1,00 · 0,98 · 0,20]`. Bảng
++        khớp vượt trội vẫn vượt trội, không bị nén về sát bảng thứ hai.
++
++    Khác min-max ở đúng một điểm: min-max lấy `lo = min(vals)` nên **ứng viên
++    không khớp kéo cả thang xuống** và làm khoảng cách tương đối bị phóng đại
++    theo kích thước pool. Ở đây `lo` cố định bằng 0.
++    """
++    if not vals:
++        return []
++    hi = max(vals)
++    if hi <= 0.0:
++        return [0.0] * len(vals)
++    return [v / hi if v > 0.0 else 0.0 for v in vals]
++
++
++_NORMS = {"minmax": _norm, "rank": _norm_rank, "maxnorm": _norm_max}
++
++
+ def _bm25_scores(conn: sqlite3.Connection, uids: list[str], match: str,
+                  weights: tuple[float, ...]) -> tuple[dict[str, float], bool]:
+     """BM25 cho `uids`, CHIA LÔ để không vượt trần placeholder của SQLite.
+@@ -131,11 +259,17 @@ def rank(conn: sqlite3.Connection, cands: list[Candidate], match: str | None,
+          basis_hint: str | None = None,
+          code_hint: frozenset[str] = frozenset(),
+          weights: tuple[float, ...] | None = None,
+-         bonuses: dict[str, float] | None = None) -> list[Scored]:
++         bonuses: dict[str, float] | None = None,
++         norm: str | None = None,
++         per_ticker_k: int | None = None,
++         primary_kinds: frozenset[str] = frozenset()) -> list[Scored]:
+     if not cands:
+         return []
+     W = tuple(weights) if weights else WEIGHTS
+     B = {**BONUSES, **(bonuses or {})}
++    nf = _NORMS.get(norm or NORM_DEFAULT)
++    if nf is None:
++        raise ValueError(f"norm phải là {sorted(_NORMS)}, nhận {norm!r}")
+ 
+     by_uid = {c.table_uid: c for c in cands}
+     uids = list(by_uid)
+@@ -144,7 +278,7 @@ def rank(conn: sqlite3.Connection, cands: list[Candidate], match: str | None,
+     if match:
+         raw, bm25_ok = _bm25_scores(conn, uids, match, W)
+ 
+-    bm = _norm([raw.get(u, 0.0) for u in uids])
++    bm = nf([raw.get(u, 0.0) for u in uids])
+     out = []
+     for u, b in zip(uids, bm):
+         c = by_uid[u]
+@@ -165,6 +299,8 @@ def rank(conn: sqlite3.Connection, cands: list[Candidate], match: str | None,
+         if stm: s += B["stmt"];   why.append("stmt")
+         if bas: s += B["basis"];  why.append("basis")
+         if ma:  s += B["code"];   why.append("code")
++        if primary_kinds and c.statement_type in primary_kinds:
++            s += B["primary"]; why.append("primary")
+         if u in raw: why.append("bm25")          # `in`, không `.get()` — điểm 0.0 vẫn là khớp
+         if not bm25_ok: why.append("bm25_partial")
+         # Hệ số nhân, không phải bộ lọc: bảng sạch hơn được ưu tiên nhưng bảng
+@@ -172,4 +308,42 @@ def rank(conn: sqlite3.Connection, cands: list[Candidate], match: str | None,
+         s *= (B["clean_floor"] + B["clean_span"] * c.clean_ratio)
+         out.append(Scored(c, raw.get(u, 0.0), per, uni, stm, s, tuple(why), bas))
+     out.sort(key=lambda x: (-x.score, x.cand.table_uid))
++    if per_ticker_k:
++        out = _fanout_by_ticker(out, per_ticker_k, top_k)
+     return out[:top_k]
++
++
++def _fanout_by_ticker(scored: list[Scored], per_k: int, top_k: int) -> list[Scored]:
++    """QUOTA THEO MÃ rồi mới gộp — sửa lỗi "top-K toàn cục sai đơn vị đo".
++
++    VẤN ĐỀ ĐO ĐƯỢC
++    --------------
++    Câu `screen` hỏi 7 mã thì cần ≥7 bảng, mỗi mã ≥1. Nhưng top-10 TOÀN CỤC có
++    thể bị một mã chiếm 8 chỗ, và 6 mã còn lại không có bảng nào — không phải vì
++    xếp hạng sai, mà vì **đơn vị cắt sai**. `docs/76` đo: nhóm `screen` có
++    `F2@10 = 0,299`, **thấp nhất mọi mode**, dù `candidate hit rate = 1,000`.
++    Recall bị chặn bởi hình dạng đầu ra, không bởi chất lượng điểm.
++
++    CÁCH LÀM
++    --------
++    Lấy `per_k` bảng tốt nhất CỦA TỪNG MÃ (giữ nguyên thứ tự điểm trong mã), rồi
++    trộn theo kiểu **round-robin theo hạng**: hạng-1 của mọi mã trước, rồi hạng-2
++    của mọi mã… Nhờ vậy mỗi mã được phục vụ trước khi bất kỳ mã nào được phục vụ
++    lần hai. Phần còn lại (nếu `top_k` chưa đầy) nối tiếp theo điểm giảm dần.
++
++    Thứ tự trong cùng một vòng: theo ĐIỂM giảm dần, tie-break `table_uid` — giữ
++    tính tất định của bản gốc.
++    """
++    by_tk: dict[str, list[Scored]] = {}
++    for s in scored:
++        by_tk.setdefault(s.cand.ticker, []).append(s)
++    if len(by_tk) <= 1:
++        return scored
++    vong: list[Scored] = []
++    for i in range(per_k):
++        lop = [v[i] for v in by_tk.values() if len(v) > i]
++        lop.sort(key=lambda x: (-x.score, x.cand.table_uid))
++        vong.extend(lop)
++    da_co = {id(s) for s in vong[:top_k]}
++    con_lai = [s for s in scored if id(s) not in da_co]
++    return vong[:top_k] + con_lai
+diff --git a/tests/test_evalkit_metrics.py b/tests/test_evalkit_metrics.py
+index 08817d4..71ff6e1 100644
+--- a/tests/test_evalkit_metrics.py
++++ b/tests/test_evalkit_metrics.py
+@@ -349,3 +349,190 @@ def test_policy_n_map_khop_rewrite_submission():
+         {"id": 5, "n_targets": 0, "years": []},              # rỗng → 1
+     ]
+     assert policy_n_map(rows) == {1: 1, 2: 2, 3: 4, 4: 10, 5: 1}
++
++
++# ── chuẩn hoá theo HẠNG · bất biến với kích thước pool ───────────────────────
++# Đây là điểm yếu đã ĐO ĐƯỢC của min-max: `basis_hard` giảm pool 470→245 và mua
++# hit@1 +0,0080 chỉ nhờ bớt loãng, nhưng phải trả −0,0219 candidate hit rate.
++# `_norm_rank` phải lấy được phần lợi đó mà không trả giá gì.
++
++def test_norm_rank_bat_bien_voi_so_ung_vien_khong_khop():
++    """Thêm 1.000 ứng viên `raw=0` KHÔNG được đổi điểm của nhóm có khớp."""
++    from retrieval.rank_s2 import _norm, _norm_rank
++    nho = [5.0, 3.0, 1.0]
++    to = nho + [0.0] * 1000
++    assert _norm_rank(to)[:3] == pytest.approx(_norm_rank(nho))
++    # min-max thì KHÔNG bất biến — đó chính là vấn đề.
++    assert _norm(to)[:3] != pytest.approx(_norm(nho))
++
++
++def test_norm_rank_ung_vien_khong_khop_nhan_0():
++    from retrieval.rank_s2 import _norm_rank
++    out = _norm_rank([5.0, 0.0, 2.0])
++    assert out[1] == 0.0
++    assert out[0] == pytest.approx(1.0)      # khớp tốt nhất luôn được 1,0
++
++
++def test_norm_rank_tot_nhat_luon_bang_1_bat_ke_pool():
++    from retrieval.rank_s2 import _norm_rank
++    for extra in (0, 10, 3000):
++        v = [9.9, 4.0] + [0.0] * extra
++        assert _norm_rank(v)[0] == pytest.approx(1.0)
++
++
++def test_norm_rank_dong_hang_nhan_cung_diem():
++    """Nếu không dùng hạng trung bình thì thứ tự CHÈN quyết định điểm."""
++    from retrieval.rank_s2 import _norm_rank
++    out = _norm_rank([3.0, 3.0, 1.0])
++    assert out[0] == pytest.approx(out[1])
++    assert out[0] > out[2]
++
++
++def test_norm_rank_giu_thu_tu_tuong_doi():
++    from retrieval.rank_s2 import _norm_rank
++    v = [1.0, 7.0, 3.0]
++    out = _norm_rank(v)
++    assert out[1] > out[2] > out[0]
++
++
++def test_norm_rank_rong_va_mot_phan_tu():
++    from retrieval.rank_s2 import _norm_rank
++    assert _norm_rank([]) == []
++    assert _norm_rank([0.0]) == [0.0]
++    assert _norm_rank([4.0]) == [1.0]
++
++
++# ── fan-out theo mã · sửa "top-K toàn cục sai đơn vị đo" ─────────────────────
++# `screen` có F2@10 = 0,299 — thấp nhất mọi mode — dù cand_hit = 1,000. Recall
++# bị chặn bởi HÌNH DẠNG đầu ra, không bởi chất lượng điểm.
++
++def _sc(uid, ticker, score):
++    from retrieval.filter_s1 import Candidate
++    from retrieval.rank_s2 import Scored
++    c = Candidate(uid, "d", ticker, 2023, None, None, 10, 10, None, None, None)
++    return Scored(c, 0.0, False, False, False, score, (), False)
++
++
++def test_fanout_moi_ma_duoc_phuc_vu_truoc_khi_ma_nao_duoc_lan_hai():
++    """Ca thật: 1 mã chiếm hết top-10 trong khi 6 mã khác không có bảng nào."""
++    from retrieval.rank_s2 import _fanout_by_ticker
++    scored = [_sc(f"A{i}", "AAA", 10.0 - i * 0.1) for i in range(8)]
++    scored += [_sc("B1", "BBB", 1.0), _sc("C1", "CCC", 0.9)]
++    truoc = [s.cand.ticker for s in scored[:3]]
++    assert truoc == ["AAA", "AAA", "AAA"]            # top-3 toàn cục: 1 mã
++    sau = _fanout_by_ticker(scored, per_k=1, top_k=10)
++    assert [s.cand.ticker for s in sau[:3]] == ["AAA", "BBB", "CCC"]
++
++
++def test_fanout_khong_lam_mat_ung_vien_nao():
++    from retrieval.rank_s2 import _fanout_by_ticker
++    scored = [_sc(f"A{i}", "AAA", 5.0 - i) for i in range(4)]
++    scored += [_sc(f"B{i}", "BBB", 4.5 - i) for i in range(3)]
++    sau = _fanout_by_ticker(scored, per_k=2, top_k=99)
++    assert {s.cand.table_uid for s in sau} == {s.cand.table_uid for s in scored}
++    assert len(sau) == len(scored)
++
++
++def test_fanout_mot_ma_thi_khong_doi_gi():
++    """Câu `single` chỉ có một mã ⇒ fan-out phải là no-op, không xáo thứ tự."""
++    from retrieval.rank_s2 import _fanout_by_ticker
++    scored = [_sc(f"A{i}", "AAA", 5.0 - i) for i in range(5)]
++    assert _fanout_by_ticker(scored, per_k=1, top_k=10) is scored
++
++
++def test_fanout_trong_cung_vong_sap_theo_diem():
++    from retrieval.rank_s2 import _fanout_by_ticker
++    scored = [_sc("A1", "AAA", 1.0), _sc("B1", "BBB", 9.0), _sc("C1", "CCC", 5.0)]
++    sau = _fanout_by_ticker(scored, per_k=1, top_k=10)
++    assert [s.cand.table_uid for s in sau[:3]] == ["B1", "C1", "A1"]
++
++
++def test_fanout_tat_dinh():
++    """Cùng điểm ⇒ tie-break `table_uid` ⇒ kết quả tái lập."""
++    from retrieval.rank_s2 import _fanout_by_ticker
++    a = [_sc("Z1", "ZZZ", 1.0), _sc("A1", "AAA", 1.0)]
++    b = [_sc("A1", "AAA", 1.0), _sc("Z1", "ZZZ", 1.0)]
++    assert ([s.cand.table_uid for s in _fanout_by_ticker(a, 1, 9)]
++            == [s.cand.table_uid for s in _fanout_by_ticker(b, 1, 9)])
++
++
++# ── cfg_sha phải băm ĐỘ LỆCH, không băm toàn bộ dict ─────────────────────────
++# Lỗi đã xảy ra: thêm `norm="minmax"` + `per_ticker_k=None` (đúng bằng hành vi
++# cũ, không đổi một con số) mà 4 lần chạy đủ 1.012 câu bị mồ côi.
++
++def test_sha_bo_qua_tag_va_budget():
++    from retrieval.evalkit.runner import EvalConfig
++    a = EvalConfig(tag="base", budget_s=35.0)
++    b = EvalConfig(tag="khac_hoan_toan", budget_s=300.0)
++    assert a.sha == b.sha, "tag/budget_s không được ảnh hưởng ngữ nghĩa phép đo"
++
++
++def test_sha_doi_khi_ngu_nghia_doi():
++    from retrieval.evalkit.runner import EvalConfig
++    assert EvalConfig().sha != EvalConfig(norm="rank").sha
++    assert EvalConfig().sha != EvalConfig(per_ticker_k=2).sha
++    assert EvalConfig().sha != EvalConfig(basis_mode="hard").sha
++
++
++def test_sha_KHONG_doi_khi_dat_lai_dung_gia_tri_mac_dinh():
++    """Khai tường minh giá trị mặc định phải cho CÙNG sha."""
++    from retrieval.evalkit.runner import EvalConfig
++    assert EvalConfig().sha == EvalConfig(norm="minmax", per_ticker_k=None).sha
++
++
++def test_deviations_chi_liet_ke_phan_lech():
++    from retrieval.evalkit.runner import EvalConfig
++    d = EvalConfig(tag="x", norm="rank", per_ticker_k=2).deviations
++    assert d == {"norm": "rank", "per_ticker_k": 2}
++    assert EvalConfig().deviations == {}
++
++
++# ── maxnorm · bản thứ ba, sau khi `rank` bị dữ liệu bác bỏ (−0,17 hit@1) ─────
++
++def test_maxnorm_bat_bien_voi_ung_vien_khong_khop():
++    from retrieval.rank_s2 import _norm_max
++    nho = [5.0, 4.9, 1.0]
++    to = nho + [0.0] * 2000
++    assert _norm_max(to)[:3] == pytest.approx(_norm_max(nho))
++
++
++def test_maxnorm_GIU_ty_le_do_lon_con_rank_thi_NEN():
++    """Cơ chế `rank` thất bại: nó nén ĐỈNH phân bố xuống dưới mức bonus.
++
++    Phải dựng ca THẬT mới thấy: median 470 ứng viên, phần lớn khớp BM25 ở mức
++    thấp. Với 3 ứng viên thì `rank` giãn rộng (1,00/0,67/0,33) và hiện tượng nén
++    không xuất hiện — bản test đầu của tôi dùng đúng ca đó nên chứng minh sai.
++
++    Ở đây: 1 bảng khớp vượt trội (10,0), 1 bảng khá (9,0), rồi 198 bảng lẹt đẹt.
++    Đó là hình dạng phân bố BM25 thật.
++    """
++    from retrieval.rank_s2 import _norm_max, _norm_rank
++    v = [10.0, 9.0] + [0.5] * 198
++    mx, rk = _norm_max(v), _norm_rank(v)
++
++    # maxnorm: khoảng cách hạng-1 ↔ hạng-2 là 0,10 — CÙNG BẬC với bonus, nên
++    # BM25 còn quyền quyết định.
++    assert mx[0] - mx[1] == pytest.approx(0.10, abs=1e-6)
++    assert mx[0] - mx[2] == pytest.approx(0.95, abs=1e-6)
++
++    # rank: khoảng cách hạng-1 ↔ hạng-2 chỉ 1/200 = 0,005 — NHỎ HƠN bonus
++    # period (0,35) tới 70 lần. Bất kỳ bonus nào cũng lật được thứ hạng.
++    assert rk[0] - rk[1] == pytest.approx(1 / 200, abs=1e-9)
++    assert (mx[0] - mx[1]) / (rk[0] - rk[1]) > 15
++
++
++def test_maxnorm_tot_nhat_bang_1_khong_khop_bang_0():
++    from retrieval.rank_s2 import _norm_max
++    out = _norm_max([3.0, 0.0, 1.5])
++    assert out == pytest.approx([1.0, 0.0, 0.5])
++
++
++def test_maxnorm_toan_khong_thi_tra_0():
++    from retrieval.rank_s2 import _norm_max
++    assert _norm_max([0.0, 0.0]) == [0.0, 0.0]
++    assert _norm_max([]) == []
++
++
++def test_ba_cach_chuan_hoa_deu_dang_ky():
++    from retrieval.rank_s2 import _NORMS
++    assert set(_NORMS) == {"minmax", "rank", "maxnorm"}
+diff --git a/tests/test_evalkit_pipeline_fixture.py b/tests/test_evalkit_pipeline_fixture.py
+index 78603fb..f281f06 100644
+--- a/tests/test_evalkit_pipeline_fixture.py
++++ b/tests/test_evalkit_pipeline_fixture.py
+@@ -136,7 +136,7 @@ def test_s1_khai_mach_de_dang_hoat_dong(conn):
+ def test_s2_tra_ve_thu_tu_va_cat_top_k(conn):
+     it = parse_intent("Doanh thu thuần của VNM năm 2023?", ALIAS)
+     o1 = HardFilterGenerator().generate(conn, "q", it)
+-    o2 = Bm25StructuralRanker(top_k=2).rank(
++    o2 = Bm25StructuralRanker(ALIAS, top_k=2).rank(
+         conn, "Doanh thu thuần của VNM năm 2023?", it, o1)
+     assert len(o2.ranked) == 2 and o2.truncated_at == 2
+     sc = [r.score for r in o2.ranked]
+@@ -147,7 +147,7 @@ def test_s2_bang_income_statement_thang_bang_note(conn):
+     """Cùng cụm ở nhãn dòng, nhưng bảng KQKD sạch hơn và có mã chỉ tiêu."""
+     it = parse_intent("Doanh thu thuần của VNM năm 2023?", ALIAS)
+     o1 = HardFilterGenerator().generate(conn, "q", it)
+-    o2 = Bm25StructuralRanker(top_k=10).rank(
++    o2 = Bm25StructuralRanker(ALIAS, top_k=10).rank(
+         conn, "Doanh thu thuần của VNM năm 2023?", it, o1)
+     order = [r.table_uid for r in o2.ranked]
+     assert order.index("t1") < order.index("t2")
+@@ -184,7 +184,7 @@ def test_s2_bonus_cau_hinh_duoc(conn):
+ def test_s3_identity_khong_doi_thu_tu(conn):
+     it = parse_intent("Doanh thu thuần của VNM năm 2023?", ALIAS)
+     o1 = HardFilterGenerator().generate(conn, "q", it)
+-    o2 = Bm25StructuralRanker(top_k=10).rank(conn, "Doanh thu thuần VNM 2023?", it, o1)
++    o2 = Bm25StructuralRanker(ALIAS, top_k=10).rank(conn, "Doanh thu thuần VNM 2023?", it, o1)
+     o3 = IdentityReranker(top_k=2).rerank(conn, "q", it, o2)
+     assert [r.table_uid for r in o3.ranked] == [r.table_uid for r in o2.ranked[:2]]
+     assert o3.trace["passthrough"] is True
+diff --git a/tools/evalkit b/tools/evalkit
+index 326a166..2551bc3 100755
+--- a/tools/evalkit
++++ b/tools/evalkit
+@@ -17,6 +17,7 @@
+ #   tools/evalkit report  --tag base
+ #   tools/evalkit ab --a base --b basis_hard
+ #   tools/evalkit diag --tag base --sample 200
++#   tools/evalkit gold sample --n 120   |  gold sheet  |  gold check
+ #   tools/evalkit doctor            # chỉ chẩn đoán môi trường, không chạy đo
+ set -euo pipefail
+ 
+@@ -85,12 +86,15 @@ PY
+     else
+       echo "work.db             : THIẾU → tools/build_retrieval_workdb.sh"
+     fi
+-    ck="$ROOT/artifacts/retrieval/evalkit"
+-    [[ -d "$ck" ]] && { echo "checkpoint có sẵn   :";
+-      for f in "$ck"/ek_*.jsonl; do
+-        [[ -e "$f" ]] && printf '    %-44s %s câu\n' "$(basename "$f")" "$(grep -c '' "$f")"
+-      done; }
++    # Đánh dấu tệp nào CHÍNH DANH cho tag của nó. `migrate` giữ lại tệp cũ (mount
++    # không xoá được), nên một tag có thể có nhiều tệp mà chỉ MỘT khớp `cfg_sha`
++    # hiện tại. Không đánh dấu thì rất dễ đọc số từ tệp của cấu hình cũ — và đó
++    # đúng là bug vừa tìm thấy ở `diag_nogold` (nó lấy `glob(...)[-1]`).
++    echo "checkpoint          : ✓ = chính danh (khớp cfg_sha hiện tại)"
++    "$chon" "$ROOT/src/retrieval/evalkit/ck_list.py" || true
+     ;;
+   diag) exec "$chon" "$ROOT/src/retrieval/evalkit/diag_nogold.py" "$@" ;;
++  gold) exec "$chon" "$ROOT/src/retrieval/evalkit/goldkit.py" "$@" ;;
++  migrate) exec "$chon" "$ROOT/src/retrieval/evalkit/migrate_ck.py" "$@" ;;
+   *)    exec "$chon" "$ROOT/src/retrieval/evalkit/cli.py" "$cmd" "$@" ;;
+ esac

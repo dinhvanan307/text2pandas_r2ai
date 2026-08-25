@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text2pandas"
+version = "2.0.0"
+description = "Text-to-Pandas trên báo cáo tài chính doanh nghiệp niêm yết Việt Nam"
+requires-python = ">=3.11"
+readme = "README.md"
+
+# RC-00 · Phụ thuộc runtime THẬT của đường ống dữ liệu.
+#
+# Trước đây khai `[]` trong khi pipeline thật sự cần cả ba. Người nhận làm
+# theo `pip install -e .` rồi chạy `pytest` sẽ gặp lỗi import — và doc 17 §12
+# xếp "test bị skip do thiếu dependency" vào stop condition.
+# KHÔNG thêm thư viện mạng hay nguồn dữ liệu ngoài (ràng buộc C04).
+dependencies = [
+  "pandas>=2.0",     # bộ replay — kiểm hợp đồng bằng công cụ của người tiêu thụ
+  "pyarrow>=14.0",   # xuất Parquet; CSV ép Decimal thành float, mất chữ số (DI-05)
+  "PyYAML>=6.0",     # readiness policy + defect taxonomy là DỮ LIỆU, không phải mã
+  "lxml>=6,<7",      # html_parser -> observation_builder: LÕI, không tuỳ chọn (RC2-021)
+]
+
+[project.optional-dependencies]
+# Nhóm tách rời để cài đúng thứ cần cho từng giai đoạn.
+parsing  = []   # lxml ĐÃ chuyển sang dependencies lõi (RC2-021) — giữ rỗng có chủ đích
+storage  = []   # pyarrow, duckdb, ...
+retrieval= []   # bm25, faiss/qdrant client, ...
+llm      = []   # client model open-weight (kiểm C05–C07 trước khi thêm)
+api      = []   # fastapi, uvicorn (chỉ cho demo)
+dev      = ["pytest>=8.0", "pytest-cov", "ruff", "mypy"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "unit: kiểm thử đơn vị, không I/O",
+  "integration: chạy trên fixture tĩnh",
+  "regression: so sánh với kết quả đã chốt",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+# Quy tắc phụ thuộc: domain không được import lên tầng ngoài.

@@ -1,0 +1,21 @@
+{
+ "kind": "supplemental",
+ "ten": "sync_122_2",
+ "doc_cung": "sync_122_1 (source/, controls/, gold/) — packet này KHÔNG thay thế nó",
+ "co_y_KHONG_chua": {
+  "source/": "SSOT source — đã có trong sync_122_1; tree_sha256 trong identity/source_identity.json là thứ để so",
+  "controls/*.zip": "submission_P0I/P0G2 — đã có trong sync_122_1",
+  "artifacts/retrieval/work.db": "4,24 GB — dựng lại bằng tools/build_retrieval_workdb.sh",
+  "A6 package": "1,68 GB — SHA 23c3b96e… đã khớp hai máy"
+ },
+ "he_qua_khi_verify": "Chạy `env/verify_packet.sh` TỪ packet này sẽ cho N/A ở các mục cần source/controls/work.db. Đó là ĐÚNG, không phải lỗi. Muốn chạy đủ: `bash env/verify_packet.sh --repo /duong/dan/Text2Pandas`.",
+ "kiem_duoc_tu_packet_nay": [
+  "manifest",
+  "env_contract",
+  "workdb_contract (chỉ hợp đồng lệnh)"
+ ],
+ "packet_version": "sync_122_2 · bản 2 (21/08 chiều)",
+ "verify_script_version": "verify_packet.sh v2 — N/A tách khỏi FAIL/PASS, --repo, verify_out/",
+ "built_at_utc": "2026-08-21T03:19:41Z",
+ "dau_hieu_ban_CU": "Nếu `verify_packet.sh` in dòng đầu là `• layout: SRC_ROOT=...` thì đó là BẢN 1 — bản giải nén đã cũ. Bản 2 in `• packet_kind` trước tiên. Giải nén lại từ zip mới."
+}

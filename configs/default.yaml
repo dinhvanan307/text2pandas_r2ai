@@ -1,0 +1,24 @@
+# default.yaml — tham số vận hành pipeline
+# Ngưỡng phân loại hiệu chỉnh trên tests/fixtures/, không hardcode trong mã.
+
+paths:
+  bronze: data/bronze
+  silver: data/silver
+  gold: data/gold
+  submissions: data/submissions
+
+catalog:
+  version: v1
+  # Ngưỡng phân loại bảng — hiệu chỉnh trên fixture, chưa chốt
+  data_table_min_numeric_ratio: null
+  data_table_min_rows: null
+  row_labels_sample_size: null
+
+execution:
+  sandbox_timeout_sec: null
+  sandbox_max_memory_mb: null
+  max_repair_attempts: null
+
+determinism:
+  seed: 42
+  llm_temperature: 0.0

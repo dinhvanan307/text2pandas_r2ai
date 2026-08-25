@@ -1,0 +1,322 @@
+# RC-02 · Chính sách readiness — hai mức, có thể audit
+#
+# Lỗi data-safety của RC1 (audit A-04): readiness được tính mà KHÔNG xét
+# confidence và hard-risk quality rule. Kết quả đo được trên build
+# `b927c3e8f90aed74`:
+#
+#     confidence='low'              530.655 tổng →  181.160 đang execution_ready
+#     column_role_unknown           121.407      →   34.098
+#     scale_rejected_implausible      1.996      →    1.527
+#     unit_assumed                    4.298      →    3.187
+#     Q-OBS-TINY-MONEY                2.836      →    1.789
+#
+# 1.789 fact đáng ngờ được phép tính tự động, chạm 849 bảng / 651 tài liệu.
+# Đó là lý do tệp này tồn tại.
+#
+# HAI MỨC, không phải một:
+#
+#   execution_candidate  đủ field để phép tính CHẠY ĐƯỢC về mặt cơ học
+#   execution_ready      candidate + đủ AN TOÀN để downstream tự động dùng
+#
+# Tách hai mức vì gộp chúng làm mất thông tin: một fact có thể đủ field mà
+# chưa đủ tin cậy, và người tiêu thụ cần phân biệt "không tính được" với
+# "tính được nhưng ta chưa dám".
+#
+# Chính sách là DỮ LIỆU, không phải mã. Sửa tệp này rồi sinh lại bảng
+# `observation_readiness` trong vài giây — không rebuild 2,6 triệu observation.
+
+policy_version: "2.2"
+supersedes: "2.1"
+
+# ── v2.1 · ĐÓNG BĂNG Ở P3, THI HÀNH Ở RC-02 ────────────────────────────────
+# Ba thứ v2.0 còn thiếu, review 28 §RC-02 nêu đích danh:
+#   1. precedence phải là CHÍNH SÁCH, không phải thứ tự `if` trong mã
+#   2. `execution_ready ⇒ execution_candidate` phải là bất biến kiểm được
+#   3. `period_from_table` / `generic_row_label` phải xét THEO BẰNG CHỨNG,
+#      không gán một nhãn cho cả 377.406 và 94.071 ca
+precedence:
+  order: [NON_CANDIDATE, BLOCKING, WARNING, PASS]
+  rules:
+    - Thiếu field bắt buộc là NON_CANDIDATE; KHÔNG xét blocking nữa.
+    - NON_CANDIDATE ⇒ execution_candidate=0 ⇒ execution_ready=0.
+    - Có ≥1 blocking reason ⇒ execution_ready=0, kể cả khi là candidate.
+    - Warning KHÔNG hạ ready, nhưng BẮT BUỘC có mặt ở warning_reasons_json.
+    - Lý do lưu thành mảng JSON đã SORT và KHÔNG TRÙNG. Cấm kiểm bằng LIKE
+      trên chuỗi tự do — đó là cách một mã lý do sai chính tả sống sót.
+
+invariants_v21:
+  - id: ready_implies_candidate
+    assert: "COUNT(execution_ready=1 AND execution_candidate=0) = 0"
+  - id: reason_arrays_canonical
+    assert: "mọi blocking/warning/non_candidate reasons là JSON array sort, unique"
+applies_to_schema: "1.0"
+
+# ── Mức 1 · đủ field để chạy ────────────────────────────────────────────────
+execution_candidate:
+  description: >
+    Đủ dữ kiện để một câu pandas chạy ra kết quả. KHÔNG nói gì về việc kết quả
+    đó có đáng tin không.
+  require:
+    - field: collision_class
+      op: is_null
+      reason: semantic_collision
+      note: nhiều giá trị cùng một khoá ngữ nghĩa — chọn dòng nào cũng là đoán
+    - field: period_end
+      op: is_not_null
+      reason: period_unresolved
+      note: không có kỳ thì không so sánh được giữa hai báo cáo
+    - field: unit_kind
+      op: not_in
+      values: ["unknown"]
+      reason: unit_unknown
+      note: không biết đơn vị thì không cộng được với bất kỳ số nào khác
+    - field: metric_label_clean
+      op: not_blank
+      reason: label_empty
+      note: không có nhãn thì không truy hồi được, dù giá trị đúng
+
+# ── confidence · cũng là CHÍNH SÁCH, không phải hằng số trong mã ────────────
+#
+# Trước đây `confidence` được tính bằng một biểu thức SQL hard-code trong
+# `release.py`. Hệ quả nhìn thấy được ngay khi thử nới ngưỡng: gỡ
+# `column_role_unknown` khỏi danh sách chặn KHÔNG làm fact đó ready, vì cùng
+# cờ ấy còn hạ `confidence` xuống `low` ở một chỗ khác mà chính sách không
+# với tới. "Chính sách là dữ liệu" chỉ đúng một nửa.
+#
+# Đưa cả hai về đây thì một lần nới là một lần nới thật.
+confidence:
+  low_if_flags:
+    - unit_assumed
+    - unit_scale_assumed_no_evidence
+    - column_role_unknown
+  low_if_conditions:
+    - "o.period_end IS NULL"
+    # ── v2.2 · A5-A1 · bậc nhân chỉ là BẰNG CHỨNG CÒN THIẾU ở nơi có bậc ──
+    #
+    # Vế cũ là `scale_source IN ('assumed','none')` không kèm điều kiện gì.
+    # Nó đúng cho TIỀN: không biết ô là đồng hay triệu đồng là sai một triệu
+    # lần, và guard đó ở đây giữ nguyên 100% — 1.654 ô money có
+    # `scale_source='none'` vẫn `low`, vẫn bị chặn.
+    #
+    # Nhưng với `percent`, `shares`, `days` thì KHÔNG CÓ bậc nhân nào để
+    # biết. `scale_exponent IS NULL` + `scale_source='none'` là trạng thái
+    # ĐÚNG VÀ ĐẦY ĐỦ của chúng, không phải bằng chứng còn thiếu. Luật cũ
+    # đánh đồng "không áp dụng" với "chưa biết", và hệ quả đo được trên A4:
+    #
+    #     percentage     103.193 candidate →       0 ready
+    #     share_count     22.016 candidate →       0 ready
+    #     interest_rate       73 candidate →       0 ready
+    #     days                 9 candidate →       0 ready
+    #
+    # 100,00% trong số đó `confidence='low'` vì đúng một vế này, không có
+    # nguyên nhân thứ hai. Tập ready của A4 vì thế CHỈ CHỨA Ô TIỀN — và
+    # 117 câu hỏi `%` của đề bài không có ô nào để trả lời.
+    #
+    # Đây KHÔNG phải nới acceptance criteria. Guard giữ nguyên; chỉ thu hẹp
+    # phạm vi áp dụng về đúng nhóm mà nó có nghĩa.
+    #
+    # Viết dưới dạng NOT IN chứ không phải IN có chủ đích: một unit kind mới
+    # thêm sau này sẽ mặc định RƠI VÀO diện phải có bằng chứng bậc — fail
+    # closed, không phải fail open.
+    #
+    # `rate` CỐ Ý không nằm trong danh sách miễn. 3/73 ca đọc tay cho
+    # `Tiền gửi của khách hàng` ra 545 · 580 · 780 — lãi suất 545% là không
+    # thể, nguyên nhân chưa xác định. Xem KNOWN_ISSUES; điều tra ở A6.
+    - "o.scale_source IN ('assumed','none') AND o.unit_kind NOT IN ('percent','shares','days')"
+  medium_if_flags:
+    - generic_row_label
+    - table_not_classified_as_data
+  medium_if_conditions:
+    - "o.period_source <> 'column_path'"
+  default: high
+
+# ── Mức 2 · đủ an toàn để tự động dùng ──────────────────────────────────────
+execution_ready:
+  description: >
+    Candidate, CỘNG thêm đủ tin cậy để downstream dùng mà không cần người xem
+    lại. Mỗi điều kiện dưới đây tương ứng một lỗi đã đo được, không phải một
+    lo ngại giả định.
+  require_candidate: true
+  confidence_allowed: ["high", "medium"]
+  confidence_reason: confidence_low
+
+  # Cờ CHẶN — có mặt là không bao giờ ready.
+  blocking_flags:
+    - flag: tiny_money_unresolved
+      rule_id: Q-OBS-TINY-MONEY
+      reason: tiny_money_unconfirmed
+      note: >
+        Chỉ chặn ca CHƯA xác nhận. Ca đã phân loại `legitimate_small_money`
+        hoặc `legitimate_per_share_or_rate_value` thì KHÔNG chặn — xem
+        `tiny_money.py`. Đo được 740/2.836 ca là lỗi của rule cũ (so ngưỡng
+        trên giá trị thô, chưa áp scale), không phải lỗi dữ liệu.
+    - flag: physical_duplicate
+      reason: physical_duplicate
+      note: nhiều observation trên cùng một ô nguồn — lỗi khai triển span
+    - flag: parse_ambiguous
+      reason: parse_ambiguity_unresolved
+      note: chuỗi số không phân giải được thành đúng một giá trị
+    - flag: unit_ambiguous_share_column
+      rule_id: RC2-039
+      reason: unit_ambiguous_share_column
+      consequence: blocking_until_classified
+      note: >
+        Nhãn nêu "cổ phiếu", giá trị âm, không quá 12 chữ số, mà không đủ bằng
+        chứng để kết luận đơn vị là ĐẾM hay TIỀN. Bản 7aa8b4c22984bf5f phát
+        hành 98 ô loại này với execution_ready=1 và blocking_reasons rỗng —
+        bất biến "unresolved không được lọt vào ready" đạt bằng VẮNG MẶT chứ
+        không bằng kiểm soát, vì cohort chưa từng được đăng ký. Cờ này là lớp
+        kiểm soát đó. Ca kết luận được đã thành share_count ở number_parser
+        1.3; đây chỉ là phần dư.
+    - flag: percent_value_implausible
+      rule_id: A5-A2
+      reason: percent_value_implausible
+      consequence: blocking_until_reclassified
+      note: >
+        Ô được phân loại PHẦN TRĂM nhưng |giá trị| >= 1.000. Đo trên A4:
+        102.748/103.193 ô percentage nằm dưới 1.000; phần còn lại là 2 ô ở
+        [1e3,1e4), 75 ô ở [1e4,1e6) và 368 ô >= 1e6. Đuôi đó là ô TIỀN bị gán
+        nhầm vì `header_path` gộp cột tiền với cột `%` liền kề — mẫu:
+        38.708.428.190.000 ở cột `01/01/2024 › (%)`. Cờ này là điều kiện tồn
+        tại của A5-A1: mở tier ready cho percentage mà không có nó thì 445 ô
+        chắc-sai đi thẳng vào tập tự động dùng được. Cờ CHẶN chứ không loại —
+        observation vẫn còn, chỉ không tự động tính.
+    - flag: column_role_unknown
+      rule_id: Q-COL-ROLE-UNKNOWN
+      reason: column_role_unknown
+      note: >
+        DI-02 cấm loại cứng nên observation vẫn được tạo — nhưng "vẫn tồn tại"
+        khác "được phép tính tự động". 34.098 ca như vậy đang ready ở RC1.
+    - flag: scale_rejected_implausible
+      rule_id: Q-OBS-SCALE-REJECTED
+      reason: scale_conflict
+      note: lời khai đơn vị mâu thuẫn với chữ số của ô — một trong hai sai
+    - flag: unit_scale_assumed_no_evidence
+      rule_id: Q-OBS-UNIT-ASSUMED
+      reason: unit_assumed_no_evidence
+      note: >
+        Đổi tên từ `unit_assumed` theo RC-04 mục 3. Tên cũ mô tả sai: phần lớn
+        ca thực tế là **currency** được giả định, không phải unit kind.
+    # `value_unit_period_conflict` ĐÃ NGHỈ HƯU ở RC-02 — xem `retired_rules`
+    # trong `rc2_contracts_v1.yaml` và to_read/32. Nó không bị xoá cho gọn: ba
+    # trục của nó được chứng minh là đã bị thâu tóm hết (period: bất khả thi về
+    # cấu trúc · scale: giao 100% với `scale_rejected_implausible` · unit:
+    # 100% đã là confidence='low'), và ba assertion RET-01..03 thay nó canh
+    # gác — chúng CHẠY, còn cờ cũ thì không.
+
+  # ── Cờ CÓ ĐIỀU KIỆN · v2.1 ────────────────────────────────────────────
+  # Đây là thay đổi cốt lõi của 2.1. Trước đây hai cờ này là warning PHẲNG —
+  # nghĩa là 377.406 + 94.071 fact được cho qua bất kể bằng chứng thế nào.
+  # `allowed_if` chỉ là chú thích bằng văn xuôi, không ai thi hành.
+  #
+  # Giờ chúng là warning KHI VÀ CHỈ KHI bằng chứng đủ; ngược lại là blocking.
+  # Không ai phải chọn một nhãn cho cả nhóm.
+  conditional_flags:
+    - flag: period_from_table
+      rule_id: Q-COL-PERIOD-FROM-TABLE
+      warning_reason: period_inferred_from_table_context
+      blocking_reason: period_inferred_without_evidence
+      # SỬA ĐỔI RC-02 (to_read/32, anh duyệt). Ba vế cũ đều là HẰNG ĐÚNG,
+      # đo được trên RC1:
+      #   `period_end IS NOT NULL`      — đã là điều kiện candidate
+      #   `period_source NOT IN (...)`  — 325.183/325.183 = 'table_context';
+      #                                   cờ này ĐƯỢC PHÁT RA chính khi
+      #                                   period_source='table_context', nên vế
+      #                                   đó chỉ lặp lại chính cái cờ
+      #   `NOT value_unit_period_conflict` — rule đã nghỉ hưu, chặn 0 ca
+      # Hệ quả: 325.183/325.183 xuống warning. Một công tắc luôn bật đội lốt
+      # phép kiểm bằng chứng.
+      #
+      # Rủi ro THẬT, bám theo cách bài toán chấm điểm: đáp án là MỘT ô của
+      # `relevant_tables[0]`, exact-match, không có điểm một nửa. Kỳ suy từ ngữ
+      # cảnh bảng nguy hiểm không phải vì kỳ sai, mà vì cả bảng nhận chung một
+      # kỳ nên `(row_path, col_path, period)` có thể không còn trỏ tới một ô
+      # duy nhất — và khi đó chọn cột nào cũng là tung đồng xu.
+      warning_if: []
+      confidence_allowed: [high, medium]
+      requires_col_path_discriminative: true
+      consequence: >
+        Kỳ suy từ ngữ cảnh bảng, không đọc thẳng nhãn cột. Vẫn dùng được KHI
+        nhãn cột còn phân biệt được ô trong phạm vi (bảng, dòng, kỳ) — đo trên
+        RC1: 323.633/325.183 đạt. 1.550 ca còn lại có ≥2 cột cùng nhãn, cùng
+        dòng, cùng kỳ nên không địa chỉ hoá được; `collision_class` KHÔNG bắt
+        được chúng vì đụng độ định nghĩa trên (bảng, dòng, cột) vật lý còn đây
+        là đụng độ khoá NGỮ NGHĨA.
+    - flag: period_from_row_path
+      rule_id: A5-B1
+      warning_reason: period_inferred_from_row_path
+      blocking_reason: period_row_path_not_addressable
+      warning_if: []
+      confidence_allowed: [high, medium]
+      requires_col_path_discriminative: true
+      consequence: >
+        Kỳ đọc được từ NGÀY TUYỆT ĐỐI trong nhãn dòng, khi cả nhãn cột lẫn ngữ
+        cảnh bảng đều không mang kỳ — bố cục chuyển vị của bảng biến động vốn
+        chủ sở hữu. Hạng bằng chứng ngang `P-EXPLICIT-DMY`, chỉ khác trục.
+        Vẫn phải qua cùng phép kiểm địa chỉ hoá như `period_from_table`: nhãn
+        CỘT phải còn phân biệt được ô trong phạm vi (bảng, dòng, kỳ). Không
+        miễn phép kiểm đó chỉ vì bằng chứng kỳ mạnh — hai thứ khác nhau.
+    - flag: generic_row_label
+      rule_id: Q-OBS-GENERIC-LABEL
+      warning_reason: generic_label_with_distinct_path
+      blocking_reason: generic_label_not_discriminative
+      warning_if:
+        - "TRIM(COALESCE(o.row_path_text,'')) <> ''"
+        - "TRIM(COALESCE(o.row_path_text,'')) <> TRIM(COALESCE(o.metric_label_clean,''))"
+      confidence_allowed: [high, medium]
+      requires_no_collision: true
+      requires_row_path_discriminative: true
+      consequence: >
+        Nhãn kiểu `Cộng`, `Số dư cuối năm`. Chỉ định danh được nhờ `row_path`;
+        nếu `row_path` trùng chính nhãn thì không phân biệt được gì.
+
+  # Cờ CẢNH BÁO phẳng — vẫn ready, nhưng người tiêu thụ phải biết hệ quả.
+  warning_flags:
+    - flag: table_not_classified_as_data
+      rule_id: Q-TAB-NOT-DATA
+      consequence: >
+        Bảng không được phân loại là bảng dữ liệu nhưng vẫn sinh observation.
+        Kiểm lại trước khi tổng hợp ngang nhiều bảng.
+    - flag: unit_no_evidence
+      rule_id: Q-OBS-UNIT-NO-EVIDENCE
+      consequence: >
+        Ô tiền không có bằng chứng đơn vị ở tầng nào. Thuộc tính của corpus —
+        trần đo được là 95,21%. Không chặn vì nếu chặn thì loại luôn cả phần
+        dữ liệu tốt của những bảng đó.
+
+# ── Mức bảng · RC-08 ────────────────────────────────────────────────────────
+table_readiness:
+  retrieval_ready:
+    description: tìm được — có locator và có ngữ cảnh/nhãn để khớp từ khoá
+    require:
+      - locator_not_null
+      - evidence_ref_not_null
+      - has_searchable_text
+  has_observations: n_observations > 0
+  has_execution_candidate: execution_candidate_obs > 0
+  has_execution_ready: execution_ready_obs > 0
+
+# ── Nới lỏng đã lên kế hoạch ────────────────────────────────────────────────
+# Ghi ra để lần sau không ai phải đoán vì sao ngưỡng là con số đó.
+planned_relaxations:
+  - flag: column_role_unknown
+    condition: sau khi có Structure Gold (DP-002) đo được độ chính xác vai trò
+    action: hạ từ blocking xuống warning nếu độ chính xác ≥ 98%
+  - flag: tiny_money_unresolved
+    condition: sau khi đọc tay nhóm `parse_or_column_role_unresolved`
+    action: ca xác nhận hợp lệ chuyển sang `legitimate_small_money`
+
+# ── Bất biến · kiểm ở RC-17, đỏ là chặn phát hành ───────────────────────────
+invariants:
+  - name: partition_complete
+    assert: execution_ready + not_execution_ready == total_observations
+  - name: candidate_superset
+    assert: execution_ready <= execution_candidate
+  - name: no_low_confidence_in_ready
+    assert: count(execution_ready = 1 AND confidence = 'low') == 0
+  - name: no_blocking_reason_in_ready
+    assert: count(execution_ready = 1 AND blocking_reasons != '[]') == 0
+  - name: no_unknown_collision_in_ready
+    assert: count(execution_ready = 1 AND collision_class IS NOT NULL) == 0
+  - name: every_not_ready_has_reason
+    assert: count(execution_ready = 0 AND blocking_reasons = '[]') == 0

@@ -1,0 +1,71 @@
+# formula_registry_v1 — D2 của plan 124 (bản 122.1).
+# Phạm vi v1 (125 §5-D2): 3 formula ĐẦY ĐỦ (lookup, percentage_change, ratio) —
+# đúng thứ tự ROI S8 (183/246 percentage hỏng trong C0; arithmetic 0/24 trên gold-45).
+# Các formula còn lại là SCAFFOLD: schema khai đủ, status: scaffold, chưa emit.
+version: 1
+schema:
+  fields: [id, intent, expression, operand_roles, output_kind, unit_policy,
+           sign_policy, zero_denominator_policy, cross_table_allowed,
+           examples_positive, examples_negative, status]
+
+formulas:
+  - id: lookup_v1
+    intent: lookup
+    expression: "x"
+    operand_roles:
+      x: "đúng MỘT fact; khóa bằng operand_id ổn định; assert multiplicity==1"
+    output_kind: number
+    unit_policy: >
+      canonical VND/ratio trong Fact Store; phép đổi đơn vị theo don_vi_hoi của
+      câu PHẢI xuất hiện trong pandas_query (vd /1e6 cho triệu, /1e9 cho tỷ).
+      Ưu tiên unit evidence ở cell/col/section; mâu thuẫn → unit_evidence_conflict.
+      34 câu UNIT_SCALE đã adjudicated (docs/103 F2) là regression bắt buộc.
+    sign_policy: >
+      giữ ngoặc kế toán âm; KHÔNG phủ định tùy tiện khi metric nằm trong nhóm
+      chi phí/lỗ (regression: qid 1 — C0 trả −208253 vs gold +208253).
+    zero_denominator_policy: n/a
+    cross_table_allowed: false
+    examples_positive: ["qid 1 (VJC lãi tiền gửi 2018)"]
+    examples_negative: ["không .values[0] trên filter multiplicity>1"]
+    status: active
+
+  - id: percentage_change_v1
+    intent: percentage_change
+    expression: "(new - old) / abs(old) * 100.0"
+    operand_roles:
+      new: "giá trị kỳ sau (năm lớn hơn)"
+      old: "giá trị kỳ trước (năm nhỏ hơn); role gán theo years trong QuestionPlan"
+    output_kind: percent
+    unit_policy: >
+      hai operand PHẢI cùng đơn vị/scale trước khi trừ; output là percent (quy ước
+      15 nghĩa là 15% — theo dải hợp lý [-100,1000] của validate_submission type
+      contract; preregister trước khi đổi).
+    sign_policy: "chiều tăng/giảm theo dấu kết quả; không abs kết quả"
+    zero_denominator_policy: "old==0 → không emit inf; status DATA_MISSING + reason ZERO_DENOMINATOR"
+    cross_table_allowed: true   # hai năm có thể ở hai file
+    examples_positive: ["'phần trăm tăng trưởng X từ 2016 sang 2021'"]
+    examples_negative: ["không nhầm với 'mức tăng' tuyệt đối (qid 104 — DERIVED_QUANTITY)"]
+    status: active
+
+  - id: ratio_v1
+    intent: ratio
+    expression: "a / b"
+    operand_roles:
+      a: "tử — metric ở numerator theo câu ('X trên Y', 'X chiếm bao nhiêu % Y')"
+      b: "mẫu — metric ở denominator"
+    output_kind: "percent nếu câu hỏi %/tỷ trọng (×100); ratio_x nếu hỏi 'bao nhiêu lần'"
+    unit_policy: "a, b cùng đơn vị & cùng kỳ trừ khi câu chỉ định khác; ×100 phải nằm trong query"
+    sign_policy: "giữ dấu tự nhiên"
+    zero_denominator_policy: "b==0 → DATA_MISSING + ZERO_DENOMINATOR"
+    cross_table_allowed: true
+    examples_positive: ["'hàng tồn kho chiếm bao nhiêu % tổng tài sản'"]
+    examples_negative: ["'Tỷ lệ biểu quyết' là METRIC lookup, không phải phép chia (flag ratio_metric_lookup)"]
+    status: active
+
+  # ── scaffold (khai schema, chưa emit) ────────────────────────────────────
+  - {id: difference_v1, intent: difference, expression: "a - b", output_kind: number, status: scaffold}
+  - {id: average_v1, intent: average, expression: "mean(values)", output_kind: number, status: scaffold}
+  - {id: sum_v1, intent: sum, expression: "sum(values)", output_kind: number, status: scaffold}
+  - {id: max_min_v1, intent: max_min, expression: "max(values) | min(values)", output_kind: number, status: scaffold}
+  - {id: argmax_year_v1, intent: argmax_year, expression: "years[argmax(values)]", output_kind: year, status: scaffold}
+  - {id: count_v1, intent: count, expression: "count(rows satisfying predicate)", output_kind: integer, status: scaffold}

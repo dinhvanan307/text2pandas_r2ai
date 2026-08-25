@@ -1,0 +1,8 @@
+# B4 · Định danh A6 KỲ VỌNG. Resolver fail-fast nếu work.db không khớp file này.
+# Nguồn: artifacts/rc2/packagesa6/silver_v1_rc2_b3e9684004679ffb_a6_run1.zip
+build_id: b3e9684004679ffb
+corpus_id: sha256:ca033190f2e9e99f8384bf59749484b0668c573e0a84e02a055d173d99de0cb9
+readiness_policy_version: 2.2
+release_label: silver-v1.0.0-rc2
+status: release-candidate
+package_sha256: 23c3b96e4338e8785c2dcfcdfebf147dc7b7dfb6438c46c590be1ecbfe2453be

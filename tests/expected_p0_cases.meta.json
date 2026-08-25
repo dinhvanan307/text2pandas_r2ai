@@ -1,0 +1,12 @@
+{
+ "_schema": "expected_p0_cases v1 — MỘT DÒNG MỘT CA (doc 134 P0-5)",
+ "source": "artifacts/execution/h0/unit_conflict_adjudication.jsonl",
+ "source_sha256": "c2fb630e818df0c590622c1583eee71b60f53ac9b5133c0874d49cd855ab4f76",
+ "n_case": 47,
+ "theo_kind": {
+  "OVERRIDE_EXPECTED": 34,
+  "MUST_NOT_OVERRIDE": 9,
+  "UNRESOLVED_MUST_NOT_OVERRIDE": 4
+ },
+ "chong_tautology": "expected lấy từ phân xử người trên raw evidence, KHÔNG từ production emitter và KHÔNG từ A6"
+}

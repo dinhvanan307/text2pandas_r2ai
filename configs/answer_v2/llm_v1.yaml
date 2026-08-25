@@ -1,0 +1,34 @@
+# Danh tính LLM — AG3. Mọi trường ở đây vào băm cache: đổi một trường ⇒ cache
+# miss ⇒ gọi lại model. Đó là chủ ý: hai lần đo với cấu hình khác nhau KHÔNG
+# được dùng chung kết quả.
+#
+# BTC cho phép: model ≤14B, phát hành trước 01/06/2026, trọng số công khai,
+# KHÔNG dùng LLM đóng (GPT-4o, Gemini...). Qwen2.5-14B-Instruct thoả cả bốn.
+# `revision` phải điền băm commit HuggingFace thật trước khi nộp — "unknown"
+# nghĩa là chưa tái lập được, và doc 144 §11.6 đòi ghim.
+#
+# `endpoint` để TRỐNG ⇒ chạy offline: reranker rơi về scorer tất định và ghi
+# `exercised: false`. Bật bằng một trong hai cách:
+#     export ANSWER_V2_LLM_ENDPOINT=http://localhost:8000
+#     hoặc điền endpoint bên dưới
+#
+# Runtime nào cũng được miễn nói OpenAI-compatible:
+#     vLLM        python -m vllm.entrypoints.openai.api_server --model Qwen/Qwen2.5-14B-Instruct
+#     Ollama      ollama serve            (endpoint http://localhost:11434)
+#     LM Studio   bật Local Server        (endpoint http://localhost:1234)
+
+endpoint:
+model_id: Qwen/Qwen2.5-14B-Instruct
+revision: unknown
+quantization: none
+runtime: openai-compatible
+
+# temperature 0 + seed cố định: điều kiện để hai lần chạy cho cùng kết quả.
+# Không có nó thì mọi so sánh A/B mất nghĩa.
+temperature: 0.0
+top_p: 1.0
+seed: 0
+
+# Đầu ra là MỘT SỐ NGUYÊN. 16 token là thừa thãi so với nhu cầu, nhưng đủ chỗ
+# cho model lỡ nói thêm vài chữ mà vẫn parse được chỉ số đầu tiên.
+max_tokens: 16
