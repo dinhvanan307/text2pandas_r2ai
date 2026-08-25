@@ -13,19 +13,18 @@ import sys
 from pathlib import Path
 
 from text2pandas.infrastructure.paths import ProjectPaths
+from text2pandas.infrastructure.snapshots import ActiveSnapshots
 
 ROOT = Path(__file__).resolve().parents[4]
 PROJECT_PATHS = ProjectPaths.from_repo_root(ROOT)
+ACTIVE_SNAPSHOTS = ActiveSnapshots.load(PROJECT_PATHS)
 CORPUS = PROJECT_PATHS.raw_btc / "financial_statements"
 QUESTIONS = PROJECT_PATHS.raw_btc / "questions" / "questions.jsonl"
 BRONZE = PROJECT_PATHS.artifact_root / "runs" / "a6" / "bronze"
 CATALOG_DB = BRONZE / "catalog.sqlite"
 INDEX_DB = BRONZE / "table_index.sqlite"
-SILVER_DB = PROJECT_PATHS.a6_snapshot("b3e9684004679ffb") / "silver.db"
-CARD_DB = (
-    PROJECT_PATHS.retrieval_snapshot("b3e9684004679ffb", "286973b134a189ee")
-    / "retrieval.db"
-)
+SILVER_DB = ACTIVE_SNAPSHOTS.a6_path / "silver.db"
+CARD_DB = ACTIVE_SNAPSHOTS.retrieval_path / "retrieval.db"
 CODE_STOCK = PROJECT_PATHS.raw_btc / "metadata" / "companies.csv"
 SUBMIT_DIR = PROJECT_PATHS.artifact_root / "submissions"
 
@@ -80,7 +79,6 @@ def cmd_parse_check(args: argparse.Namespace) -> int:
     from collections import Counter
 
     from text2pandas.domain.values.vn_number import (
-        ParseStatus,
         detect_convention,
         parse_vn_number,
     )
@@ -160,7 +158,10 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     from text2pandas.application.usecases.run_pipeline import run_pipeline
     from text2pandas.application.usecases.submission import (
-        SubmissionConfig, build_submission, replay_zip, validate_zip,
+        SubmissionConfig,
+        build_submission,
+        replay_zip,
+        validate_zip,
     )
 
     cat = _workdb("catalog.sqlite")
@@ -207,7 +208,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         expected = {r.qid for r in rep.results}
 
     cfg = SubmissionConfig(doc_id_variant=args.doc_id, locator_base=args.locator_base)
-    zip_path = build_submission(rep.results, questions, work_out, cfg)
+    zip_path = build_submission(rep.results, questions, stage, cfg)
 
     val = validate_zip(zip_path, expected)
     print("\n╔═══════════ VALIDATOR ═══════════╗")
@@ -240,7 +241,10 @@ def cmd_package(args: argparse.Namespace) -> int:
 
     from text2pandas.application.usecases.answer import AnswerResult
     from text2pandas.application.usecases.submission import (
-        SubmissionConfig, build_submission, replay_zip, validate_zip,
+        SubmissionConfig,
+        build_submission,
+        replay_zip,
+        validate_zip,
     )
 
     stage = SCRATCH / "stage"
@@ -347,6 +351,17 @@ def cmd_cards(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_verify(args: argparse.Namespace) -> int:
+    """Verify active raw, A6, and retrieval snapshot lineage."""
+    from text2pandas.infrastructure.snapshots import verify_active_snapshots
+
+    report = verify_active_snapshots(PROJECT_PATHS, scope=args.scope)
+    for item in report.items:
+        mark = "PASS" if item.ok else "FAIL"
+        print(f"[{mark}] {item.name}: {item.detail}")
+    return 0 if report.ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="text2pandas")
     p.add_argument("-v", "--verbose", action="store_true")
@@ -373,11 +388,13 @@ def main(argv: list[str] | None = None) -> int:
     pk.add_argument("--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1)
     pc = sub.add_parser("parse-check", help="Parse thử bảng, thống kê chất lượng")
     pc.add_argument("--limit", type=int, default=0)
+    vf = sub.add_parser("verify", help="Kiểm identity và lineage của active snapshots")
+    vf.add_argument("scope", nargs="?", choices=["raw", "a6", "retrieval", "all"], default="all")
 
     args = p.parse_args(argv)
     handlers = {"catalog": cmd_catalog, "parse-check": cmd_parse_check,
                 "index": cmd_index, "run": cmd_run, "package": cmd_package,
-                "silver": cmd_silver, "cards": cmd_cards}
+                "silver": cmd_silver, "cards": cmd_cards, "verify": cmd_verify}
     return handlers[args.cmd](args)
 
 
