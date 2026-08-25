@@ -43,10 +43,10 @@ def diem(B, k, cap, che_do=None):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--bundle", default="artifacts/retrieval/reaudit/exp_gold_bundle.json")
+    ap.add_argument("--bundle", default="artifacts/runs/retrieval/reaudit/exp_gold_bundle.json")
     ap.add_argument("--k", type=int, default=3)
     ap.add_argument("--cap", type=int, default=30)
-    ap.add_argument("--out", default="artifacts/retrieval/reaudit/e1_ceiling.json")
+    ap.add_argument("--out", default="artifacts/runs/retrieval/reaudit/e1_ceiling.json")
     a = ap.parse_args(argv)
     B = json.loads(Path(a.bundle).read_text(encoding="utf-8"))
     tong = diem(B, a.k, a.cap)

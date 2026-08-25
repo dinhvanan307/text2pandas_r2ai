@@ -11,10 +11,10 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
 from execution.dong_goi_tat_dinh import ghi_zip, json_chuan          # noqa: E402
 
-NEN = ROOT / "data/submissions/submission_P0G2.zip"
-A6R = ROOT / "data/dev/answer_a6/records_a6.jsonl"
-DATA_A6, DATA_V3 = ROOT / "data/dev/answer_a6/data", ROOT / "data/dev/answer_v3/data"
-SOHOC = ROOT / "data/dev/so_hoc/records_sohoc.jsonl"
+NEN = ROOT / "artifacts/submissions/legacy/submission_P0G2.zip"
+A6R = ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl"
+DATA_A6, DATA_V3 = ROOT / "data/curated/dev-legacy/answer_a6/data", ROOT / "data/curated/dev-legacy/answer_v3/data"
+SOHOC = ROOT / "data/curated/dev-legacy/so_hoc/records_sohoc.jsonl"
 
 
 def dung(ra: Path, force: bool = False) -> dict:
@@ -121,7 +121,7 @@ def dung(ra: Path, force: bool = False) -> dict:
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    out = Path(args[0]) if args else ROOT / "data/submissions/submission_C1R_LOCAL.zip"
+    out = Path(args[0]) if args else ROOT / "artifacts/submissions/legacy/submission_C1R_LOCAL.zip"
     dv = dung(out, force="--force" in sys.argv)
     (ROOT / "artifacts/execution/h0" / f"dauvan_{out.stem}.json").write_text(
         json.dumps(dv, ensure_ascii=False, indent=1))

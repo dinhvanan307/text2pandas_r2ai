@@ -20,7 +20,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-GD = ROOT / "data/dev/answer_gold"
+GD = ROOT / "data/curated/dev-legacy/answer_gold"
 OUT = ROOT / "reports/163/gold"
 
 TAXONOMY = ("QUESTION_SEMANTIC_AMBIGUITY", "MULTIPLE_VALID_DEFINITIONS",
@@ -165,8 +165,8 @@ def main() -> int:
                                              "answer_gold_wave1*.jsonl; annotator là "
                                              "tiến trình RIÊNG, không có label trong context"},
             "an_prediction": {"trang_thai": "VERIFIED",
-                              "bang_chung": "prompt cấm data/submissions, "
-                                            "data/dev/answer_a6, data/dev/so_hoc, "
+                              "bang_chung": "prompt cấm artifacts/submissions/legacy, "
+                                            "data/curated/dev-legacy/answer_a6, data/curated/dev-legacy/so_hoc, "
                                             "dossiers_*, reports/"},
             "xao_thu_tu_cau": {"trang_thai": "NOT_VERIFIED",
                                "ly_do": "QID được đưa theo thứ tự tăng dần, KHÔNG xáo"},
@@ -215,15 +215,15 @@ def main() -> int:
     }, ensure_ascii=False, indent=1), encoding="utf-8")
 
     sel = json.loads((GD / "wave1_selection.json").read_text(encoding="utf-8"))
-    dev = json.loads((ROOT / "data/dev/execution_gold/dev60_selection.json")
+    dev = json.loads((ROOT / "data/curated/dev-legacy/execution_gold/dev60_selection.json")
                      .read_text(encoding="utf-8"))
-    aud = json.loads((ROOT / "data/dev/execution_gold/audit40_selection.json")
+    aud = json.loads((ROOT / "data/curated/dev-legacy/execution_gold/audit40_selection.json")
                      .read_text(encoding="utf-8"))
     giao = sorted(set(sel["wave1_qids"]) & set(aud["qids"]))
     (OUT / "dev60_universe.json").write_text(json.dumps({
         "_schema": "dev60_universe v1",
-        "dev60_selection_sha256": shaf(ROOT / "data/dev/execution_gold/dev60_selection.json"),
-        "audit40_selection_sha256": shaf(ROOT / "data/dev/execution_gold/audit40_selection.json"),
+        "dev60_selection_sha256": shaf(ROOT / "data/curated/dev-legacy/execution_gold/dev60_selection.json"),
+        "audit40_selection_sha256": shaf(ROOT / "data/curated/dev-legacy/execution_gold/audit40_selection.json"),
         "dev60_qids": dev["qids"], "n_dev60": len(dev["qids"]),
         "dev60_seed": dev.get("seed"), "dev60_intent_dist": dev.get("intent_dist"),
         "audit40_qids_COUNT_ONLY": len(aud["qids"]),

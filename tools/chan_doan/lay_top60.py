@@ -7,14 +7,14 @@ from retrieval.evalkit.stages import Bm25StructuralRanker, HardFilterGenerator
 from retrieval.question_intent import parse_intent
 OUT="/tmp/refs60.json"
 cfg=_load_cfg("base", {}); alias=load_aliases(brands=cfg.brands)
-conn=sqlite3.connect("file:%s?mode=ro"%os.path.expanduser("~/fast/artifacts/retrieval/work.db"), uri=True)
+conn=sqlite3.connect("file:%s?mode=ro"%os.path.expanduser("data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"), uri=True)
 conn.execute("PRAGMA cache_size=-200000")
 s1=HardFilterGenerator(basis_mode=cfg.basis_mode, year_slack=cfg.year_slack)
 s2=Bm25StructuralRanker(alias, top_k=max(cfg.top_k_rank,60), use_hints=cfg.use_hints,
                         basis_mode=cfg.basis_mode, stop_mode=cfg.stop_mode)
 u2r={u:ev.replace("|line:","|") for u,ev in conn.execute(
     "SELECT table_uid,evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL")}
-mau=[json.loads(l) for l in open("data/dev/gold_tay_sample_v2.jsonl") if l.strip()]
+mau=[json.loads(l) for l in open("data/curated/dev-legacy/gold_tay_sample_v2.jsonl") if l.strip()]
 done=json.load(open(OUT)) if os.path.exists(OUT) else {}
 tu,den=int(sys.argv[1]),int(sys.argv[2])
 n=0

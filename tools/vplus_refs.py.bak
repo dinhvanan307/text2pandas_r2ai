@@ -27,7 +27,7 @@ from retrieval.evalkit.stages import (Bm25StructuralRanker,    # noqa: E402
                                       HardFilterGenerator)
 from retrieval.question_intent import parse_intent             # noqa: E402
 
-OUT = ROOT / "artifacts" / "retrieval" / "vplus" / "refs_1012.json"
+OUT = ROOT / "artifacts" / "runs" / "retrieval" / "vplus" / "refs_1012.json"
 DEPTH = 300
 
 
@@ -35,7 +35,7 @@ def main(argv):
     ap = argparse.ArgumentParser(prog="vplus_refs")
     ap.add_argument("--db", required=True)
     ap.add_argument("--questions",
-                    default=str(ROOT / "data/external/vifinqa/questions/questions.jsonl"))
+                    default=str(ROOT / "data/raw/btc/questions/questions.jsonl"))
     a = ap.parse_args(argv)
 
     cfg = _load_cfg("base", {})

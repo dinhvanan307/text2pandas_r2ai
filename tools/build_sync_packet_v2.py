@@ -71,11 +71,11 @@ ITEMS: list[tuple[str, str]] = [
     ("evaluation/fact_candidates_gold45_v12.jsonl", "evaluation/fact_candidates_gold45_v12.jsonl"),
     ("evaluation/run_trace_1012.jsonl", "evaluation/run_trace_1012.jsonl"),
     # selections + schema nhãn
-    ("data/dev/execution_gold/dev60_selection.json", "data/dev/execution_gold/dev60_selection.json"),
-    ("data/dev/execution_gold/audit40_selection.json", "data/dev/execution_gold/audit40_selection.json"),
-    ("data/dev/execution_gold/label_template_schema.json", "data/dev/execution_gold/label_template_schema.json"),
-    ("data/dev/execution_gold/dev60_labels.jsonl", "data/dev/execution_gold/dev60_labels.jsonl"),
-    ("data/dev/gold_dap_an/gold_dap_an_v1.jsonl", "data/dev/gold_dap_an/gold_dap_an_v1.jsonl"),
+    ("data/curated/dev-legacy/execution_gold/dev60_selection.json", "data/curated/dev-legacy/execution_gold/dev60_selection.json"),
+    ("data/curated/dev-legacy/execution_gold/audit40_selection.json", "data/curated/dev-legacy/execution_gold/audit40_selection.json"),
+    ("data/curated/dev-legacy/execution_gold/label_template_schema.json", "data/curated/dev-legacy/execution_gold/label_template_schema.json"),
+    ("data/curated/dev-legacy/execution_gold/dev60_labels.jsonl", "data/curated/dev-legacy/execution_gold/dev60_labels.jsonl"),
+    ("data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl", "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl"),
     # reports
     ("reports/fact_slot_evidence_v1.json", "reports/fact_slot_evidence_v1.json"),
     ("reports/question_plan_v1_report.json", "reports/question_plan_v1_report.json"),
@@ -94,7 +94,7 @@ ITEMS: list[tuple[str, str]] = [
     ("reports/primary_boost_verification.json", "reports/primary_boost_verification.json"),
     ("reports/submission_P0I_clean_replay.json", "reports/submission_P0I_clean_replay.json"),
     # rebuild
-    ("artifacts/retrieval/workdb_verify_report.json", "rebuild/workdb_verify_report.json"),
+    ("artifacts/runs/retrieval/workdb_verify_report.json", "rebuild/workdb_verify_report.json"),
     ("sync_122_1/rebuild/expected_workdb_identity.json", "rebuild/expected_workdb_identity.json"),
     # docs
     ("docs/PREREGISTRATION_C1.md", "docs/PREREGISTRATION_C1.md"),
@@ -104,9 +104,9 @@ ITEMS: list[tuple[str, str]] = [
 ]
 
 DOSSIER_DIRS = [
-    ("data/dev/execution_gold/dossiers_dev60", "data/dev/execution_gold/dossiers_dev60"),
-    ("data/dev/execution_gold/dossiers_audit40_blind",
-     "data/dev/execution_gold/dossiers_audit40_blind"),
+    ("data/curated/dev-legacy/execution_gold/dossiers_dev60", "data/curated/dev-legacy/execution_gold/dossiers_dev60"),
+    ("data/curated/dev-legacy/execution_gold/dossiers_audit40_blind",
+     "data/curated/dev-legacy/execution_gold/dossiers_audit40_blind"),
 ]
 
 

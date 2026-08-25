@@ -8,7 +8,7 @@ workdb_sha256: e9f62775a75794d770954ba1903f7a90c8b97467e5398b0baa2057bec8e67d5f
 regression_defects:  # docs/120 §fresh_holdout_v2 — PHẢI thành test, không chữa bằng nới similarity
   metric_different_concept_false_blocks: [18, 31, 144, 252, 284]
   derived_quantity_leak: [104]
-  register: artifacts/retrieval/bundles/verify_117_v1/fresh_holdout_v2_defect_register.jsonl
+  register: artifacts/runs/retrieval/bundles/verify_117_v1/fresh_holdout_v2_defect_register.jsonl
 metrics:
   - label: "Số dư cuối năm"
     n_obs: 39315

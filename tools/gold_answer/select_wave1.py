@@ -21,7 +21,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data/dev/answer_gold"
+OUT = ROOT / "data/curated/dev-legacy/answer_gold"
 
 CHI_TIEU = [
     ("S1_lookup_1entity_1period", 20),
@@ -53,7 +53,7 @@ def phan_tang(p: dict) -> str:
 
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
-    p_sel = ROOT / "data/dev/execution_gold/dev60_selection.json"
+    p_sel = ROOT / "data/curated/dev-legacy/execution_gold/dev60_selection.json"
     p_plan = ROOT / "evaluation/question_plans_1012.jsonl"
     dev = json.loads(p_sel.read_text(encoding="utf-8"))
     plans = {r["qid"]: r for r in (json.loads(l) for l in

@@ -16,7 +16,7 @@ import json, random, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-AUD = ROOT / "data/dev/audit"
+AUD = ROOT / "data/curated/dev-legacy/audit"
 FILE = AUD / "mau_kiem_tay_dong_bang.json"
 
 R = [json.loads(l) for l in (AUD / "phan_xu_ky.jsonl").open(encoding="utf-8") if l.strip()]

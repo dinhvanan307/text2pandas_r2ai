@@ -37,7 +37,7 @@ from execution.operand_pipeline_v1 import load_aliases, slots_for  # noqa: E402
 from execution.score_v2 import LADDER as SL, rank_pool  # noqa: E402
 from build_candidate_v1 import registry_labels  # noqa: E402
 
-WORK = ROOT / "artifacts/retrieval/work.db"
+WORK = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 OUT = ROOT / "artifacts/llm_cache"
 
 
@@ -55,7 +55,7 @@ def main() -> int:
 
     if a.scope == "eval":
         gold = {g["qid"]: g for g in (json.loads(l) for l in
-                (ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
+                (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
                 if not g.get("_meta")}
         qids = sorted(q for q, g in gold.items() if g["lop"] in ARITH_INTENTS)
     else:

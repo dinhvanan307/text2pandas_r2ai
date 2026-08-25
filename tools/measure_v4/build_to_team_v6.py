@@ -29,7 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MOC = (2026, 1, 1, 0, 0, 0)          # mốc thời gian cố định cho mọi entry
 
-PARENT = "data/submissions/submission_P0I.zip"
+PARENT = "artifacts/submissions/legacy/submission_P0I.zip"
 
 # ---- source: đúng những gì tạo ra artifact, không thừa ----------------------
 SOURCE_PKG = "src/text2pandas/answer_pipeline"
@@ -134,7 +134,7 @@ def main() -> int:
         "sha256": parent_sha,
         "bundled_in_packet": not a.no_parent,
         "placement_if_not_bundled":
-            "đặt file có đúng SHA trên vào <repo>/data/submissions/submission_P0I.zip",
+            "đặt file có đúng SHA trên vào <repo>/artifacts/submissions/legacy/submission_P0I.zip",
         "n_prediction_records": 1012,
         "n_csv_members": 982,
     }, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
@@ -215,7 +215,7 @@ def main() -> int:
 COMMAND_LOG = """# Command log — mọi artifact trong packet được sinh bằng đúng các lệnh sau
 
 Chạy từ root repo. Cần `pandas` và `pytest`. Parent ZIP phải nằm ở
-`data/submissions/submission_P0I.zip` (SHA trong `parent/identity.json`).
+`artifacts/submissions/legacy/submission_P0I.zip` (SHA trong `parent/identity.json`).
 
 ```bash
 A=artifacts/handoff_v6
@@ -223,18 +223,18 @@ M=tools/measure_v4
 
 # 1. Measurement closure (AST /1e6, storage scale, unit convention per QID)
 python3 $M/run_measurement_closure.py \\
-    --submission-zip data/submissions/submission_P0I.zip \\
+    --submission-zip artifacts/submissions/legacy/submission_P0I.zip \\
     --out-dir $A/measurement_closure
 
 # 2. Pinned ablation — ghim vào đúng ô parent đã chọn.
 #    Cô lập tầng SINH ĐÁP ÁN khỏi selection/retrieval.
 python3 $M/run_pipeline_e2e.py \\
-    --submission-zip data/submissions/submission_P0I.zip \\
+    --submission-zip artifacts/submissions/legacy/submission_P0I.zip \\
     --out-dir $A/pinned --pin-parent-cells
 
 # 3. Unpinned smoke run — selector thật (còn là stub).
 python3 $M/run_pipeline_e2e.py \\
-    --submission-zip data/submissions/submission_P0I.zip \\
+    --submission-zip artifacts/submissions/legacy/submission_P0I.zip \\
     --out-dir $A/unpinned
 
 # 4. Set relations + funnel loại trừ lẫn nhau
@@ -293,8 +293,8 @@ Log của lần chạy trên máy build: `artifacts/tests/pytest_full.log`.
 Nếu packet có bundle sẵn:
 
 ```bash
-mkdir -p <repo>/data/submissions
-cp parent/submission_P0I.zip <repo>/data/submissions/
+mkdir -p <repo>/artifacts/submissions/legacy
+cp parent/submission_P0I.zip <repo>/artifacts/submissions/legacy/
 ```
 
 Mọi generator đều **tất định**: chạy hai lần cho SHA giống hệt (đã kiểm với

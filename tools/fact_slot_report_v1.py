@@ -79,11 +79,11 @@ def miss_reason(slot_in_sql: bool, slot_in_scorable: bool, rank20: int | None,
 
 def main() -> int:
     con = sqlite3.connect(
-        f"file:{ROOT/'artifacts/retrieval/work.db'}?mode=ro&immutable=1", uri=True)
+        f"file:{ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'}?mode=ro&immutable=1", uri=True)
     plans = {p["qid"]: p for p in (json.loads(l) for l in
              (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
     gold = [g for g in (json.loads(l) for l in
-            (ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
+            (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
             if not g.get("_meta")]
 
     variants = {"V1.0": V1_0, "V1.1": V1_1, "V1.2": V1_2}

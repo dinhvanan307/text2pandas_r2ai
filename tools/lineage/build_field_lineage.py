@@ -25,7 +25,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SUB = ROOT / "data/submissions"
+SUB = ROOT / "artifacts/submissions/legacy"
 
 TRUONG = ("answer", "pandas_query", "evidence")
 
@@ -75,12 +75,12 @@ def main() -> int:
 
     # ── reason_code từ nhánh quyết định THẬT của packager cuối ─────────────
     a6 = {}
-    p_a6 = ROOT / "data/dev/answer_a6/records_a6.jsonl"
+    p_a6 = ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl"
     if p_a6.is_file():
         a6 = {json.loads(l)["qid"]: json.loads(l)
               for l in p_a6.open(encoding="utf-8") if l.strip()}
     giu_sohoc = set()
-    p_sh = ROOT / "data/dev/so_hoc/records_sohoc.jsonl"
+    p_sh = ROOT / "data/curated/dev-legacy/so_hoc/records_sohoc.jsonl"
     if p_sh.is_file():
         for l in p_sh.open(encoding="utf-8"):
             if l.strip():

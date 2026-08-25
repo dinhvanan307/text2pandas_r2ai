@@ -30,7 +30,7 @@ import json, re, sys, unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-AUD  = ROOT / "data/dev/audit"
+AUD  = ROOT / "data/curated/dev-legacy/audit"
 
 
 def fold(s: str) -> str:
@@ -177,9 +177,9 @@ def nam_duoc_hoi(question: str, years: list[int]) -> tuple[list[int], str]:
 
 def main() -> int:
     mau = {r["id"]: r for r in (json.loads(l) for l in
-           (ROOT / "data/dev/gold_tay_sample_v2.jsonl").open(encoding="utf-8") if l.strip())}
+           (ROOT / "data/curated/dev-legacy/gold_tay_sample_v2.jsonl").open(encoding="utf-8") if l.strip())}
     pool = {r["id"]: r for r in (json.loads(l) for l in
-            (ROOT / "data/dev/gold_tay_pool_v5.jsonl").open(encoding="utf-8") if l.strip())}
+            (ROOT / "data/curated/dev-legacy/gold_tay_pool_v5.jsonl").open(encoding="utf-8") if l.strip())}
     tho = {r["table_uid"]: r for r in (json.loads(l) for l in
            (AUD / "bang_tho.jsonl").open(encoding="utf-8") if l.strip())}
     ids = json.loads((AUD / "mau_audit_nam.json").read_text())

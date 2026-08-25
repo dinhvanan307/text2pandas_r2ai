@@ -1,12 +1,12 @@
 import json, collections, math
 D=json.load(open('/tmp/refs60.json'))
 gold={}
-for l in open('data/dev/gold_v1.jsonl'):
+for l in open('data/curated/dev-legacy/gold_v1.jsonl'):
     r=json.loads(l)
     if r.get('gold_table_uids'): gold[str(r['id'])]=set(r['gold_table_uids'])
 # map uid -> ref  (need db) -> instead map ref->uid via table_cards; but refs60 stores refs.
 import sqlite3,os
-db='artifacts/retrieval/work.db'
+db='data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'
 conn=sqlite3.connect('file:%s?mode=ro'%os.path.abspath(db),uri=True)
 u2r={}
 for u,ev in conn.execute("SELECT table_uid,evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL"):
@@ -14,7 +14,7 @@ for u,ev in conn.execute("SELECT table_uid,evidence_ref FROM table_cards WHERE e
 G={q:set(u2r[u] for u in s if u in u2r) for q,s in gold.items()}
 miss={q:len(s)-len(G[q]) for q,s in gold.items() if len(s)!=len(G[q])}
 print("qid gold co uid khong map duoc ref:",miss)
-tang={str(r['id']):r['tang'] for r in (json.loads(l) for l in open('data/dev/gold_tay_sample_v2.jsonl') if l.strip())}
+tang={str(r['id']):r['tang'] for r in (json.loads(l) for l in open('data/curated/dev-legacy/gold_tay_sample_v2.jsonl') if l.strip())}
 Q=sorted(G)
 print("n cau co gold:",len(Q),"tong bang gold:",sum(len(G[q]) for q in Q))
 

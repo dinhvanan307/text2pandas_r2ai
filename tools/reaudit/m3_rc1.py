@@ -5,7 +5,7 @@ from retrieval.normalize import ascii_compact, company_aliases, ticker_mentioned
 from retrieval.question_intent import parse_intent
 from retrieval.evalkit.cli import _load_cfg
 cfg=_load_cfg("base",{}); alias=load_aliases(brands=cfg.brands)
-Q=[json.loads(l) for l in open('data/external/vifinqa/questions/questions.jsonl') if l.strip()]
+Q=[json.loads(l) for l in open('data/raw/btc/questions/questions.jsonl') if l.strip()]
 names_of={t:([n] if isinstance(n,str) else list(n)) for t,n in alias.items()}
 
 def compact_with_bounds(text):

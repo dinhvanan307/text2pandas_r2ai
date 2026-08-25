@@ -10,7 +10,7 @@ Nen buoc nay chi dung:
   * `evidence_ref` (doc_id | so dong) — dia chi, khong phai bang chung
   * chinh tep `*_extracted.txt` cua BTC — nguon su that
 
-Ket qua ghi ra `data/dev/audit/bang_tho.jsonl`, moi dong mot bang:
+Ket qua ghi ra `data/curated/dev-legacy/audit/bang_tho.jsonl`, moi dong mot bang:
   table_uid · doc_id · tieu_de_cot (dong <tr> dau) · nhan_dong (td dau moi <tr>)
 KHONG ghi `doc_year`, KHONG ghi `periods`.
 """
@@ -19,9 +19,9 @@ import json, os, re, sqlite3, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-OCR  = ROOT / "data/external/vifinqa/financial_statements"
-RA   = ROOT / "data/dev/audit/bang_tho.jsonl"
-DB   = Path(os.path.expanduser("~/fast/artifacts/retrieval/work.db"))
+OCR  = ROOT / "data/raw/btc/financial_statements"
+RA   = ROOT / "data/curated/dev-legacy/audit/bang_tho.jsonl"
+DB   = Path(os.path.expanduser("data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"))
 
 _TD = re.compile(r"<td[^>]*>(.*?)</td>", re.S)
 _TR = re.compile(r"<tr[^>]*>(.*?)</tr>", re.S)
@@ -54,10 +54,10 @@ def bocj(x: str) -> str:
 
 
 def main(argv):
-    ids = json.loads((ROOT / "data/dev/audit/mau_audit_nam.json").read_text())
+    ids = json.loads((ROOT / "data/curated/dev-legacy/audit/mau_audit_nam.json").read_text())
     qs = {q for v in ids.values() for q in v}
     pool = {r["id"]: r for r in (json.loads(l) for l in
-            (ROOT / "data/dev/gold_tay_pool_v5.jsonl").open(encoding="utf-8") if l.strip())}
+            (ROOT / "data/curated/dev-legacy/gold_tay_pool_v5.jsonl").open(encoding="utf-8") if l.strip())}
     uids = sorted({c["table_uid"] for q in qs for c in pool[q]["candidates"]})
     tu, den = (int(argv[0]), int(argv[1])) if len(argv) >= 2 else (1, 10 ** 9)
     uids = uids[tu - 1: den]

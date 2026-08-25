@@ -19,10 +19,10 @@ from execution.a6_identity import A6IdentityError, kiem_dinh_danh  # noqa: E402
 
 H0 = ROOT / "artifacts/execution/h0"
 CAU_HINH = ROOT / "configs/execution/a6_identity.yaml"
-REC = ROOT / "data/dev/answer_a6/records_a6.jsonl"
+REC = ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl"
 PX = H0 / "unit_conflict_adjudication.jsonl"
-C1R = ROOT / "data/submissions/submission_C1R_LOCAL.zip"
-NEN = ROOT / "data/submissions/submission_P0G2.zip"
+C1R = ROOT / "artifacts/submissions/legacy/submission_C1R_LOCAL.zip"
+NEN = ROOT / "artifacts/submissions/legacy/submission_P0G2.zip"
 
 TRUONG = ("build_id", "corpus_id", "readiness_policy_version", "release_label", "status")
 

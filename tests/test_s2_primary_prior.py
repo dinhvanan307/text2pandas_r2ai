@@ -87,7 +87,7 @@ def test_default_production_phai_tat():
     assert cfg.primary_modes == ("screen", "related")
     assert cfg.sha != "489d4fed855debb5", (
         "sha trùng bản trước ⇒ checkpoint schema evalkit-2 sẽ bị trộn lẫn")
-    assert EvalConfig(gold_manual_path="data/dev/gold_v1.jsonl").sha != cfg.sha
+    assert EvalConfig(gold_manual_path="data/curated/dev-legacy/gold_v1.jsonl").sha != cfg.sha
 
 
 def test_profile_thi_nghiem_ton_tai_va_co_sha_rieng():
@@ -104,8 +104,8 @@ def test_profile_thi_nghiem_ton_tai_va_co_sha_rieng():
 
 def test_gold_manual_tro_ve_v2():
     from retrieval.evalkit.runner import EvalConfig
-    assert EvalConfig().gold_manual_path == "data/dev/gold_v2.jsonl"
-    assert (ROOT / "data/dev/gold_v2.jsonl").is_file()
+    assert EvalConfig().gold_manual_path == "data/curated/dev-legacy/gold_v2.jsonl"
+    assert (ROOT / "data/curated/dev-legacy/gold_v2.jsonl").is_file()
 
 
 if __name__ == "__main__":                       # chạy được không cần pytest

@@ -9,7 +9,7 @@ phương án nâng EXECUTION, không phải một tiện nghi.
 
 NGUYÊN TẮC CHỌN MẪU
 -------------------
-1. Phân tầng theo `lop` của `data/dev/so_hoc/phan_loai.jsonl` — vì hỏng theo
+1. Phân tầng theo `lop` của `data/curated/dev-legacy/so_hoc/phan_loai.jsonl` — vì hỏng theo
    LỚP chứ không theo câu: 100% `difference`/`max_min`/`percentage_change`/
    `count`/`sum` đang nộp query một-ô-đơn.
 2. **Sàn 8 câu/lớp.** Cấp phát thuần theo tỷ lệ cho `sum` (5 câu) đúng 1 câu —
@@ -36,8 +36,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PHAN_LOAI = ROOT / "data/dev/so_hoc/phan_loai.jsonl"
-RA = ROOT / "data/dev/gold_dap_an/mau_v1.jsonl"
+PHAN_LOAI = ROOT / "data/curated/dev-legacy/so_hoc/phan_loai.jsonl"
+RA = ROOT / "data/curated/dev-legacy/gold_dap_an/mau_v1.jsonl"
 
 SAN = 8  # sàn tối thiểu mỗi lớp
 

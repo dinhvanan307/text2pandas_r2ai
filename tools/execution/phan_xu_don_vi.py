@@ -76,7 +76,7 @@ def phan_xu(r: dict) -> dict:
 
 def main() -> int:
     Q = {q["id"]: q["question"] for q in
-         (json.loads(l) for l in (ROOT/"data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8") if l.strip())}
+         (json.loads(l) for l in (ROOT/"data/raw/btc/questions/questions.jsonl").open(encoding="utf-8") if l.strip())}
     n = 0
     dem: dict[str, int] = {}
     with RA.open("w", encoding="utf-8") as f:

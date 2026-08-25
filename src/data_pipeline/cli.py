@@ -23,7 +23,10 @@ import sqlite3
 import sys
 from pathlib import Path
 
+from text2pandas.infrastructure.paths import ProjectPaths
+
 ROOT = Path(__file__).resolve().parents[2]
+PROJECT_PATHS = ProjectPaths.from_repo_root(ROOT)
 
 # ── SAFETY · RC2-017 · `CONFIG=` / `INPUT=` phải THẬT SỰ tới được pipeline ──
 #
@@ -44,7 +47,7 @@ def _env_path(name: str, default: Path) -> Path:
 
 CORPUS = _env_path(
     "DATA_PIPELINE_CORPUS",
-    ROOT / "data" / "external" / "vifinqa" / "financial_statements")
+    PROJECT_PATHS.raw_btc / "financial_statements")
 CONFIG_PATH = _env_path("DATA_PIPELINE_CONFIG",
                         ROOT / "configs" / "vifinqa_silver_v1.yaml")
 # ── SAFETY · RC2-005 · thư mục làm việc không được ngầm định ──────────────
@@ -60,9 +63,10 @@ CONFIG_PATH = _env_path("DATA_PIPELINE_CONFIG",
 _SCRATCH_EXPLICIT = "DATA_PIPELINE_SCRATCH" in os.environ
 SCRATCH = Path(os.environ.get("DATA_PIPELINE_SCRATCH", "/tmp/dp_work"))
 BRONZE_OUT = _env_path("DATA_PIPELINE_BRONZE",
-                       ROOT / "data" / "bronze" / "catalog_v2.sqlite")
+                       PROJECT_PATHS.artifact_root / "runs" / "a6" / "bronze"
+                       / "catalog_v2.sqlite")
 SILVER_DIR = _env_path("DATA_PIPELINE_SILVER_DIR",
-                       ROOT / "data" / "silver" / "vifinqa")
+                       PROJECT_PATHS.data_root / "processed" / "a6")
 MANIFEST_OUT = BRONZE_OUT.parent / "manifest.json"
 
 DATASET = "AIGuruTinix/ViFinQA"

@@ -124,7 +124,7 @@ def test_dung_CHINH_data_pipeline_manifest_khong_cai_lai_thuat_toan():
 def test_corpus_that_neu_co_thi_phai_KHOP_moc_RC1():
     """Acceptance thật của bước freeze_input. Bỏ qua nếu corpus không có
     trong cây này (gói source không mang 380 MB corpus)."""
-    root = ROOT / "data" / "external" / "vifinqa"
+    root = ROOT / "data" / "raw" / "btc"
     base = ROOT / "data" / "bronze" / "manifest.json"
     if not root.is_dir() or not base.is_file():
         pytest.skip("MISSING ARTIFACT: corpus/manifest mốc không có trong cây này")

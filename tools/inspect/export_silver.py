@@ -13,8 +13,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SILVER = ROOT / "data" / "silver" / "silver.sqlite"
-OUT = ROOT / "data" / "silver" / "exports"
+SILVER = ROOT / "data" / "processed" / "a6" / "b3e9684004679ffb" / "silver.db"
+OUT = ROOT / "artifacts" / "runs" / "a6" / "exports"
 N_TABLES = 300
 N_CELLS_PER_TABLE = 24
 

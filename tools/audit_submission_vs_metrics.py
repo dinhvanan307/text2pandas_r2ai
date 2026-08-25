@@ -149,8 +149,8 @@ def expected_tickers(question: str, name_to_code: dict[str, str],
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--submission", required=True)
-    ap.add_argument("--questions", default="data/external/vifinqa/questions/questions.jsonl")
-    ap.add_argument("--stock-csv", default="data/external/vifinqa/code_stock.csv")
+    ap.add_argument("--questions", default="data/raw/btc/questions/questions.jsonl")
+    ap.add_argument("--stock-csv", default="data/raw/btc/metadata/companies.csv")
     ap.add_argument("--json-out", default=None)
     a = ap.parse_args()
 

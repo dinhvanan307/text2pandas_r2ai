@@ -39,7 +39,7 @@ paths-check: ## In repository/data/artifact roots và kiểm active snapshot con
 ## ── RC-00 ────────────────────────────────────────────────────────────────
 dp-env-check: ## In OS/Python/SQLite/deps/commit/config hash — chạy TRƯỚC mọi thứ
 	# KHÔNG truyền `--corpus` khi người dùng không chỉ định: để `env_check` tự
-	# đọc `corpus.root` từ config. Bản đầu đặt mặc định `data/external/vifinqa`
+	# đọc `corpus.root` từ config. Bản đầu đặt mặc định `data/raw/btc`
 	# ngay tại đây, nên nó ĐÈ LÊN config và băm nhầm 15 tệp `_codebase/prompts`
 	# vào `corpus_hash` — hai nguồn sự thật cho cùng một đường dẫn.
 	@$(PY) tools/env_check.py --config "$(or $(CONFIG),configs/vifinqa_silver_v1.yaml)" \

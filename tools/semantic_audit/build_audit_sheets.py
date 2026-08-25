@@ -26,8 +26,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "reports/165/audit_sheets"
-FS = ROOT / "data/external/vifinqa/financial_statements"
-WORK = ROOT / "artifacts/retrieval/work.db"
+FS = ROOT / "data/raw/btc/financial_statements"
+WORK = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 NGU_CANH = 12
 
 
@@ -57,9 +57,9 @@ def main() -> int:
     wl = json.loads((ROOT / "reports/163/unit_drift/proposed_u1_whitelist.json")
                     .read_text(encoding="utf-8"))["whitelist_qids"]
     sub = {r["id"]: r for r in json.loads(zipfile.ZipFile(
-        ROOT / "data/submissions/submission_P0I.zip").read("submission.json"))}
+        ROOT / "artifacts/submissions/legacy/submission_P0I.zip").read("submission.json"))}
     a6 = {json.loads(l)["qid"]: json.loads(l) for l in
-          (ROOT / "data/dev/answer_a6/records_a6.jsonl").open(encoding="utf-8")
+          (ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl").open(encoding="utf-8")
           if l.strip()}
     con = sqlite3.connect("file:" + os.path.abspath(WORK) + "?mode=ro", uri=True)
 

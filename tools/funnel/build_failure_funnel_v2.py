@@ -36,9 +36,9 @@ sys.path.insert(0, str(ROOT / "tools"))
 from execution import fact_rank_v1                      # noqa: E402
 from execution.answer_operation import phan_tich_ast    # noqa: E402
 
-GD = ROOT / "data/dev/answer_gold"
+GD = ROOT / "data/curated/dev-legacy/answer_gold"
 OUT = ROOT / "reports/163/funnel"
-WORK = ROOT / "artifacts/retrieval/work.db"
+WORK = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 
 TANG = ["G0_GOLD_VALID", "D1_SOURCE_AVAILABLE", "R1_GOLD_TABLE_RETRIEVED",
         "C1_GOLD_FACT_CANDIDATE", "S1_OPERAND_SET_EXACT", "O1_OPERATION_EXACT",
@@ -95,7 +95,7 @@ def safe_env(dfs):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--zip", type=Path,
-                    default=ROOT / "data/submissions/submission_P0I.zip")
+                    default=ROOT / "artifacts/submissions/legacy/submission_P0I.zip")
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)

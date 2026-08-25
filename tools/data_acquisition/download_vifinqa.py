@@ -45,8 +45,10 @@ HF_REPO_ID = "AIGuruTinix/ViFinQA"
 HF_REPO_TYPE = "dataset"
 GITHUB_URL = "https://github.com/DSKT-NOWJ/ViFinQA.git"
 
-DEFAULT_DEST = Path("data/external/vifinqa")
-GITHUB_SUBDIR = "_codebase"  # tách khỏi dữ liệu, không trộn lẫn
+DEFAULT_DEST = Path("data/raw/btc")
+DEFAULT_CODEBASE_DEST = Path("vendor/vifinqa-reference")
+DEFAULT_LOG_DIR = Path("artifacts/runs/data-acquisition")
+DEFAULT_REPORT = Path("artifacts/reports/data-acquisition/dataset_report.md")
 
 # Giá trị công bố trong Dataset Card — dùng để đối chiếu.
 # KHÔNG suy diễn thêm; chỉ những con số tài liệu nêu tường minh.
@@ -73,9 +75,8 @@ LOG = logging.getLogger("vifinqa")
 
 # ─────────────────────────── Logging ───────────────────────────
 
-def setup_logging(dest: Path, verbose: bool = False) -> Path:
+def setup_logging(log_dir: Path, verbose: bool = False) -> Path:
     """Cấu hình log ra console + file. Trả về đường dẫn file log."""
-    log_dir = dest.parent / "_logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     log_path = log_dir / f"download_vifinqa_{stamp}.log"
@@ -139,12 +140,11 @@ def download_hf_dataset(dest: Path) -> dict[str, Any]:
     }
 
 
-def clone_github(dest: Path) -> dict[str, Any]:
+def clone_github(repo_dir: Path) -> dict[str, Any]:
     """
     Clone (hoặc cập nhật) codebase companion.
     Idempotent: đã có thì fetch + reset, chưa có thì clone.
     """
-    repo_dir = dest / GITHUB_SUBDIR
     try:
         if (repo_dir / ".git").exists():
             LOG.info("Codebase đã tồn tại — cập nhật: %s", repo_dir)
@@ -166,6 +166,21 @@ def clone_github(dest: Path) -> dict[str, Any]:
         stderr = exc.stderr.decode() if isinstance(exc.stderr, bytes) else str(exc.stderr)
         LOG.error("Clone/cập nhật codebase thất bại: %s", stderr.strip()[:300])
         return {"ok": False, "error": stderr.strip()[:300]}
+
+
+def normalize_layout(dest: Path) -> None:
+    """Normalize upstream metadata without mixing reference code into raw data."""
+    source = dest / "code_stock.csv"
+    target = dest / "metadata" / "companies.csv"
+    if not source.is_file():
+        return
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists():
+        if source.read_bytes() != target.read_bytes():
+            raise RuntimeError(f"metadata collision: {source} differs from {target}")
+        source.unlink()
+        return
+    source.replace(target)
 
 
 # ─────────────────────────── Kiểm kê ───────────────────────────
@@ -193,7 +208,11 @@ def inspect(dest: Path) -> dict[str, Any]:
     Kiểm kê nội dung đã tải. CHỈ đếm và đối chiếu — không phân tích nội dung,
     không parse bảng, không trích xuất số liệu.
     """
-    from tqdm import tqdm
+    try:
+        from tqdm import tqdm
+    except ImportError:
+        def tqdm(items, **_kwargs):  # type: ignore[no-redef]
+            return items
 
     LOG.info("Bắt đầu kiểm kê tại: %s", dest)
     result: dict[str, Any] = {"errors": [], "warnings": []}
@@ -246,7 +265,7 @@ def inspect(dest: Path) -> dict[str, Any]:
                  len(ids), len(id_set), min(ids, default="-"), max(ids, default="-"))
 
     # ── code_stock.csv ────────────────────────────────────────
-    cs_path = dest / "code_stock.csv"
+    cs_path = dest / "metadata" / "companies.csv"
     if not cs_path.exists():
         result["errors"].append(f"THIẾU FILE: {cs_path}")
         result["code_stock"] = {"rows": 0}
@@ -322,9 +341,8 @@ def inspect(dest: Path) -> dict[str, Any]:
 
     # ── Toàn bộ file trong thư mục đích ───────────────────────
     all_files = [p for p in dest.rglob("*") if p.is_file()]
-    # loại trừ codebase và metadata của hf
-    data_files = [p for p in all_files
-                  if GITHUB_SUBDIR not in p.parts and ".cache" not in p.parts]
+    # loại trừ cache của Hugging Face; reference code nằm ngoài raw data root.
+    data_files = [p for p in all_files if ".cache" not in p.parts]
     ext_counter: Counter[str] = Counter(p.suffix.lower() or "<no-ext>" for p in data_files)
     result["filesystem"] = {
         "total_files_all": len(all_files),
@@ -404,8 +422,9 @@ def render_tree(dest: Path, max_entries: int = 3) -> str:
     if (dest / "questions").is_dir():
         lines.append("├── questions/")
         lines.append("│   └── questions.jsonl")
-    if (dest / "code_stock.csv").exists():
-        lines.append("└── code_stock.csv")
+    if (dest / "metadata" / "companies.csv").exists():
+        lines.append("└── metadata/")
+        lines.append("    └── companies.csv  # upstream: code_stock.csv")
     return "\n".join(lines)
 
 
@@ -516,7 +535,7 @@ def write_report(dest: Path, report_path: Path, inv: dict[str, Any],
 
     # Chi tiết code_stock
     cs = inv.get("code_stock", {})
-    A("### 6.2. Chi tiết `code_stock.csv`")
+    A("### 6.2. Chi tiết `metadata/companies.csv` (`code_stock.csv` upstream)")
     A("")
     A("| Mục | Giá trị |")
     A("|---|---|")
@@ -585,8 +604,8 @@ def write_report(dest: Path, report_path: Path, inv: dict[str, Any],
     A(f"{dest}")
     A(f"```")
     A("")
-    A("Toàn bộ tên file và cấu trúc thư mục **giữ nguyên như nguồn**. "
-      "Không đổi tên, không sửa nội dung, không chuyển đổi định dạng.")
+    A("Payload báo cáo và câu hỏi giữ nguyên bytes. `code_stock.csv` được chuyển "
+      "thành `metadata/companies.csv`; mapping được ghi trong raw manifest.")
     A("")
     A("---")
     A("")
@@ -606,7 +625,11 @@ def main() -> int:
     ap.add_argument("--dest", type=Path, default=DEFAULT_DEST,
                     help=f"Thư mục đích (mặc định: {DEFAULT_DEST})")
     ap.add_argument("--report", type=Path, default=None,
-                    help="Đường dẫn file báo cáo (mặc định: <dest>/dataset_report.md)")
+                    help=f"Đường dẫn file báo cáo (mặc định: {DEFAULT_REPORT})")
+    ap.add_argument("--codebase-dest", type=Path, default=DEFAULT_CODEBASE_DEST,
+                    help=f"Đích clone reference code (mặc định: {DEFAULT_CODEBASE_DEST})")
+    ap.add_argument("--log-dir", type=Path, default=DEFAULT_LOG_DIR,
+                    help=f"Thư mục log (mặc định: {DEFAULT_LOG_DIR})")
     ap.add_argument("--skip-github", action="store_true",
                     help="Bỏ qua clone codebase companion")
     ap.add_argument("--verify-only", action="store_true",
@@ -615,9 +638,11 @@ def main() -> int:
     args = ap.parse_args()
 
     dest: Path = args.dest.expanduser().resolve()
-    report_path: Path = args.report or (dest / "dataset_report.md")
+    report_path: Path = (args.report or DEFAULT_REPORT).expanduser().resolve()
+    codebase_dest: Path = args.codebase_dest.expanduser().resolve()
+    log_dir: Path = args.log_dir.expanduser().resolve()
 
-    log_path = setup_logging(dest, args.verbose)
+    log_path = setup_logging(log_dir, args.verbose)
     LOG.info("=" * 70)
     LOG.info("ViFinQA — tải & kiểm tra toàn vẹn")
     LOG.info("Python %s | đích: %s", sys.version.split()[0], dest)
@@ -635,9 +660,10 @@ def main() -> int:
             LOG.exception("Tải dataset thất bại: %s", exc)
             return 2
         if not args.skip_github:
-            gh_meta = clone_github(dest)
+            gh_meta = clone_github(codebase_dest)
 
     try:
+        normalize_layout(dest)
         inv = inspect(dest)
     except Exception as exc:
         LOG.exception("Kiểm kê thất bại: %s", exc)

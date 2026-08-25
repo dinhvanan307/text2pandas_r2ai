@@ -24,10 +24,10 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REFS = ROOT / "artifacts" / "retrieval" / "vplus" / "refs_1012.json"
-NEN = ROOT / "data" / "submissions" / "submission_P0G2.zip"
-RA = ROOT / "data" / "submissions" / "submission_CAL1.zip"
-SO = ROOT / "artifacts" / "retrieval" / "vplus" / "cal1_nhanh.json"
+REFS = ROOT / "artifacts" / "runs" / "retrieval" / "vplus" / "refs_1012.json"
+NEN = ROOT / "artifacts" / "submissions" / "legacy" / "submission_P0G2.zip"
+RA = ROOT / "artifacts" / "submissions" / "legacy" / "submission_CAL1.zip"
+SO = ROOT / "artifacts" / "runs" / "retrieval" / "vplus" / "cal1_nhanh.json"
 
 X_K, X_CAP = 3, 30
 Z_K, Z_CAP = 1, 10

@@ -11,7 +11,7 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
-RA = ROOT / "data/dev/so_hoc"
+RA = ROOT / "data/curated/dev-legacy/so_hoc"
 DATA = RA / "data"
 
 

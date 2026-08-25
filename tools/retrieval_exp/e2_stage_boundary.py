@@ -25,18 +25,18 @@ DEPTH = 300
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", default=str(ROOT / "artifacts/retrieval/work.db"))
+    ap.add_argument("--db", default=str(ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"))
     ap.add_argument("--boost", type=float, default=0.60)
-    ap.add_argument("--out", default=str(ROOT / "artifacts/retrieval/reaudit/e2_stage_boundary.json"))
+    ap.add_argument("--out", default=str(ROOT / "artifacts/runs/retrieval/reaudit/e2_stage_boundary.json"))
     a = ap.parse_args(argv)
     cfg = _load_cfg("base", {})
     alias = load_aliases(brands=cfg.brands)
     conn = sqlite3.connect(f"file:{os.path.abspath(a.db)}?mode=ro", uri=True)
     conn.execute("PRAGMA cache_size=-200000")
     S = {r["id"]: r for r in (json.loads(l) for l in
-         (ROOT / "data/dev/gold_tay_sample_v2.jsonl").open(encoding="utf-8") if l.strip())}
+         (ROOT / "data/curated/dev-legacy/gold_tay_sample_v2.jsonl").open(encoding="utf-8") if l.strip())}
     qids = sorted(r["id"] for r in (json.loads(l) for l in
-                  (ROOT / "data/dev/gold_v2.jsonl").open(encoding="utf-8") if l.strip())
+                  (ROOT / "data/curated/dev-legacy/gold_v2.jsonl").open(encoding="utf-8") if l.strip())
                   if r.get("gold_table_uids"))
     s1 = HardFilterGenerator(basis_mode=cfg.basis_mode, year_slack=cfg.year_slack)
     mk = lambda b: Bm25StructuralRanker(
@@ -45,7 +45,7 @@ def main(argv=None) -> int:
     # S2 KHÔNG chạy lại ở đây: dùng đúng hai tệp refs đã cache của `e2_run.py`
     # (base = boost 0,00 · treat = boost 0,60 + BS/IS). S1 thì phải chạy vì
     # kích thước pool chính là con số §5.7 cần.
-    RE = ROOT / "artifacts/retrieval/reaudit"
+    RE = ROOT / "artifacts/runs/retrieval/reaudit"
     CA = json.loads((RE / "exp_refs_base.json").read_text(encoding="utf-8"))["refs"]
     CB = json.loads((RE / "exp_refs_pri060_bsis.json").read_text(encoding="utf-8"))["refs"]
 

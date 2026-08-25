@@ -7,7 +7,7 @@ from retrieval.question_intent import parse_intent
 DEPTH=300
 OUT="/tmp/reaudit/refs300.json"
 cfg=_load_cfg("base", {}); alias=load_aliases(brands=cfg.brands)
-conn=sqlite3.connect("file:%s?mode=ro"%os.path.abspath("artifacts/retrieval/work.db"), uri=True)
+conn=sqlite3.connect("file:%s?mode=ro"%os.path.abspath("data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"), uri=True)
 conn.execute("PRAGMA cache_size=-200000")
 s1=HardFilterGenerator(basis_mode=cfg.basis_mode, year_slack=cfg.year_slack)
 s2=Bm25StructuralRanker(alias, top_k=max(cfg.top_k_rank,DEPTH), use_hints=cfg.use_hints,
@@ -15,10 +15,10 @@ s2=Bm25StructuralRanker(alias, top_k=max(cfg.top_k_rank,DEPTH), use_hints=cfg.us
 u2r={u:ev.replace("|line:","|") for u,ev in conn.execute(
     "SELECT table_uid,evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL")}
 gold=set()
-for l in open('data/dev/gold_v1.jsonl'):
+for l in open('data/curated/dev-legacy/gold_v1.jsonl'):
     r=json.loads(l)
     if r.get('gold_table_uids'): gold.add(r['id'])
-mau=[r for r in (json.loads(l) for l in open("data/dev/gold_tay_sample_v2.jsonl") if l.strip()) if r['id'] in gold]
+mau=[r for r in (json.loads(l) for l in open("data/curated/dev-legacy/gold_tay_sample_v2.jsonl") if l.strip()) if r['id'] in gold]
 done=json.load(open(OUT)) if os.path.exists(OUT) else {}
 t0=time.time(); n=0
 for r in mau:

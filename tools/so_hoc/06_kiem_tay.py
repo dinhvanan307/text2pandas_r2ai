@@ -8,12 +8,12 @@ import collections, json, random, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-RA = ROOT / "data/dev/so_hoc"
+RA = ROOT / "data/curated/dev-legacy/so_hoc"
 FILE = RA / "mau_kiem_tay.json"
 
 rec = {r["qid"]: r for r in (json.loads(l) for l in (RA / "records_sohoc.jsonl").open(encoding="utf-8") if l.strip())}
 q = {r["id"]: r["question"] for r in (json.loads(l) for l in
-     (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8") if l.strip())}
+     (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8") if l.strip())}
 
 if FILE.is_file():
     khoa = json.loads(FILE.read_text())

@@ -18,8 +18,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from retrieval.question_intent import parse_intent          # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-QS = ROOT / "data/external/vifinqa/questions/questions.jsonl"
-CS = ROOT / "data/external/vifinqa/code_stock.csv"
+QS = ROOT / "data/raw/btc/questions/questions.jsonl"
+CS = ROOT / "data/raw/btc/metadata/companies.csv"
 _PAREN_TICKER = re.compile(r"\(([A-Z]{3})\)")
 
 

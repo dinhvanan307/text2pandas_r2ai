@@ -177,7 +177,7 @@ if __name__ == "__main__":
          "files": ca_files}, ensure_ascii=False, indent=1), encoding="utf-8")
 
     full_agg, ca_agg = agg(full_files), agg(ca_files)
-    ag1b = ROOT / "data/submissions/submission_AG1B_R2_PRECISION_FIX.zip"
+    ag1b = ROOT / "artifacts/submissions/legacy/submission_AG1B_R2_PRECISION_FIX.zip"
     ag1b_sha = sha_file(ag1b) if ag1b.is_file() else None
 
     (stage / "identity/SOURCE_AGGREGATE_V2_1.json").write_text(json.dumps({

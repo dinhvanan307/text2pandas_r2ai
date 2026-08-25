@@ -5,11 +5,11 @@
 thái ngầm của cây nguồn. Chạy hai lần cùng input phải cho cùng SHA-256.
 
     python3 generate_answer_operation_precheck.py \
-        --questions   data/external/vifinqa/questions/questions.jsonl \
-        --records     data/dev/answer_a6/records_a6.jsonl \
-        --sohoc       data/dev/so_hoc/records_sohoc.jsonl \
-        --code-stock  data/external/vifinqa/code_stock.csv \
-        --work-db     artifacts/retrieval/work.db \
+        --questions   data/raw/btc/questions/questions.jsonl \
+        --records     data/curated/dev-legacy/answer_a6/records_a6.jsonl \
+        --sohoc       data/curated/dev-legacy/so_hoc/records_sohoc.jsonl \
+        --code-stock  data/raw/btc/metadata/companies.csv \
+        --work-db     data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db \
         --src         src \
         --out-dir     op_evidence_v2
 """

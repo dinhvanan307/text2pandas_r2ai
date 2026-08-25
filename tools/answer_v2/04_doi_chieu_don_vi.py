@@ -11,7 +11,7 @@ import json, re, sqlite3, unicodedata, collections
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-OCR = ROOT / "data/external/vifinqa/financial_statements"
+OCR = ROOT / "data/raw/btc/financial_statements"
 _TABLE = re.compile(r"<table.*?</table>", re.S)
 _TD = re.compile(r"<td[^>]*>(.*?)</td>", re.S)
 _TR = re.compile(r"<tr[^>]*>(.*?)</tr>", re.S)
@@ -49,10 +49,10 @@ def doc_don_vi(html, truoc):
 
 
 def main():
-    card = sqlite3.connect("file:data/silver/card_index.sqlite?mode=ro", uri=True)
+    card = sqlite3.connect("file:artifacts/legacy/silver-pre-a6/card_index.sqlite?mode=ro", uri=True)
     UE = {f"{d}|{ln}": ue for d, ln, ue in
           card.execute("SELECT doc_id,line_no,unit_exponent FROM card_meta")}
-    rec = [json.loads(l) for l in (ROOT / "data/dev/answer_v2/records.jsonl").open(encoding="utf-8") if l.strip()]
+    rec = [json.loads(l) for l in (ROOT / "data/curated/dev-legacy/answer_v2/records.jsonl").open(encoding="utf-8") if l.strip()]
     _CSV = re.compile(r"data/(.+)_line(\d+)\.csv$")
     cache = {}
     bang = collections.Counter()

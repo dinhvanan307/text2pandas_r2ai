@@ -2,10 +2,10 @@
 # Ngưỡng phân loại hiệu chỉnh trên tests/fixtures/, không hardcode trong mã.
 
 paths:
-  bronze: data/bronze
-  silver: data/silver
-  gold: data/gold
-  submissions: data/submissions
+  bronze: artifacts/runs/a6/bronze
+  silver: data/processed/a6
+  gold: data/curated/gold
+  submissions: artifacts/submissions
 
 catalog:
   version: v1

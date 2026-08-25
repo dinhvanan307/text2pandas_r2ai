@@ -45,8 +45,8 @@ case "${1:-}" in
     OUT=$2 ;;
   *)
     # positional THẮNG environment; environment THẮNG default.
-    SRC=${1:-${SRC:-artifacts/rc2/release_finala6/silver.db}}
-    OUT=${2:-${OUT:-artifacts/retrieval/work.db}}
+    SRC=${1:-${SRC:-data/processed/a6/b3e9684004679ffb/silver.db}}
+    OUT=${2:-${OUT:-data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db}}
     PKG=${3:-${PKG:-artifacts/rc2/packagesa6/silver_v1_rc2_${BID}_a6_run1.zip}} ;;
 esac
 

@@ -23,8 +23,8 @@ phép đo trực tiếp trên gold.
 Chạy:
     python tools/coverage_audit_non_tabular.py \
         --db artifacts/rc1_baseline/silver.db \
-        --questions data/external/vifinqa/questions/questions.jsonl \
-        --stocks data/external/vifinqa/code_stock.csv \
+        --questions data/raw/btc/questions/questions.jsonl \
+        --stocks data/raw/btc/metadata/companies.csv \
         --out reports/coverage_audit_non_tabular.json
 """
 

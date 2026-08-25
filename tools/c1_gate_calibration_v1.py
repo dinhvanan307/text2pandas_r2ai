@@ -53,11 +53,11 @@ GRID = [0.0, 0.02, 0.05, 0.08, 0.10, 0.12, 0.15, 0.20, 0.25, 0.30,
 
 def main() -> int:
     con = sqlite3.connect(
-        f"file:{ROOT/'artifacts/retrieval/work.db'}?mode=ro&immutable=1", uri=True)
+        f"file:{ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'}?mode=ro&immutable=1", uri=True)
     plans = {p["qid"]: p for p in (json.loads(l) for l in
              (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
     gold = {g["qid"]: g for g in (json.loads(l) for l in
-            (ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
+            (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
             if not g.get("_meta")}
     labs = registry_labels()
     sub0, _ = load_control()

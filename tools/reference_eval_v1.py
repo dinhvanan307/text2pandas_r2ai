@@ -144,7 +144,7 @@ def main() -> int:
         return 1
 
     gold = {g["qid"]: g for g in (json.loads(l) for l in
-            (ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
+            (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
             if not g.get("_meta")}
 
     # ── phần 1: O6 tự chấm GOLD (bắt gold tự mâu thuẫn) ────────────────────

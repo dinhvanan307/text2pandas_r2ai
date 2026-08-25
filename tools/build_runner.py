@@ -137,7 +137,7 @@ def main() -> int:
     # không có tác dụng, và không có thông báo nào sai để người ta nghi ngờ.
     #
     # `bronze`/`silver_dir` cũng vào OUTPUT: hai build song song mà dùng chung
-    # `data/bronze/` sẽ giẫm lên nhau, và C0 sẽ so hai bản đã nhiễm nhau.
+    # `artifacts/runs/a6/bronze/` sẽ giẫm lên nhau, và C0 sẽ so hai bản đã nhiễm nhau.
     env = {**os.environ,
            "DATA_PIPELINE_SCRATCH": str(out),
            "DATA_PIPELINE_CONFIG": str(Path(a.config).resolve()),

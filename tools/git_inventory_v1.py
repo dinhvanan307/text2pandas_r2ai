@@ -30,9 +30,9 @@ BIG = 5 * 1024 * 1024        # >5 MB = large artifact
 # Thứ tự QUAN TRỌNG: khớp luật đầu tiên thắng.
 RULES: list[tuple[str, str, str]] = [
     # (nhóm, mô tả, tiền tố/hậu tố)
-    ("NEVER_COMMIT", "database dẫn xuất", "artifacts/retrieval/work.db"),
+    ("NEVER_COMMIT", "database dẫn xuất", "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"),
     ("NEVER_COMMIT", "gói A6 chứng nhận", "artifacts/rc2/packagesa6/"),
-    ("NEVER_COMMIT", "release DB", "artifacts/rc2/release_finala6/"),
+    ("NEVER_COMMIT", "release DB", "data/processed/a6/b3e9684004679ffb/"),
     ("NEVER_COMMIT", "wheelhouse", "wheelhouse"),
     ("NEVER_COMMIT", "silver release zip", "silver_release.zip"),
     ("NEVER_COMMIT", "venv", ".venv"),
@@ -53,14 +53,14 @@ RULES: list[tuple[str, str, str]] = [
     # từ tên, nhưng tái tạo được từ nguồn: nó CHÍNH LÀ sync_122_1.zip.
     ("NEVER_COMMIT", "bản sao mồ côi của sync_122_1.zip", "zi8fvJau"),
 
-    # data/dev: TÁCH metadata nhỏ khỏi dump lớn. Gộp cả `data/dev/` vào COMMIT
+    # data/curated/dev-legacy: TÁCH metadata nhỏ khỏi dump lớn. Gộp cả `data/curated/dev-legacy/` vào COMMIT
     # sẽ kéo 46,8 MB record dump vào Git — đúng thứ review 131 §7 cấm.
-    ("NEVER_COMMIT", "dump bản ghi answer_a6", "data/dev/answer_a6/"),
-    ("NEVER_COMMIT", "dump bản ghi answer_v2", "data/dev/answer_v2/"),
-    ("NEVER_COMMIT", "dump bản ghi answer_v3", "data/dev/answer_v3/"),
-    ("NEVER_COMMIT", "dump so_hoc", "data/dev/so_hoc/"),
-    ("NEVER_COMMIT", "gold pool trung gian", "data/dev/gold_tay_pool_"),
-    ("NEVER_COMMIT", "worksheet trung gian", "data/dev/gold_worksheet_"),
+    ("NEVER_COMMIT", "dump bản ghi answer_a6", "data/curated/dev-legacy/answer_a6/"),
+    ("NEVER_COMMIT", "dump bản ghi answer_v2", "data/curated/dev-legacy/answer_v2/"),
+    ("NEVER_COMMIT", "dump bản ghi answer_v3", "data/curated/dev-legacy/answer_v3/"),
+    ("NEVER_COMMIT", "dump so_hoc", "data/curated/dev-legacy/so_hoc/"),
+    ("NEVER_COMMIT", "gold pool trung gian", "data/curated/dev-legacy/gold_tay_pool_"),
+    ("NEVER_COMMIT", "worksheet trung gian", "data/curated/dev-legacy/gold_worksheet_"),
 
     ("COMMIT", "source", "src/"),
     ("COMMIT", "tool", "tools/"),
@@ -69,14 +69,14 @@ RULES: list[tuple[str, str, str]] = [
     ("COMMIT", "tài liệu", "docs/"),
     ("COMMIT", "môi trường", "env/"),
     ("COMMIT", "identity/metadata nhỏ", "identity/"),
-    ("COMMIT", "selection + dossier + schema nhãn", "data/dev/execution_gold/"),
-    ("COMMIT", "gold đáp án (nhỏ, là SSOT đo)", "data/dev/gold_dap_an/"),
-    # Các gold/sample nhỏ còn lại của data/dev — đều là metadata đo, vài trăm KB.
-    ("COMMIT", "gold BẢNG v1/v2 (dụng cụ đo retrieval)", "data/dev/gold_v"),
-    ("COMMIT", "gold tay sample", "data/dev/gold_tay_sample_"),
-    ("COMMIT", "sample chọn mẫu", "data/dev/gold_sample_"),
-    ("COMMIT", "override thực thể", "data/dev/gold_entity_override_"),
-    ("COMMIT", "audit retrieval (nhỏ)", "data/dev/audit/"),
+    ("COMMIT", "selection + dossier + schema nhãn", "data/curated/dev-legacy/execution_gold/"),
+    ("COMMIT", "gold đáp án (nhỏ, là SSOT đo)", "data/curated/dev-legacy/gold_dap_an/"),
+    # Các gold/sample nhỏ còn lại của data/curated/dev-legacy — đều là metadata đo, vài trăm KB.
+    ("COMMIT", "gold BẢNG v1/v2 (dụng cụ đo retrieval)", "data/curated/dev-legacy/gold_v"),
+    ("COMMIT", "gold tay sample", "data/curated/dev-legacy/gold_tay_sample_"),
+    ("COMMIT", "sample chọn mẫu", "data/curated/dev-legacy/gold_sample_"),
+    ("COMMIT", "override thực thể", "data/curated/dev-legacy/gold_entity_override_"),
+    ("COMMIT", "audit retrieval (nhỏ)", "data/curated/dev-legacy/audit/"),
     ("COMMIT", "báo cáo JSON nhỏ", "reports/"),
     ("COMMIT", "evaluation JSONL nhỏ", "evaluation/"),
     ("COMMIT", "manifest packet", "packet_kind.json"),
@@ -93,9 +93,9 @@ GITIGNORE_LINES = [
     ".venv*/", ".DS_Store",
     "",
     "# artifact lớn / dẫn xuất — giữ NGOÀI Git, tra bằng SHA manifest",
-    "artifacts/retrieval/work.db",
+    "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db",
     "artifacts/rc2/packagesa6/",
-    "artifacts/rc2/release_finala6/",
+    "data/processed/a6/b3e9684004679ffb/",
     "artifacts/execution/candidates/",
     "wheelhouse*/", "wheelhouse*.zip",
     "silver_release.zip",
@@ -107,10 +107,10 @@ GITIGNORE_LINES = [
     "!sync_122_2.sha256",
     "zi8fvJau",
     "",
-    "# data/dev: chỉ giữ metadata nhỏ, bỏ dump bản ghi",
-    "data/dev/answer_a6/", "data/dev/answer_v2/", "data/dev/answer_v3/",
-    "data/dev/so_hoc/",
-    "data/dev/gold_tay_pool_*.jsonl", "data/dev/gold_worksheet_*.jsonl",
+    "# data/curated/dev-legacy: chỉ giữ metadata nhỏ, bỏ dump bản ghi",
+    "data/curated/dev-legacy/answer_a6/", "data/curated/dev-legacy/answer_v2/", "data/curated/dev-legacy/answer_v3/",
+    "data/curated/dev-legacy/so_hoc/",
+    "data/curated/dev-legacy/gold_tay_pool_*.jsonl", "data/curated/dev-legacy/gold_worksheet_*.jsonl",
 ]
 
 
@@ -138,7 +138,7 @@ def main() -> int:
     groups: dict[str, list] = {}
     large: list[dict] = []
     # `git status` gộp một thư mục hoàn toàn untracked thành MỘT dòng. Với thư
-    # mục TRỘN (data/dev vừa có metadata nhỏ vừa có dump 46 MB) thì một nhãn
+    # mục TRỘN (data/curated/dev-legacy vừa có metadata nhỏ vừa có dump 46 MB) thì một nhãn
     # duy nhất là sai dù chọn nhãn nào. Nở một cấp rồi phân loại từng con.
     expanded: list[str] = []
     for line in st:
@@ -221,7 +221,7 @@ def main() -> int:
 
 
 def _regen(path: str) -> str:
-    if path.startswith("artifacts/retrieval/work.db"):
+    if path.startswith("data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"):
         return "bash tools/build_retrieval_workdb.sh <silver.db> <work.db> [<a6.zip>]"
     if path.startswith("artifacts/execution/candidates/"):
         return "python3 tools/build_candidate_v1.py --zip <rung>"

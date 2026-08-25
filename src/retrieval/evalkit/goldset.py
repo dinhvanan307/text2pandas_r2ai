@@ -305,7 +305,7 @@ class ProxyGoldV2:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ManualGold:
-    """Nạp `data/dev/gold_v1.jsonl`.
+    """Nạp `data/curated/dev-legacy/gold_v1.jsonl`.
 
     Lược đồ mỗi dòng, tối thiểu:
         {"id": 1, "gold_tables": ["DOC|1293", ...]}         ← khoá nộp bài

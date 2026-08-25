@@ -6,7 +6,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "artifacts/execution/h0"; OUT.mkdir(parents=True, exist_ok=True)
-ZP = ROOT / "data/submissions/submission_P0I.zip"
+ZP = ROOT / "artifacts/submissions/legacy/submission_P0I.zip"
 
 # ── replay: chạy lại TOÀN BỘ query trên CSV trong chính ZIP ────────────────
 Z = zipfile.ZipFile(ZP); sub = json.loads(Z.read("submission.json"))
@@ -57,7 +57,7 @@ b = dau_van(ZP)
 
 # ── RUN_MANIFEST ───────────────────────────────────────────────────────────
 def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
-w = sqlite3.connect('file:'+os.path.abspath(ROOT/'artifacts/retrieval/work.db')+'?mode=ro', uri=True)
+w = sqlite3.connect('file:'+os.path.abspath(ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db')+'?mode=ro', uri=True)
 bm = dict(w.execute("SELECT key,value FROM build_meta"))
 git = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
 dirty = len(subprocess.run(["git","status","--porcelain"], cwd=ROOT, capture_output=True, text=True).stdout.splitlines())
@@ -71,10 +71,10 @@ dirty = len(subprocess.run(["git","status","--porcelain"], cwd=ROOT, capture_out
                "package": "artifacts/rc2/packagesa6/silver_v1_rc2_b3e9684004679ffb_a6_run1.zip",
                "package_sha256": "23c3b96e4338e8785c2dcfcdfebf147dc7b7dfb6438c46c590be1ecbfe2453be",
                "package_sha256_matches_PROVENANCE": True},
-    "work_db": {"path": "artifacts/retrieval/work.db",
+    "work_db": {"path": "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db",
                 "sha256": "e9f62775a75794d770954ba1903f7a90c8b97467e5398b0baa2057bec8e67d5f",
                 "note": "DAN XUAT — PROVENANCE.json cam dung lam bang chung du lieu"},
-    "submission": {"P0I_sha256": sha(ZP), "P0G2_sha256": sha(ROOT/"data/submissions/submission_P0G2.zip")},
+    "submission": {"P0I_sha256": sha(ZP), "P0G2_sha256": sha(ROOT/"artifacts/submissions/legacy/submission_P0G2.zip")},
     "code": {"git_commit": git, "git_dirty_files": dirty,
              "answer_a6_files": {p.name: sha(p) for p in sorted((ROOT/"tools/answer_a6").glob("*.py"))}},
     "env_build_machine": {"python": sys.version.split()[0], "pandas": pd.__version__,

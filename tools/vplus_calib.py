@@ -30,8 +30,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEV = ROOT / "data" / "dev"
-VP = ROOT / "artifacts" / "retrieval" / "vplus"
+DEV = ROOT / "data" / "curated" / "dev-legacy"
+VP = ROOT / "artifacts" / "runs" / "retrieval" / "vplus"
 
 X_K, X_CAP = 3, 30
 Z_K, Z_CAP = 1, 10

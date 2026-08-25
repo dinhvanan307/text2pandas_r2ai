@@ -1,10 +1,10 @@
 import json,collections
-rows=[json.loads(l) for l in open('data/dev/gold_tay_pool_v5.jsonl')]
+rows=[json.loads(l) for l in open('data/curated/dev-legacy/gold_tay_pool_v5.jsonl')]
 print("candidate keys:",list(rows[0]['candidates'][0]))
 tot=0; only_s2=0; fts_only=0; strong=0
 sc=collections.Counter()
 gold={}
-for l in open('data/dev/gold_v1.jsonl'):
+for l in open('data/curated/dev-legacy/gold_v1.jsonl'):
     r=json.loads(l)
     if r.get('gold_table_uids'): gold[r['id']]=set(r['gold_table_uids'])
 gsrc=collections.Counter(); gtot=0

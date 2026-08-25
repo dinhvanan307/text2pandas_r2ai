@@ -53,10 +53,10 @@ _preflight()
 from retrieval.alias_store import load_aliases            # noqa: E402
 from retrieval.question_intent import parse_intent         # noqa: E402
 
-OUT = ROOT / "artifacts/retrieval/evalkit"
-DEV = ROOT / "data/dev"
-QPATH = ROOT / "data/external/vifinqa/questions/questions.jsonl"
-DB = ROOT / "artifacts/retrieval/work.db"
+OUT = ROOT / "artifacts/runs/retrieval/evalkit"
+DEV = ROOT / "data/curated/dev-legacy"
+QPATH = ROOT / "data/raw/btc/questions/questions.jsonl"
+DB = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 
 # Tỷ lệ phân tầng theo `mode`, xấp xỉ phân bố thật (single 741 · screen 160 ·
 # related 59 · compare 51 · screen_open 1) nhưng ĐÁNH THÊM TRỌNG SỐ cho nhóm

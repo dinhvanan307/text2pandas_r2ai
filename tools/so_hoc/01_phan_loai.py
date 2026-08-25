@@ -25,8 +25,8 @@ import json, re, unicodedata, collections
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-CAU = ROOT / "data/external/vifinqa/questions/questions.jsonl"
-RA = ROOT / "data/dev/so_hoc/phan_loai.jsonl"
+CAU = ROOT / "data/raw/btc/questions/questions.jsonl"
+RA = ROOT / "data/curated/dev-legacy/so_hoc/phan_loai.jsonl"
 
 
 def fold(s: str) -> str:

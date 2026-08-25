@@ -212,7 +212,7 @@ def test_gold_difference_cross_entity_theo_thu_tu_ALPHABET():
     ĐẶC TẢ, không phải bug emitter.
     """
     gold = {g["qid"]: g for g in (json.loads(l) for l in
-            (ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
+            (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
             if not g.get("_meta")}
     div = {"trieu": 1e6, "ty": 1e9, "dong": 1.0}
     n = ok = 0
@@ -239,7 +239,7 @@ def test_gold_difference_cross_entity_theo_thu_tu_ALPHABET():
 def test_qid760_gold_nguoc_voi_cach_doc_tu_nhien():
     """Ca cụ thể: 'BAB so với NVB' → đọc tự nhiên là BAB − NVB = +447.660."""
     gold = {g["qid"]: g for g in (json.loads(l) for l in
-            (ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
+            (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
             if not g.get("_meta")}
     g = gold[760]
     v = {s["slot"].split("/")[0]:

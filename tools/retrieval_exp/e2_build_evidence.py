@@ -4,8 +4,8 @@ import hashlib, json, os, shutil, sqlite3, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-RE = ROOT / "artifacts/retrieval/reaudit"
-OUT = ROOT / "artifacts/retrieval/bundles/retrieval_e2_evidence_v1"
+RE = ROOT / "artifacts/runs/retrieval/reaudit"
+OUT = ROOT / "artifacts/runs/retrieval/bundles/retrieval_e2_evidence_v1"
 sys.path.insert(0, str(ROOT / "src"))
 K, CAP = 3, 30
 TAGS = ["base", "pri015", "pri030", "pri060", "pri100",
@@ -59,15 +59,15 @@ def main() -> int:
 
     # ── gold_identity ───────────────────────────────────────────────────────
     G = {}
-    for line in (ROOT / "data/dev/gold_v2.jsonl").open(encoding="utf-8"):
+    for line in (ROOT / "data/curated/dev-legacy/gold_v2.jsonl").open(encoding="utf-8"):
         r = json.loads(line)
         if r.get("gold_table_uids"):
             G[r["id"]] = r["gold_table_uids"]
-    gi = {"gold_file": "data/dev/gold_v2.jsonl",
-          "gold_file_sha256": sha(ROOT / "data/dev/gold_v2.jsonl"),
-          "gold_v1_sha256": sha(ROOT / "data/dev/gold_v1.jsonl"),
-          "sample_file_sha256": sha(ROOT / "data/dev/gold_tay_sample_v2.jsonl"),
-          "n_rows_total": sum(1 for _ in (ROOT / "data/dev/gold_v2.jsonl").open(encoding="utf-8")),
+    gi = {"gold_file": "data/curated/dev-legacy/gold_v2.jsonl",
+          "gold_file_sha256": sha(ROOT / "data/curated/dev-legacy/gold_v2.jsonl"),
+          "gold_v1_sha256": sha(ROOT / "data/curated/dev-legacy/gold_v1.jsonl"),
+          "sample_file_sha256": sha(ROOT / "data/curated/dev-legacy/gold_tay_sample_v2.jsonl"),
+          "n_rows_total": sum(1 for _ in (ROOT / "data/curated/dev-legacy/gold_v2.jsonl").open(encoding="utf-8")),
           "n_qid_co_gold": len(G), "n_bang_gold": sum(len(v) for v in G.values()),
           "qids": sorted(G),
           "qid_list_sha256": hashlib.sha256(
@@ -79,7 +79,7 @@ def main() -> int:
         json.dumps(gi, ensure_ascii=False, indent=1), encoding="utf-8")
 
     # ── cache_identity ──────────────────────────────────────────────────────
-    db = ROOT / "artifacts/retrieval/work.db"
+    db = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
     conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
     n_cards = conn.execute("SELECT COUNT(*) FROM table_cards").fetchone()[0]
     ci = {"work_db": str(db.relative_to(ROOT)), "work_db_bytes": db.stat().st_size,

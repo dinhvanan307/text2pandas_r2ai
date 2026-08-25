@@ -9,11 +9,11 @@ và tệ hơn: nó MIỄN TỘI cho Retrieval ở đúng những câu Retrieval 
 Ranh giới phải giữ:
   * `src/retrieval/**` KHÔNG đổi một byte — Retrieval khi được CHẤM vẫn mang
     nguyên bốn lỗi ấy và vẫn bị trừ điểm ở 12 câu này. Đó là điều đúng.
-  * Ghi đè là DỮ LIỆU KHAI BÁO (`data/dev/gold_entity_override_v1.json`), có
+  * Ghi đè là DỮ LIỆU KHAI BÁO (`data/curated/dev-legacy/gold_entity_override_v1.json`), có
     `evidence` từng câu, không phải suy diễn lúc chạy.
   * Mọi mã thêm vào đều PHẢI có trong bảng alias A6. Không bịa thực thể.
 
-Chạy:  python tools/gold_pool_v6.py --db artifacts/retrieval/work.db
+Chạy:  python tools/gold_pool_v6.py --db data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db
 """
 from __future__ import annotations
 

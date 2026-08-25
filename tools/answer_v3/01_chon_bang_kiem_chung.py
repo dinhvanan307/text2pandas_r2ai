@@ -46,10 +46,10 @@ if os.environ.get("LOC_COT", "1") == "1":          # bộ lọc cột phi giá t
     import importlib
     importlib.import_module("06_loc_cot_phi_gia_tri").bat()
 
-OCR = ROOT / "data/external/vifinqa/financial_statements"
-CARD = ROOT / "data/silver/card_index.sqlite"
-REFS = ROOT / "artifacts/retrieval/vplus/refs_1012.json"
-RA = ROOT / "data/dev/answer_v3"
+OCR = ROOT / "data/raw/btc/financial_statements"
+CARD = ROOT / "artifacts/legacy/silver-pre-a6/card_index.sqlite"
+REFS = ROOT / "artifacts/runs/retrieval/vplus/refs_1012.json"
+RA = ROOT / "data/curated/dev-legacy/answer_v3"
 DATA = RA / "data"
 GHI = RA / "records_v4.jsonl"
 SO = RA / "chon_bang_log.jsonl"
@@ -76,14 +76,14 @@ def main(argv: list[str]) -> int:
     tu, den = (int(argv[0]), int(argv[1])) if len(argv) >= 2 else (1, 10 ** 9)
     D = json.loads(REFS.read_text())
     qs = [json.loads(l) for l in
-          (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8") if l.strip()]
-    companies = CompanyIndex.from_csv(ROOT / "data/external/vifinqa/code_stock.csv")
+          (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8") if l.strip()]
+    companies = CompanyIndex.from_csv(ROOT / "data/raw/btc/metadata/companies.csv")
 
     card = sqlite3.connect(f"file:{CARD}?mode=ro", uri=True)
     META = {f"{d}|{ln}": (nr, nc, ue) for d, ln, nr, nc, ue in card.execute(
         "SELECT doc_id, line_no, n_rows, n_cols, unit_exponent FROM card_meta")}
     work = sqlite3.connect(
-        f"file:{ROOT / 'artifacts/retrieval/work.db'}?mode=ro", uri=True)
+        f"file:{ROOT / 'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'}?mode=ro", uri=True)
     known = {r[0] for r in work.execute(
         "SELECT DISTINCT ticker FROM documents WHERE ticker IS NOT NULL")}
 

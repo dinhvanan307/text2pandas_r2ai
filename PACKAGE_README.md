@@ -13,9 +13,9 @@
 | Bị loại | Dung lượng | Lý do |
 |---|---|---|
 | `artifacts/` | 64 G | artifact dẫn xuất (`work.db` 4,2 G, `rc2/` 60 G) |
-| `data/silver/` | 7,3 G | Silver SSOT — dựng lại bằng `make dp-build` |
+| `data/processed/a6/` | 7,3 G | Silver SSOT — dựng lại bằng `make dp-build` |
 | `data/external/` | 379 M | corpus ViFinQA — tải lại bằng `tools/data_acquisition/` |
-| `data/submissions/` | 20 M | bài nộp ZIP |
+| `artifacts/submissions/legacy/` | 20 M | bài nộp ZIP |
 | `silver_release.zip` | 1,5 G | gói phát hành |
 | `reports/` | 75 M | số liệu đo |
 | `docs/` | 5,8 M | 168 tài liệu (loại theo yêu cầu) |
@@ -37,5 +37,5 @@ python3 -m pytest tests/ -q --continue-on-collection-errors
 `pip install -e .` trước, hoặc dùng `--continue-on-collection-errors`.
 Xem `docs/179_TECHNICAL_ARCHITECTURE_AUDIT.md` §P0-2.
 
-Phần lớn `tools/` cần `artifacts/retrieval/work.db` và `data/silver/`; không
+Phần lớn `tools/` cần `data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db` và `data/processed/a6/`; không
 có hai thứ đó thì chỉ đọc và chạy test đơn vị được.

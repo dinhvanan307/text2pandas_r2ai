@@ -3,10 +3,10 @@ from __future__ import annotations
 import collections, json, os, re, sqlite3, unicodedata
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
-c = sqlite3.connect('file:'+os.path.abspath(ROOT/'artifacts/retrieval/work.db')+'?mode=ro', uri=True)
+c = sqlite3.connect('file:'+os.path.abspath(ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db')+'?mode=ro', uri=True)
 ev2uid = {ev.replace("|line:", "|"): u for u, ev in c.execute(
     "SELECT table_uid,evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL")}
-HT = [json.loads(l) for l in (ROOT/"data/dev/answer_v3/records_v4.jsonl").open(encoding="utf-8")][:300]
+HT = [json.loads(l) for l in (ROOT/"data/curated/dev-legacy/answer_v3/records_v4.jsonl").open(encoding="utf-8")][:300]
 RP = re.compile(r"row_path'\]\s*==\s*'([^']*)'")
 
 def chuan(s):

@@ -36,7 +36,7 @@ from retrieval.alias_store import load_aliases            # noqa: E402
 from retrieval.query_terms import content_terms           # noqa: E402
 from retrieval.question_intent import parse_intent        # noqa: E402
 
-OUT = ROOT / "artifacts/retrieval/evalkit"
+OUT = ROOT / "artifacts/runs/retrieval/evalkit"
 
 _BASE = ("SELECT COUNT(*) FROM table_cards_fts f "
          "JOIN table_cards t ON t.rowid = f.rowid WHERE table_cards_fts MATCH ?")
@@ -112,10 +112,10 @@ def main(argv) -> int:
 
     qmap = {q["id"]: q["question"] for q in (
         json.loads(l) for l in
-        (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8")
+        (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8")
         if l.strip())}
     alias = load_aliases(brands=True)
-    conn = sqlite3.connect(f"file:{ROOT/'artifacts/retrieval/work.db'}?mode=ro", uri=True)
+    conn = sqlite3.connect(f"file:{ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'}?mode=ro", uri=True)
     conn.execute("PRAGMA cache_size=-300000")
 
     # Bốn cấu hình ràng buộc, mỗi cấu hình nới ĐÚNG MỘT chiều so với gốc.

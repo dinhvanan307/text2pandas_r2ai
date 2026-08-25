@@ -28,8 +28,8 @@ from retrieval.evalkit.stages import (Bm25StructuralRanker,    # noqa: E402
                                       HardFilterGenerator)
 from retrieval.question_intent import parse_intent             # noqa: E402
 
-DEV = ROOT / "data" / "dev"
-OUT = ROOT / "artifacts" / "retrieval" / "reaudit" / "refs_goldv2.json"
+DEV = ROOT / "data" / "curated" / "dev-legacy"
+OUT = ROOT / "artifacts" / "runs" / "retrieval" / "reaudit" / "refs_goldv2.json"
 DEPTH = 300
 
 

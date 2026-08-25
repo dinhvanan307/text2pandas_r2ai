@@ -15,14 +15,14 @@ from retrieval.evalkit.stages import (Bm25StructuralRanker,    # noqa: E402
                                       HardFilterGenerator)
 from retrieval.question_intent import parse_intent             # noqa: E402
 
-DEV = ROOT / "data/dev"
-OUTDIR = ROOT / "artifacts/retrieval/reaudit"
+DEV = ROOT / "data/curated/dev-legacy"
+OUTDIR = ROOT / "artifacts/runs/retrieval/reaudit"
 DEPTH = 300
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", default=str(ROOT / "artifacts/retrieval/work.db"))
+    ap.add_argument("--db", default=str(ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"))
     ap.add_argument("--tag", required=True)
     ap.add_argument("--primary-boost", type=float, default=0.0)
     ap.add_argument("--primary-modes", default="screen,related")

@@ -61,7 +61,7 @@ def kiem_dinh_danh(db: Path, cau_hinh: Path = CAU_HINH, in_log=print) -> dict:
 
 
 if __name__ == "__main__":
-    db = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "artifacts/retrieval/work.db"
+    db = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
     try:
         kiem_dinh_danh(db)
     except A6IdentityError as e:

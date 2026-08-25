@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from retrieval.evalkit.cli import _load_cfg          # noqa: E402
 from retrieval.evalkit.runner import SCHEMA_VERSION  # noqa: E402
-EK = ROOT / "artifacts/retrieval/evalkit"
+EK = ROOT / "artifacts/runs/retrieval/evalkit"
 
 
 def load(tag):
@@ -109,7 +109,7 @@ def main() -> int:
            "bucket_distribution": out_extra["bucket"],
            "checks": chk, "n_pass": sum(1 for x in chk if x["pass"]),
            "n_fail": sum(1 for x in chk if not x["pass"])}
-    (ROOT / "artifacts/retrieval/reaudit/e2_full_regression_1012.json").write_text(
+    (ROOT / "artifacts/runs/retrieval/reaudit/e2_full_regression_1012.json").write_text(
         json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"\nTỔNG: {out['n_pass']} PASS / {out['n_fail']} FAIL")
     return 0

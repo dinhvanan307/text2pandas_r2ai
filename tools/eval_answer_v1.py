@@ -33,7 +33,7 @@ BA CẢNH BÁO PHẢI ĐỌC TRƯỚC KHI TRÍCH SỐ
    bài nộp nào đó thì số của tệp này vô nghĩa cho bài ấy — kiểm lại trước.
 
 Chạy:
-    python tools/eval_answer_v1.py data/submissions/submission_P0G2.zip
+    python tools/eval_answer_v1.py artifacts/submissions/legacy/submission_P0G2.zip
     python tools/eval_answer_v1.py --hieu-chuan
 """
 from __future__ import annotations
@@ -46,8 +46,8 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-GOLD = ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl"
-SUB = ROOT / "data/submissions"
+GOLD = ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl"
+SUB = ROOT / "artifacts/submissions/legacy"
 
 # Điểm neo LB đã biết (docs/95 §"Ba lượt nộp"). Dùng để hiệu chuẩn, KHÔNG dùng
 # để tối ưu — tối ưu thẳng lên leaderboard là điều bị cấm trong ràng buộc dự án.

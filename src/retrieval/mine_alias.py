@@ -66,11 +66,11 @@ def main() -> int:
     alias = yaml.safe_load((ROOT / "configs/retrieval/company_alias_v1.yaml")
                            .read_text(encoding="utf-8"))["aliases"]
     qs = [json.loads(l) for l in
-          (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8")]
+          (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8")]
     tat_ca_alias = {a for names in alias.values()
                     for n in ([names] if isinstance(names, str) else names)
                     for a in company_aliases(n)}
-    conn = sqlite3.connect("file:" + str(ROOT / "artifacts/retrieval/work.db")
+    conn = sqlite3.connect("file:" + str(ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db")
                            + "?mode=ro", uri=True)
     conn.execute("PRAGMA cache_size=-200000")
 
@@ -111,7 +111,7 @@ def main() -> int:
               f"   {', '.join(f'{a}:{b}' for a, b in top[1:4])}")
     print(f"\nCORPUS XÁC NHẬN {len(nhan)} ánh xạ:")
     print(json.dumps(nhan, ensure_ascii=False, indent=2))
-    (ROOT / "artifacts/retrieval/alias_candidates.json").write_text(
+    (ROOT / "artifacts/runs/retrieval/alias_candidates.json").write_text(
         json.dumps({"xac_nhan": nhan,
                     "tan_suat": dict(ung_vien.most_common(200))},
                    ensure_ascii=False, indent=2), encoding="utf-8")

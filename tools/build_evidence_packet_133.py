@@ -74,10 +74,10 @@ ITEMS: list[tuple[str, str]] = [
     ("tests/expected_p0_cases.meta.json", "tests/expected_p0_cases.meta.json"),
     ("tests/execution/test_p0_families_v1.py", "tests/execution/test_p0_families_v1.py"),
 
-    ("data/dev/gold_dap_an/gold_dap_an_v1.jsonl", "data/dev/gold_dap_an/gold_dap_an_v1.jsonl"),
-    ("data/dev/execution_gold/dev60_selection.json", "data/dev/execution_gold/dev60_selection.json"),
-    ("data/dev/execution_gold/audit40_selection.json", "data/dev/execution_gold/audit40_selection.json"),
-    ("data/dev/execution_gold/dev60_labels.jsonl", "data/dev/execution_gold/dev60_labels.jsonl"),
+    ("data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl", "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl"),
+    ("data/curated/dev-legacy/execution_gold/dev60_selection.json", "data/curated/dev-legacy/execution_gold/dev60_selection.json"),
+    ("data/curated/dev-legacy/execution_gold/audit40_selection.json", "data/curated/dev-legacy/execution_gold/audit40_selection.json"),
+    ("data/curated/dev-legacy/execution_gold/dev60_labels.jsonl", "data/curated/dev-legacy/execution_gold/dev60_labels.jsonl"),
 
     ("docs/132_RESOLVE_REVIEW_131.md", "docs/132_RESOLVE_REVIEW_131.md"),
     ("docs/133_REVIEW_132B_AND_OPTIMAL_MASTER_PLAN.md", "docs/133_REVIEW_132B_AND_OPTIMAL_MASTER_PLAN.md"),

@@ -27,7 +27,7 @@ def norm(s: str) -> str:
 
 
 def main() -> int:
-    con = sqlite3.connect(ROOT / "artifacts/retrieval/work.db")
+    con = sqlite3.connect(ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db")
     rows = con.execute(
         """SELECT metric_label_clean, COUNT(*) c, COUNT(DISTINCT ticker) nt
            FROM observations
@@ -36,7 +36,7 @@ def main() -> int:
         (TOP_N,)).fetchall()
 
     qs = [json.loads(l) for l in
-          (ROOT / "data/dev/so_hoc/phan_loai.jsonl").open(encoding="utf-8")]
+          (ROOT / "data/curated/dev-legacy/so_hoc/phan_loai.jsonl").open(encoding="utf-8")]
     lab_n = [(norm(l), l) for l, _, _ in rows if len(norm(l)) >= 8]
     covered, unresolved = [], []
     for q in qs:
@@ -58,7 +58,7 @@ def main() -> int:
         "regression_defects:  # docs/120 §fresh_holdout_v2 — PHẢI thành test, không chữa bằng nới similarity",
         "  metric_different_concept_false_blocks: [18, 31, 144, 252, 284]",
         "  derived_quantity_leak: [104]",
-        "  register: artifacts/retrieval/bundles/verify_117_v1/fresh_holdout_v2_defect_register.jsonl",
+        "  register: artifacts/runs/retrieval/bundles/verify_117_v1/fresh_holdout_v2_defect_register.jsonl",
         "metrics:",
     ]
     for label, c, nt in rows:

@@ -13,9 +13,9 @@ khi pilot người thật xác nhận — ghi rõ trong report):
     HARD ~10′  ≥4 slot, screen/count/multi-entity, hoặc thiếu candidate
 
 Sinh:
-    data/dev/execution_gold/dossiers_dev60/qid_XXXX.md
-    data/dev/execution_gold/dossiers_audit40_blind/qid_XXXX.md
-    data/dev/execution_gold/label_template_schema.json
+    data/curated/dev-legacy/execution_gold/dossiers_dev60/qid_XXXX.md
+    data/curated/dev-legacy/execution_gold/dossiers_audit40_blind/qid_XXXX.md
+    data/curated/dev-legacy/execution_gold/label_template_schema.json
     reports/labeling_batch_size_report.json
 """
 from __future__ import annotations
@@ -93,16 +93,16 @@ def main() -> int:
     plans = {p["qid"]: p for p in
              (json.loads(l) for l in
               (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
-    dev = json.loads((ROOT / "data/dev/execution_gold/dev60_selection.json").read_text())
-    aud = json.loads((ROOT / "data/dev/execution_gold/audit40_selection.json").read_text())
+    dev = json.loads((ROOT / "data/curated/dev-legacy/execution_gold/dev60_selection.json").read_text())
+    aud = json.loads((ROOT / "data/curated/dev-legacy/execution_gold/audit40_selection.json").read_text())
     con = sqlite3.connect(
-        f"file:{ROOT/'artifacts/retrieval/work.db'}?mode=ro&immutable=1", uri=True)
+        f"file:{ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'}?mode=ro&immutable=1", uri=True)
 
-    (ROOT / "data/dev/execution_gold/label_template_schema.json").write_text(
+    (ROOT / "data/curated/dev-legacy/execution_gold/label_template_schema.json").write_text(
         json.dumps(SCHEMA, ensure_ascii=False, indent=1), encoding="utf-8")
 
-    ddir = ROOT / "data/dev/execution_gold/dossiers_dev60"
-    adir = ROOT / "data/dev/execution_gold/dossiers_audit40_blind"
+    ddir = ROOT / "data/curated/dev-legacy/execution_gold/dossiers_dev60"
+    adir = ROOT / "data/curated/dev-legacy/execution_gold/dossiers_audit40_blind"
     ddir.mkdir(parents=True, exist_ok=True)
     adir.mkdir(parents=True, exist_ok=True)
 

@@ -26,7 +26,7 @@ corpus:
   uid_namespace_id: "sha256:ca033190f2e9e99f8384bf59749484b0668c573e0a84e02a055d173d99de0cb9"
   id: vifinqa
   # Tương đối với repository root. `dp-build INPUT=` ghi đè giá trị này.
-  root: data/external/vifinqa/financial_statements
+  root: data/raw/btc/financial_statements
   file_glob: "*/*/*/*.txt"
   encoding: utf-8
   line_ending: LF
@@ -61,10 +61,10 @@ locator:
 
 # ── Đường dẫn · tương đối repo root, `dp-build` ghi đè được ─────────────────
 paths:
-  bronze_catalog: data/bronze/catalog_v2.sqlite
+  bronze_catalog: artifacts/runs/a6/bronze/catalog_v2.sqlite
   work_dir: /tmp/dp_work
-  silver_dir: data/silver/vifinqa
-  reports_dir: reports
+  silver_dir: data/processed/a6
+  reports_dir: artifacts/reports/a6
 
 # ── Chính sách tham chiếu · tách tệp vì chúng đổi độc lập ───────────────────
 policies:

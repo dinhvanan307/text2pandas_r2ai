@@ -1,5 +1,5 @@
 # Sinh bởi src/retrieval/build_alias.py — KHÔNG sửa tay.
-# Nguồn: data/external/vifinqa/code_stock.csv (100 mã).
+# Nguồn: data/raw/btc/metadata/companies.csv (100 mã).
 # Biến thể mơ hồ đã bị loại; xem `rejected` ở cuối.
 version: 1
 n_tickers: 100

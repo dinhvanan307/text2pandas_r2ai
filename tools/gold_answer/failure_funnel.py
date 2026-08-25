@@ -34,7 +34,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-GD = ROOT / "data/dev/answer_gold"
+GD = ROOT / "data/curated/dev-legacy/answer_gold"
 
 TANG = ["retrieval_gold_present", "candidate_gold_present", "entity_correct",
         "period_correct", "basis_correct", "metric_correct", "operand_correct",
@@ -130,7 +130,7 @@ def cham(rec: dict, g: dict) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--zip", type=Path,
-                    default=ROOT / "data/submissions/submission_P0I.zip")
+                    default=ROOT / "artifacts/submissions/legacy/submission_P0I.zip")
     ap.add_argument("--arm", default="PRIMARY_OFFICIAL_BUILD_P0I")
     ap.add_argument("--out", type=Path, default=ROOT / "reports/funnel")
     a = ap.parse_args()

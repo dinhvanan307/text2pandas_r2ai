@@ -18,7 +18,7 @@ BA LUẬT CHỐNG NHIỄM (thi hành bằng cấu trúc, có `verify` kiểm l�
    đã bị chính heuristic của hệ thống lọc trước. Audit trên 3 dòng đó là audit
    một phần bằng chứng do hệ thống chọn hộ. Có `--db` thì độc lập hơn hẳn.
 
-    python tools/human_audit.py set    --db artifacts/retrieval/work.db
+    python tools/human_audit.py set    --db data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db
     python tools/human_audit.py sheet  > /tmp/phieu_audit.txt
     python tools/human_audit.py form
     python tools/human_audit.py check
@@ -37,8 +37,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEV = ROOT / "data/dev"
-OUT = ROOT / "artifacts/retrieval/audit"
+DEV = ROOT / "data/curated/dev-legacy"
+OUT = ROOT / "artifacts/runs/retrieval/audit"
 
 MAU = DEV / "gold_tay_sample_v2.jsonl"
 POOL = DEV / "gold_tay_pool_v3.jsonl"

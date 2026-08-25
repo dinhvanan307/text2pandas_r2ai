@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "reports/163"
-SUB = ROOT / "data/submissions"
+SUB = ROOT / "artifacts/submissions/legacy"
 TRUONG = ("answer", "pandas_query", "evidence")
 
 CHUOI = [
@@ -129,8 +129,8 @@ def main() -> int:
 
     # ── identity đầu vào + ZIP trung gian ────────────────────────────────
     inp = {}
-    for ten, p in (("records_a6", ROOT / "data/dev/answer_a6/records_a6.jsonl"),
-                   ("records_sohoc", ROOT / "data/dev/so_hoc/records_sohoc.jsonl")):
+    for ten, p in (("records_a6", ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl"),
+                   ("records_sohoc", ROOT / "data/curated/dev-legacy/so_hoc/records_sohoc.jsonl")):
         if p.is_file():
             n = sum(1 for l in p.open(encoding="utf-8") if l.strip())
             inp[ten] = {"path": str(p.relative_to(ROOT)), "sha256": shaf(p),

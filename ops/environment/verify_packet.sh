@@ -45,9 +45,9 @@ find_first() { for p in "$@"; do [ -e "$p" ] && { echo "$p"; return 0; }; done; 
 
 SRC_ROOT=$(find_first source/src src ${REPO:+"$REPO/src"}) || SRC_ROOT=""
 CTRL=$(find_first controls/submission_P0I.zip sync_122_1/controls/submission_P0I.zip \
-        data/submissions/submission_P0I.zip \
+        artifacts/submissions/legacy/submission_P0I.zip \
         ${REPO:+"$REPO/sync_122_1/controls/submission_P0I.zip"}) || CTRL=""
-WDB=$(find_first artifacts/retrieval/work.db ${REPO:+"$REPO/artifacts/retrieval/work.db"}) || WDB=""
+WDB=$(find_first data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db ${REPO:+"$REPO/data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"}) || WDB=""
 
 # Bản-1 của script không in dòng nào trước `• layout:`, nên một bản GIẢI NÉN CŨ
 # chạy y hệt bản mới trong mắt người đọc log. Đó là cách một lần chạy sai được

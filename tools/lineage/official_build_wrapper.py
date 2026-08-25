@@ -9,10 +9,10 @@ nào — nếu đổi thì `feature_off` sẽ không tái lập được parent,
 thử của chính nó.
 
   python3 tools/lineage/official_build_wrapper.py \
-      --parent-zip data/submissions/submission_P0G2.zip \
+      --parent-zip artifacts/submissions/legacy/submission_P0G2.zip \
       --output-zip /tmp/replay_P0I.zip \
       --trace-jsonl reports/lineage/stage_trace_P0I.jsonl \
-      --expect-zip data/submissions/submission_P0I.zip
+      --expect-zip artifacts/submissions/legacy/submission_P0I.zip
 
 `--candidate-records` để trống = **feature_off** = tái dựng đúng P0I.
 
@@ -73,7 +73,7 @@ def canonical_submission_bytes(sub: list) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--parent-zip", type=Path,
-                    default=ROOT / "data/submissions/submission_P0G2.zip")
+                    default=ROOT / "artifacts/submissions/legacy/submission_P0G2.zip")
     ap.add_argument("--candidate-records", type=Path, default=None,
                     help="overlay thêm; để trống = feature_off")
     ap.add_argument("--output-zip", type=Path, required=True)
@@ -81,11 +81,11 @@ def main() -> int:
     ap.add_argument("--expect-zip", type=Path, default=None,
                     help="ZIP kỳ vọng để đối chiếu canonical SHA")
     ap.add_argument("--a6-records", type=Path,
-                    default=ROOT / "data/dev/answer_a6/records_a6.jsonl")
+                    default=ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl")
     ap.add_argument("--sohoc-records", type=Path,
-                    default=ROOT / "data/dev/so_hoc/records_sohoc.jsonl")
-    ap.add_argument("--data-a6", type=Path, default=ROOT / "data/dev/answer_a6/data")
-    ap.add_argument("--data-v3", type=Path, default=ROOT / "data/dev/answer_v3/data")
+                    default=ROOT / "data/curated/dev-legacy/so_hoc/records_sohoc.jsonl")
+    ap.add_argument("--data-a6", type=Path, default=ROOT / "data/curated/dev-legacy/answer_a6/data")
+    ap.add_argument("--data-v3", type=Path, default=ROOT / "data/curated/dev-legacy/answer_v3/data")
     a = ap.parse_args()
 
     a.trace_jsonl.parent.mkdir(parents=True, exist_ok=True)

@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse, json, sqlite3, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
-DEV = ROOT / "data" / "dev"
+DEV = ROOT / "data" / "curated" / "dev-legacy"
 
 def main(argv):
     p = argparse.ArgumentParser(prog="gold_sheet_v6")

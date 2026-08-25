@@ -49,7 +49,7 @@ from retrieval.evalkit.runner import SCHEMA_VERSION  # noqa: E402
 
 _preflight()
 
-OUT = ROOT / "artifacts/retrieval/evalkit"
+OUT = ROOT / "artifacts/runs/retrieval/evalkit"
 
 
 # THỜI KỲ LƯỢC ĐỒ · tập trường KHÔNG tồn tại ở thời kỳ đó.

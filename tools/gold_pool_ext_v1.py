@@ -35,7 +35,7 @@ import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEV = ROOT / "data" / "dev"
+DEV = ROOT / "data" / "curated" / "dev-legacy"
 POOL_IN = DEV / "gold_tay_pool_v6.jsonl"
 POOL_OUT = DEV / "gold_tay_pool_v7.jsonl"
 GHI_DE = DEV / "gold_entity_override_v1.json"

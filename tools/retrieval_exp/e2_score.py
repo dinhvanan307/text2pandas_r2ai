@@ -8,7 +8,7 @@ import argparse, json, math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-RE = ROOT / "artifacts/retrieval/reaudit"
+RE = ROOT / "artifacts/runs/retrieval/reaudit"
 K, CAP = 3, 30
 
 

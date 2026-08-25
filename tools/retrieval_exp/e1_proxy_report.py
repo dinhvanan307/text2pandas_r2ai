@@ -16,7 +16,7 @@ def cham(r, g, k, cap):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--inp", default="artifacts/retrieval/reaudit/e1_proxy_gap.json")
+    ap.add_argument("--inp", default="artifacts/runs/retrieval/reaudit/e1_proxy_gap.json")
     ap.add_argument("--k", type=int, default=3)
     ap.add_argument("--cap", type=int, default=30)
     a = ap.parse_args(argv)

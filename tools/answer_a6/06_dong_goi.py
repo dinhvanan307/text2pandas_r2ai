@@ -8,12 +8,12 @@ import json, sys, zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-NEN = ROOT / "data/submissions/submission_P0G2.zip"
-RA = ROOT / "data/submissions/submission_P0I.zip"
-A6R = ROOT / "data/dev/answer_a6/records_a6.jsonl"
-DATA_A6 = ROOT / "data/dev/answer_a6/data"
-DATA_V3 = ROOT / "data/dev/answer_v3/data"
-SOHOC = ROOT / "data/dev/so_hoc/records_sohoc.jsonl"
+NEN = ROOT / "artifacts/submissions/legacy/submission_P0G2.zip"
+RA = ROOT / "artifacts/submissions/legacy/submission_P0I.zip"
+A6R = ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl"
+DATA_A6 = ROOT / "data/curated/dev-legacy/answer_a6/data"
+DATA_V3 = ROOT / "data/curated/dev-legacy/answer_v3/data"
+SOHOC = ROOT / "data/curated/dev-legacy/so_hoc/records_sohoc.jsonl"
 
 moi = {r["qid"]: r for r in (json.loads(l) for l in A6R.open(encoding="utf-8") if l.strip())}
 zin = zipfile.ZipFile(NEN)

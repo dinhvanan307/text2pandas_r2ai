@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
-RA = ROOT / "data/dev/answer_a6"
+RA = ROOT / "data/curated/dev-legacy/answer_a6"
 rec = [json.loads(l) for l in (RA / "records_a6.jsonl").open(encoding="utf-8") if l.strip()]
 tu, den = (int(sys.argv[1]), int(sys.argv[2])) if len(sys.argv) >= 3 else (0, 10**9)
 kq_p = RA / "bat_bien.json"

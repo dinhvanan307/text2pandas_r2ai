@@ -75,7 +75,7 @@ def main() -> int:
             "chưa chạy ops/environment/verify_packet.sh",
         )
 
-    wv = ROOT / "artifacts/retrieval/workdb_verify_report.json"
+    wv = ROOT / "artifacts/runs/retrieval/workdb_verify_report.json"
     if wv.is_file():
         d = json.loads(wv.read_text(encoding="utf-8"))
         add("P0_packet", "workdb_rebuild_query", "PASS" if d["verdict"] == "PASS" else "FAIL",
@@ -147,7 +147,7 @@ def main() -> int:
     # nhận một CẤU HÌNH chứ không phải cái ZIP nó vừa băm (47 emit vs 45 câu
     # thực sự ghi). Nay chấm thẳng file.
     gold = {g["qid"]: g for g in (json.loads(l) for l in
-            (ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
+            (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
             if not g.get("_meta")}
 
     def khop(got, want, tol: float = 0.01) -> bool:

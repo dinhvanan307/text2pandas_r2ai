@@ -9,8 +9,8 @@ Quy tắc:
   BLIND (không chứa prediction/ranking — 125 §P0-C).
 
 Sinh:
-    data/dev/execution_gold/dev60_selection.json
-    data/dev/execution_gold/audit40_selection.json
+    data/curated/dev-legacy/execution_gold/dev60_selection.json
+    data/curated/dev-legacy/execution_gold/audit40_selection.json
     identity/final_audit_seal.json
 """
 from __future__ import annotations
@@ -62,7 +62,7 @@ def main() -> int:
     plans = [json.loads(l) for l in
              (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8")]
     gold_qids = {json.loads(l)["qid"] for l in
-                 (ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8")
+                 (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8")
                  if not json.loads(l).get("_meta")}
     pool = [p for p in plans if p["qid"] not in gold_qids]
     by_intent: dict[str, list[int]] = defaultdict(list)
@@ -77,7 +77,7 @@ def main() -> int:
     assert not set(dev) & set(audit) and not (set(dev) | set(audit)) & gold_qids
 
     pm = {p["qid"]: p for p in plans}
-    out_dir = ROOT / "data/dev/execution_gold"
+    out_dir = ROOT / "data/curated/dev-legacy/execution_gold"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     def dump(qids: list[int], name: str, note: str) -> dict:

@@ -69,7 +69,7 @@ class EvalConfig:
     top_k_rerank: int = 10
     year_slack: int = 1
     gold_source: str = "proxy_v2"       # proxy_v2 | manual | manual_then_proxy
-    gold_manual_path: str = "data/dev/gold_v2.jsonl"
+    gold_manual_path: str = "data/curated/dev-legacy/gold_v2.jsonl"
     gold_raw_limit: int = 400
     gold_max_trusted: int = 60
     gold_max_tier: str = "T4_anycol_2gram"   # T1|T2|T3|T4 — nới tới đâu
@@ -194,7 +194,7 @@ def attribute_drop(conn, gold_uids: frozenset[str], intent, cfg: EvalConfig,
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _questions(root: Path) -> list[dict]:
-    p = root / "data/external/vifinqa/questions/questions.jsonl"
+    p = root / "data/raw/btc/questions/questions.jsonl"
     return [json.loads(l) for l in p.open(encoding="utf-8") if l.strip()]
 
 
@@ -230,11 +230,11 @@ def _build_gold_provider(cfg: EvalConfig, root: Path, conn, alias: dict):
 
 def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
             limit: int | None = None) -> int:
-    db = db_path or root / "artifacts/retrieval/work.db"
+    db = db_path or root / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
     if not db.is_file():
         print(f"✗ thiếu {db} — chạy tools/build_retrieval_workdb.sh")
         return 2
-    outdir = root / "artifacts/retrieval/evalkit"
+    outdir = root / "artifacts/runs/retrieval/evalkit"
     outdir.mkdir(parents=True, exist_ok=True)
     ck = outdir / cfg.checkpoint_name
 

@@ -2,7 +2,7 @@
 
 VÌ SAO PHẢI CÓ MỘT LỚP RIÊNG, KHÔNG PHẢI ĐỔI TÊN CSDL
 -----------------------------------------------------
-Đường nộp hiện tại đọc `data/silver/silver.sqlite` — **một thế hệ lược đồ khác**
+Đường nộp hiện tại đọc `artifacts/legacy/silver-pre-a6/silver.sqlite` — **một thế hệ lược đồ khác**
 (2 bảng, sinh 02/08) chứ không phải gói Silver A6 (19 bảng). Cám dỗ ở đây là
 trỏ đường nộp thẳng vào `work.db` rồi coi như xong. Làm thế là **giả lập tích
 hợp**: hai lược đồ khác nhau về cột, về khoá, về ngữ nghĩa `retrieval_ready`, và

@@ -47,7 +47,7 @@ def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="verify_no_behavior_change")
     ap.add_argument("--tag", default="base")
     ap.add_argument("--n", type=int, default=150, help="số câu phát lại")
-    ap.add_argument("--db", default="artifacts/retrieval/work.db")
+    ap.add_argument("--db", default="data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db")
     ap.add_argument("--bo-gold", action="store_true",
                     help="chỉ so xếp hạng, bỏ qua gold (khi cố ý sửa bộ dựng gold)")
     ns = ap.parse_args(argv)

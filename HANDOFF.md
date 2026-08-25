@@ -77,7 +77,7 @@ hẳn `False` (đo rồi và lệch). Đừng gộp hai cái.
 
 ```bash
 CFG=configs/vifinqa_silver_v1.yaml
-CORPUS=data/external/vifinqa/financial_statements     # ← KHÔNG phải .../vifinqa
+CORPUS=data/raw/btc/financial_statements     # ← KHÔNG phải .../vifinqa
 RC2=artifacts/rc2
 
 make dp-env-check
@@ -100,14 +100,14 @@ python -m data_pipeline.cli quality
 python -m data_pipeline.cli publish
 
 # C1 no-loss — chạy trên BUILD DB, KHÔNG phải gói slim
-python tools/no_loss_check.py --db data/silver/vifinqa/<BID>/silver.sqlite \
+python tools/no_loss_check.py --db data/processed/a6/<BID>/silver.sqlite \
                               --report $RC2/c1_no_loss.json --check-unicode-digits
 
 # sổ ca chưa giải quyết
-python tools/unresolved_registry.py --db data/silver/vifinqa/<BID>/silver.sqlite \
+python tools/unresolved_registry.py --db data/processed/a6/<BID>/silver.sqlite \
                               --report $RC2/unresolved.json --cases $RC2/unresolved.csv
 
-make dp-release       DB=data/silver/vifinqa/<BID>/silver.sqlite \
+make dp-release       DB=data/processed/a6/<BID>/silver.sqlite \
                       OUTPUT=$RC2/release REPORT_DIR=$RC2/release_report
 make dp-package       DIR=$RC2/release OUT=$RC2/silver_rc2.zip
 make dp-verify        PACKAGE=$RC2/silver_rc2.zip TYPE=release
@@ -118,7 +118,7 @@ rm -f $RC2/buildA/silver.sqlite ; rm -rf $RC2/buildB
 
 ### Ba thứ không được đảo
 
-1. **`INPUT` phải là `data/external/vifinqa/financial_statements`.** Trỏ vào
+1. **`INPUT` phải là `data/raw/btc/financial_statements`.** Trỏ vào
    thư mục cha gộp thêm 15 tệp `_codebase/prompts/*.txt` vào `corpus_hash` —
    hai nguồn sự thật cho cùng một đường dẫn. Xem RC2-016.
 2. **C0 trước `publish`.** Publish một bản dựng chưa chứng minh tất định là
@@ -128,7 +128,7 @@ rm -f $RC2/buildA/silver.sqlite ; rm -rf $RC2/buildB
 
 ### `OUTPUT` phải nằm ngoài cây `snapshot` quét
 
-`cmd_snapshot` quét `CORPUS.parent` = `data/external/vifinqa/`. `artifacts/rc2/…`
+`cmd_snapshot` quét `CORPUS.parent` = `data/raw/btc/`. `artifacts/rc2/…`
 nằm ngoài — an toàn. Nếu ai đổi `OUTPUT` vào trong `data/external/`, build A
 trở thành đầu vào của build B và **C0 đỏ với lý do sai** (giá trị giống hệt,
 chỉ UID lệch). Tự kiểm: `corpus_file_count` phải vẫn là `1973` trước build B.

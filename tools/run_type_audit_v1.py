@@ -36,7 +36,7 @@ from build_candidate_v1 import load_control, registry_labels  # noqa: E402
 
 def main() -> int:
     con = sqlite3.connect(
-        f"file:{ROOT/'artifacts/retrieval/work.db'}?mode=ro&immutable=1", uri=True)
+        f"file:{ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'}?mode=ro&immutable=1", uri=True)
     plans = {p["qid"]: p for p in (json.loads(l) for l in
              (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
     labs = registry_labels()

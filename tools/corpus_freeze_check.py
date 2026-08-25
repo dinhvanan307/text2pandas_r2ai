@@ -89,9 +89,9 @@ def _uid_namespace_from_config(cfg: Path) -> str | None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--root", default="data/external/vifinqa",
+    ap.add_argument("--root", default="data/raw/btc",
                     help="CORPUS.parent — gốc mà `cmd_snapshot` quét")
-    ap.add_argument("--baseline", default="data/bronze/manifest.json",
+    ap.add_argument("--baseline", default="artifacts/runs/a6/bronze/manifest.json",
                     help="manifest RC1 dùng làm mốc")
     ap.add_argument("--config", default="configs/vifinqa_silver_v1.yaml")
     ap.add_argument("--dataset", default="AIGuruTinix/ViFinQA")

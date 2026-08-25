@@ -7,7 +7,7 @@ extraction (period bị ép, nhãn bị cắt, scale normalize sai) sẽ đi th�
 
 Nhưng tài liệu GỐC vẫn còn trên đĩa:
 
-    data/external/vifinqa/financial_statements/<TICKER>/<YEAR>/<doc>/<doc>_extracted.txt
+    data/raw/btc/financial_statements/<TICKER>/<YEAR>/<doc>/<doc>_extracted.txt
 
 `evidence_ref` có dạng `DOC|line:N`, và `N` là **số dòng 1-based trong chính file
 extracted.txt đó**. Vì vậy mỗi gold operand truy được về **một dòng văn bản gốc**,
@@ -34,10 +34,10 @@ import sqlite3
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-GD = ROOT / "data/dev/answer_gold"
+GD = ROOT / "data/curated/dev-legacy/answer_gold"
 OUT = ROOT / "reports/163/gold"
-FS = ROOT / "data/external/vifinqa/financial_statements"
-WORK = ROOT / "artifacts/retrieval/work.db"
+FS = ROOT / "data/raw/btc/financial_statements"
+WORK = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 
 
 def shaf(p: Path) -> str:

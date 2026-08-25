@@ -90,11 +90,11 @@ def main() -> int:
     (R163 / "identity").mkdir(parents=True, exist_ok=True)
     ds = {
         "_schema": "DATA_AND_SOURCE_IDENTITY v1",
-        "work_db": {"path": "artifacts/retrieval/work.db",
+        "work_db": {"path": "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db",
                     "KHONG_GUI": "4,2 GB — packet chỉ gửi projection 40 QID",
-                    "bytes": (ROOT / "artifacts/retrieval/work.db").stat().st_size},
+                    "bytes": (ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db").stat().st_size},
         "tai_lieu_goc": {
-            "root": "data/external/vifinqa/financial_statements",
+            "root": "data/raw/btc/financial_statements",
             "dinh_dang_evidence_ref": "<DOC>|line:<N> với N là dòng 1-based trong "
                                       "<DOC>/<DOC>_extracted.txt",
             "KHONG_GUI": "379 MB — packet gửi excerpt + SHA256 từng tài liệu"},

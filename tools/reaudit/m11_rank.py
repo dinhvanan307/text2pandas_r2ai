@@ -1,14 +1,14 @@
 import json,sqlite3,os,collections,statistics
 D=json.load(open('/tmp/reaudit/refs300.json'))
-conn=sqlite3.connect('file:%s?mode=ro'%os.path.abspath('artifacts/retrieval/work.db'),uri=True)
+conn=sqlite3.connect('file:%s?mode=ro'%os.path.abspath('data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'),uri=True)
 u2r={};meta={}
 for u,ev,st,ro,nr,ty,yr in conn.execute("SELECT table_uid,evidence_ref,statement_type,execution_ready_obs,n_rows,ticker,doc_year FROM table_cards WHERE evidence_ref IS NOT NULL"):
     r=ev.replace('|line:','|'); u2r[u]=r; meta[r]=(st,ro or 0,nr or 0,ty,yr)
 G={}
-for l in open('data/dev/gold_v1.jsonl'):
+for l in open('data/curated/dev-legacy/gold_v1.jsonl'):
     r=json.loads(l)
     if r.get('gold_table_uids'): G[str(r['id'])]=set(u2r[u] for u in r['gold_table_uids'] if u in u2r)
-tang={str(r['id']):r['tang'] for r in (json.loads(l) for l in open('data/dev/gold_tay_sample_v2.jsonl') if l.strip())}
+tang={str(r['id']):r['tang'] for r in (json.loads(l) for l in open('data/curated/dev-legacy/gold_tay_sample_v2.jsonl') if l.strip())}
 Q=sorted(G)
 print("=== thu hang cua gold trong danh sach S2 (top-300) ===")
 for t in ('T1','T2','screen'):

@@ -158,7 +158,7 @@ def classify_intent(q: str, tickers: list[str], years: list[int],
 
 def build_plans() -> list[dict]:
     rows = [json.loads(l) for l in
-            (ROOT / "data/dev/so_hoc/phan_loai.jsonl").open(encoding="utf-8")]
+            (ROOT / "data/curated/dev-legacy/so_hoc/phan_loai.jsonl").open(encoding="utf-8")]
     plans = []
     for r in rows:
         q = r["question"]
@@ -191,7 +191,7 @@ def main() -> int:
 
     # entity/year deterministic check trên gold-45
     gold = [json.loads(l) for l in
-            (ROOT / "data/dev/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8")]
+            (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8")]
     gold = [g for g in gold if not g.get("_meta")]
     by_qid = {p["qid"]: p for p in plans}
     ent_ok = yr_ok = basis_ok = n45 = 0
@@ -211,7 +211,7 @@ def main() -> int:
             basis_ok += 1
 
     # bảng chéo intent × n_evidence của C0
-    zp = ROOT / "data/submissions/submission_P0I.zip"
+    zp = ROOT / "artifacts/submissions/legacy/submission_P0I.zip"
     with zipfile.ZipFile(zp) as z:
         sub = {r["id"]: len(r.get("evidence") or [])
                for r in json.loads(z.read("submission.json"))}

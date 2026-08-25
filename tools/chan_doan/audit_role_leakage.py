@@ -9,15 +9,15 @@ from gold_pool_v5 import vai_tro_chat
 from retrieval.alias_store import load_aliases
 from retrieval.evalkit.cli import _load_cfg
 from retrieval.question_intent import parse_intent
-conn=sqlite3.connect('file:%s?mode=ro'%os.path.expanduser('~/fast/artifacts/retrieval/work.db'),uri=True)
+conn=sqlite3.connect('file:%s?mode=ro'%os.path.expanduser('data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'),uri=True)
 M={}
 for u,ev,s,rt,yr in conn.execute("SELECT table_uid,evidence_ref,statement_type,row_terms,doc_year FROM table_cards WHERE evidence_ref IS NOT NULL"):
     M[ev.replace("|line:","|")]={"st":s,"rows":rt or "","yr":yr}
 u2r={u:ev.replace("|line:","|") for u,ev in conn.execute("SELECT table_uid,evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL")}
 gold={r["id"]:set(u2r[u] for u in r["gold_table_uids"] if u in u2r)
-      for r in (json.loads(l) for l in open("data/dev/gold_v1.jsonl") if l.strip()) if r.get("gold_table_uids")}
+      for r in (json.loads(l) for l in open("data/curated/dev-legacy/gold_v1.jsonl") if l.strip()) if r.get("gold_table_uids")}
 D=json.load(open("/tmp/refs60.json"))
-mau={r["id"]:r["question"] for r in (json.loads(l) for l in open("data/dev/gold_tay_sample_v2.jsonl") if l.strip())}
+mau={r["id"]:r["question"] for r in (json.loads(l) for l in open("data/curated/dev-legacy/gold_tay_sample_v2.jsonl") if l.strip())}
 cfg=_load_cfg("base", {}); alias=load_aliases(brands=cfg.brands)
 CTX={q:(set(v4.nhu_cau_cua(mau[q])), set(parse_intent(mau[q],alias).years or [])) for q in gold}
 P0B=set(json.load(open("/tmp/qid_p0b.json"))); P0D=set(json.load(open("/tmp/qid_p0d.json")))

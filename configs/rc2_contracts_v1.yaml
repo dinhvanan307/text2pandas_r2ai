@@ -489,7 +489,7 @@ amendments:
       nguyên ở RC2, xét lại ở RC3 khi RC2 đã có baseline riêng.
     risk_accepted: >
       `corpus_id` nhạy cảm với tệp KHÔNG thuộc corpus nằm cùng cây. Thêm hoặc
-      bớt một tệp rác trong data/external/vifinqa/ sẽ đổi `corpus_id`, đổi
+      bớt một tệp rác trong data/raw/btc/ sẽ đổi `corpus_id`, đổi
       `build_id`, và làm C0 đỏ với lý do gây hiểu nhầm.
     mitigation:
       - "Runbook §5 bước 3 bắt buộc kiểm corpus_file_count = 1973 trước build B."
@@ -508,7 +508,7 @@ amendments:
     supersede_reason: >
       AMD-03 (giữ nguyên scope) được duyệt KHI CHƯA có phương án C trên bàn.
       Sau khi đo lại, rủi ro của AMD-03 là hiện thực chứ không lý thuyết: cây
-      data/external/vifinqa/ từng có 6.258 tệp ở một thời điểm và 5.931 ở thời
+      data/raw/btc/ từng có 6.258 tệp ở một thời điểm và 5.931 ở thời
       điểm khác. Chỉ cần cache ghi thêm một .lock giữa build A và build B là
       corpus_id đổi -> build_id đổi -> C0 đỏ với lý do gây hiểu nhầm.
     design:

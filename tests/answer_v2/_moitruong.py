@@ -21,7 +21,7 @@ BA TẦNG TEST (doc 157 §B4)
     minimal integration  TEXT2PANDAS_WORK_DB=<v2>  — phải 0 failed, 0 silent-return
     full integration     work.db 4,2 GB            — TEAM_VERIFIED, ghi đúng nhãn
 
-Chọn DB theo thứ tự: `TEXT2PANDAS_WORK_DB` → `artifacts/retrieval/work.db`.
+Chọn DB theo thứ tự: `TEXT2PANDAS_WORK_DB` → `data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db`.
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-MAC_DINH = ROOT / "artifacts/retrieval/work.db"
+MAC_DINH = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 
 
 class BoQua(Exception):
@@ -56,7 +56,7 @@ def nhan_tang() -> str:
         return "unit-only (no DB)"
     if os.environ.get("TEXT2PANDAS_WORK_DB"):
         return f"minimal-db integration ({p.name})"
-    return "full-db integration (artifacts/retrieval/work.db)"
+    return "full-db integration (data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db)"
 
 
 def chay_chung(CA):

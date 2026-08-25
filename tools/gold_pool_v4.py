@@ -72,7 +72,7 @@ from retrieval.metric_hint import metric_codes_hint, statement_hint  # noqa: E40
 from retrieval.query_terms import content_terms, drop_terms  # noqa: E402
 from retrieval.question_intent import parse_intent        # noqa: E402
 
-DEV = ROOT / "data/dev"
+DEV = ROOT / "data/curated/dev-legacy"
 MAU = DEV / "gold_tay_sample_v2.jsonl"
 POOL_V3 = DEV / "gold_tay_pool_v3.jsonl"
 POOL_V4 = DEV / "gold_tay_pool_v4.jsonl"

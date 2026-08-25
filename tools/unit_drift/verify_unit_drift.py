@@ -32,7 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "reports/163/unit_drift"
-FS = ROOT / "data/external/vifinqa/financial_statements"
+FS = ROOT / "data/raw/btc/financial_statements"
 
 DON_VI = [("nghìn tỷ", 12), ("nghin ty", 12), ("tỷ đồng", 9), ("tỉ đồng", 9),
           ("triệu usd", 6), ("triệu đồng", 6), ("nghìn đồng", 3), ("đồng", 0)]
@@ -89,11 +89,11 @@ def main() -> int:
     (OUT / "source_unit_excerpts").mkdir(exist_ok=True)
 
     A = {r["id"]: r for r in json.loads(zipfile.ZipFile(
-        ROOT / "data/submissions/submission_P0I.zip").read("submission.json"))}
+        ROOT / "artifacts/submissions/legacy/submission_P0I.zip").read("submission.json"))}
     B = {r["id"]: r for r in json.loads(zipfile.ZipFile(
         Path("/tmp/replay_P0I.zip")).read("submission.json"))}
     a6 = {json.loads(l)["qid"]: json.loads(l) for l in
-          (ROOT / "data/dev/answer_a6/records_a6.jsonl").open(encoding="utf-8")
+          (ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl").open(encoding="utf-8")
           if l.strip()}
 
     qs = sorted(q for q in A if A[q].get("answer") != B[q].get("answer"))

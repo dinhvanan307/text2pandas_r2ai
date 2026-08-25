@@ -29,7 +29,7 @@ def main(argv):
     tu, den = (int(argv[0]), int(argv[1])) if len(argv) >= 2 else (1, 10 ** 9)
     cfg = _load_cfg("base", {})
     alias = load_aliases(brands=cfg.brands)
-    conn = sqlite3.connect(f"file:{os.path.expanduser('~/fast/artifacts/retrieval/work.db')}?mode=ro", uri=True)
+    conn = sqlite3.connect(f"file:{os.path.expanduser('data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db')}?mode=ro", uri=True)
     conn.execute("PRAGMA cache_size=-200000")
     s1 = HardFilterGenerator(basis_mode=cfg.basis_mode, year_slack=cfg.year_slack)
     s2 = Bm25StructuralRanker(alias, top_k=cfg.top_k_rank, use_hints=cfg.use_hints,
@@ -37,13 +37,13 @@ def main(argv):
     u2r = {u: (e or "").replace("|line:", "|") for u, e in
            conn.execute("SELECT table_uid,evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL")}
     qs = [json.loads(l) for l in
-          (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8") if l.strip()]
+          (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8") if l.strip()]
     # Chỉ fan-out cho các lớp THỰC SỰ cần nhiều ô. `lookup`/`multi_table`/`count`
     # dùng lại `/tmp/refs.json` — fan-out cho chúng chỉ tốn thời gian.
     LOP_CAN = {"ratio", "percentage_change", "difference", "sum", "average",
                "max_min", "argmax_year"}
     PL = {r["id"]: r["lop"] for r in (json.loads(l) for l in
-          (ROOT / "data/dev/so_hoc/phan_loai.jsonl").open(encoding="utf-8") if l.strip())}
+          (ROOT / "data/curated/dev-legacy/so_hoc/phan_loai.jsonl").open(encoding="utf-8") if l.strip())}
     cu_refs = json.loads(Path("/tmp/refs.json").read_text())
     done = json.loads(RA.read_text()) if RA.is_file() else {}
     n = 0

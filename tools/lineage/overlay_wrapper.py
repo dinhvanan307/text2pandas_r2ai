@@ -12,7 +12,7 @@ overlay chỉ *vá* các QID trong whitelist.
 Đây là điều kiện để mọi candidate sau này (U1, E1) có rollback thật: tắt cờ là
 ra lại đúng `fa27e15d…`.
 
-    python3 tools/lineage/overlay_wrapper.py --parent-zip data/submissions/submission_P0I.zip \
+    python3 tools/lineage/overlay_wrapper.py --parent-zip artifacts/submissions/legacy/submission_P0I.zip \
         --output-zip /tmp/p0i_noop.zip --report reports/163/lineage/overlay_noop_report.json
 """
 from __future__ import annotations
@@ -49,7 +49,7 @@ def canon(rows) -> bytes:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--parent-zip", type=Path,
-                    default=ROOT / "data/submissions/submission_P0I.zip")
+                    default=ROOT / "artifacts/submissions/legacy/submission_P0I.zip")
     ap.add_argument("--overlay", type=Path, default=None,
                     help="JSONL {qid, answer?, pandas_query?, evidence?}; "
                          "để trống = feature_off")

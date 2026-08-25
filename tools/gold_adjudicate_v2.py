@@ -33,7 +33,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "src"))
 from gold_pool_v5 import vai_tro_chat                        # noqa: E402
 
-DEV = ROOT / "data" / "dev"
+DEV = ROOT / "data" / "curated" / "dev-legacy"
 POOL = DEV / "gold_tay_pool_v7.jsonl"
 GOLD_V1 = DEV / "gold_v1.jsonl"
 GOLD_V2 = DEV / "gold_v2.jsonl"

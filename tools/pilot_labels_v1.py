@@ -27,7 +27,7 @@ import statistics
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-GOLD_DIR = ROOT / "data/dev/execution_gold"
+GOLD_DIR = ROOT / "data/curated/dev-legacy/execution_gold"
 SEL = GOLD_DIR / "dev60_selection.json"
 OUT = GOLD_DIR / "dev60_labels.jsonl"
 DOSSIER = GOLD_DIR / "dossiers_dev60"
@@ -65,7 +65,7 @@ def init() -> int:
                 "qid": q,
                 "_thu_tu": i,
                 "_la_pilot": i <= N_PILOT,
-                "_dossier": f"data/dev/execution_gold/dossiers_dev60/qid_{q:04d}.md",
+                "_dossier": f"data/curated/dev-legacy/execution_gold/dossiers_dev60/qid_{q:04d}.md",
                 "_cau_hoi": p["question"],
                 # ── ĐIỀN TỪ ĐÂY ────────────────────────────────────────────
                 "dap_an_gold": None,

@@ -1,12 +1,12 @@
 import json,sqlite3,os,collections
-D=json.load(open('artifacts/retrieval/reaudit/refs300.json'))
-conn=sqlite3.connect('file:%s?mode=ro'%os.path.abspath('artifacts/retrieval/work.db'),uri=True)
+D=json.load(open('artifacts/runs/retrieval/reaudit/refs300.json'))
+conn=sqlite3.connect('file:%s?mode=ro'%os.path.abspath('data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'),uri=True)
 u2r={u:ev.replace('|line:','|') for u,ev in conn.execute("SELECT table_uid,evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL")}
 G={}
-for l in open('data/dev/gold_v1.jsonl'):
+for l in open('data/curated/dev-legacy/gold_v1.jsonl'):
     r=json.loads(l)
     if r.get('gold_table_uids'): G[str(r['id'])]=set(u2r[u] for u in r['gold_table_uids'] if u in u2r)
-tang={str(r['id']):r['tang'] for r in (json.loads(l) for l in open('data/dev/gold_tay_sample_v2.jsonl') if l.strip())}
+tang={str(r['id']):r['tang'] for r in (json.loads(l) for l in open('data/curated/dev-legacy/gold_tay_sample_v2.jsonl') if l.strip())}
 Q=sorted(G)
 print("=== XAC SUAT TRUNG THEO KHOANG THU HANG (gold tay) ===")
 print("khoang | so slot | trung | p        | p/1.91 (uoc luong so gold BTC)")

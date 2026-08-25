@@ -16,7 +16,7 @@ from retrieval.filter_s1 import filter_tables            # noqa: E402
 from retrieval.question_intent import parse_intent       # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-DB = ROOT / "artifacts/retrieval/work.db"
+DB = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 
 
 def main() -> int:
@@ -26,7 +26,7 @@ def main() -> int:
     alias = yaml.safe_load((ROOT / "configs/retrieval/company_alias_v1.yaml")
                            .read_text(encoding="utf-8"))["aliases"]
     qs = [json.loads(l) for l in
-          (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8")]
+          (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8")]
     c = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
     c.execute("PRAGMA cache_size=-200000")
 

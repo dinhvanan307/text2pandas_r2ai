@@ -3,7 +3,7 @@
 
 corpus:
   id: vifinqa
-  root: data/external/vifinqa/financial_statements
+  root: data/raw/btc/financial_statements
   file_glob: "*/*/*/*.txt"
   encoding: utf-8
   line_ending: LF

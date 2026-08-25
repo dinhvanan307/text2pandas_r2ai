@@ -17,8 +17,8 @@ E = importlib.import_module("02_engine")
 from text2pandas.application.usecases.answer import write_long_csv          # noqa: E402
 from text2pandas.domain.rules.question import CompanyIndex, parse_question  # noqa: E402
 
-OCR = ROOT / "data/external/vifinqa/financial_statements"
-RA = ROOT / "data/dev/so_hoc"
+OCR = ROOT / "data/raw/btc/financial_statements"
+RA = ROOT / "data/curated/dev-legacy/so_hoc"
 DATA = RA / "data"
 GHI = RA / "records_sohoc.jsonl"
 _TABLE = re.compile(r"<table.*?</table>", re.S)
@@ -41,11 +41,11 @@ def main(argv):
     # Dùng truy hồi THEO Ô (bước 4) — top-N toàn cục thiếu bảng của từng năm.
     refs = json.loads(Path("/tmp/refs_cell.json").read_text())
     PL = {r["id"]: r for r in (json.loads(l) for l in (RA / "phan_loai.jsonl").open(encoding="utf-8") if l.strip())}
-    qs = [json.loads(l) for l in (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8") if l.strip()]
-    companies = CompanyIndex.from_csv(ROOT / "data/external/vifinqa/code_stock.csv")
-    card = sqlite3.connect("file:data/silver/card_index.sqlite?mode=ro", uri=True)
+    qs = [json.loads(l) for l in (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8") if l.strip()]
+    companies = CompanyIndex.from_csv(ROOT / "data/raw/btc/metadata/companies.csv")
+    card = sqlite3.connect("file:artifacts/legacy/silver-pre-a6/card_index.sqlite?mode=ro", uri=True)
     MU = {f"{d}|{ln}": ue for d, ln, ue in card.execute("SELECT doc_id,line_no,unit_exponent FROM card_meta")}
-    work = sqlite3.connect(f"file:{os.path.expanduser('~/fast/artifacts/retrieval/work.db')}?mode=ro", uri=True)
+    work = sqlite3.connect(f"file:{os.path.expanduser('data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db')}?mode=ro", uri=True)
     known = {r[0] for r in work.execute("SELECT DISTINCT ticker FROM documents WHERE ticker IS NOT NULL")}
 
     DATA.mkdir(parents=True, exist_ok=True)

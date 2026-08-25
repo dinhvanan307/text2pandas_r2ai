@@ -26,12 +26,12 @@ def main() -> int:
     alias = yaml.safe_load((ROOT / "configs/retrieval/company_alias_v1.yaml")
                            .read_text(encoding="utf-8"))["aliases"]
     qs = {q["id"]: q for q in (json.loads(l) for l in
-          (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8"))}
+          (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8"))}
     rows = [json.loads(l) for l in
-            (ROOT / "artifacts/retrieval/eval_retrieval.jsonl").open(encoding="utf-8") if l.strip()]
+            (ROOT / "artifacts/runs/retrieval/eval_retrieval.jsonl").open(encoding="utf-8") if l.strip()]
     mat = [r for r in rows if r["n_gold"] and r["n_gold"] <= 60
            and r["n_gold_cells"] < 400 and not r["in_s1"]]
-    c = sqlite3.connect("file:" + str(ROOT / "artifacts/retrieval/work.db") + "?mode=ro", uri=True)
+    c = sqlite3.connect("file:" + str(ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db") + "?mode=ro", uri=True)
     c.execute("PRAGMA cache_size=-300000")
     thu = Counter()
     for r in mat:

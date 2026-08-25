@@ -1,6 +1,6 @@
 """Semantic gold: artifact integrity + the parser fixes it drove.
 
-The gold set is `data/gold/semantic_gold.jsonl`, produced by TWO INDEPENDENT
+The gold set is `data/curated/gold/semantic_gold.jsonl`, produced by TWO INDEPENDENT
 MODEL PASSES with disjoint context. That is deliberately NOT called a human
 blinded recheck: two runs of one model share a prior, so their agreement bounds
 reliability from above and is not evidence of correctness. Every test here

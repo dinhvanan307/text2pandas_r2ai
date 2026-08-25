@@ -133,7 +133,7 @@ from retrieval.evalkit.report import (guard_single_config, load_rows,  # noqa: E
 from retrieval.evalkit.runner import EvalConfig, collect  # noqa: E402
 
 CFG_PATH = ROOT / "configs/retrieval/eval_v1.yaml"
-OUTDIR = ROOT / "artifacts/retrieval/evalkit"
+OUTDIR = ROOT / "artifacts/runs/retrieval/evalkit"
 
 
 def _load_cfg(tag: str, overrides: dict) -> EvalConfig:

@@ -8,8 +8,8 @@ import json, random
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-MAU  = ROOT / "data/dev/gold_tay_sample_v2.jsonl"
-RA   = ROOT / "data/dev/audit/mau_audit_nam.json"
+MAU  = ROOT / "data/curated/dev-legacy/gold_tay_sample_v2.jsonl"
+RA   = ROOT / "data/curated/dev-legacy/audit/mau_audit_nam.json"
 MOI_TANG = 15
 
 rows = [json.loads(l) for l in MAU.open(encoding="utf-8") if l.strip()]

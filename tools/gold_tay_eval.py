@@ -44,7 +44,7 @@ from retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
                                       HardFilterGenerator, IdentityReranker)
 from retrieval.question_intent import parse_intent        # noqa: E402
 
-DEV = ROOT / "data/dev"
+DEV = ROOT / "data/curated/dev-legacy"
 MAU = DEV / "gold_tay_sample_v2.jsonl"
 NHAN = DEV / "gold_v1.jsonl"
 KS = (1, 3, 5, 10)
@@ -75,8 +75,8 @@ def _khoi(ket: list[dict], khoa: str) -> dict:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="gold_tay_eval")
-    ap.add_argument("--db", default="artifacts/retrieval/work.db")
-    ap.add_argument("--out", default="artifacts/retrieval/evalkit/gold_tay_eval.json")
+    ap.add_argument("--db", default="data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db")
+    ap.add_argument("--out", default="artifacts/runs/retrieval/evalkit/gold_tay_eval.json")
     ns = ap.parse_args(argv)
 
     mau = {r["id"]: r for r in

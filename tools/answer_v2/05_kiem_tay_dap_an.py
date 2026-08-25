@@ -4,14 +4,14 @@ import json, os, random, re, sqlite3, sys, zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-conn = sqlite3.connect(f"file:{os.path.expanduser('~/fast/artifacts/retrieval/work.db')}?mode=ro", uri=True)
+conn = sqlite3.connect(f"file:{os.path.expanduser('data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db')}?mode=ro", uri=True)
 U2R = {u: (e or "").replace("|line:", "|") for u, e in
        conn.execute("SELECT table_uid,evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL")}
 GOLD = {r["id"]: {U2R[u] for u in r["gold_table_uids"] if u in U2R}
-        for r in (json.loads(l) for l in (ROOT / "data/dev/gold_v1.jsonl").open(encoding="utf-8") if l.strip())
+        for r in (json.loads(l) for l in (ROOT / "data/curated/dev-legacy/gold_v1.jsonl").open(encoding="utf-8") if l.strip())
         if r.get("gold_table_uids")}
-CU = {r["id"]: r for r in json.loads(zipfile.ZipFile(ROOT / "data/submissions/submission_P0E.zip").read("submission.json"))}
-MOI = {r["qid"]: r for r in (json.loads(l) for l in (ROOT / "data/dev/answer_v2/records.jsonl").open(encoding="utf-8") if l.strip())}
+CU = {r["id"]: r for r in json.loads(zipfile.ZipFile(ROOT / "artifacts/submissions/legacy/submission_P0E.zip").read("submission.json"))}
+MOI = {r["qid"]: r for r in (json.loads(l) for l in (ROOT / "data/curated/dev-legacy/answer_v2/records.jsonl").open(encoding="utf-8") if l.strip())}
 _CSV = re.compile(r"data/(.+)_line(\d+)\.csv$")
 
 

@@ -73,7 +73,7 @@ from retrieval.query_terms import _fold, content_terms, drop_terms  # noqa: E402
 from retrieval.question_intent import (BASIS_OF_SCOPE,  # noqa: E402
                                        parse_intent)
 
-DEV = ROOT / "data/dev"
+DEV = ROOT / "data/curated/dev-legacy"
 MAU = DEV / "gold_tay_sample_v2.jsonl"
 # P0-c: `sheet`/`stats`/`resolve`/`check` đọc pool v4 (hạn ngạch theo loại
 # báo cáo — xem `tools/gold_pool_v4.py` và `docs/83`). v3 giữ lại nguyên vẹn
@@ -759,7 +759,7 @@ def main(argv: list[str]) -> int:
     s.add_argument("--n", type=int, default=120)
     for ten in ("pool", "resolve", "check"):
         s = sub.add_parser(ten)
-        s.add_argument("--db", default="artifacts/retrieval/work.db")
+        s.add_argument("--db", default="data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db")
         if ten == "pool":
             s.add_argument("--tu", type=int, default=1)
             s.add_argument("--den", type=int, default=120)

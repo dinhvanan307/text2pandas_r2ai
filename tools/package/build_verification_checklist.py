@@ -179,7 +179,7 @@ def main() -> int:
     add("F2b", "§4 F2 / §11", "wrapper nhận trực tiếp P0I; feature_off canonical diff = 0",
         "lineage/overlay_noop_report.json",
         "python3 tools/lineage/overlay_wrapper.py --parent-zip "
-        "data/submissions/submission_P0I.zip --output-zip /tmp/p0i_noop.zip "
+        "artifacts/submissions/legacy/submission_P0I.zip --output-zip /tmp/p0i_noop.zip "
         "--report reports/163/lineage/overlay_noop_report.json",
         "VERIFIED" if ovl.get("GATE") == "FEATURE_OFF_NOOP_PASS" else "NOT_VERIFIED",
         "reports/163/lineage/overlay_noop_report.json",

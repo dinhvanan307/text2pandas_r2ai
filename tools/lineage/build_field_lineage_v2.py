@@ -29,7 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "reports/163/lineage"
-SUB = ROOT / "data/submissions"
+SUB = ROOT / "artifacts/submissions/legacy"
 TRUONG = ("answer", "pandas_query", "evidence")
 
 TANG = [("P0E", "GOC_CHUOI", SUB / "submission_P0E.zip"),
@@ -62,9 +62,9 @@ def main() -> int:
          for t, _, p in TANG}
     qids = sorted(z["P0I"])
 
-    p_a6 = ROOT / "data/dev/answer_a6/records_a6.jsonl"
-    p_sh = ROOT / "data/dev/so_hoc/records_sohoc.jsonl"
-    p_v3 = ROOT / "data/dev/answer_v2/records_v3.jsonl"
+    p_a6 = ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl"
+    p_sh = ROOT / "data/curated/dev-legacy/so_hoc/records_sohoc.jsonl"
+    p_v3 = ROOT / "data/curated/dev-legacy/answer_v2/records_v3.jsonl"
     a6 = {r["qid"]: r for r in jl(p_a6)} if p_a6.is_file() else {}
     sh_ok = {r.get("qid") or r.get("id") for r in jl(p_sh)
              if r.get("trang_thai") == "OK"} if p_sh.is_file() else set()

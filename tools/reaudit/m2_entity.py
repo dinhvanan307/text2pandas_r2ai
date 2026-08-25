@@ -7,7 +7,7 @@ from retrieval.subject import classify, pick_subject, QuestionMode
 import retrieval.subject as subj
 from retrieval.evalkit.cli import _load_cfg
 cfg=_load_cfg("base",{}); alias=load_aliases(brands=cfg.brands)
-Q=[json.loads(l) for l in open('data/external/vifinqa/questions/questions.jsonl') if l.strip()]
+Q=[json.loads(l) for l in open('data/raw/btc/questions/questions.jsonl') if l.strip()]
 print("so cau:",len(Q))
 names_of={t:([n] if isinstance(n,str) else list(n)) for t,n in alias.items()}
 

@@ -28,7 +28,7 @@ chặn thì mọi gói đều "không hợp lệ" và công cụ mất tác dụ
 Tầng kiểu là **thước đo tiến bộ**, không phải cổng. Nó tồn tại để trả lời câu
 "bản mới có tốt hơn bản cũ không" mà **không cần nhãn vàng**.
 
-    python tools/validate_submission.py data/submissions/submission_CARD.zip
+    python tools/validate_submission.py artifacts/submissions/legacy/submission_CARD.zip
     python tools/validate_submission.py new.zip old.zip --compare
     python tools/validate_submission.py x.zip --samples 10 --json reports/v.json
 """

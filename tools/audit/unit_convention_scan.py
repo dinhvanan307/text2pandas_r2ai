@@ -109,7 +109,7 @@ def he_so_query(q):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--zip", type=Path,
-                    default=ROOT / "data/submissions/submission_P0I.zip")
+                    default=ROOT / "artifacts/submissions/legacy/submission_P0I.zip")
     ap.add_argument("--out", type=Path, default=ROOT / "reports/167")
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)

@@ -8,9 +8,9 @@ import json, shutil, zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-CU = ROOT / "data/submissions/submission_P0G.zip"
-RA = ROOT / "data/submissions/submission_P0G2.zip"
-SH = ROOT / "data/dev/so_hoc"
+CU = ROOT / "artifacts/submissions/legacy/submission_P0G.zip"
+RA = ROOT / "artifacts/submissions/legacy/submission_P0G2.zip"
+SH = ROOT / "data/curated/dev-legacy/so_hoc"
 
 sh = {r["qid"]: r for r in (json.loads(l) for l in (SH / "records_sohoc.jsonl").open(encoding="utf-8") if l.strip())
       if r["trang_thai"] == "OK"}

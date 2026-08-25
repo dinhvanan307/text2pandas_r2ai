@@ -18,9 +18,9 @@ from retrieval.question_intent import parse_intent        # noqa: E402
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--db", default="artifacts/retrieval/work.db")
-    ap.add_argument("--bundle", default="artifacts/retrieval/reaudit/exp_gold_bundle.json")
-    ap.add_argument("--out", default="artifacts/retrieval/reaudit/e1_proxy_gap.json")
+    ap.add_argument("--db", default="data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db")
+    ap.add_argument("--bundle", default="artifacts/runs/retrieval/reaudit/exp_gold_bundle.json")
+    ap.add_argument("--out", default="artifacts/runs/retrieval/reaudit/e1_proxy_gap.json")
     ap.add_argument("--limit", type=int, default=0)
     a = ap.parse_args(argv)
 

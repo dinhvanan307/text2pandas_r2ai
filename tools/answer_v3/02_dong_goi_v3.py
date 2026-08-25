@@ -15,11 +15,11 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-NEN = ROOT / "data/submissions/submission_P0G2.zip"
-RA = ROOT / "data/submissions/submission_P0H.zip"
-REC = ROOT / "data/dev/answer_v3/records_v4.jsonl"
-DATA = ROOT / "data/dev/answer_v3/data"
-SOHOC = ROOT / "data/dev/so_hoc/records_sohoc.jsonl"
+NEN = ROOT / "artifacts/submissions/legacy/submission_P0G2.zip"
+RA = ROOT / "artifacts/submissions/legacy/submission_P0H.zip"
+REC = ROOT / "data/curated/dev-legacy/answer_v3/records_v4.jsonl"
+DATA = ROOT / "data/curated/dev-legacy/answer_v3/data"
+SOHOC = ROOT / "data/curated/dev-legacy/so_hoc/records_sohoc.jsonl"
 
 moi = {r["qid"]: r for r in (json.loads(l) for l in REC.open(encoding="utf-8") if l.strip())}
 zin = zipfile.ZipFile(NEN)

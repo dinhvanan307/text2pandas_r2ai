@@ -12,7 +12,7 @@ riêng, không được ép vào ×1 hay ×10⁶.
 
 Chạy trên CẢ HAI nguồn vì chúng khác nhau (drift 19/08 17:31):
   --source zip   : CSV nằm trong submission_P0I.zip  (bản ĐÃ CHẤM 0,1225)
-  --source disk  : data/dev/answer_a6/data/          (bản HIỆN TẠI trên đĩa)
+  --source disk  : data/curated/dev-legacy/answer_a6/data/          (bản HIỆN TẠI trên đĩa)
 """
 from __future__ import annotations
 
@@ -71,9 +71,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--source", choices=["zip", "disk"], default="zip")
     ap.add_argument("--zip", type=Path,
-                    default=ROOT / "data/submissions/submission_P0I.zip")
+                    default=ROOT / "artifacts/submissions/legacy/submission_P0I.zip")
     ap.add_argument("--disk", type=Path,
-                    default=ROOT / "data/dev/answer_a6/data")
+                    default=ROOT / "data/curated/dev-legacy/answer_a6/data")
     ap.add_argument("--out", type=Path, default=ROOT / "reports/167/csv_scale_audit")
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)

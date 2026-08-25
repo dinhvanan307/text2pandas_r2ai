@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from retrieval.normalize import ascii_compact                # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-CS = ROOT / "data/external/vifinqa/code_stock.csv"
+CS = ROOT / "data/raw/btc/metadata/companies.csv"
 OUT = ROOT / "configs/retrieval/company_alias_v1.yaml"
 
 # Cụm loại hình, cắt từ TRÁI. Xếp dài trước ngắn để "ngân hàng tmcp" được cắt
@@ -89,7 +89,7 @@ def main() -> int:
     keep, bo, comp = build()
     n = sum(len(v) for v in keep.values())
     lines = ["# Sinh bởi src/retrieval/build_alias.py — KHÔNG sửa tay.",
-             "# Nguồn: data/external/vifinqa/code_stock.csv (100 mã).",
+             "# Nguồn: data/raw/btc/metadata/companies.csv (100 mã).",
              "# Biến thể mơ hồ đã bị loại; xem `rejected` ở cuối.",
              f"version: 1", f"n_tickers: {len(keep)}", f"n_aliases: {n}", "aliases:"]
     for t in sorted(keep):

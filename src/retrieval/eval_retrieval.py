@@ -41,7 +41,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MODE = os.environ.get("BASIS_MODE", "soft")
 BRANDS = os.environ.get("BRANDS", "1") == "1"
 HINTS = os.environ.get("HINTS", "code_single")
-CK = ROOT / (f"artifacts/retrieval/eval_{MODE}"
+CK = ROOT / (f"artifacts/runs/retrieval/eval_{MODE}"
              f"{'_brand' if BRANDS else ''}"
              f"{'' if HINTS == 'none' else '_' + HINTS}.jsonl")
 KS = (1, 3, 5, 10, 20, 50)
@@ -56,7 +56,7 @@ def f2(p: float, r: float) -> float:
 
 
 def _questions() -> list[dict]:
-    p = ROOT / "data/external/vifinqa/questions/questions.jsonl"
+    p = ROOT / "data/raw/btc/questions/questions.jsonl"
     return [json.loads(l) for l in p.open(encoding="utf-8")]
 
 
@@ -75,7 +75,7 @@ def _done() -> set[int]:
 
 
 def collect() -> int:
-    db = ROOT / "artifacts/retrieval/work.db"
+    db = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
     if not db.is_file():
         print("✗ thiếu work.db — chạy tools/build_retrieval_workdb.sh")
         return 2

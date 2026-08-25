@@ -23,7 +23,7 @@ import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-WORK = ROOT / "artifacts/retrieval/work.db"
+WORK = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 
 
 def bo_dau(s: str) -> str:

@@ -40,7 +40,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-FS = ROOT / "data/external/vifinqa/financial_statements"
+FS = ROOT / "data/raw/btc/financial_statements"
 SRC = ROOT / "configs/retrieval/company_brand_v1.yaml"
 DST = ROOT / "configs/retrieval/company_brand_attested_v1.yaml"
 

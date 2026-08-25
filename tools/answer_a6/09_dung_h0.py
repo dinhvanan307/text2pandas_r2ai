@@ -6,9 +6,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "artifacts/execution/h0"
 OUT.mkdir(parents=True, exist_ok=True)
-W = sqlite3.connect('file:' + os.path.abspath(ROOT/'artifacts/retrieval/work.db') + '?mode=ro', uri=True)
-CARD = sqlite3.connect('file:' + os.path.abspath(ROOT/'data/silver/card_index.sqlite') + '?mode=ro', uri=True)
-OCR = ROOT / "data/external/vifinqa/financial_statements"
+W = sqlite3.connect('file:' + os.path.abspath(ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db') + '?mode=ro', uri=True)
+CARD = sqlite3.connect('file:' + os.path.abspath(ROOT/'artifacts/legacy/silver-pre-a6/card_index.sqlite') + '?mode=ro', uri=True)
+OCR = ROOT / "data/raw/btc/financial_statements"
 _TAB = re.compile(r"<table.*?</table>", re.S)
 
 
@@ -28,14 +28,14 @@ def hang_dau(html: str, k: int = 2) -> list[str]:
     return [re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", r)).strip()[:300] for r in rows]
 
 
-A6 = {r["qid"]: r for r in (json.loads(l) for l in (ROOT/"data/dev/answer_a6/records_a6.jsonl").open(encoding="utf-8"))}
-LG = {r["qid"]: r for r in (json.loads(l) for l in (ROOT/"data/dev/answer_a6/resolve_log.jsonl").open(encoding="utf-8"))}
-zg = zipfile.ZipFile(ROOT/"data/submissions/submission_P0G2.zip")
-zi = zipfile.ZipFile(ROOT/"data/submissions/submission_P0I.zip")
+A6 = {r["qid"]: r for r in (json.loads(l) for l in (ROOT/"data/curated/dev-legacy/answer_a6/records_a6.jsonl").open(encoding="utf-8"))}
+LG = {r["qid"]: r for r in (json.loads(l) for l in (ROOT/"data/curated/dev-legacy/answer_a6/resolve_log.jsonl").open(encoding="utf-8"))}
+zg = zipfile.ZipFile(ROOT/"artifacts/submissions/legacy/submission_P0G2.zip")
+zi = zipfile.ZipFile(ROOT/"artifacts/submissions/legacy/submission_P0I.zip")
 G = {r["id"]: r for r in json.loads(zg.read("submission.json"))}
 I = {r["id"]: r for r in json.loads(zi.read("submission.json"))}
 SOHOC = set()
-p = ROOT/"data/dev/so_hoc/records_sohoc.jsonl"
+p = ROOT/"data/curated/dev-legacy/so_hoc/records_sohoc.jsonl"
 if p.is_file():
     for l in p.open(encoding="utf-8"):
         r = json.loads(l)

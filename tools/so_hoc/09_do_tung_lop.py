@@ -4,11 +4,11 @@ import collections, json, zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SH = ROOT / "data/dev/so_hoc"
+SH = ROOT / "data/curated/dev-legacy/so_hoc"
 PL = {r["id"]: r for r in (json.loads(l) for l in (SH / "phan_loai.jsonl").open(encoding="utf-8") if l.strip())}
 RC = {r["qid"]: r for r in (json.loads(l) for l in (SH / "records_sohoc.jsonl").open(encoding="utf-8") if l.strip())}
-G = {r["id"]: r for r in json.loads(zipfile.ZipFile(ROOT / "data/submissions/submission_P0G.zip").read("submission.json"))}
-G2 = {r["id"]: r for r in json.loads(zipfile.ZipFile(ROOT / "data/submissions/submission_P0G2.zip").read("submission.json"))}
+G = {r["id"]: r for r in json.loads(zipfile.ZipFile(ROOT / "artifacts/submissions/legacy/submission_P0G.zip").read("submission.json"))}
+G2 = {r["id"]: r for r in json.loads(zipfile.ZipFile(ROOT / "artifacts/submissions/legacy/submission_P0G2.zip").read("submission.json"))}
 
 LOP = ("lookup", "ratio", "percentage_change", "difference", "sum", "average",
        "max_min", "argmax_year", "count", "multi_table")

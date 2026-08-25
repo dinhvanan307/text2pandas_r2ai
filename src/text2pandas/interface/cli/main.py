@@ -12,20 +12,26 @@ import shutil
 import sys
 from pathlib import Path
 
+from text2pandas.infrastructure.paths import ProjectPaths
+
 ROOT = Path(__file__).resolve().parents[4]
-CORPUS = ROOT / "data" / "external" / "vifinqa" / "financial_statements"
-QUESTIONS = ROOT / "data" / "external" / "vifinqa" / "questions" / "questions.jsonl"
-BRONZE = ROOT / "data" / "bronze"
+PROJECT_PATHS = ProjectPaths.from_repo_root(ROOT)
+CORPUS = PROJECT_PATHS.raw_btc / "financial_statements"
+QUESTIONS = PROJECT_PATHS.raw_btc / "questions" / "questions.jsonl"
+BRONZE = PROJECT_PATHS.artifact_root / "runs" / "a6" / "bronze"
 CATALOG_DB = BRONZE / "catalog.sqlite"
 INDEX_DB = BRONZE / "table_index.sqlite"
-SILVER_DB = ROOT / "data" / "silver" / "silver.sqlite"
-CARD_DB = ROOT / "data" / "silver" / "card_index.sqlite"
-CODE_STOCK = ROOT / "data" / "external" / "vifinqa" / "code_stock.csv"
-SUBMIT_DIR = ROOT / "data" / "submissions"
+SILVER_DB = PROJECT_PATHS.a6_snapshot("b3e9684004679ffb") / "silver.db"
+CARD_DB = (
+    PROJECT_PATHS.retrieval_snapshot("b3e9684004679ffb", "286973b134a189ee")
+    / "retrieval.db"
+)
+CODE_STOCK = PROJECT_PATHS.raw_btc / "metadata" / "companies.csv"
+SUBMIT_DIR = PROJECT_PATHS.artifact_root / "submissions"
 
 # Thư mục nhân bản trên đĩa CỤC BỘ. Bắt buộc: kho code nằm trên FUSE mount,
 # nơi SQLite không khoá được tệp và ném "disk I/O error" ngay ở lệnh đầu tiên.
-# Build ở đây rồi copy sang `data/bronze/` khi xong.
+# Build ở đây rồi copy sang `artifacts/runs/a6/bronze/` khi xong.
 SCRATCH = Path(os.environ.get("TEXT2PANDAS_SCRATCH", "/tmp/text2pandas_work"))
 
 
@@ -286,7 +292,8 @@ def cmd_package(args: argparse.Namespace) -> int:
         print(f"  bất biến answer == eval(query): {100*stat['matched']/stat['executed']:.2f}%")
     SUBMIT_DIR.mkdir(parents=True, exist_ok=True)
     _publish(zip_path, SUBMIT_DIR / zip_path.name)
-    print(f"  ZIP       : data/submissions/{zip_path.name}  ({zip_path.stat().st_size/1e6:.2f} MB)")
+    published = SUBMIT_DIR / zip_path.name
+    print(f"  ZIP       : {published.relative_to(ROOT)}  ({zip_path.stat().st_size/1e6:.2f} MB)")
     return 0 if val.ok else 1
 
 

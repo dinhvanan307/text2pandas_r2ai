@@ -40,11 +40,11 @@ if os.environ.get("LOC_COT") == "1":                    # bật bản ghi đè l
     _loc = importlib.import_module("06_loc_cot_phi_gia_tri")
     _loc.bat()
 
-OCR = ROOT / "data/external/vifinqa/financial_statements"
-CARD = ROOT / "data/silver/card_index.sqlite"
-WORK = Path(os.path.expanduser("~/fast/artifacts/retrieval/work.db"))
+OCR = ROOT / "data/raw/btc/financial_statements"
+CARD = ROOT / "artifacts/legacy/silver-pre-a6/card_index.sqlite"
+WORK = Path(os.path.expanduser("data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"))
 REFS = Path("/tmp/refs.json")
-RA = ROOT / "data/dev/answer_v2"
+RA = ROOT / "data/curated/dev-legacy/answer_v2"
 DATA = RA / ("data_v3" if os.environ.get("LOC_COT") == "1" else "data")
 GHI = RA / ("records_v3.jsonl" if os.environ.get("LOC_COT") == "1" else "records.jsonl")
 
@@ -68,8 +68,8 @@ def main(argv: list[str]) -> int:
     tu, den = (int(argv[0]), int(argv[1])) if len(argv) >= 2 else (1, 10 ** 9)
     refs = json.loads(REFS.read_text())
     qs = [json.loads(l) for l in
-          (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8") if l.strip()]
-    companies = CompanyIndex.from_csv(ROOT / "data/external/vifinqa/code_stock.csv")
+          (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8") if l.strip()]
+    companies = CompanyIndex.from_csv(ROOT / "data/raw/btc/metadata/companies.csv")
 
     card = sqlite3.connect(f"file:{CARD}?mode=ro", uri=True)
     META = {}

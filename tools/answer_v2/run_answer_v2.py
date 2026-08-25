@@ -45,10 +45,10 @@ import router_v1 as RT                 # noqa: E402
 import verifier as VF                  # noqa: E402
 from execution.answer_type_v1 import kiem, suy_hop_dong  # noqa: E402
 
-WORK = ROOT / "artifacts/retrieval/work.db"
+WORK = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 PLANS = ROOT / "evaluation/question_plans_1012.jsonl"
 REPORTS = ROOT / "reports/answer_v2"
-PARENT_DEFAULT = ROOT / "data/submissions/submission_P0I.zip"
+PARENT_DEFAULT = ROOT / "artifacts/submissions/legacy/submission_P0I.zip"
 
 # `value_kind` cho dimension algebra: mọi lá wave 1 đều là tiền.
 VALUE_KIND = {"money": "money"}
@@ -263,7 +263,7 @@ def main() -> int:
     # ── đóng ZIP ───────────────────────────────────────────────────────────
     if a.build_zip and ok:
         by = {t["qid"]: t for t in ok}
-        out = ROOT / f"data/submissions/submission_{a.candidate_id}.zip"
+        out = ROOT / f"artifacts/submissions/legacy/submission_{a.candidate_id}.zip"
         if out.exists() and not a.allow_overwrite:
             # FAIL CLOSED. Ghi đè âm thầm chính là cách `submission_AG1B_…zip`
             # ra đời với SHA của AG1 (0d207332…) — một artifact mang tên

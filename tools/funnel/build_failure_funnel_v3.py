@@ -95,13 +95,13 @@ def quy_trach_nhiem(st: dict) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--zip", type=Path,
-                    default=ROOT / "data/submissions/submission_P0I.zip")
+                    default=ROOT / "artifacts/submissions/legacy/submission_P0I.zip")
     ap.add_argument("--out", type=Path, default=ROOT / "reports/165/funnel_v3")
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
 
     gold = {r["qid"]: r for r in (json.loads(l) for l in
-            (ROOT / "data/dev/answer_gold/answer_gold_wave1_final.jsonl")
+            (ROOT / "data/curated/dev-legacy/answer_gold/answer_gold_wave1_final.jsonl")
             .open(encoding="utf-8") if l.strip())}
     plans = {r["qid"]: r for r in (json.loads(l) for l in
              (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8")

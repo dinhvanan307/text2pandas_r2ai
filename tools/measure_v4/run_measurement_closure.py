@@ -2,7 +2,7 @@
 """One command that regenerates every measurement-closure artifact.
 
     python3 tools/measure_v4/run_measurement_closure.py \
-        --submission-zip data/submissions/submission_P0I.zip \
+        --submission-zip artifacts/submissions/legacy/submission_P0I.zip \
         --out-dir artifacts/measurement_closure_v4
 
 Deterministic: rerunning produces byte-identical outputs (sorted keys, sorted

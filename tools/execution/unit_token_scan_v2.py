@@ -12,7 +12,7 @@ Khác v1 ở năm điểm:
 Phân loại dùng CHÍNH `unit_rule_v2` (mask + parse) nên bằng chứng và
 implementation không thể lệch nhau.
 
-    python3 unit_token_scan_v2.py --work-db artifacts/retrieval/work.db --out-dir .
+    python3 unit_token_scan_v2.py --work-db data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db --out-dir .
 """
 from __future__ import annotations
 

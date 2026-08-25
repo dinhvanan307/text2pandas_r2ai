@@ -19,7 +19,7 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-GOLD_DIR = ROOT / "data/dev/execution_gold"
+GOLD_DIR = ROOT / "data/curated/dev-legacy/execution_gold"
 MIN_PER_INTENT = 5          # khoá trong promotion_rule_v1.yaml
 
 INTENTS = ("lookup", "percentage_change", "difference", "sum",

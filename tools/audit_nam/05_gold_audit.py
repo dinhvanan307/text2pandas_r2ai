@@ -22,8 +22,8 @@ import json, os, sqlite3
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-AUD = ROOT / "data/dev/audit"
-DB = Path(os.path.expanduser("~/fast/artifacts/retrieval/work.db"))
+AUD = ROOT / "data/curated/dev-legacy/audit"
+DB = Path(os.path.expanduser("data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"))
 NGUONG = 0.5
 
 
@@ -39,7 +39,7 @@ def main() -> int:
     PXK = {r["id"]: r for r in (json.loads(l) for l in
            (AUD / "phan_xu_ky.jsonl").open(encoding="utf-8") if l.strip())}
     GOLD_CU = {r["id"]: r.get("gold_table_uids") or [] for r in (json.loads(l) for l in
-               (ROOT / "data/dev/gold_v1.jsonl").open(encoding="utf-8") if l.strip())}
+               (ROOT / "data/curated/dev-legacy/gold_v1.jsonl").open(encoding="utf-8") if l.strip())}
 
     ra = []
     for qid, r in sorted(PXK.items()):

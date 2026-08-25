@@ -157,7 +157,7 @@ def test_CANONICAL_FINAL_van_bao_phu_phan_finalize():
 @pytest.mark.parametrize("t", ["documents", "pages", "tables", "table_cards"])
 def test_bang_release_only_that_su_vang_trong_DB_ban_dung(t):
     """Khẳng định trên DỮ LIỆU THẬT, không chỉ trên hằng số."""
-    db = ROOT / "data" / "silver" / "vifinqa" / "b927c3e8f90aed74" / "silver.sqlite"
+    db = ROOT / "data" / "processed" / "a6" / "b927c3e8f90aed74" / "silver.sqlite"
     if not db.is_file():
         pytest.skip("MISSING ARTIFACT: DB bản dựng RC1 không có trong cây này")
     c = sqlite3.connect(f"file:{db}?mode=ro", uri=True)

@@ -7,11 +7,11 @@ import json, os, sys, zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-CU = ROOT / "data/submissions/submission_P0E.zip"
+CU = ROOT / "artifacts/submissions/legacy/submission_P0E.zip"
 V3 = len(sys.argv) > 1 and sys.argv[1] == "v3"
-RA = ROOT / ("data/submissions/submission_P0G.zip" if V3 else "data/submissions/submission_P0F.zip")
-REC = ROOT / ("data/dev/answer_v2/records_v3.jsonl" if V3 else "data/dev/answer_v2/records.jsonl")
-DATA = ROOT / ("data/dev/answer_v2/data_v3" if V3 else "data/dev/answer_v2/data")
+RA = ROOT / ("artifacts/submissions/legacy/submission_P0G.zip" if V3 else "artifacts/submissions/legacy/submission_P0F.zip")
+REC = ROOT / ("data/curated/dev-legacy/answer_v2/records_v3.jsonl" if V3 else "data/curated/dev-legacy/answer_v2/records.jsonl")
+DATA = ROOT / ("data/curated/dev-legacy/answer_v2/data_v3" if V3 else "data/curated/dev-legacy/answer_v2/data")
 
 moi = {r["qid"]: r for r in (json.loads(l) for l in REC.open(encoding="utf-8") if l.strip())}
 sub = json.loads(zipfile.ZipFile(CU).read("submission.json"))

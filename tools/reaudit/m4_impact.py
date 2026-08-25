@@ -3,7 +3,7 @@ sys.path.insert(0,'src')
 RC2=[70,413,416,419,422,435,534,594,774,788,790,791,797,800,819,853,942,955,963,979,987,991,1001,1012]
 RC1=[429,540,542]
 RC3=[767]
-Q=[json.loads(l) for l in open('data/external/vifinqa/questions/questions.jsonl') if l.strip()]
+Q=[json.loads(l) for l in open('data/raw/btc/questions/questions.jsonl') if l.strip()]
 YR=re.compile(r'(?<!\d)(20[0-2]\d)(?!\d)')
 import unicodedata
 def sp(s):
@@ -19,9 +19,9 @@ U=set(RC1)|set(RC2)|set(RC3)|set(RC4)
 print("hop cua 4 RC (khong trung):",len(U),"cau /1012 = %.1f%%"%(100*len(U)/1012))
 
 # giao voi gold tay
-sample={r['id']:r['tang'] for r in (json.loads(l) for l in open('data/dev/gold_tay_sample_v2.jsonl') if l.strip())}
+sample={r['id']:r['tang'] for r in (json.loads(l) for l in open('data/curated/dev-legacy/gold_tay_sample_v2.jsonl') if l.strip())}
 gold={}; unc={}
-for l in open('data/dev/gold_v1.jsonl'):
+for l in open('data/curated/dev-legacy/gold_v1.jsonl'):
     r=json.loads(l)
     if r.get('gold_table_uids'): gold[r['id']]=r
     else: unc[r['id']]=r

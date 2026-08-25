@@ -3,12 +3,12 @@ from __future__ import annotations
 import collections, json, os, sqlite3
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
-c = sqlite3.connect('file:'+os.path.abspath(ROOT/'artifacts/retrieval/work.db')+'?mode=ro', uri=True)
-card = sqlite3.connect('file:'+os.path.abspath(ROOT/'data/silver/card_index.sqlite')+'?mode=ro', uri=True)
+c = sqlite3.connect('file:'+os.path.abspath(ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db')+'?mode=ro', uri=True)
+card = sqlite3.connect('file:'+os.path.abspath(ROOT/'artifacts/legacy/silver-pre-a6/card_index.sqlite')+'?mode=ro', uri=True)
 UEXP = {}
 for d, ln, ue in card.execute("SELECT doc_id,line_no,unit_exponent FROM card_meta"):
     UEXP[f"{d}|{ln}"] = ue
-A6 = [json.loads(l) for l in (ROOT/"data/dev/answer_a6/records_a6.jsonl").open(encoding="utf-8")]
+A6 = [json.loads(l) for l in (ROOT/"data/curated/dev-legacy/answer_a6/records_a6.jsonl").open(encoding="utf-8")]
 mau = collections.Counter(); vidu = collections.defaultdict(list)
 for r in A6:
     pr = r.get("provenance")
@@ -38,4 +38,4 @@ for r in A6:
     if ue is not None and ue != pr["scale_exponent"]:
         xd[pr["scale_source"]] += 1
 for k, v in xd.most_common(): print(f"  {str(k):<20}{v:>5}")
-json.dump(dict(mau), open(ROOT/"data/dev/answer_a6/scale_audit.json", "w"), ensure_ascii=False)
+json.dump(dict(mau), open(ROOT/"data/curated/dev-legacy/answer_a6/scale_audit.json", "w"), ensure_ascii=False)

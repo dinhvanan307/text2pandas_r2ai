@@ -332,7 +332,7 @@ def main() -> int:
         rep["summary"]["why_blocked"] = (
             "Mệnh đề no-loss cốt lõi cần source_cells + grid_cells. DB slim "
             "release KHÔNG mang hai bảng này. Chạy C1 trên build DB "
-            "(data/silver/<ns>/<build_id>/silver.sqlite), không phải trên gói slim."
+            "(data/processed/a6/<ns>/<build_id>/silver.sqlite), không phải trên gói slim."
         )
 
     for c in checks:

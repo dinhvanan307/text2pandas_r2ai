@@ -20,7 +20,7 @@ runtime_terminal_stage (thứ tự kiểm):
     OK             toàn bộ khớp
 
 Chạy:
-    python3 tools/replay_submission_v1.py data/submissions/submission_P0I.zip
+    python3 tools/replay_submission_v1.py artifacts/submissions/legacy/submission_P0I.zip
 Exit 0 = mọi QID có trace; số liệu in ra stdout. Không exit lỗi theo mismatch —
 đây là dụng cụ ĐO (giống triết lý validate_submission tầng kiểu).
 """

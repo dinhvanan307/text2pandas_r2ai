@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-GD = ROOT / "data/dev/answer_gold"
+GD = ROOT / "data/curated/dev-legacy/answer_gold"
 
 
 def doc(p: Path) -> dict:

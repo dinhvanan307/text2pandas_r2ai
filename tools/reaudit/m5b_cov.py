@@ -1,5 +1,5 @@
 import sqlite3,os,collections
-conn=sqlite3.connect('file:%s?mode=ro'%os.path.abspath('artifacts/retrieval/work.db'),uri=True)
+conn=sqlite3.connect('file:%s?mode=ro'%os.path.abspath('data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'),uri=True)
 cur=conn.cursor()
 print("documents",cur.execute("SELECT COUNT(*) FROM documents").fetchone()[0],
       "| table_cards",cur.execute("SELECT COUNT(*) FROM table_cards").fetchone()[0],

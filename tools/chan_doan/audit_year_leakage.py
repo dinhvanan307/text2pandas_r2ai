@@ -8,13 +8,13 @@ import json, sys, os, sqlite3, collections, re
 sys.path.insert(0,"src"); sys.path.insert(0,"tools")
 from gold_pool_v5 import vai_tro_chat
 
-conn=sqlite3.connect('file:%s?mode=ro'%os.path.expanduser('~/fast/artifacts/retrieval/work.db'),uri=True)
+conn=sqlite3.connect('file:%s?mode=ro'%os.path.expanduser('data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'),uri=True)
 ROW={u:(r or "") for u,r in conn.execute("SELECT table_uid,row_terms FROM table_cards")}
 PER={u:(p or "") for u,p in conn.execute("SELECT table_uid,periods FROM table_cards")}
 
-MAU={r["id"]:r for r in (json.loads(l) for l in open("data/dev/gold_tay_sample_v2.jsonl") if l.strip())}
-POOL={r["id"]:r for r in (json.loads(l) for l in open("data/dev/gold_tay_pool_v5.jsonl") if l.strip())}
-GOLD={r["id"]:r["gold_table_uids"] for r in (json.loads(l) for l in open("data/dev/gold_v1.jsonl") if l.strip())
+MAU={r["id"]:r for r in (json.loads(l) for l in open("data/curated/dev-legacy/gold_tay_sample_v2.jsonl") if l.strip())}
+POOL={r["id"]:r for r in (json.loads(l) for l in open("data/curated/dev-legacy/gold_tay_pool_v5.jsonl") if l.strip())}
+GOLD={r["id"]:r["gold_table_uids"] for r in (json.loads(l) for l in open("data/curated/dev-legacy/gold_v1.jsonl") if l.strip())
       if r.get("gold_table_uids")}
 
 def tang(qid): return MAU[qid].get("tier") or MAU[qid].get("tang") or "?"

@@ -3,7 +3,7 @@
 against the parent, per cohort, per QID.
 
     python3 tools/measure_v4/run_pipeline_e2e.py \
-        --submission-zip data/submissions/submission_P0I.zip \
+        --submission-zip artifacts/submissions/legacy/submission_P0I.zip \
         --out-dir artifacts/pipeline_e2e_v4
 
 The parent's ``evidence`` list is used as the *candidate pool* (this round is

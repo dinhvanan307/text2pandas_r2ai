@@ -80,7 +80,7 @@ print(f"sqlite3             : {sqlite3.sqlite_version}")
 for m in ("yaml", "pytest", "pandas", "lxml", "pyarrow"):
     print(f"  {m:10s}        : {'có' if importlib.util.find_spec(m) else '—'}")
 PY
-    db="$ROOT/artifacts/retrieval/work.db"
+    db="$ROOT/data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
     if [[ -f "$db" ]]; then
       echo "work.db             : $(du -h "$db" | cut -f1)"
     else

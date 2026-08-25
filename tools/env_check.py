@@ -209,7 +209,7 @@ def _imports_report(root: Path) -> dict:
 
 def _corpus_root_from_config(cfg: Path) -> Path:
     """Đọc `corpus.root` từ config. Một nguồn sự thật, không có mặc định thứ hai."""
-    fallback = Path("data/external/vifinqa/financial_statements")
+    fallback = Path("data/raw/btc/financial_statements")
     if not cfg.is_file():
         return fallback
     try:
@@ -291,8 +291,8 @@ def main() -> int:
 
     # Gốc corpus phải ĐỌC TỪ CONFIG, không phải một mặc định riêng.
     #
-    # Bản đầu mặc định `data/external/vifinqa` trong khi config khai
-    # `data/external/vifinqa/financial_statements`. Chênh **15 tệp**: toàn bộ
+    # Bản đầu mặc định `data/raw/btc` trong khi config khai
+    # `data/raw/btc/financial_statements`. Chênh **15 tệp**: toàn bộ
     # `_codebase/prompts/*.txt` của ban tổ chức bị gộp vào băm.
     #
     # Hệ quả nặng hơn vẻ ngoài: `corpus_hash` khi đó KHÔNG mô tả corpus thật

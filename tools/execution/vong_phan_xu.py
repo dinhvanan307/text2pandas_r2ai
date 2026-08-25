@@ -19,7 +19,7 @@ def chay(*cmd, env=None):
 
 def con_uncertain() -> int:
     n = 0
-    for l in (ROOT / "data/dev/answer_a6/records_a6.jsonl").open(encoding="utf-8"):
+    for l in (ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl").open(encoding="utf-8"):
         r = json.loads(l)
         if (r.get("provenance") or {}).get("scale_UNCERTAIN"):
             n += 1

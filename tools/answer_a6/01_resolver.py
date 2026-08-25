@@ -42,12 +42,12 @@ from text2pandas.infrastructure.retrieval.index import tokenize              # n
 sys.path.insert(0, str(ROOT / "tools"))
 from execution.a6_identity import A6IdentityError, kiem_dinh_danh            # noqa: E402
 
-WORK = ROOT / "artifacts/retrieval/work.db"
-CARD = ROOT / "data/silver/card_index.sqlite"
+WORK = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
+CARD = ROOT / "artifacts/legacy/silver-pre-a6/card_index.sqlite"
 PHAN_XU = ROOT / "artifacts/execution/h0/unit_conflict_adjudication.jsonl"
-SUBG = ROOT / "data/submissions/submission_P0G2.zip"
-V4 = ROOT / "data/dev/answer_v3/records_v4.jsonl"          # đường HTML — FALLBACK
-RA = ROOT / "data/dev/answer_a6"
+SUBG = ROOT / "artifacts/submissions/legacy/submission_P0G2.zip"
+V4 = ROOT / "data/curated/dev-legacy/answer_v3/records_v4.jsonl"          # đường HTML — FALLBACK
+RA = ROOT / "data/curated/dev-legacy/answer_a6"
 DATA = RA / "data"
 GHI = RA / "records_a6.jsonl"
 LOG = RA / "resolve_log.jsonl"
@@ -287,9 +287,9 @@ def main(argv):
         uid2doc[u] = doc
     R = Resolver(c)
 
-    qs = [json.loads(l) for l in (ROOT / "data/external/vifinqa/questions/questions.jsonl")
+    qs = [json.loads(l) for l in (ROOT / "data/raw/btc/questions/questions.jsonl")
           .open(encoding="utf-8") if l.strip()]
-    companies = CompanyIndex.from_csv(ROOT / "data/external/vifinqa/code_stock.csv")
+    companies = CompanyIndex.from_csv(ROOT / "data/raw/btc/metadata/companies.csv")
     known = {r[0] for r in c.execute("SELECT DISTINCT ticker FROM documents WHERE ticker IS NOT NULL")}
 
     DATA.mkdir(parents=True, exist_ok=True)

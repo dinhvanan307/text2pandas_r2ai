@@ -10,17 +10,17 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from text2pandas.domain.rules.question import CompanyIndex, parse_question  # noqa: E402
 
-c = sqlite3.connect('file:' + os.path.abspath(ROOT / 'artifacts/retrieval/work.db') + '?mode=ro', uri=True)
+c = sqlite3.connect('file:' + os.path.abspath(ROOT / 'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db') + '?mode=ro', uri=True)
 ev2uid = {ev.replace("|line:", "|"): u for u, ev in c.execute(
     "SELECT table_uid, evidence_ref FROM table_cards WHERE evidence_ref IS NOT NULL")}
 known = {r[0] for r in c.execute("SELECT DISTINCT ticker FROM documents WHERE ticker IS NOT NULL")}
-companies = CompanyIndex.from_csv(ROOT / "data/external/vifinqa/code_stock.csv")
+companies = CompanyIndex.from_csv(ROOT / "data/raw/btc/metadata/companies.csv")
 Q = {q["id"]: q for q in (json.loads(l) for l in
-     (ROOT / "data/external/vifinqa/questions/questions.jsonl").open(encoding="utf-8") if l.strip())}
-A6 = {r["qid"]: r for r in (json.loads(l) for l in (ROOT / "data/dev/answer_a6/records_a6.jsonl").open(encoding="utf-8"))}
-HT = {r["qid"]: r for r in (json.loads(l) for l in (ROOT / "data/dev/answer_v3/records_v4.jsonl").open(encoding="utf-8"))}
+     (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8") if l.strip())}
+A6 = {r["qid"]: r for r in (json.loads(l) for l in (ROOT / "data/curated/dev-legacy/answer_a6/records_a6.jsonl").open(encoding="utf-8"))}
+HT = {r["qid"]: r for r in (json.loads(l) for l in (ROOT / "data/curated/dev-legacy/answer_v3/records_v4.jsonl").open(encoding="utf-8"))}
 G = {}
-for l in (ROOT / "data/dev/gold_v2.jsonl").open(encoding="utf-8"):
+for l in (ROOT / "data/curated/dev-legacy/gold_v2.jsonl").open(encoding="utf-8"):
     r = json.loads(l)
     if r.get("gold_table_uids"):
         G[r["id"]] = set(r["gold_table_uids"])
@@ -88,4 +88,4 @@ for qid, kind, av, hv, a, h in vd[:8]:
           f" ky={pr['period_end']}({pr['period_source']})")
     print(f"        A6 row={pr['row_path'][:52]!r}")
     print(f"        HTML query={ (h.get('pandas_query') or '')[:96] }")
-json.dump({k: v for k, v in ty.items()}, open(ROOT / "data/dev/answer_a6/doi_chieu.json", "w"))
+json.dump({k: v for k, v in ty.items()}, open(ROOT / "data/curated/dev-legacy/answer_a6/doi_chieu.json", "w"))
