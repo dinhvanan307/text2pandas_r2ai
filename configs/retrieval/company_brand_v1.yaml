@@ -9,7 +9,7 @@
 # LUẬT NHẬN MỘT BÍ DANH
 #   1. dạng nén phải dài ≥ 5 ký tự — ngắn hơn quá dễ khớp nhầm trong câu;
 #   2. không được là chuỗi con của bí danh mã khác (kiểm bằng
-#      `src/retrieval/check_brand.py`, chạy trong test);
+#      `src/text2pandas/pipelines/retrieval/check_brand.py`, chạy trong test);
 #   3. thêm vào KHÔNG được làm tụt candidate recall trên 1.012 câu.
 #
 # Bí danh cố ý KHÔNG thêm, ghi lại để lần sau không ai thêm lại:

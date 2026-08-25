@@ -34,10 +34,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from retrieval.evalkit.metrics import (f2_at_k, f2_at_policy,  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.metrics import (f2_at_k, f2_at_policy,  # noqa: E402
                                        gold_size_stats, hit_rate_at_policy,
                                        metric_block)
-from retrieval.evalkit.report import (guard_single_config, load_rows,  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.report import (guard_single_config, load_rows,  # noqa: E402
                                       policy_n_map, to_outcomes)
 
 KS = (1, 3, 5, 10, 20, 50)

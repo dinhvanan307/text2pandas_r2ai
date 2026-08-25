@@ -3,15 +3,9 @@
 Rule adopted after the 75.1% false-claim post-mortem: no detector ships
 without a negative test.
 """
-import sys
-from pathlib import Path
+import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools" / "measure_v4"))
-
-import pytest  # noqa: E402
-
-from unitlex import (  # noqa: E402
+from text2pandas.domain.units.lexicon import (
     MONEY, PERCENT, RATIO, COUNT, SHARES, UNKNOWN,
     parse_raw_number, scan_unit, scan_question_unit,
     storage_ratio, snap_power_of_ten,

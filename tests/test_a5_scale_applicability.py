@@ -9,12 +9,12 @@ from decimal import Decimal
 import pytest
 import yaml
 
-from data_pipeline.models import ValueKind
-from data_pipeline.number_parser import (
+from text2pandas.pipelines.a6.models import ValueKind
+from text2pandas.pipelines.a6.number_parser import (
     PERCENT_ABS_MAX,
     is_percent_value_implausible,
 )
-from data_pipeline.readiness import load_policy
+from text2pandas.pipelines.a6.readiness import load_policy
 
 POL = load_policy()
 COND = [c for c in POL.raw["confidence"]["low_if_conditions"] if "scale_source" in c]

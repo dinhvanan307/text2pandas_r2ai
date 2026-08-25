@@ -31,12 +31,12 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from retrieval.evalkit.runner import SCHEMA_VERSION  # noqa: E402
-from retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.runner import SCHEMA_VERSION  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
                                       HardFilterGenerator)
-from retrieval.pipeline import run  # noqa: E402
-from retrieval.query_terms import content_terms, drop_terms  # noqa: E402
-from retrieval.question_intent import parse_intent  # noqa: E402
+from text2pandas.pipelines.retrieval.pipeline import run  # noqa: E402
+from text2pandas.pipelines.retrieval.query_terms import content_terms, drop_terms  # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent  # noqa: E402
 
 ALIAS = {"VNM": ["Công ty Cổ phần Sữa Việt Nam", "Vinamilk"]}
 CAU = "Doanh thu thuần của Công ty Cổ phần Sữa Việt Nam năm 2023 là bao nhiêu?"
@@ -163,7 +163,7 @@ def test_luat_drop_chi_dinh_nghia_o_dung_mot_cho():
     """Chống trôi dạt bằng CẤU TRÚC: chỉ được có một `def drop_terms`, và không
     tệp nào khác được tự dựng lại luật đó."""
     dinh_nghia = []
-    for p in sorted((ROOT / "src/retrieval").rglob("*.py")):
+    for p in sorted((ROOT / "src/text2pandas/pipelines/retrieval").rglob("*.py")):
         tree = ast.parse(p.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef) and node.name in (
@@ -171,7 +171,7 @@ def test_luat_drop_chi_dinh_nghia_o_dung_mot_cho():
                 dinh_nghia.append(str(p.relative_to(ROOT)))
     # Không ghim `lineno`: nó đỏ mỗi lần sửa chú thích phía trên, và một test đỏ
     # vì lý do vô nghĩa là một test sẽ bị bỏ qua.
-    assert dinh_nghia == ["src/retrieval/query_terms.py"], dinh_nghia
+    assert dinh_nghia == ["src/text2pandas/pipelines/retrieval/query_terms.py"], dinh_nghia
 
 
 def test_runner_truyen_alias_vao_ranker():
@@ -181,7 +181,7 @@ def test_runner_truyen_alias_vao_ranker():
     Chấp nhận CẢ HAI dạng: `alias` vị trí (dạng hiện tại, bắt buộc) hoặc
     `alias=` keyword (dạng cũ) — test này khoá SỰ CÓ MẶT, không khoá phong cách.
     """
-    tree = ast.parse((ROOT / "src/retrieval/evalkit/runner.py")
+    tree = ast.parse((ROOT / "src/text2pandas/pipelines/retrieval/evalkit/runner.py")
                      .read_text(encoding="utf-8"))
     goi = [n for n in ast.walk(tree)
            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
@@ -198,12 +198,12 @@ def test_runner_truyen_alias_vao_ranker():
 
 # Các module quyết định S1+S2 trả về CÁI GÌ và theo THỨ TỰ NÀO.
 _MODULE_HANH_VI = (
-    "src/retrieval/query_terms.py",
-    "src/retrieval/filter_s1.py",
-    "src/retrieval/rank_s2.py",
-    "src/retrieval/metric_hint.py",
-    "src/retrieval/question_intent.py",
-    "src/retrieval/evalkit/stages.py",
+    "src/text2pandas/pipelines/retrieval/query_terms.py",
+    "src/text2pandas/pipelines/retrieval/filter_s1.py",
+    "src/text2pandas/pipelines/retrieval/rank_s2.py",
+    "src/text2pandas/pipelines/retrieval/metric_hint.py",
+    "src/text2pandas/pipelines/retrieval/question_intent.py",
+    "src/text2pandas/pipelines/retrieval/evalkit/stages.py",
 )
 
 # fingerprint ↔ SCHEMA_VERSION. Đổi code hành vi ⇒ đổi CẢ HAI.
@@ -218,8 +218,11 @@ _MODULE_HANH_VI = (
 #   dce65cd2bfaf25e0  P0-4 · thêm `stop_mode` ("fold" mặc định = hành vi cũ,
 #                     "dau" sửa va chạm bỏ dấu của STOP). Trung tính ở mặc
 #                     định — verify_no_behavior_change --tag base ĐỒNG NHẤT.
+#   89cd3974d9ad7579  Folder refactor: chỉ đổi namespace/path module sang
+#                     `text2pandas.pipelines.retrieval`; AST hành vi giữ nguyên.
 _FINGERPRINT = {
     "evalkit-2": "dce65cd2bfaf25e0",
+    "evalkit-3": "89cd3974d9ad7579",
 }
 
 _FIELD = {ast.Constant: "value", ast.Name: "id", ast.Attribute: "attr",

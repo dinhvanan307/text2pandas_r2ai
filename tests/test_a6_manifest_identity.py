@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from data_pipeline.release import READINESS_VERSION, _identity_from_build_meta
+from text2pandas.pipelines.a6.release import READINESS_VERSION, _identity_from_build_meta
 
 _sp = _u.spec_from_file_location(
     "_vp", Path(__file__).resolve().parents[1] / "tools" / "verify_package.py")

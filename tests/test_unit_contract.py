@@ -8,7 +8,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import pytest  # noqa: E402
 
-from text2pandas.answer_pipeline.units import (  # noqa: E402
+from text2pandas.pipelines.answering.units import (  # noqa: E402
     COUNT, MONEY, PERCENT, RATIO, SHARES, UNKNOWN,
     ConversionStatus, Quantity, Reason, Unit,
     compatible, conversion_factor, convert, query_factor,
@@ -168,7 +168,7 @@ def _executable_source(path: Path) -> str:
     return src
 
 
-PKG = ROOT / "src" / "text2pandas" / "answer_pipeline"
+PKG = ROOT / "src" / "text2pandas" / "pipelines" / "answering"
 
 
 # Guard scope, corrected after review 171 §7.3: banning every "1e6" in the
@@ -224,8 +224,8 @@ def test_no_qid_whitelist_in_the_package():
 # 23 questions in the corpus ask explicitly for "điểm phần trăm". A percentage
 # and a difference of percentages are different quantities; conflating them is
 # the same class of error as conflating triệu with tỷ.
-from text2pandas.answer_pipeline.units import PERCENT_POINT  # noqa: E402
-from text2pandas.answer_pipeline.ir import (  # noqa: E402
+from text2pandas.pipelines.answering.units import PERCENT_POINT  # noqa: E402
+from text2pandas.pipelines.answering.ir import (  # noqa: E402
     SUBTRACT as _SUB, DIVIDE as _DIV, GROWTH as _GROW, AVG as _AVG,
     result_dimension as _rd,
 )
@@ -266,5 +266,5 @@ def test_average_of_percentages_is_still_percent():
 def test_basis_point_is_declared_out_of_scope():
     """No corpus question asks for bps; the contract must not invent a unit
     it cannot validate. Adding BASIS_POINT requires corpus evidence first."""
-    from text2pandas.answer_pipeline.units import DIMENSIONS
+    from text2pandas.pipelines.answering.units import DIMENSIONS
     assert "BASIS_POINT" not in DIMENSIONS

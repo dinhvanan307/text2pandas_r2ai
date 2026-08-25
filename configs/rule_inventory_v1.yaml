@@ -18,7 +18,7 @@
 #   informational         ghi nhận trạng thái hợp lệ, không hạ readiness
 
 inventory_version: "1.0"
-source_of_truth: src/data_pipeline/quality.py
+source_of_truth: src/text2pandas/pipelines/a6/quality.py
 supersedes_scope: >
   Mở rộng `active_rule_inventory` của rc2_contracts_v1.yaml từ 14 rule đã nổ
   trên RC1 lên toàn bộ 26 rule mà mã có thể phát ra.

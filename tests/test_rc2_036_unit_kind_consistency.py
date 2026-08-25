@@ -24,11 +24,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from data_pipeline.models import UnitKind, ValueKind          # noqa: E402
-from data_pipeline.number_parser import (                     # noqa: E402
+from text2pandas.pipelines.a6.models import UnitKind, ValueKind          # noqa: E402
+from text2pandas.pipelines.a6.number_parser import (                     # noqa: E402
     _explicit_share_count_column, classify_value_kind,
 )
-from data_pipeline.unit_resolver import resolve_unit          # noqa: E402
+from text2pandas.pipelines.a6.unit_resolver import resolve_unit          # noqa: E402
 
 
 # ── RC2-036 · money_view chặn từ khoá nhãn lật đơn vị ─────────────────────
@@ -134,7 +134,7 @@ def test_so_qua_lon_tren_cot_co_phieu_khong_phai_dem():
 # ── đường gọi thật trong observation_builder ──────────────────────────────
 
 def test_observation_builder_dung_ban_don_vi_danh_cho_o_TIEN():
-    src = (ROOT / "src" / "data_pipeline" / "observation_builder.py").read_text(
+    src = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "observation_builder.py").read_text(
         encoding="utf-8")
     assert "col_unit_money" in src
     assert "money_view=True" in src
@@ -143,6 +143,6 @@ def test_observation_builder_dung_ban_don_vi_danh_cho_o_TIEN():
 
 
 def test_semantic_version_da_bump():
-    src = (ROOT / "src" / "data_pipeline" / "observation_builder.py").read_text(
+    src = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "observation_builder.py").read_text(
         encoding="utf-8")
     assert 'SEMANTIC_VERSION = "1.4"' in src

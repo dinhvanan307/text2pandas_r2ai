@@ -22,6 +22,9 @@ dependencies = [
   "lxml>=6,<7",      # html_parser -> observation_builder: LÕI, không tuỳ chọn (RC2-021)
 ]
 
+[project.scripts]
+text2pandas = "text2pandas.interface.cli.main:main"
+
 [project.optional-dependencies]
 # Nhóm tách rời để cài đúng thứ cần cho từng giai đoạn.
 parsing  = []   # lxml ĐÃ chuyển sang dependencies lõi (RC2-021) — giữ rỗng có chủ đích

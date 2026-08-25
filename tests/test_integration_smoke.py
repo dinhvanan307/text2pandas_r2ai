@@ -30,7 +30,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from retrieval.submission_adapter import (MAX_N,  # noqa: E402
+from text2pandas.pipelines.retrieval.submission_adapter import (MAX_N,  # noqa: E402
                                           RetrievalToSubmission,
                                           to_submission_ref)
 

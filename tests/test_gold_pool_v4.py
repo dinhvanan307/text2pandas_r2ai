@@ -27,7 +27,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import gold_tay as g3                                       # noqa: E402
 from gold_pool_v4 import (PER_CELL_BASE, PER_NEED, _bo_dau,  # noqa: E402
                           _co_cum, _vai_tro, build_pool_v4, nhu_cau_cua)
-from retrieval.question_intent import parse_intent           # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent           # noqa: E402
 
 ALIAS = {t: [f"Công ty Cổ phần Số {t}"] for t in
          ("VNM", "HPG", "MSN", "DBC", "QNS", "OGC", "ASM", "MPC")}

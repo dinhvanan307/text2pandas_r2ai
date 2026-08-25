@@ -1,6 +1,6 @@
 """V+ bước 1 · Dựng lại danh sách xếp hạng đầy đủ cho 1.012 câu.
 
-Chỉ đọc. `src/retrieval/**` không đổi. Dùng đúng đường S0→S1→S2→S3(identity)
+Chỉ đọc. `src/text2pandas/pipelines/retrieval/**` không đổi. Dùng đúng đường S0→S1→S2→S3(identity)
 mà `submission_adapter` dùng, độ sâu 300 để cả hai nhánh X (cap 30) và Z
 (cap 10) đều lấy được từ CÙNG một thứ tự.
 
@@ -21,11 +21,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from retrieval.alias_store import load_aliases                 # noqa: E402
-from retrieval.evalkit.cli import _load_cfg                    # noqa: E402
-from retrieval.evalkit.stages import (Bm25StructuralRanker,    # noqa: E402
+from text2pandas.pipelines.retrieval.alias_store import load_aliases                 # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg                    # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker,    # noqa: E402
                                       HardFilterGenerator)
-from retrieval.question_intent import parse_intent             # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent             # noqa: E402
 
 OUT = ROOT / "artifacts" / "runs" / "retrieval" / "vplus" / "refs_1012.json"
 DEPTH = 300

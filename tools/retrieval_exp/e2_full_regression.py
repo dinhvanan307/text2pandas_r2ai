@@ -6,8 +6,8 @@ from collections import Counter
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
-from retrieval.evalkit.cli import _load_cfg          # noqa: E402
-from retrieval.evalkit.runner import SCHEMA_VERSION  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg          # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.runner import SCHEMA_VERSION  # noqa: E402
 EK = ROOT / "artifacts/runs/retrieval/evalkit"
 
 

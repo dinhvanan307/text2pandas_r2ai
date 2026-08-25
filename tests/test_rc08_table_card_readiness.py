@@ -26,8 +26,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from data_pipeline.readiness import retrieval_ready_expr  # noqa: E402
-from data_pipeline.release_schema import (  # noqa: E402
+from text2pandas.pipelines.a6.readiness import retrieval_ready_expr  # noqa: E402
+from text2pandas.pipelines.a6.release_schema import (  # noqa: E402
     RELEASE_CARD_DDL, RELEASE_DDL)
 
 CONTRACT = ROOT / "configs" / "rc2_contracts_v1.yaml"
@@ -74,7 +74,7 @@ def test_dinh_nghia_giu_TRON_ca_hai_y(db):
 
 def test_release_py_KHONG_con_tu_dinh_nghia(db):
     """Chống hồi quy ở mức nguồn — biểu thức cũ không được quay lại."""
-    src = (ROOT / "src" / "data_pipeline" / "release.py").read_text(encoding="utf-8")
+    src = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "release.py").read_text(encoding="utf-8")
     assert 'pstatus == "ok" and stype != "toc"' not in src
     assert "retrieval_ready_expr" in src
 

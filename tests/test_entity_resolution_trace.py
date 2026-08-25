@@ -7,12 +7,12 @@ Bộ test này chia làm hai loại, và sự phân biệt là chủ ý:
     xanh bây giờ và phải xanh mãi, vì chúng mô tả hợp đồng chứ không mô tả lỗi.
 
   · **Test hành vi mong muốn** — đánh dấu `xfail(strict=True)`. Chúng ĐỎ trong
-    ý nghĩa "đã biết là chưa đúng", và ngay khi ai đó sửa `src/retrieval/**`
+    ý nghĩa "đã biết là chưa đúng", và ngay khi ai đó sửa `src/text2pandas/pipelines/retrieval/**`
     thì `strict=True` biến chúng thành *unexpected pass* ⇒ pytest thất bại ⇒
     người sửa buộc phải gỡ nhãn `xfail`. Cách này ghi lại nợ kỹ thuật mà không
     bao giờ để nó chìm.
 
-P0-c KHÔNG sửa `src/retrieval/**`. Đây là hồ sơ truy vết, không phải bản vá.
+P0-c KHÔNG sửa `src/text2pandas/pipelines/retrieval/**`. Đây là hồ sơ truy vết, không phải bản vá.
 
 Alias dùng ở đây chép nguyên văn từ `configs/retrieval/company_alias_v1.yaml`
 và `company_brand_v1.yaml` (chép chứ không nạp, để test chạy được ở mọi máy kể
@@ -29,10 +29,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from retrieval.normalize import (ascii_compact,  # noqa: E402
+from text2pandas.pipelines.retrieval.normalize import (ascii_compact,  # noqa: E402
                                  company_aliases, ticker_mentioned)
-from retrieval.question_intent import parse_intent  # noqa: E402
-from retrieval.subject import QuestionMode, classify, _plain  # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent  # noqa: E402
+from text2pandas.pipelines.retrieval.subject import QuestionMode, classify, _plain  # noqa: E402
 
 # Chép từ configs/retrieval/company_alias_v1.yaml (+ brand_v1 cho ABB).
 ALIAS = {

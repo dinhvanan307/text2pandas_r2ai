@@ -117,7 +117,7 @@ def test_thieu_moc_thi_NOT_VERIFIED_chu_khong_phai_PASS(tmp_path):
 
 def test_dung_CHINH_data_pipeline_manifest_khong_cai_lai_thuat_toan():
     src = (ROOT / "tools" / "corpus_freeze_check.py").read_text(encoding="utf-8")
-    assert "from data_pipeline.manifest import" in src
+    assert "from text2pandas.pipelines.a6.manifest import" in src
     assert "build_manifest" in src and "compute_corpus_id" in src
 
 

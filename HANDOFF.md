@@ -96,8 +96,8 @@ make dp-rebuild-check BUILD_A=$RC2/buildA BUILD_B=$RC2/buildB \
                       REPORT=$RC2/rebuild_check.json
 
 # quality → publish (shell của build A)
-python -m data_pipeline.cli quality
-python -m data_pipeline.cli publish
+python -m text2pandas.pipelines.a6.cli quality
+python -m text2pandas.pipelines.a6.cli publish
 
 # C1 no-loss — chạy trên BUILD DB, KHÔNG phải gói slim
 python tools/no_loss_check.py --db data/processed/a6/<BID>/silver.sqlite \
@@ -154,8 +154,8 @@ env -i PATH="$PATH" HOME="$HOME" PYTHONHASHSEED=0 TZ=UTC LC_ALL=C.UTF-8 \
     --output "$SMK/B" --allow-low-disk
 python tools/rebuild_check.py --build-a "$SMK/A" --build-b "$SMK/B" \
     --report "$SMK/rebuild_check.json"
-DATA_PIPELINE_SCRATCH=$SMK/A python -m data_pipeline.cli quality
-DATA_PIPELINE_SCRATCH=$SMK/A python -m data_pipeline.cli publish   # kỳ vọng exit 2
+DATA_PIPELINE_SCRATCH=$SMK/A python -m text2pandas.pipelines.a6.cli quality
+DATA_PIPELINE_SCRATCH=$SMK/A python -m text2pandas.pipelines.a6.cli publish   # kỳ vọng exit 2
 ```
 
 `publish` **phải** trả exit 2 trên fixture — G5 đòi ≥10.000 phép kiểm số học,
@@ -253,13 +253,13 @@ Yêu cầu bàn giao nhắc `tests/data_pipeline/`, `fixtures/`, `scripts/`,
 
 | Yêu cầu | Thực tế trong repo |
 |---|---|
-| `src/data_pipeline/` | ✅ `src/data_pipeline/` (76 tệp) |
+| `src/text2pandas/pipelines/a6/` | ✅ `src/text2pandas/pipelines/a6/` (76 tệp) |
 | `configs/` | ✅ `configs/` (11 tệp) |
 | `tests/data_pipeline/` | ⚠ test nằm phẳng ở `tests/*.py` (24 tệp) |
 | `fixtures/` | ⚠ `tests/fixtures/` (rỗng — fixture dựng trong test) |
 | `tools/` | ✅ `tools/` (32 tệp) |
 | `scripts/` | ❌ **KHÔNG TỒN TẠI** — vai trò này do `tools/` + `Makefile` đảm nhiệm |
-| `schema/` | ❌ **KHÔNG TỒN TẠI** — schema khai trong `src/data_pipeline/release_schema.py` và `storage.py` |
+| `schema/` | ❌ **KHÔNG TỒN TẠI** — schema khai trong `src/text2pandas/pipelines/a6/release_schema.py` và `storage.py` |
 | `Makefile` · `pyproject.toml` · lock | ✅ |
 
 Ghi ra đây thay vì tạo thư mục rỗng cho khớp danh sách.

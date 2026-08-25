@@ -118,7 +118,7 @@ NON_COMPARABLE = frozenset({"created_at", "build_time", "seconds"})
 # Chép lại là tạo nguồn sự thật thứ hai, và hai nguồn sẽ lệch nhau ở lần sửa
 # tiếp theo mà không ai thấy.
 try:
-    from data_pipeline.number_parser import _SHARE_COUNT_STRONG as _ROW_COUNT_SIGNAL
+    from text2pandas.pipelines.a6.number_parser import _SHARE_COUNT_STRONG as _ROW_COUNT_SIGNAL
 except Exception:                                            # pragma: no cover
     _ROW_COUNT_SIGNAL = None
 

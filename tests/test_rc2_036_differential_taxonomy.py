@@ -178,7 +178,7 @@ def test_ket_thuc_o_trang_thai_MAU_THUAN_thi_khong_lop_nao_tha():
 def test_dinh_nghia_nhat_quan_KHOP_voi_C4_10_trong_gates():
     """Hai nơi phải dùng CÙNG một định nghĩa; lệch nhau là cổng và audit nói
     hai điều khác nhau về cùng một bản ghi."""
-    g = (ROOT / "src" / "data_pipeline" / "gates.py").read_text(encoding="utf-8")
+    g = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "gates.py").read_text(encoding="utf-8")
     i = g.index('"C4-10"')
     sql = g[i:i + 400]
     assert "value_kind='money'" in sql

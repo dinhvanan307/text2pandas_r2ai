@@ -39,14 +39,14 @@ def test_tep_md_o_goc_repo_KHONG_lam_cay_ban():
 def test_tep_py_la_trong_src_LA_NGUY_HIEM():
     """Tệp chưa commit trong `src/` không vào `source_hash` nhưng vẫn import
     được lúc build — bản dựng sẽ không tái lập được."""
-    d = env_check._classify_dirty("?? src/data_pipeline/hotfix.py")
-    assert d["untracked_source"] == ["src/data_pipeline/hotfix.py"]
+    d = env_check._classify_dirty("?? src/text2pandas/pipelines/a6/hotfix.py")
+    assert d["untracked_source"] == ["src/text2pandas/pipelines/a6/hotfix.py"]
     assert d["untracked_other"] == []
 
 
 def test_tep_tracked_bi_sua_thi_cay_ban():
-    d = env_check._classify_dirty(" M src/data_pipeline/release.py\nM  configs/a.yaml")
-    assert set(d["tracked"]) == {"src/data_pipeline/release.py", "configs/a.yaml"}
+    d = env_check._classify_dirty(" M src/text2pandas/pipelines/a6/release.py\nM  configs/a.yaml")
+    assert set(d["tracked"]) == {"src/text2pandas/pipelines/a6/release.py", "configs/a.yaml"}
     assert d["untracked_source"] == [] and d["untracked_other"] == []
 
 
@@ -156,8 +156,8 @@ def test_dong_dau_mat_khoang_trang_van_lay_dung_duong_dan():
     nên một tệp lạ trong `configs/` có thể bị xếp nhầm thành `untracked_other`
     và KHÔNG chặn build.
     """
-    d = env_check._classify_dirty("M  configs/a.yaml\n M src/data_pipeline/b.py")
-    assert set(d["tracked"]) == {"configs/a.yaml", "src/data_pipeline/b.py"}
+    d = env_check._classify_dirty("M  configs/a.yaml\n M src/text2pandas/pipelines/a6/b.py")
+    assert set(d["tracked"]) == {"configs/a.yaml", "src/text2pandas/pipelines/a6/b.py"}
 
 
 def test_untracked_dong_dau_van_duoc_xep_vao_duong_dan_nguon():

@@ -23,8 +23,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from text2pandas.answer_pipeline.adapters import load_cells  # noqa: E402
-from text2pandas.answer_pipeline.frame import classify_operation  # noqa: E402
+from text2pandas.pipelines.answering.adapters import load_cells  # noqa: E402
+from text2pandas.pipelines.answering.frame import classify_operation  # noqa: E402
 
 _YEAR = re.compile(r"(?<!\d)(?:19|20)\d{2}(?!\d)")
 

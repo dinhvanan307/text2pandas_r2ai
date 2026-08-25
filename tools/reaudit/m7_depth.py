@@ -1,9 +1,9 @@
 import sys,json,sqlite3,os,time
 sys.path.insert(0,"src")
-from retrieval.alias_store import load_aliases
-from retrieval.evalkit.cli import _load_cfg
-from retrieval.evalkit.stages import Bm25StructuralRanker, HardFilterGenerator
-from retrieval.question_intent import parse_intent
+from text2pandas.pipelines.retrieval.alias_store import load_aliases
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg
+from text2pandas.pipelines.retrieval.evalkit.stages import Bm25StructuralRanker, HardFilterGenerator
+from text2pandas.pipelines.retrieval.question_intent import parse_intent
 DEPTH=300
 OUT="/tmp/reaudit/refs300.json"
 cfg=_load_cfg("base", {}); alias=load_aliases(brands=cfg.brands)

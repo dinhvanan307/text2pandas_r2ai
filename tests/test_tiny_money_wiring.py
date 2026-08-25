@@ -30,10 +30,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.observation_builder import (
+from text2pandas.pipelines.a6.observation_builder import (
     _column_digit_profile, build_silver_tables)
-from data_pipeline.storage import BRONZE_DDL, SILVER_DDL, connect, integrity_check
-from data_pipeline.tiny_money import (
+from text2pandas.pipelines.a6.storage import BRONZE_DDL, SILVER_DDL, connect, integrity_check
+from text2pandas.pipelines.a6.tiny_money import (
     FALSE_VALUE_CLASSES, classify_tiny_money, is_reference_header)
 
 # ─────────────────────── S1 · dung sai OCR ở nhãn cột ───────────────────────
@@ -114,7 +114,7 @@ class _Row:
 
 
 def test_digit_profile_peer_is_max_of_others():
-    from data_pipeline.models import RowRole
+    from text2pandas.pipelines.a6.models import RowRole
     pt = _PT([
         _Cell(0, 0, "2024"), _Cell(0, 1, "Mã số"),      # dòng header — bỏ qua
         _Cell(1, 0, "Tiền"), _Cell(1, 1, "110"), _Cell(1, 2, "20.559.756.794"),
@@ -277,16 +277,16 @@ def test_drop_reasons_have_verdicts():
     Thiếu một entry thì bảng trong tài liệu phát hành in `⬜ chưa đánh giá` —
     đúng lỗi đã xảy ra với `non_value_column`, bucket lớn nhất (73%).
     """
-    from data_pipeline.release_docs import _DROP_VERDICT
-    from data_pipeline.tiny_money import FALSE_VALUE_CLASSES as F
+    from text2pandas.pipelines.a6.release_docs import _DROP_VERDICT
+    from text2pandas.pipelines.a6.tiny_money import FALSE_VALUE_CLASSES as F
     for cls in F:
         assert f"tiny_money_{cls}" in _DROP_VERDICT, cls
 
 
 def test_build_id_reacts_to_tiny_money_version():
     """Đổi luật phân loại phải đổi `build_id` — nếu không, ID nói dối."""
-    from data_pipeline.storage import make_build_id
-    from data_pipeline.tiny_money import TINY_MONEY_VERSION
+    from text2pandas.pipelines.a6.storage import make_build_id
+    from text2pandas.pipelines.a6.tiny_money import TINY_MONEY_VERSION
     counts = {"tables": 1, "observations": 2, "source_cells": 3, "dropped_cells": 4}
     base = {"semantic": "1.3", "tiny_money": TINY_MONEY_VERSION}
     a, _ = make_build_id(counts, base)

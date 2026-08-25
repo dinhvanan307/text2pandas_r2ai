@@ -14,13 +14,13 @@ import pytest  # noqa: E402
 
 pd = pytest.importorskip("pandas")
 
-from text2pandas.answer_pipeline import (  # noqa: E402
+from text2pandas.pipelines.answering import (  # noqa: E402
     CandidateCell, DIVIDE, GROWTH, LOOKUP, SUBTRACT, SUM, AVG,
     Unit, answer_question, build_evidence,
 )
-from text2pandas.answer_pipeline.units import MONEY, PERCENT, RATIO, UNKNOWN  # noqa: E402
-from text2pandas.answer_pipeline.binding import BoundOperand, Selector  # noqa: E402
-from text2pandas.answer_pipeline.ir import OperandSlot  # noqa: E402
+from text2pandas.pipelines.answering.units import MONEY, PERCENT, RATIO, UNKNOWN  # noqa: E402
+from text2pandas.pipelines.answering.binding import BoundOperand, Selector  # noqa: E402
+from text2pandas.pipelines.answering.ir import OperandSlot  # noqa: E402
 
 
 # --------------------------------------------------------------- fixtures

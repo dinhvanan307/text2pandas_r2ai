@@ -1,10 +1,10 @@
 """Lay top-60 ung vien cho 120 cau gold tay de quet nguong N. Chi doc, khong sua gi."""
 import sys, json, sqlite3, os
 sys.path.insert(0,"src")
-from retrieval.alias_store import load_aliases
-from retrieval.evalkit.cli import _load_cfg
-from retrieval.evalkit.stages import Bm25StructuralRanker, HardFilterGenerator
-from retrieval.question_intent import parse_intent
+from text2pandas.pipelines.retrieval.alias_store import load_aliases
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg
+from text2pandas.pipelines.retrieval.evalkit.stages import Bm25StructuralRanker, HardFilterGenerator
+from text2pandas.pipelines.retrieval.question_intent import parse_intent
 OUT="/tmp/refs60.json"
 cfg=_load_cfg("base", {}); alias=load_aliases(brands=cfg.brands)
 conn=sqlite3.connect("file:%s?mode=ro"%os.path.expanduser("data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"), uri=True)

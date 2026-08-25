@@ -26,13 +26,13 @@ def git(*a):
 def main() -> int:
     if OUT.exists():
         shutil.rmtree(OUT)
-    (OUT / "src/retrieval/evalkit").mkdir(parents=True)
+    (OUT / "src/text2pandas/pipelines/retrieval/evalkit").mkdir(parents=True)
     (OUT / "tests").mkdir(parents=True)
     (OUT / "tools/retrieval_exp").mkdir(parents=True)
 
-    SRC = ["src/retrieval/rank_s2.py", "src/retrieval/pipeline.py",
-           "src/retrieval/evalkit/stages.py", "src/retrieval/evalkit/runner.py",
-           "src/retrieval/evalkit/cli.py", "tests/test_s2_primary_prior.py",
+    SRC = ["src/text2pandas/pipelines/retrieval/rank_s2.py", "src/text2pandas/pipelines/retrieval/pipeline.py",
+           "src/text2pandas/pipelines/retrieval/evalkit/stages.py", "src/text2pandas/pipelines/retrieval/evalkit/runner.py",
+           "src/text2pandas/pipelines/retrieval/evalkit/cli.py", "tests/test_s2_primary_prior.py",
            "configs/retrieval/eval_v1.yaml"]
     for f in SRC:
         d = OUT / f
@@ -42,8 +42,8 @@ def main() -> int:
         shutil.copy2(f, OUT / "tools/retrieval_exp" / f.name)
 
     # ── source_identity ─────────────────────────────────────────────────────
-    from retrieval.evalkit.runner import SCHEMA_VERSION, EvalConfig
-    from retrieval.evalkit.cli import _load_cfg
+    from text2pandas.pipelines.retrieval.evalkit.runner import SCHEMA_VERSION, EvalConfig
+    from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg
     si = {"git_commit": git("rev-parse", "HEAD"),
           "git_branch": git("rev-parse", "--abbrev-ref", "HEAD"),
           "git_dirty": bool(git("status", "--porcelain")),

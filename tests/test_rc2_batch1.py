@@ -20,10 +20,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.cleaning import (
+from text2pandas.pipelines.a6.cleaning import (
     CLEAN_RULES, _SLOPPY_CP1252, clean_text, repair_mojibake)
-from data_pipeline.manifest import build_manifest, read_manifest, write_manifest
-from data_pipeline.storage import BRONZE_DDL, connect
+from text2pandas.pipelines.a6.manifest import build_manifest, read_manifest, write_manifest
+from text2pandas.pipelines.a6.storage import BRONZE_DDL, connect
 
 # ════════════════════════ RC-07 · mojibake ════════════════════════
 
@@ -289,7 +289,7 @@ def test_view_follows_n_tables_without_rebuild(bronze):
 
 def test_no_table_document_is_not_counted_as_failure(bronze):
     """RC-06 nói rõ: KHÔNG coi tám tệp này là orphan FK hay parser failure."""
-    from data_pipeline.storage import integrity_check
+    from text2pandas.pipelines.a6.storage import integrity_check
     assert integrity_check(bronze) == []
     assert hashlib.sha256  # giữ import dùng thật ở fixture khác
 
@@ -308,17 +308,18 @@ def test_fingerprint_hashes_the_directory_actually_used(tmp_path, monkeypatch):
     Nghĩa là sửa ngưỡng trong `configs/vifinqa_silver_v1.yaml` KHÔNG đổi
     `build_id`. Test này khoá lại điều ngược lại.
     """
-    from data_pipeline import storage
+    from text2pandas.pipelines.a6 import storage
     root = tmp_path / "repo"
-    (root / "src" / "data_pipeline").mkdir(parents=True)
+    (root / "src" / "text2pandas" / "pipelines" / "a6").mkdir(parents=True)
+    (root / "pyproject.toml").write_text("[project]\nname='fixture'\n", encoding="utf-8")
     (root / "configs").mkdir()
     (root / "config").mkdir()
-    (root / "src" / "data_pipeline" / "x.py").write_text("# noop", encoding="utf-8")
+    (root / "src" / "text2pandas" / "pipelines" / "a6" / "x.py").write_text("# noop", encoding="utf-8")
     (root / "configs" / "a.yaml").write_text("threshold: 1\n", encoding="utf-8")
     (root / "config" / "old.yaml").write_text("legacy: true\n", encoding="utf-8")
 
     monkeypatch.setattr(storage, "__file__",
-                        str(root / "src" / "data_pipeline" / "storage.py"))
+                        str(root / "src" / "text2pandas" / "pipelines" / "a6" / "storage.py"))
     before = storage.source_fingerprint()["config_hash"]
 
     # Sửa thư mục CHẾT → vân tay KHÔNG được đổi.
@@ -355,7 +356,7 @@ def test_mj01_real_rc1_case_is_repaired():
     Bản trước TRẢ NGUYÊN VĂN ca này: `_sloppy_encode` đòi TOÀN BỘ chuỗi mã hoá
     được, mà `ổ` (U+1ED5) nằm ngoài Latin-1. Đây là test khoá lại đúng chỗ đó.
     """
-    from data_pipeline.cleaning import clean_text
+    from text2pandas.pipelines.a6.cleaning import clean_text
     res = clean_text(_RC1_REAL_MOJIBAKE)
     assert "HÃ¹" not in res.text_clean
     assert "Hù" in res.text_clean
@@ -364,7 +365,7 @@ def test_mj01_real_rc1_case_is_repaired():
 
 def test_mj01_leaves_neighbouring_vietnamese_untouched():
     """Ngoài cửa sổ KHÔNG một ký tự nào được đổi — đây là điều kiện an toàn."""
-    from data_pipeline.cleaning import repair_mojibake
+    from text2pandas.pipelines.a6.cleaning import repair_mojibake
     got = repair_mojibake(_RC1_REAL_MOJIBAKE)
     for keep in ("7 J1001 C TRÁC ", " Tổng Công ty Viglacera - CTCP Địa chỉ: Tò"):
         assert keep in got, keep
@@ -374,7 +375,7 @@ def test_mj01_leaves_neighbouring_vietnamese_untouched():
 
 
 def test_mojibake_audit_trace_records_window():
-    from data_pipeline.cleaning import repair_mojibake_trace
+    from text2pandas.pipelines.a6.cleaning import repair_mojibake_trace
     tr = repair_mojibake_trace(_RC1_REAL_MOJIBAKE)
     assert len(tr) == 1
     e = tr[0]
@@ -386,7 +387,7 @@ def test_mojibake_audit_trace_records_window():
 @pytest.mark.parametrize("clean_part", ["Doanh thu", "năm 2023", "Số dư", "của Tổng công ty"])
 def test_mixed_string_keeps_clean_part(clean_part):
     """MJ-02 — chuỗi hỗn hợp: phần đúng phải sống sót nguyên vẹn."""
-    from data_pipeline.cleaning import repair_mojibake
+    from text2pandas.pipelines.a6.cleaning import repair_mojibake
     src = {"Doanh thu": "Doanh thu " + _mojibake("thuần") + " năm 2023",
            "năm 2023": "Doanh thu " + _mojibake("thuần") + " năm 2023",
            "Số dư": "Số dư " + _mojibake("đầu kỳ") + " của Tổng công ty",
@@ -400,5 +401,5 @@ def test_mixed_string_keeps_clean_part(clean_part):
 ])
 def test_extended_negative_set_untouched(s):
     """MJ-03/04/05 — tập âm mở rộng ngoài 16 ca ban đầu."""
-    from data_pipeline.cleaning import repair_mojibake
+    from text2pandas.pipelines.a6.cleaning import repair_mojibake
     assert repair_mojibake(s) == s

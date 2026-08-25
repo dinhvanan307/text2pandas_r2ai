@@ -19,9 +19,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.models import ColumnInfo, ColumnRole, RowInfo, RowRole
-from data_pipeline.readiness import apply_policy, load_policy
-from data_pipeline.storage import (
+from text2pandas.pipelines.a6.models import ColumnInfo, ColumnRole, RowInfo, RowRole
+from text2pandas.pipelines.a6.readiness import apply_policy, load_policy
+from text2pandas.pipelines.a6.storage import (
     SCHEMA_VERSION, SILVER_DDL, stamp_schema_version)
 
 # Trường [F3]: cố ý NULL ở v1.0, được điền ở các minor về sau. Chúng phải TỒN

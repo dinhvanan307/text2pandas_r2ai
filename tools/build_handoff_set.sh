@@ -107,7 +107,7 @@ def sha(p):
         for c in iter(lambda: f.read(1 << 20), b""): h.update(c)
     return h.hexdigest()
 try:
-    from data_pipeline.storage import source_fingerprint
+    from text2pandas.pipelines.a6.storage import source_fingerprint
     fp = source_fingerprint()
 except Exception as exc:
     fp = {"error": repr(exc)}
@@ -130,7 +130,7 @@ man = {
      if l.startswith("??") and l[3:].split("/")[0] in ("src","tools","configs","tests")],
  "source_hash": fp.get("source_hash"),
  "config_hash": fp.get("config_hash"),
- "canonical_rule": "source_hash = sha256(noi dung src/data_pipeline/*.py theo ten); config_hash = sha256(noi dung configs/*.yaml theo ten)",
+ "canonical_rule": "source_hash = sha256(noi dung src/text2pandas/pipelines/a6/*.py theo ten); config_hash = sha256(noi dung configs/*.yaml theo ten)",
  "component_versions": {},
  "n_files": len(files),
  "files": dict(sorted(files.items())),

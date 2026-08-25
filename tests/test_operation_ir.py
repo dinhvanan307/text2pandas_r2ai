@@ -8,12 +8,12 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import pytest  # noqa: E402
 
-from text2pandas.answer_pipeline.ir import (  # noqa: E402
+from text2pandas.pipelines.answering.ir import (  # noqa: E402
     AVG, DENOMINATOR, DIVIDE, GROWTH, IRError, LOOKUP, MINUEND, MIN_ARITY, NEW,
     NUMERATOR, OLD, OperandSlot, OperationIR, ROLE_SPEC, SUBTRACT, SUBTRAHEND,
     SUM, SUMMAND, VALUE, result_dimension,
 )
-from text2pandas.answer_pipeline.units import (  # noqa: E402
+from text2pandas.pipelines.answering.units import (  # noqa: E402
     COUNT, MONEY, PERCENT, RATIO, SHARES, UNKNOWN, Unit,
 )
 

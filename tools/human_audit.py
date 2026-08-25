@@ -1,7 +1,7 @@
 """P0-d · HUMAN AUDIT gold tay — dựng phiếu mù, kiểm nhãn người, đo đồng thuận.
 
 NGUYÊN TẮC: audit là bước VALIDATION ĐỘC LẬP, không phải bước tối ưu Retrieval.
-Script này KHÔNG đọc, KHÔNG sửa, KHÔNG gọi bất cứ thứ gì trong `src/retrieval/**`.
+Script này KHÔNG đọc, KHÔNG sửa, KHÔNG gọi bất cứ thứ gì trong `src/text2pandas/pipelines/retrieval/**`.
 Nó chỉ đọc ba tệp dữ liệu và ghi ra bốn tệp kết quả. Không đụng ranking, S2, S3,
 `brands`, `stop_mode`, Answer Generation, submission.
 

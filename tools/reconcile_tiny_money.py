@@ -35,10 +35,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from data_pipeline.tiny_money import (  # noqa: E402
+from text2pandas.pipelines.a6.tiny_money import (  # noqa: E402
     FALSE_VALUE_CLASSES, TINY_MONEY_VERSION, UNRESOLVED_CLASSES,
     classify_tiny_money)
-from data_pipeline.unit_resolver import UNIT_VERSION, _find_scale  # noqa: E402
+from text2pandas.pipelines.a6.unit_resolver import UNIT_VERSION, _find_scale  # noqa: E402
 
 RECONCILE_VERSION = "1.0"
 _DIGIT = re.compile(r"\d")

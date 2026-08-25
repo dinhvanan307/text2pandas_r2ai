@@ -25,8 +25,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.html_parser import parse_table
-from data_pipeline.structure import (
+from text2pandas.pipelines.a6.html_parser import parse_table
+from text2pandas.pipelines.a6.structure import (
     _cell_value_kind, _detect_header_rows, interpret_structure)
 
 

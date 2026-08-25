@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 INVENTORY = ROOT / "configs" / "rule_inventory_v1.yaml"
-QUALITY = ROOT / "src" / "data_pipeline" / "quality.py"
+QUALITY = ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "quality.py"
 CONTRACTS = ROOT / "configs" / "rc2_contracts_v1.yaml"
 
 _RULE_ID = re.compile(r'"(Q-[A-Z0-9-]+)"')
@@ -43,7 +43,7 @@ def inv():
 def emitted() -> set[str]:
     """Mã mà CODE có thể phát ra — đọc từ nguồn, không từ một danh sách chép tay."""
     src = "\n".join(p.read_text(encoding="utf-8")
-                    for p in sorted((ROOT / "src" / "data_pipeline").glob("*.py")))
+                    for p in sorted((ROOT / "src" / "text2pandas" / "pipelines" / "a6").glob("*.py")))
     return set(_RULE_ID.findall(src))
 
 

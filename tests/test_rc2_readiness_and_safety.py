@@ -24,12 +24,12 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from data_pipeline.readiness import (  # noqa: E402
+from text2pandas.pipelines.a6.readiness import (  # noqa: E402
     build_readiness, load_policy)
-from data_pipeline.storage import SILVER_DDL  # noqa: E402
-from data_pipeline.text_normalize import (  # noqa: E402
+from text2pandas.pipelines.a6.storage import SILVER_DDL  # noqa: E402
+from text2pandas.pipelines.a6.text_normalize import (  # noqa: E402
     ACCENT_PAIRS, fold_vietnamese, normalize_search_text, normalize_token)
-from data_pipeline.tiny_money import (  # noqa: E402
+from text2pandas.pipelines.a6.tiny_money import (  # noqa: E402
     CLASSES, FALSE_VALUE_CLASSES, classify_tiny_money, is_reference_header)
 
 POLICY = ROOT / "configs" / "readiness_policy_v1.yaml"
@@ -517,7 +517,7 @@ def test_ba_assertion_nghi_huu_CHAY_o_moi_build(db):
 ])
 def test_bien_trai_nhan_chu_so_nhung_tu_choi_chu_cai(text, want):
     """Đo trên RC1: 26.515 cột (4,48%) mất bậc chỉ vì `\\b` giữa số và chữ."""
-    from data_pipeline.unit_resolver import _find_scale
+    from text2pandas.pipelines.a6.unit_resolver import _find_scale
     assert _find_scale(text) == want
 
 
@@ -527,6 +527,6 @@ def test_lop_bien_la_CHU_CAI_unicode_khong_phai_dai_liet_ke():
     `[a-zà-ỹ]` trông đủ cho tiếng Việt nhưng `à-ỹ` = U+00E0–U+1EF9 nuốt cả
     khối Thái/Hy Lạp/Kirin. Lớp đúng là `[^\\W\\d_]`.
     """
-    from data_pipeline import unit_resolver as U
+    from text2pandas.pipelines.a6 import unit_resolver as U
     assert U._NL == r"(?<![^\W\d_])"
     assert "à-ỹ" not in U._NL

@@ -12,13 +12,13 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import pytest  # noqa: E402
 
-from text2pandas.answer_pipeline.spec import (  # noqa: E402
+from text2pandas.pipelines.answering.spec import (  # noqa: E402
     AXIS_ENTITY, AXIS_METRIC, AXIS_NONE, AXIS_PERIOD, CandidateObservation,
     EntitySelector, FilterSpec, OperandSpec, PeriodSelector,
     QuestionSemanticFrameV2, RankSpec, ReturnSpec, OP_GT,
 )
-from text2pandas.answer_pipeline import result_kind as RK  # noqa: E402
-from text2pandas.answer_pipeline.units import MONEY, PERCENT, Unit  # noqa: E402
+from text2pandas.pipelines.answering import result_kind as RK  # noqa: E402
+from text2pandas.pipelines.answering.units import MONEY, PERCENT, Unit  # noqa: E402
 
 
 def test_ratio_of_two_different_metrics_is_expressible():

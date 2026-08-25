@@ -23,11 +23,11 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from data_pipeline.release import (  # noqa: E402
+from text2pandas.pipelines.a6.release import (  # noqa: E402
     ALLOWED_BLOCKED_GATES, _source_commit, _taxonomy_version)
 
 CONTRACT = ROOT / "configs" / "rc2_contracts_v1.yaml"
-RELEASE_PY = ROOT / "src" / "data_pipeline" / "release.py"
+RELEASE_PY = ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "release.py"
 
 
 @pytest.fixture(scope="module")
@@ -48,7 +48,7 @@ def _manifest_that(tmp: Path) -> dict:
     """Gọi `_md_manifest` trên một release tối thiểu nhưng thật."""
     import sqlite3
 
-    from data_pipeline.release import ReleaseReport, _md_manifest
+    from text2pandas.pipelines.a6.release import ReleaseReport, _md_manifest
 
     out = tmp / "rel"
     out.mkdir(parents=True, exist_ok=True)
@@ -145,7 +145,7 @@ def test_acceptance_status_khong_duoc_lac_quan():
     """
     import sys
     sys.path.insert(0, str(RELEASE_PY.parents[2]))
-    from data_pipeline.release import ReleaseReport, _acceptance_status
+    from text2pandas.pipelines.a6.release import ReleaseReport, _acceptance_status
 
     r = ReleaseReport(out_dir=None, profile="slim")
     assert _acceptance_status(r) == "not_accepted_no_gate_report", (

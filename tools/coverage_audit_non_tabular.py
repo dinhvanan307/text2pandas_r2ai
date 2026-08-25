@@ -39,7 +39,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from data_pipeline.text_normalize import normalize_search_text  # noqa: E402
+from text2pandas.pipelines.a6.text_normalize import normalize_search_text  # noqa: E402
 
 AUDIT_VERSION = "1.0"
 

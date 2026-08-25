@@ -147,7 +147,7 @@ PY
 
 echo "── 3. import source ──"
 if [ -n "$SRC_ROOT" ]; then
-  run import_pipeline python3 -c "import sys;sys.path.insert(0,'$SRC_ROOT');import retrieval.pipeline;print('import retrieval.pipeline OK')"
+  run import_pipeline python3 -c "import sys;sys.path.insert(0,'$SRC_ROOT');import text2pandas.pipelines.retrieval.pipeline;print('import text2pandas.pipelines.retrieval.pipeline OK')"
 else
   na import_pipeline "packet '$PACKET_KIND' KHÔNG chứa source/ (đúng thiết kế). Dùng --repo <path> hoặc giải nén sync_122_1 cạnh đây."
 fi

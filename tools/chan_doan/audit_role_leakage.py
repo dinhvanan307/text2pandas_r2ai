@@ -6,9 +6,9 @@ import json, sqlite3, os, sys, math
 sys.path.insert(0,"src"); sys.path.insert(0,"tools")
 import gold_pool_v4 as v4
 from gold_pool_v5 import vai_tro_chat
-from retrieval.alias_store import load_aliases
-from retrieval.evalkit.cli import _load_cfg
-from retrieval.question_intent import parse_intent
+from text2pandas.pipelines.retrieval.alias_store import load_aliases
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg
+from text2pandas.pipelines.retrieval.question_intent import parse_intent
 conn=sqlite3.connect('file:%s?mode=ro'%os.path.expanduser('data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'),uri=True)
 M={}
 for u,ev,s,rt,yr in conn.execute("SELECT table_uid,evidence_ref,statement_type,row_terms,doc_year FROM table_cards WHERE evidence_ref IS NOT NULL"):

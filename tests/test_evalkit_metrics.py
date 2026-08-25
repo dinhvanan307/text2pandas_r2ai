@@ -15,14 +15,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from retrieval.evalkit.metrics import (QueryOutcome, candidate_hit_rate,  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.metrics import (QueryOutcome, candidate_hit_rate,  # noqa: E402
                                        f2_at_k, gold_size_stats, hit_rate_at_k,
                                        metric_block, mrr, ndcg_at_k,
                                        precision_at_k, precision_at_k_capped,
                                        recall_at_k)
-from retrieval.evalkit.taxonomy import (Bucket, NoGoldReason, classify,  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.taxonomy import (Bucket, NoGoldReason, classify,  # noqa: E402
                                         summarize)
-from retrieval.query_terms import content_terms  # noqa: E402
+from text2pandas.pipelines.retrieval.query_terms import content_terms  # noqa: E402
 
 
 def oc(qid=1, n_gold=1, hits=(), n_ranked=50, in_cand=True, measurable=True,
@@ -248,14 +248,14 @@ def test_khong_cat_chi_tieu_that():
 # sys.prefix == sys.base_prefix. Hệ quả: chặn đúng interpreter đúng của dự án.
 
 def test_dang_dung_khong_co_env_thi_luon_dung():
-    from retrieval.evalkit.cli import _dang_dung
+    from text2pandas.pipelines.retrieval.evalkit.cli import _dang_dung
     assert _dang_dung(None) is True
 
 
 def test_dang_dung_nhan_ra_conda_du_prefix_bang_base_prefix(monkeypatch):
     """Ca thật: /opt/anaconda3/envs/text2pandas — conda, prefix == base_prefix."""
     import sys as _s
-    from retrieval.evalkit.cli import _dang_dung
+    from text2pandas.pipelines.retrieval.evalkit.cli import _dang_dung
     monkeypatch.setattr(_s, "prefix", "/opt/anaconda3/envs/text2pandas")
     monkeypatch.setattr(_s, "base_prefix", "/opt/anaconda3/envs/text2pandas")
     assert _dang_dung("/opt/anaconda3/envs/text2pandas") is True
@@ -263,13 +263,13 @@ def test_dang_dung_nhan_ra_conda_du_prefix_bang_base_prefix(monkeypatch):
 
 def test_dang_dung_bat_duoc_lech_that(monkeypatch):
     import sys as _s
-    from retrieval.evalkit.cli import _dang_dung
+    from text2pandas.pipelines.retrieval.evalkit.cli import _dang_dung
     monkeypatch.setattr(_s, "prefix", "/opt/homebrew/opt/python@3.14/Frameworks/x")
     assert _dang_dung("/opt/anaconda3/envs/text2pandas") is False
 
 
 def test_active_env_uu_tien_virtualenv_truoc_conda(monkeypatch):
-    from retrieval.evalkit.cli import _active_env
+    from text2pandas.pipelines.retrieval.evalkit.cli import _active_env
     monkeypatch.setenv("VIRTUAL_ENV", "/a/venv")
     monkeypatch.setenv("CONDA_PREFIX", "/b/conda")
     assert _active_env() == ("/a/venv", "venv")
@@ -284,7 +284,7 @@ def test_preflight_KHONG_fatal_khi_du_goi_du_lech_env(monkeypatch, capsys):
     hợp lệ; chặn nó là biến gợi ý chẩn đoán thành cổng chặn cứng.
     """
     import sys as _s
-    from retrieval.evalkit.cli import _preflight
+    from text2pandas.pipelines.retrieval.evalkit.cli import _preflight
     monkeypatch.setenv("CONDA_PREFIX", "/opt/anaconda3/envs/text2pandas")
     monkeypatch.setattr(_s, "prefix", "/somewhere/else")
     _preflight()                       # KHÔNG được raise
@@ -292,7 +292,7 @@ def test_preflight_KHONG_fatal_khi_du_goi_du_lech_env(monkeypatch, capsys):
 
 
 def test_preflight_im_lang_khi_moi_thu_dung(monkeypatch, capsys):
-    from retrieval.evalkit.cli import _preflight
+    from text2pandas.pipelines.retrieval.evalkit.cli import _preflight
     monkeypatch.delenv("VIRTUAL_ENV", raising=False)
     monkeypatch.delenv("CONDA_PREFIX", raising=False)
     _preflight()
@@ -301,7 +301,7 @@ def test_preflight_im_lang_khi_moi_thu_dung(monkeypatch, capsys):
 
 def test_preflight_van_chan_khi_thieu_goi(monkeypatch):
     import importlib.util as iu
-    from retrieval.evalkit.cli import _preflight
+    from text2pandas.pipelines.retrieval.evalkit.cli import _preflight
     o = iu.find_spec
     monkeypatch.setattr(iu, "find_spec",
                         lambda n, *a, **k: None if n == "yaml" else o(n, *a, **k))
@@ -313,7 +313,7 @@ def test_preflight_van_chan_khi_thieu_goi(monkeypatch):
 
 def test_f2_at_policy_dung_n_rieng_tung_cau():
     """Câu A nộp N=1, câu B nộp N=3. F2 phải dùng đúng N của từng câu."""
-    from retrieval.evalkit.metrics import f2_at_policy
+    from text2pandas.pipelines.retrieval.evalkit.metrics import f2_at_policy
     rows = [oc(1, n_gold=1, hits=(1,), n_ranked=50),
             oc(2, n_gold=3, hits=(2, 5), n_ranked=50)]
     got = f2_at_policy(rows, {1: 1, 2: 3})
@@ -323,7 +323,7 @@ def test_f2_at_policy_dung_n_rieng_tung_cau():
 
 def test_f2_at_policy_khac_f2_at_k_co_dinh():
     """Bằng chứng vì sao cần chỉ số này: hai chính sách cho hai con số khác nhau."""
-    from retrieval.evalkit.metrics import f2_at_policy
+    from text2pandas.pipelines.retrieval.evalkit.metrics import f2_at_policy
     rows = [oc(1, n_gold=1, hits=(1,), n_ranked=50),
             oc(2, n_gold=7, hits=(3, 9), n_ranked=50)]
     assert f2_at_policy(rows, {1: 1, 2: 7}) != pytest.approx(f2_at_k(rows, 10))
@@ -331,7 +331,7 @@ def test_f2_at_policy_khac_f2_at_k_co_dinh():
 
 
 def test_f2_at_policy_khong_vuot_n_ranked():
-    from retrieval.evalkit.metrics import f2_at_policy
+    from text2pandas.pipelines.retrieval.evalkit.metrics import f2_at_policy
     rows = [oc(1, n_gold=1, hits=(1,), n_ranked=2)]
     assert f2_at_policy(rows, {1: 10}) == pytest.approx(5 / 6)   # N bị kẹp về 2
 
@@ -340,7 +340,7 @@ def test_policy_n_map_khop_rewrite_submission():
     """Khoá công thức `clamp(n_mã × n_năm, 1, 10)` — cùng công thức với
     `tools/rewrite_submission.py._n_tables`. Hai nơi cùng một luật là rủi ro
     trôi dạt; test này tồn tại để bắt nó."""
-    from retrieval.evalkit.report import policy_n_map
+    from text2pandas.pipelines.retrieval.evalkit.report import policy_n_map
     rows = [
         {"id": 1, "n_targets": 1, "years": [2023]},          # single 1 năm  → 1
         {"id": 2, "n_targets": 1, "years": [2022, 2023]},    # single 2 năm  → 2
@@ -358,7 +358,7 @@ def test_policy_n_map_khop_rewrite_submission():
 
 def test_norm_rank_bat_bien_voi_so_ung_vien_khong_khop():
     """Thêm 1.000 ứng viên `raw=0` KHÔNG được đổi điểm của nhóm có khớp."""
-    from retrieval.rank_s2 import _norm, _norm_rank
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm, _norm_rank
     nho = [5.0, 3.0, 1.0]
     to = nho + [0.0] * 1000
     assert _norm_rank(to)[:3] == pytest.approx(_norm_rank(nho))
@@ -367,14 +367,14 @@ def test_norm_rank_bat_bien_voi_so_ung_vien_khong_khop():
 
 
 def test_norm_rank_ung_vien_khong_khop_nhan_0():
-    from retrieval.rank_s2 import _norm_rank
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm_rank
     out = _norm_rank([5.0, 0.0, 2.0])
     assert out[1] == 0.0
     assert out[0] == pytest.approx(1.0)      # khớp tốt nhất luôn được 1,0
 
 
 def test_norm_rank_tot_nhat_luon_bang_1_bat_ke_pool():
-    from retrieval.rank_s2 import _norm_rank
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm_rank
     for extra in (0, 10, 3000):
         v = [9.9, 4.0] + [0.0] * extra
         assert _norm_rank(v)[0] == pytest.approx(1.0)
@@ -382,21 +382,21 @@ def test_norm_rank_tot_nhat_luon_bang_1_bat_ke_pool():
 
 def test_norm_rank_dong_hang_nhan_cung_diem():
     """Nếu không dùng hạng trung bình thì thứ tự CHÈN quyết định điểm."""
-    from retrieval.rank_s2 import _norm_rank
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm_rank
     out = _norm_rank([3.0, 3.0, 1.0])
     assert out[0] == pytest.approx(out[1])
     assert out[0] > out[2]
 
 
 def test_norm_rank_giu_thu_tu_tuong_doi():
-    from retrieval.rank_s2 import _norm_rank
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm_rank
     v = [1.0, 7.0, 3.0]
     out = _norm_rank(v)
     assert out[1] > out[2] > out[0]
 
 
 def test_norm_rank_rong_va_mot_phan_tu():
-    from retrieval.rank_s2 import _norm_rank
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm_rank
     assert _norm_rank([]) == []
     assert _norm_rank([0.0]) == [0.0]
     assert _norm_rank([4.0]) == [1.0]
@@ -407,15 +407,15 @@ def test_norm_rank_rong_va_mot_phan_tu():
 # bị chặn bởi HÌNH DẠNG đầu ra, không bởi chất lượng điểm.
 
 def _sc(uid, ticker, score):
-    from retrieval.filter_s1 import Candidate
-    from retrieval.rank_s2 import Scored
+    from text2pandas.pipelines.retrieval.filter_s1 import Candidate
+    from text2pandas.pipelines.retrieval.rank_s2 import Scored
     c = Candidate(uid, "d", ticker, 2023, None, None, 10, 10, None, None, None)
     return Scored(c, 0.0, False, False, False, score, (), False)
 
 
 def test_fanout_moi_ma_duoc_phuc_vu_truoc_khi_ma_nao_duoc_lan_hai():
     """Ca thật: 1 mã chiếm hết top-10 trong khi 6 mã khác không có bảng nào."""
-    from retrieval.rank_s2 import _fanout_by_ticker
+    from text2pandas.pipelines.retrieval.rank_s2 import _fanout_by_ticker
     scored = [_sc(f"A{i}", "AAA", 10.0 - i * 0.1) for i in range(8)]
     scored += [_sc("B1", "BBB", 1.0), _sc("C1", "CCC", 0.9)]
     truoc = [s.cand.ticker for s in scored[:3]]
@@ -425,7 +425,7 @@ def test_fanout_moi_ma_duoc_phuc_vu_truoc_khi_ma_nao_duoc_lan_hai():
 
 
 def test_fanout_khong_lam_mat_ung_vien_nao():
-    from retrieval.rank_s2 import _fanout_by_ticker
+    from text2pandas.pipelines.retrieval.rank_s2 import _fanout_by_ticker
     scored = [_sc(f"A{i}", "AAA", 5.0 - i) for i in range(4)]
     scored += [_sc(f"B{i}", "BBB", 4.5 - i) for i in range(3)]
     sau = _fanout_by_ticker(scored, per_k=2, top_k=99)
@@ -435,13 +435,13 @@ def test_fanout_khong_lam_mat_ung_vien_nao():
 
 def test_fanout_mot_ma_thi_khong_doi_gi():
     """Câu `single` chỉ có một mã ⇒ fan-out phải là no-op, không xáo thứ tự."""
-    from retrieval.rank_s2 import _fanout_by_ticker
+    from text2pandas.pipelines.retrieval.rank_s2 import _fanout_by_ticker
     scored = [_sc(f"A{i}", "AAA", 5.0 - i) for i in range(5)]
     assert _fanout_by_ticker(scored, per_k=1, top_k=10) is scored
 
 
 def test_fanout_trong_cung_vong_sap_theo_diem():
-    from retrieval.rank_s2 import _fanout_by_ticker
+    from text2pandas.pipelines.retrieval.rank_s2 import _fanout_by_ticker
     scored = [_sc("A1", "AAA", 1.0), _sc("B1", "BBB", 9.0), _sc("C1", "CCC", 5.0)]
     sau = _fanout_by_ticker(scored, per_k=1, top_k=10)
     assert [s.cand.table_uid for s in sau[:3]] == ["B1", "C1", "A1"]
@@ -449,7 +449,7 @@ def test_fanout_trong_cung_vong_sap_theo_diem():
 
 def test_fanout_tat_dinh():
     """Cùng điểm ⇒ tie-break `table_uid` ⇒ kết quả tái lập."""
-    from retrieval.rank_s2 import _fanout_by_ticker
+    from text2pandas.pipelines.retrieval.rank_s2 import _fanout_by_ticker
     a = [_sc("Z1", "ZZZ", 1.0), _sc("A1", "AAA", 1.0)]
     b = [_sc("A1", "AAA", 1.0), _sc("Z1", "ZZZ", 1.0)]
     assert ([s.cand.table_uid for s in _fanout_by_ticker(a, 1, 9)]
@@ -461,14 +461,14 @@ def test_fanout_tat_dinh():
 # cũ, không đổi một con số) mà 4 lần chạy đủ 1.012 câu bị mồ côi.
 
 def test_sha_bo_qua_tag_va_budget():
-    from retrieval.evalkit.runner import EvalConfig
+    from text2pandas.pipelines.retrieval.evalkit.runner import EvalConfig
     a = EvalConfig(tag="base", budget_s=35.0)
     b = EvalConfig(tag="khac_hoan_toan", budget_s=300.0)
     assert a.sha == b.sha, "tag/budget_s không được ảnh hưởng ngữ nghĩa phép đo"
 
 
 def test_sha_doi_khi_ngu_nghia_doi():
-    from retrieval.evalkit.runner import EvalConfig
+    from text2pandas.pipelines.retrieval.evalkit.runner import EvalConfig
     assert EvalConfig().sha != EvalConfig(norm="rank").sha
     assert EvalConfig().sha != EvalConfig(per_ticker_k=2).sha
     assert EvalConfig().sha != EvalConfig(basis_mode="hard").sha
@@ -476,12 +476,12 @@ def test_sha_doi_khi_ngu_nghia_doi():
 
 def test_sha_KHONG_doi_khi_dat_lai_dung_gia_tri_mac_dinh():
     """Khai tường minh giá trị mặc định phải cho CÙNG sha."""
-    from retrieval.evalkit.runner import EvalConfig
+    from text2pandas.pipelines.retrieval.evalkit.runner import EvalConfig
     assert EvalConfig().sha == EvalConfig(norm="minmax", per_ticker_k=None).sha
 
 
 def test_deviations_chi_liet_ke_phan_lech():
-    from retrieval.evalkit.runner import EvalConfig
+    from text2pandas.pipelines.retrieval.evalkit.runner import EvalConfig
     d = EvalConfig(tag="x", norm="rank", per_ticker_k=2).deviations
     assert d == {"norm": "rank", "per_ticker_k": 2}
     assert EvalConfig().deviations == {}
@@ -490,7 +490,7 @@ def test_deviations_chi_liet_ke_phan_lech():
 # ── maxnorm · bản thứ ba, sau khi `rank` bị dữ liệu bác bỏ (−0,17 hit@1) ─────
 
 def test_maxnorm_bat_bien_voi_ung_vien_khong_khop():
-    from retrieval.rank_s2 import _norm_max
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm_max
     nho = [5.0, 4.9, 1.0]
     to = nho + [0.0] * 2000
     assert _norm_max(to)[:3] == pytest.approx(_norm_max(nho))
@@ -506,7 +506,7 @@ def test_maxnorm_GIU_ty_le_do_lon_con_rank_thi_NEN():
     Ở đây: 1 bảng khớp vượt trội (10,0), 1 bảng khá (9,0), rồi 198 bảng lẹt đẹt.
     Đó là hình dạng phân bố BM25 thật.
     """
-    from retrieval.rank_s2 import _norm_max, _norm_rank
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm_max, _norm_rank
     v = [10.0, 9.0] + [0.5] * 198
     mx, rk = _norm_max(v), _norm_rank(v)
 
@@ -522,17 +522,17 @@ def test_maxnorm_GIU_ty_le_do_lon_con_rank_thi_NEN():
 
 
 def test_maxnorm_tot_nhat_bang_1_khong_khop_bang_0():
-    from retrieval.rank_s2 import _norm_max
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm_max
     out = _norm_max([3.0, 0.0, 1.5])
     assert out == pytest.approx([1.0, 0.0, 0.5])
 
 
 def test_maxnorm_toan_khong_thi_tra_0():
-    from retrieval.rank_s2 import _norm_max
+    from text2pandas.pipelines.retrieval.rank_s2 import _norm_max
     assert _norm_max([0.0, 0.0]) == [0.0, 0.0]
     assert _norm_max([]) == []
 
 
 def test_ba_cach_chuan_hoa_deu_dang_ky():
-    from retrieval.rank_s2 import _NORMS
+    from text2pandas.pipelines.retrieval.rank_s2 import _NORMS
     assert set(_NORMS) == {"minmax", "rank", "maxnorm"}

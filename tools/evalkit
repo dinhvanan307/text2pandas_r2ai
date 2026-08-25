@@ -91,10 +91,10 @@ PY
     # hiện tại. Không đánh dấu thì rất dễ đọc số từ tệp của cấu hình cũ — và đó
     # đúng là bug vừa tìm thấy ở `diag_nogold` (nó lấy `glob(...)[-1]`).
     echo "checkpoint          : ✓ = chính danh (khớp cfg_sha hiện tại)"
-    "$chon" "$ROOT/src/retrieval/evalkit/ck_list.py" || true
+    "$chon" "$ROOT/src/text2pandas/pipelines/retrieval/evalkit/ck_list.py" || true
     ;;
-  diag) exec "$chon" "$ROOT/src/retrieval/evalkit/diag_nogold.py" "$@" ;;
-  gold) exec "$chon" "$ROOT/src/retrieval/evalkit/goldkit.py" "$@" ;;
-  migrate) exec "$chon" "$ROOT/src/retrieval/evalkit/migrate_ck.py" "$@" ;;
-  *)    exec "$chon" "$ROOT/src/retrieval/evalkit/cli.py" "$cmd" "$@" ;;
+  diag) exec "$chon" "$ROOT/src/text2pandas/pipelines/retrieval/evalkit/diag_nogold.py" "$@" ;;
+  gold) exec "$chon" "$ROOT/src/text2pandas/pipelines/retrieval/evalkit/goldkit.py" "$@" ;;
+  migrate) exec "$chon" "$ROOT/src/text2pandas/pipelines/retrieval/evalkit/migrate_ck.py" "$@" ;;
+  *)    exec "$chon" "$ROOT/src/text2pandas/pipelines/retrieval/evalkit/cli.py" "$cmd" "$@" ;;
 esac

@@ -59,8 +59,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
-from retrieval.alias_store import load_aliases           # noqa: E402
-from retrieval.question_intent import parse_intent       # noqa: E402
+from text2pandas.pipelines.retrieval.alias_store import load_aliases           # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent       # noqa: E402
 
 DB = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
 MAU = ROOT / "data/curated/dev-legacy/gold_dap_an/mau_v1.jsonl"

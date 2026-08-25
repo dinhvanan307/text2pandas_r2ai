@@ -18,7 +18,7 @@ import csv, json, argparse, sys, collections, hashlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from unitlex import (parse_raw_number, storage_ratio, snap_power_of_ten,
+from text2pandas.domain.units.lexicon import (parse_raw_number, storage_ratio, snap_power_of_ten,
                      scan_unit, MONEY)
 
 

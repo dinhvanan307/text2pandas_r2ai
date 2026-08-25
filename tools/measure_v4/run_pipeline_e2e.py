@@ -20,12 +20,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from text2pandas.answer_pipeline import answer_question  # noqa: E402
-from text2pandas.answer_pipeline.adapters import (  # noqa: E402
+from text2pandas.pipelines.answering import answer_question  # noqa: E402
+from text2pandas.pipelines.answering.adapters import (  # noqa: E402
     load_cells, load_frames, requested_unit_of,
 )
-from text2pandas.answer_pipeline.frame import classify_operation  # noqa: E402
-from text2pandas.answer_pipeline.binding import Selector  # noqa: E402
+from text2pandas.pipelines.answering.frame import classify_operation  # noqa: E402
+from text2pandas.pipelines.answering.binding import Selector  # noqa: E402
 from cellref import extract_cellrefs  # noqa: E402
 
 REL_TOL = 1e-6

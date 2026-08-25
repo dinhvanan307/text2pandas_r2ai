@@ -21,8 +21,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from retrieval.filter_s1 import Candidate                  # noqa: E402
-from retrieval.rank_s2 import PRIMARY_KINDS, rank          # noqa: E402
+from text2pandas.pipelines.retrieval.filter_s1 import Candidate                  # noqa: E402
+from text2pandas.pipelines.retrieval.rank_s2 import PRIMARY_KINDS, rank          # noqa: E402
 
 
 def _cands():
@@ -64,7 +64,7 @@ def test_pham_vi_rong_thi_bonus_vo_hieu():
 
 def test_cong_theo_mode_o_tang_stages():
     """`single`/`compare` không được nhận tiên nghiệm — kiểm ở lớp gọi."""
-    from retrieval.evalkit.stages import Bm25StructuralRanker
+    from text2pandas.pipelines.retrieval.evalkit.stages import Bm25StructuralRanker
     r = Bm25StructuralRanker({"AAA": ["Cong ty A"]}, primary_boost=0.60)
     assert r.primary_modes == ("screen", "related")
     assert "single" not in r.primary_modes and "compare" not in r.primary_modes
@@ -79,8 +79,8 @@ def test_default_production_phai_tat():
     held-out PASS là đưa một model-selection result vào đường sản xuất.
     """
     import inspect
-    from retrieval.evalkit.runner import EvalConfig
-    from retrieval.pipeline import run
+    from text2pandas.pipelines.retrieval.evalkit.runner import EvalConfig
+    from text2pandas.pipelines.retrieval.pipeline import run
     cfg = EvalConfig()
     assert cfg.primary_boost == 0.00, "default production phải TẮT"
     assert inspect.signature(run).parameters["primary_boost"].default == 0.00
@@ -92,7 +92,7 @@ def test_default_production_phai_tat():
 
 def test_profile_thi_nghiem_ton_tai_va_co_sha_rieng():
     """0,60 chỉ sống trong profile `s2_primary`, có `sha` khác `base`."""
-    from retrieval.evalkit.cli import _load_cfg
+    from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg
     base, exp = _load_cfg("base", {}), _load_cfg("s2_primary", {})
     assert base.primary_boost == 0.00 and exp.primary_boost == 0.60
     assert base.sha != exp.sha
@@ -103,7 +103,7 @@ def test_profile_thi_nghiem_ton_tai_va_co_sha_rieng():
 
 
 def test_gold_manual_tro_ve_v2():
-    from retrieval.evalkit.runner import EvalConfig
+    from text2pandas.pipelines.retrieval.evalkit.runner import EvalConfig
     assert EvalConfig().gold_manual_path == "data/curated/dev-legacy/gold_v2.jsonl"
     assert (ROOT / "data/curated/dev-legacy/gold_v2.jsonl").is_file()
 

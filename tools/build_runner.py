@@ -34,7 +34,7 @@ def _dirty_report() -> dict:
 
     Bản trước ghi `bool(git status --porcelain)` — BẤT KỲ dòng nào cũng thành
     `source_tree_dirty: true`, kể cả một tệp `.md` trong `docs/`. Nhưng
-    `source_hash` chỉ băm `src/data_pipeline/*.py` và `config_hash` chỉ băm
+    `source_hash` chỉ băm `src/text2pandas/pipelines/a6/*.py` và `config_hash` chỉ băm
     `configs/*.yaml`; sửa một tài liệu KHÔNG thể ảnh hưởng tới bản dựng.
 
     Hậu quả đo được trên chính bản dựng `4c86c9e43915694a`: nó ghi
@@ -102,7 +102,7 @@ def main() -> int:
     out.mkdir(parents=True)
     sys.path.insert(0, str(Path.cwd() / "src"))
     try:
-        from data_pipeline.storage import source_fingerprint
+        from text2pandas.pipelines.a6.storage import source_fingerprint
         fp = source_fingerprint()
     except Exception as exc:
         fp = {"source_fingerprint_error": repr(exc)}
@@ -166,7 +166,7 @@ def main() -> int:
     for stage in stages:
         print(f"  ── {stage} ──", flush=True)
         log.write(f"\n===== {stage} =====\n"); log.flush()
-        p = subprocess.run([sys.executable, "-m", "data_pipeline.cli", stage],
+        p = subprocess.run([sys.executable, "-m", "text2pandas.pipelines.a6.cli", stage],
                            env=env, stdout=log, stderr=subprocess.STDOUT)
         if p.returncode:
             rc = p.returncode

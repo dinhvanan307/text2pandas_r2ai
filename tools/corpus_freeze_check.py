@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from data_pipeline.manifest import (                          # noqa: E402
+from text2pandas.pipelines.a6.manifest import (                          # noqa: E402
     RC1_UID_NAMESPACE_ID, build_manifest, compute_corpus_id, is_corpus_report,
 )
 

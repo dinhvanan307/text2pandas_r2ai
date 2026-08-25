@@ -27,7 +27,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from data_pipeline import cli  # noqa: E402
+from text2pandas.pipelines.a6 import cli  # noqa: E402
 
 
 # ── 1. `--finalize` phải chạy tới publish ─────────────────────────────────
@@ -40,7 +40,7 @@ def test_finalize_chay_ca_quality_va_publish():
 
 def test_stage_publish_ton_tai_trong_cli():
     """Nếu `publish` không phải subcommand thì build_runner gọi nó sẽ chết."""
-    src = (ROOT / "src" / "data_pipeline" / "cli.py").read_text(encoding="utf-8")
+    src = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "cli.py").read_text(encoding="utf-8")
     assert '"publish": cmd_publish' in src
 
 
@@ -135,9 +135,9 @@ def test_do_release_tra_2_khi_canh_DB_la_manifest_corpus(tmp_path, capsys):
 def test_release_khong_duoc_de_build_id_unknown_di_qua():
     """`build_release` có mặc định `"unknown"`; nó chỉ an toàn khi có chốt chặn
     đứng TRƯỚC. Test này khoá cả hai vế lại với nhau."""
-    rel = (ROOT / "src" / "data_pipeline" / "release.py").read_text(encoding="utf-8")
+    rel = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "release.py").read_text(encoding="utf-8")
     assert 'src_manifest.get("build_id", "unknown")' in rel
-    cl = (ROOT / "src" / "data_pipeline" / "cli.py").read_text(encoding="utf-8")
+    cl = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "cli.py").read_text(encoding="utf-8")
     i_guard = cl.index("_is_build_manifest(manifest")
     i_call = cl.index("rep = build_release(", i_guard - 4000 if i_guard > 4000 else 0)
     assert i_guard < cl.index("build_release(src_silver=db"), \
@@ -162,7 +162,7 @@ def test_build_runner_dung_cung_phep_phan_loai_dirty_voi_env_check():
 
     Đo được trên bản dựng thật `4c86c9e43915694a`: nó ghi dirty=true trong khi
     cây nguồn sinh ra nó khớp CHÍNH XÁC commit `22c26b2` — `source_hash` chỉ băm
-    `src/data_pipeline/*.py`, `config_hash` chỉ băm `configs/*.yaml`, nên một
+    `src/text2pandas/pipelines/a6/*.py`, `config_hash` chỉ băm `configs/*.yaml`, nên một
     tài liệu không thể ảnh hưởng tới bản dựng. Người review đọc
     `build_invocation.json` sẽ mất niềm tin vào một bản dựng hoàn toàn sạch, vì
     một dòng tài liệu.

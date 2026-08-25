@@ -46,7 +46,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 try:
-    from data_pipeline.answer_contract import (CONTRACT_VERSION,
+    from text2pandas.pipelines.a6.answer_contract import (CONTRACT_VERSION,
                                                classify_question, is_plausible)
     _TYPES = True
 except ImportError:                                          # pragma: no cover

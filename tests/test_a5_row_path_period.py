@@ -10,9 +10,9 @@ from pathlib import Path
 
 import pytest
 
-from data_pipeline.models import EvidenceSource, PeriodRole, PeriodType
-from data_pipeline.period_resolver import PERIOD_VERSION, resolve_row_period
-from data_pipeline.readiness import load_policy
+from text2pandas.pipelines.a6.models import EvidenceSource, PeriodRole, PeriodType
+from text2pandas.pipelines.a6.period_resolver import PERIOD_VERSION, resolve_row_period
+from text2pandas.pipelines.a6.readiness import load_policy
 
 _spec = _u.spec_from_file_location(
     "_da", Path(__file__).resolve().parents[1] / "tools" / "differential_audit.py")

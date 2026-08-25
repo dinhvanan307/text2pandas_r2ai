@@ -21,7 +21,7 @@ import ast, csv, json, argparse, sys, collections
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from unitlex import (parse_raw_number, storage_ratio, snap_power_of_ten,
+from text2pandas.domain.units.lexicon import (parse_raw_number, storage_ratio, snap_power_of_ten,
                      scan_unit, scan_question_unit, MONEY, PERCENT, RATIO,
                      COUNT, SHARES, UNKNOWN)
 from cellref import extract_cellrefs

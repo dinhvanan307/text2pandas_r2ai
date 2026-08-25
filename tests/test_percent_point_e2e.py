@@ -23,18 +23,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "tools" / "measure_v4"))
 
 import pytest  # noqa: E402
 
 pd = pytest.importorskip("pandas")
 
-from unitlex import scan_question_unit  # noqa: E402
-from text2pandas.answer_pipeline import CandidateCell, Unit, answer_question  # noqa: E402
-from text2pandas.answer_pipeline.binding import Selector  # noqa: E402
-from text2pandas.answer_pipeline.frame import classify_operation  # noqa: E402
-from text2pandas.answer_pipeline.ir import DIVIDE, GROWTH, LOOKUP, SUBTRACT  # noqa: E402
-from text2pandas.answer_pipeline.units import (  # noqa: E402
+from text2pandas.domain.units.lexicon import scan_question_unit  # noqa: E402
+from text2pandas.pipelines.answering import CandidateCell, Unit, answer_question  # noqa: E402
+from text2pandas.pipelines.answering.binding import Selector  # noqa: E402
+from text2pandas.pipelines.answering.frame import classify_operation  # noqa: E402
+from text2pandas.pipelines.answering.ir import DIVIDE, GROWTH, LOOKUP, SUBTRACT  # noqa: E402
+from text2pandas.pipelines.answering.units import (  # noqa: E402
     MONEY, PERCENT, PERCENT_POINT, RATIO,
 )
 
@@ -131,7 +130,7 @@ def test_operands_are_not_converted_into_percentage_points():
 
 def test_full_parse_path_produces_points_not_a_ratio():
     """No forced unit: the parser itself must reach 5.0, not 150.0."""
-    from text2pandas.answer_pipeline.adapters import requested_unit_of
+    from text2pandas.pipelines.answering.adapters import requested_unit_of
     q = "Chênh lệch tỷ lệ nợ xấu năm 2023 so với năm 2022 là bao nhiêu điểm phần trăm?"
     a = pct_cell("2023%", 15, 0, "2023")
     b = pct_cell("2022%", 10, 1, "2022")

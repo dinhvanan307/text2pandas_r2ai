@@ -22,11 +22,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from retrieval.evalkit.goldset import ProxyGoldV2, free_ticker_histogram  # noqa: E402
-from retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.goldset import ProxyGoldV2, free_ticker_histogram  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
                                       HardFilterGenerator, IdentityReranker)
-from retrieval.question_intent import parse_intent  # noqa: E402
-from retrieval.rank_s2 import assert_fts_arity, rank  # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent  # noqa: E402
+from text2pandas.pipelines.retrieval.rank_s2 import assert_fts_arity, rank  # noqa: E402
 
 ALIAS = {"VNM": ["Công ty CP Sữa Việt Nam"], "HPG": ["Công ty CP Tập đoàn Hòa Phát"]}
 
@@ -155,10 +155,10 @@ def test_s2_bang_income_statement_thang_bang_note(conn):
 
 def test_s2_chia_lo_cho_cung_ket_qua(conn, monkeypatch):
     """Chia lô KHÔNG được đổi điểm: `bm25()` chấm từng dòng, độc lập tập ứng viên."""
-    import retrieval.rank_s2 as m
+    import text2pandas.pipelines.retrieval.rank_s2 as m
     it = parse_intent("Doanh thu thuần của VNM năm 2023?", ALIAS)
     cands = [r.cand for r in HardFilterGenerator().generate(conn, "q", it).ranked]
-    from retrieval.query_terms import build_match, content_terms
+    from text2pandas.pipelines.retrieval.query_terms import build_match, content_terms
     match = build_match(content_terms("Doanh thu thuần của VNM năm 2023?",
                                       drop=("VNM",)))
     goc = {s.cand.table_uid: s.score for s in rank(conn, cands, match, top_k=99)}
@@ -170,7 +170,7 @@ def test_s2_chia_lo_cho_cung_ket_qua(conn, monkeypatch):
 def test_s2_bonus_cau_hinh_duoc(conn):
     it = parse_intent("Doanh thu thuần của VNM năm 2023?", ALIAS)
     cands = [r.cand for r in HardFilterGenerator().generate(conn, "q", it).ranked]
-    from retrieval.query_terms import build_match, content_terms
+    from text2pandas.pipelines.retrieval.query_terms import build_match, content_terms
     match = build_match(content_terms("Doanh thu thuần của VNM năm 2023?", drop=("VNM",)))
     a = rank(conn, cands, match, period_ends=("2023-12-31",), top_k=99)
     b = rank(conn, cands, match, period_ends=("2023-12-31",), top_k=99,

@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.gates import evaluate_gates
+from text2pandas.pipelines.a6.gates import evaluate_gates
 
 
 # Chi ba cong nay duoc phep BLOCKED theo Plan 17 §RC-20.

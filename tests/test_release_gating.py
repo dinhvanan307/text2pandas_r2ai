@@ -23,9 +23,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.gates import (  # noqa: E402
+from text2pandas.pipelines.a6.gates import (  # noqa: E402
     BLOCKED, FAIL, PASS, legacy_check_status, split_legacy_gates)
-from data_pipeline.release import _gate_rollup  # noqa: E402
+from text2pandas.pipelines.a6.release import _gate_rollup  # noqa: E402
 
 
 def _c(name, ok, **kw):
@@ -110,7 +110,7 @@ def test_quality_py_danh_dau_g3_la_blocked():
     """Kiểm tận nguồn: nếu ai đó bỏ cờ `blocked` khỏi `quality.py`, RC lại
     tắc và test ở trên vẫn xanh vì chúng dùng dữ liệu giả."""
     src = (Path(__file__).resolve().parents[1]
-           / "src" / "data_pipeline" / "quality.py").read_text(encoding="utf-8")
+           / "src" / "text2pandas" / "pipelines" / "a6" / "quality.py").read_text(encoding="utf-8")
     i = src.index("độ chính xác role trên gold")
     assert '"blocked": True' in src[i:i + 400], \
         "G3 gold check phải mang cờ blocked, nếu không publish sẽ chặn nhầm"

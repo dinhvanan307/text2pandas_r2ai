@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import pytest  # noqa: E402
 
-from text2pandas.answer_pipeline.period import (  # noqa: E402
+from text2pandas.pipelines.answering.period import (  # noqa: E402
     ABSOLUTE, CURRENT, PRIOR, UNRESOLVED, anchor_year_from_path, resolve_period,
 )
 

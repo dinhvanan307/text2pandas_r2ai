@@ -95,7 +95,7 @@ def test_c0_final_phu_bang_bat_buoc():
 def test_collision_group_uid_KHONG_dung_randomblob():
     """`randomblob(N)` với N<1 trả MỘT BYTE NGẪU NHIÊN (không phải blob rỗng),
     nên `group_uid` đổi mỗi lần build — bất định im lặng."""
-    src = (ROOT / "src" / "data_pipeline" / "collision.py").read_text(encoding="utf-8")
+    src = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "collision.py").read_text(encoding="utf-8")
     for line in src.splitlines():
         code = line.split("--")[0]
         assert "randomblob" not in code, \

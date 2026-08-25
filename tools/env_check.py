@@ -249,7 +249,7 @@ def _build_id_fingerprint() -> dict[str, str]:
     """
     try:
         sys.path.insert(0, str(Path.cwd() / "src"))
-        from data_pipeline.storage import source_fingerprint
+        from text2pandas.pipelines.a6.storage import source_fingerprint
         return source_fingerprint()
     except Exception as exc:                                 # pragma: no cover
         return {"source_hash": f"KHÔNG TÍNH ĐƯỢC ({exc.__class__.__name__})",
@@ -319,7 +319,7 @@ def main() -> int:
     commit = _sh("git", "rev-parse", "HEAD")
     dirty = _sh("git", "status", "--porcelain", strip=False)
     dcls = _classify_dirty(dirty)
-    tracked = _sh("git", "ls-tree", "-r", "--name-only", "HEAD", "src/data_pipeline")
+    tracked = _sh("git", "ls-tree", "-r", "--name-only", "HEAD", "src/text2pandas/pipelines/a6")
     lockrep = _lock_report(root / "requirements.lock")
     imprep = _imports_report(root)
 
@@ -379,7 +379,7 @@ def main() -> int:
     if not commit:
         fail.append("không có git commit — không xác định được source của build")
     if info["data_pipeline_tracked_files"] == 0:
-        fail.append("`src/data_pipeline/` CHƯA ĐƯỢC COMMIT (0 file tracked ở HEAD)"
+        fail.append("`src/text2pandas/pipelines/a6/` CHƯA ĐƯỢC COMMIT (0 file tracked ở HEAD)"
                     " — đây là blocker A-01, xem RC-00")
     if not cfg.is_file():
         fail.append(f"không thấy config: {cfg}")

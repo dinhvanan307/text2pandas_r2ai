@@ -12,14 +12,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "tools" / "measure_v4"))
 
 import pytest  # noqa: E402
 
 GOLD_DIR = ROOT / "data" / "gold"
 GOLD = GOLD_DIR / "semantic_gold.jsonl"
 
-from text2pandas.answer_pipeline.frame import (  # noqa: E402
+from text2pandas.pipelines.answering.frame import (  # noqa: E402
     DEFAULT_BASIS, classify_operation, extract_basis, extract_entities,
     extract_entity, extract_periods, resolve_basis,
 )
@@ -164,7 +163,7 @@ def test_operation_precedence_after_gold_fixes(q, expected):
 
 def test_count_is_declared_unsupported_not_silently_routed():
     """COUNT is detected but has no IR yet -- it must abstain loudly."""
-    from text2pandas.answer_pipeline.frame import SUPPORTED
+    from text2pandas.pipelines.answering.frame import SUPPORTED
     assert classify_operation("Có bao nhiêu công ty lãi năm 2024?").op == "COUNT"
     assert "COUNT" not in SUPPORTED
 

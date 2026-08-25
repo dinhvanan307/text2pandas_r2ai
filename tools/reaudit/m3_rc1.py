@@ -1,9 +1,9 @@
 import sys,json,re,unicodedata,collections
 sys.path.insert(0,'src')
-from retrieval.alias_store import load_aliases
-from retrieval.normalize import ascii_compact, company_aliases, ticker_mentioned
-from retrieval.question_intent import parse_intent
-from retrieval.evalkit.cli import _load_cfg
+from text2pandas.pipelines.retrieval.alias_store import load_aliases
+from text2pandas.pipelines.retrieval.normalize import ascii_compact, company_aliases, ticker_mentioned
+from text2pandas.pipelines.retrieval.question_intent import parse_intent
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg
 cfg=_load_cfg("base",{}); alias=load_aliases(brands=cfg.brands)
 Q=[json.loads(l) for l in open('data/raw/btc/questions/questions.jsonl') if l.strip()]
 names_of={t:([n] if isinstance(n,str) else list(n)) for t,n in alias.items()}

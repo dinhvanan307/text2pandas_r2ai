@@ -213,7 +213,7 @@ def do_arith(con) -> dict:
         lệch ≈ 10^k lần      sai BẬC ĐƠN VỊ của một số hạng -> defect
         lệch khác            thiếu số hạng hoặc sai dấu     -> cần xem tay
     """
-    from data_pipeline.arithmetic import IDENTITIES, MINUS_ABS, run_arithmetic
+    from text2pandas.pipelines.a6.arithmetic import IDENTITIES, MINUS_ABS, run_arithmetic
 
     r = run_arithmetic(con)
     fails = r.pop("failures", [])

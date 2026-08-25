@@ -32,7 +32,7 @@ MOC = (2026, 1, 1, 0, 0, 0)          # mốc thời gian cố định cho mọi 
 PARENT = "artifacts/submissions/legacy/submission_P0I.zip"
 
 # ---- source: đúng những gì tạo ra artifact, không thừa ----------------------
-SOURCE_PKG = "src/text2pandas/answer_pipeline"
+SOURCE_PKG = "src/text2pandas/pipelines/answering"
 SOURCE_TOOLS = "tools/measure_v4"
 TESTS = [
     "tests/test_unitlex.py",
@@ -303,7 +303,7 @@ Mọi generator đều **tất định**: chạy hai lần cho SHA giống hệt
 ## Nội dung
 
 ```
-source/src/text2pandas/answer_pipeline/   pipeline sinh đáp án (units, ir, frame,
+source/src/text2pandas/pipelines/answering/   pipeline sinh đáp án (units, ir, frame,
                                           router, binding, render, validate,
                                           period, adapters, pipeline)
 source/tools/measure_v4/                  generator đo lường + audit + builder

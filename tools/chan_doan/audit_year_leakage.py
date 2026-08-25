@@ -2,7 +2,7 @@
 hay chi la he qua cua chinh quy tac phan xu gold (docs/82 §quy tac, dong "doc_year:
 lay nam bao cao, khong suy tu cot nam so sanh").
 
-Chi doc. Khong sua gold, khong sua src/retrieval/**.
+Chi doc. Khong sua gold, khong sua src/text2pandas/pipelines/retrieval/**.
 """
 import json, sys, os, sqlite3, collections, re
 sys.path.insert(0,"src"); sys.path.insert(0,"tools")

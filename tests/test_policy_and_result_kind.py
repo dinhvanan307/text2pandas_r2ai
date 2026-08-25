@@ -14,18 +14,18 @@ import pytest  # noqa: E402
 
 pd = pytest.importorskip("pandas")
 
-from text2pandas.answer_pipeline import CandidateCell, Unit, answer_question  # noqa: E402
-from text2pandas.answer_pipeline.binding import BoundOperand, Selector  # noqa: E402
-from text2pandas.answer_pipeline.ir import (  # noqa: E402
+from text2pandas.pipelines.answering import CandidateCell, Unit, answer_question  # noqa: E402
+from text2pandas.pipelines.answering.binding import BoundOperand, Selector  # noqa: E402
+from text2pandas.pipelines.answering.ir import (  # noqa: E402
     DENOMINATOR, DIVIDE, GROWTH, NEW, NUMERATOR, OLD, OperandSlot, OperationIR,
     SUBTRACT, MINUEND, SUBTRAHEND, SUM, SUMMAND, VALUE, LOOKUP,
 )
-from text2pandas.answer_pipeline.policy import (  # noqa: E402
+from text2pandas.pipelines.answering.policy import (  # noqa: E402
     GROWTH_BASE_NEGATIVE, GROWTH_BASE_ZERO, MISSING_OPERAND_VALUE,
     ZERO_DENOMINATOR, check_operand_policies,
 )
-from text2pandas.answer_pipeline import result_kind as RK  # noqa: E402
-from text2pandas.answer_pipeline.units import (  # noqa: E402
+from text2pandas.pipelines.answering import result_kind as RK  # noqa: E402
+from text2pandas.pipelines.answering.units import (  # noqa: E402
     MONEY, PERCENT, PERCENT_POINT, RATIO, Quantity,
 )
 

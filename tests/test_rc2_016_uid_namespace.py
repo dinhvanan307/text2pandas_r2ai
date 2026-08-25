@@ -22,7 +22,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from data_pipeline.manifest import (  # noqa: E402
+from text2pandas.pipelines.a6.manifest import (  # noqa: E402
     RC1_UID_NAMESPACE_ID, build_manifest, is_corpus_report,
 )
 
@@ -103,7 +103,7 @@ def test_them_mot_bao_cao_thi_corpus_content_hash_DOI(tmp_path):
 def test_document_uid_sinh_tu_namespace_dong_bang(tmp_path):
     """`document_uid = make_uid(uid_namespace_id, rel)`. Namespace đóng băng
     nên UID tái lập được bất kể cây quét có bao nhiêu tệp rác."""
-    from data_pipeline.models import make_uid
+    from text2pandas.pipelines.a6.models import make_uid
     rel = "financial_statements/AAA/2020/x/x_extracted.txt"
     u1 = make_uid(RC1_UID_NAMESPACE_ID, rel)
     u2 = make_uid(_mf(_corpus(tmp_path / "a", cache_files=99)).uid_namespace_id, rel)

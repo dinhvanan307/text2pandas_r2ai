@@ -53,7 +53,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import yaml  # noqa: E402
 
-from retrieval.question_intent import parse_intent  # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent  # noqa: E402
 
 _CSV = re.compile(r"^data/(.+)_line(\d+)\.csv$")
 _TABREF = re.compile(r"^[^|]+\|\d+$")

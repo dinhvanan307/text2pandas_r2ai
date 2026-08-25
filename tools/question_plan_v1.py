@@ -41,7 +41,7 @@ RE_RANGE = re.compile(r"(19[89]\d|20[0-4]\d)\s*[-–—]\s*(19[89]\d|20[0-4]\d)"
 
 sys.path.insert(0, str(ROOT / "src"))
 try:  # alias tên công ty → ticker (dùng chung tài nguyên retrieval, read-only)
-    from retrieval.alias_store import load_aliases
+    from text2pandas.pipelines.retrieval.alias_store import load_aliases
     _ALIASES: dict[str, list[str]] = load_aliases("a6")
 except Exception:  # noqa: BLE001 — packet review có thể thiếu attested file
     try:

@@ -47,7 +47,7 @@ def main(argv=None) -> int:
         Path(__file__).resolve().parent / "answer_operation.py"
     sys.path.insert(0, str(rule_src.parent.parent))
 
-    from data_pipeline.answer_contract import CONTRACT_VERSION, classify_question
+    from text2pandas.pipelines.a6.answer_contract import CONTRACT_VERSION, classify_question
     from execution.answer_operation import (ENUM_STATUS, OPERATIONS, RULE_VERSION,
                                             entity_hits, phan_loai)
     from text2pandas.domain.rules.question import CompanyIndex

@@ -20,9 +20,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.readiness import build_readiness, load_policy
-from data_pipeline.text_normalize import fts_match_expr, normalize_search_text
-from data_pipeline.release_schema import (
+from text2pandas.pipelines.a6.readiness import build_readiness, load_policy
+from text2pandas.pipelines.a6.text_normalize import fts_match_expr, normalize_search_text
+from text2pandas.pipelines.a6.release_schema import (
     RELEASE_CARD_DDL, RELEASE_DDL, RELEASE_FTS_DDL, RELEASE_LONG_DDL,
     RELEASE_SCHEMA_VERSION)
 
@@ -208,7 +208,7 @@ def test_goi_phat_hanh_CO_bang_readiness():
     `build_meta` của RC1 ghi `readiness_policy_version = '1.0'` — một dòng
     metadata mô tả một bảng không tồn tại trong chính gói đó.
     """
-    from data_pipeline.release_schema import SLIM_TABLES
+    from text2pandas.pipelines.a6.release_schema import SLIM_TABLES
     assert "observation_readiness" in SLIM_TABLES
 
 
@@ -242,7 +242,7 @@ def test_hop_dong_nguon_TU_CHOI_silver_khong_co_readiness(tmp_path):
 
     Phải dừng ở cổng, không phải im lặng rơi về định nghĩa cũ.
     """
-    from data_pipeline.release import check_source_contract
+    from text2pandas.pipelines.a6.release import check_source_contract
     p = tmp_path / "silver.db"
     con = sqlite3.connect(p)
     con.executescript(

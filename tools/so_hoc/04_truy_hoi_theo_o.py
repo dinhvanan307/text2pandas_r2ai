@@ -8,7 +8,7 @@ Dùng nó để TRẢ LỜI thì hỏng, vì phép toán cần **một ô cho m�
 bảng của năm ấy không lọt vào top-N.
 
 docs/76 §1 đã khuyến nghị fan-out theo mã cho `screen` từ lâu. Ở đây áp dụng cho
-tầng đáp án, KHÔNG đụng `src/retrieval/**` và KHÔNG đổi `relevant_tables`.
+tầng đáp án, KHÔNG đụng `src/text2pandas/pipelines/retrieval/**` và KHÔNG đổi `relevant_tables`.
 """
 from __future__ import annotations
 import dataclasses, json, os, sqlite3, sys
@@ -16,10 +16,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
-from retrieval.alias_store import load_aliases                     # noqa: E402
-from retrieval.evalkit.cli import _load_cfg                        # noqa: E402
-from retrieval.evalkit.stages import Bm25StructuralRanker, HardFilterGenerator  # noqa: E402
-from retrieval.question_intent import parse_intent                 # noqa: E402
+from text2pandas.pipelines.retrieval.alias_store import load_aliases                     # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg                        # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.stages import Bm25StructuralRanker, HardFilterGenerator  # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent                 # noqa: E402
 
 RA = Path("/tmp/refs_cell.json")
 MOI_O = 4

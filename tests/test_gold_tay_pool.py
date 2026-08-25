@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 from gold_tay import (POOL_MIN, S2_SHARE_MAX, _phu_thuoc_fts,  # noqa: E402
                       build_pool, kiem)
-from retrieval.question_intent import parse_intent  # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent  # noqa: E402
 
 ALIAS = {"VNM": ["Công ty Cổ phần Sữa Việt Nam"],
          "HPG": ["Công ty Cổ phần Tập đoàn Hòa Phát"],

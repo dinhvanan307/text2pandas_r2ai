@@ -12,7 +12,7 @@
 #
 # Bản v1.0 khai `replay (P8) → rc20_gate (P8) → release (P9)`. Nhưng
 # `tools/replay_report.py` đọc `SELECT * FROM v_long_dataframe`, và view đó CHỈ
-# tồn tại trong release DB (`src/data_pipeline/release.py` sinh nó). Đo trực
+# tồn tại trong release DB (`src/text2pandas/pipelines/a6/release.py` sinh nó). Đo trực
 # tiếp trên bản dựng 5ffc07216708d9fd: build DB có `v_execution_ready`,
 # `v_retrieval_ready` — KHÔNG có `v_long_dataframe`.
 #

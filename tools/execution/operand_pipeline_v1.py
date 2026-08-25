@@ -36,7 +36,7 @@ _ALIAS_CACHE: dict | None = None
 def load_aliases(path: str = "configs/retrieval/company_alias_v1.yaml") -> dict[str, list[str]]:
     """ticker -> danh sách tên công ty. Parser tối giản, không cần PyYAML.
 
-    File do `src/retrieval/build_alias.py` sinh, cấu trúc cố định 2 mức dưới
+    File do `src/text2pandas/pipelines/retrieval/build_alias.py` sinh, cấu trúc cố định 2 mức dưới
     khoá `aliases:`. Dừng ở khoá `rejected:` — các biến thể ở đó đã bị loại vì
     mơ hồ và dùng chúng sẽ tái tạo đúng lỗi mà build_alias vừa tránh.
     """

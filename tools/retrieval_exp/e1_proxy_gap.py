@@ -10,10 +10,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
-from retrieval.alias_store import load_aliases            # noqa: E402
-from retrieval.evalkit.cli import _load_cfg               # noqa: E402
-from retrieval.evalkit.goldset import ProxyGoldV2         # noqa: E402
-from retrieval.question_intent import parse_intent        # noqa: E402
+from text2pandas.pipelines.retrieval.alias_store import load_aliases            # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg               # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.goldset import ProxyGoldV2         # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent        # noqa: E402
 
 
 def main(argv=None) -> int:

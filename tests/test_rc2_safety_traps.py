@@ -20,7 +20,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-CLI = ROOT / "src" / "data_pipeline" / "cli.py"
+CLI = ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "cli.py"
 REBUILD = ROOT / "tools" / "rebuild_check.py"
 
 
@@ -35,7 +35,7 @@ def _run(args, env=None, cwd=None):
 # ── RC2-004 · release không được có default phá huỷ ────────────────────────
 
 def test_release_thieu_out_thi_FAIL(tmp_path):
-    r = _run(["-m", "data_pipeline.cli", "release"])
+    r = _run(["-m", "text2pandas.pipelines.a6.cli", "release"])
     assert r.returncode != 0
     assert "--out" in (r.stderr + r.stdout)
 
@@ -53,7 +53,7 @@ def test_KHONG_con_default_ghi_vao_silver_release():
 
 
 def test_argparse_khai_out_la_required():
-    from data_pipeline import cli
+    from text2pandas.pipelines.a6 import cli
     with pytest.raises(SystemExit) as e:
         cli.main(["release"])
     assert e.value.code == 2
@@ -63,7 +63,7 @@ def test_argparse_khai_out_la_required():
 
 def test_scratch_mac_dinh_CO_RAC_thi_dung_han(tmp_path, monkeypatch):
     """Đọc nhầm scratch của build khác là lỗi im lặng tệ nhất của chuỗi build."""
-    from data_pipeline import cli
+    from text2pandas.pipelines.a6 import cli
     stale = tmp_path / "dp_work"
     stale.mkdir()
     (stale / "silver.sqlite").write_text("rác của build khác", encoding="utf-8")
@@ -75,7 +75,7 @@ def test_scratch_mac_dinh_CO_RAC_thi_dung_han(tmp_path, monkeypatch):
 
 
 def test_scratch_dat_TUONG_MINH_thi_khong_can_canh_bao(tmp_path, monkeypatch):
-    from data_pipeline import cli
+    from text2pandas.pipelines.a6 import cli
     monkeypatch.setattr(cli, "_SCRATCH_EXPLICIT", True)
     monkeypatch.setattr(cli, "SCRATCH", tmp_path)
     cli.assert_scratch_explicit("publish")      # không được ném
@@ -121,7 +121,7 @@ def test_make_dp_release_khong_con_truyen_tham_so_CLI_khong_nhan():
     """B0-01: Makefile từng truyền `--db/--report-dir` mà `cli release` không
     nhận → exit 2. Lệnh release trong tài liệu bàn giao không chạy được."""
     mk = (ROOT / "Makefile").read_text(encoding="utf-8")
-    cli = (ROOT / "src" / "data_pipeline" / "cli.py").read_text(encoding="utf-8")
+    cli = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "cli.py").read_text(encoding="utf-8")
     i = mk.index("dp-release:")
     block = mk[i:mk.index("\n\n", i)]
     for flag in ("--db", "--out", "--report-dir", "--bronze", "--quality"):
@@ -131,7 +131,7 @@ def test_make_dp_release_khong_con_truyen_tham_so_CLI_khong_nhan():
 
 
 def test_release_bat_buoc_kiem_ba_artifact_cung_build():
-    cli = (ROOT / "src" / "data_pipeline" / "cli.py").read_text(encoding="utf-8")
+    cli = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "cli.py").read_text(encoding="utf-8")
     assert "_release_inputs_same_build" in cli
     assert "thuộc build" in cli, "phải báo rõ khi --quality khác build với --db"
 
@@ -142,7 +142,7 @@ def test_KHONG_con_hard_code_1973_trong_control_flow():
     """`n_doc >= 1973` khiến corpus khác kích thước KHÔNG BAO GIỜ publish —
     im lặng, không báo lỗi."""
     import ast
-    src = (ROOT / "src" / "data_pipeline" / "cli.py").read_text(encoding="utf-8")
+    src = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "cli.py").read_text(encoding="utf-8")
     tree = ast.parse(src)
     # Chỉ xét HẰNG SỐ trong mã thật; docstring/comment nhắc tới 1973 là tư liệu.
     bad = [n.lineno for n in ast.walk(tree)

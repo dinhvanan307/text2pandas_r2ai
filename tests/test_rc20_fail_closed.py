@@ -159,7 +159,7 @@ def _replay():
 
 
 def _c5(rep):
-    from data_pipeline.gates import _gate_c5
+    from text2pandas.pipelines.a6.gates import _gate_c5
     g = _gate_c5(rep)
     return g, {m.name: m.status for m in g.metrics}
 

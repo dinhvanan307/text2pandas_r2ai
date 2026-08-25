@@ -31,9 +31,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.release_schema import (  # noqa: E402
+from text2pandas.pipelines.a6.release_schema import (  # noqa: E402
     FTS_CONTENT, FTS_TOKENIZER, RELEASE_FTS_DDL)
-from data_pipeline.text_normalize import (  # noqa: E402
+from text2pandas.pipelines.a6.text_normalize import (  # noqa: E402
     NORMALIZE_VERSION, fts_match_expr, normalize_search_text)
 
 # Văn bản thật, lấy từ nhãn phổ biến nhất của corpus.
@@ -170,7 +170,7 @@ def test_release_py_KHONG_con_duong_nap_van_ban_tho():
     """Chống hồi quy ở mức nguồn: `INSERT INTO table_cards_fts` phải đi qua
     `norm_search`. Bỏ sót một cột là mở lại đúng lỗ hổng của RC1."""
     src = (Path(__file__).resolve().parents[1]
-           / "src" / "data_pipeline" / "release.py").read_text(encoding="utf-8")
+           / "src" / "text2pandas" / "pipelines" / "a6" / "release.py").read_text(encoding="utf-8")
     i = src.index("INSERT INTO table_cards_fts")
     block = src[i:src.index("FROM table_cards", i)]
     assert block.count("norm_search(") == 4, (

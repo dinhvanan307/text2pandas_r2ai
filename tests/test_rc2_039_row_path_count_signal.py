@@ -20,7 +20,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from data_pipeline.number_parser import (          # noqa: E402
+from text2pandas.pipelines.a6.number_parser import (          # noqa: E402
     classify_value_kind,
     is_unit_ambiguous_share_cell,
 )

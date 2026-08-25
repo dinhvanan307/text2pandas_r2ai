@@ -529,8 +529,8 @@ amendments:
         why_rejected: >
           đổi mọi UID của RC2 -> mất mốc so với RC1, đúng lúc C1 và RC-16 cần nó nhất
     implemented_by:
-      - src/data_pipeline/manifest.py (RC1_UID_NAMESPACE_ID, is_corpus_report, build_manifest)
-      - src/data_pipeline/cli.py (_uid_namespace_from_config, cmd_snapshot)
+      - src/text2pandas/pipelines/a6/manifest.py (RC1_UID_NAMESPACE_ID, is_corpus_report, build_manifest)
+      - src/text2pandas/pipelines/a6/cli.py (_uid_namespace_from_config, cmd_snapshot)
       - configs/vifinqa_silver_v1.yaml (corpus.uid_namespace_id)
     tests: tests/test_rc2_016_uid_namespace.py
     revisit_at: RC3 (chỉ khi cần migration namespace, kèm mapping UID cũ -> mới)

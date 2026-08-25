@@ -22,11 +22,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.models import EvidenceSource, PeriodRole, PeriodType
-from data_pipeline.observation_builder import build_silver_tables
-from data_pipeline.period_resolver import resolve_period, resolve_table_period
-from data_pipeline.quality import run_quality
-from data_pipeline.storage import BRONZE_DDL, SILVER_DDL, connect, integrity_check
+from text2pandas.pipelines.a6.models import EvidenceSource, PeriodRole, PeriodType
+from text2pandas.pipelines.a6.observation_builder import build_silver_tables
+from text2pandas.pipelines.a6.period_resolver import resolve_period, resolve_table_period
+from text2pandas.pipelines.a6.quality import run_quality
+from text2pandas.pipelines.a6.storage import BRONZE_DDL, SILVER_DDL, connect, integrity_check
 
 # ─────────────────────── giải kỳ cấp bảng ───────────────────────
 
@@ -170,8 +170,8 @@ def test_quality_reports_two_period_measures(silver):
 
 # ──────────── lỗi đo được từ diagnose_silver.py trên build 4941cb2a ────────────
 
-from data_pipeline.models import ColumnRole  # noqa: E402
-from data_pipeline.structure import (  # noqa: E402
+from text2pandas.pipelines.a6.models import ColumnRole  # noqa: E402
+from text2pandas.pipelines.a6.structure import (  # noqa: E402
     _classify_column,
     _global_header_segments,
 )
@@ -251,8 +251,8 @@ def test_ordinal_column_not_a_value(header, role):
 
 # ───── hai con số dính liền — 3.633 ô vượt 10^16 VND trên build 4941cb2a ─────
 
-from data_pipeline.models import ParseStatus, ValueKind  # noqa: E402
-from data_pipeline.number_parser import SepConvention, parse_number  # noqa: E402
+from text2pandas.pipelines.a6.models import ParseStatus, ValueKind  # noqa: E402
+from text2pandas.pipelines.a6.number_parser import SepConvention, parse_number  # noqa: E402
 
 _DOT, _COMMA = SepConvention.DOT, SepConvention.COMMA
 
@@ -291,8 +291,8 @@ def test_valid_numbers_untouched(raw, conv, want):
 
 def test_reference_column_demoted_by_digit_length():
     """Cột `Thuyết minh` không nhãn: 4,5,6,7 giữa các cột tiền 13 chữ số."""
-    from data_pipeline.html_parser import parse_table
-    from data_pipeline.structure import interpret_structure
+    from text2pandas.pipelines.a6.html_parser import parse_table
+    from text2pandas.pipelines.a6.structure import interpret_structure
     html = ("<table><tr><td>Chỉ tiêu</td><td>Mã số</td><td></td>"
             "<td>31/12/2018</td><td>01/01/2018</td></tr>"
             "<tr><td>Tiền</td><td>110</td><td>4</td>"
@@ -312,8 +312,8 @@ def test_reference_column_demoted_by_digit_length():
 
 def test_small_number_table_not_demoted():
     """Bảng đếm nhân sự toàn số nhỏ KHÔNG được coi là cột tham chiếu."""
-    from data_pipeline.html_parser import parse_table
-    from data_pipeline.structure import interpret_structure
+    from text2pandas.pipelines.a6.html_parser import parse_table
+    from text2pandas.pipelines.a6.structure import interpret_structure
     html = ("<table><tr><td>Bộ phận</td><td>2018</td><td>2017</td></tr>"
             "<tr><td>Quản lý</td><td>12</td><td>10</td></tr>"
             "<tr><td>Sản xuất</td><td>85</td><td>80</td></tr>"
@@ -346,7 +346,7 @@ def test_ceiling_does_not_apply_to_share_count():
 
 # ── `CÔNG TY CỔ PHẦN` trong tên pháp nhân KHÔNG phải lời khai đơn vị ──
 
-from data_pipeline.unit_resolver import resolve_unit  # noqa: E402
+from text2pandas.pipelines.a6.unit_resolver import resolve_unit  # noqa: E402
 
 
 @pytest.mark.parametrize("context, scale", [
@@ -554,8 +554,8 @@ def test_year_window_applies_to_table_tier_only():
 
 # ── Bậc đơn vị là LỜI KHAI; chữ số in trong ô là BẰNG CHỨNG ──────────────────
 from decimal import Decimal                                    # noqa: E402
-from data_pipeline.models import EvidenceSource as _E          # noqa: E402
-from data_pipeline.unit_resolver import reconcile_scale        # noqa: E402
+from text2pandas.pipelines.a6.models import EvidenceSource as _E          # noqa: E402
+from text2pandas.pipelines.a6.unit_resolver import reconcile_scale        # noqa: E402
 
 
 @pytest.mark.parametrize("value, scale, src, expect", [

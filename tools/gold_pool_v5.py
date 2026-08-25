@@ -43,12 +43,12 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 import gold_pool_v4 as v4                                  # noqa: E402
 import gold_tay as g3                                      # noqa: E402
-from retrieval.alias_store import load_aliases             # noqa: E402
-from retrieval.evalkit.cli import _load_cfg                # noqa: E402
-from retrieval.evalkit.goldset import ProxyGoldV2          # noqa: E402
-from retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
+from text2pandas.pipelines.retrieval.alias_store import load_aliases             # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg                # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.goldset import ProxyGoldV2          # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
                                       HardFilterGenerator)
-from retrieval.question_intent import parse_intent         # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent         # noqa: E402
 
 POOL_V5 = v4.DEV / "gold_tay_pool_v5.jsonl"
 

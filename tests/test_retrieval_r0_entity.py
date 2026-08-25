@@ -13,8 +13,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from retrieval.normalize import ascii_compact, company_aliases, ticker_mentioned  # noqa: E402
-from retrieval.question_intent import SCOPE_DEFAULT, parse_intent  # noqa: E402
+from text2pandas.pipelines.retrieval.normalize import ascii_compact, company_aliases, ticker_mentioned  # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import SCOPE_DEFAULT, parse_intent  # noqa: E402
 
 CS = ROOT / "data/raw/btc/metadata/companies.csv"
 ALIAS = ROOT / "configs/retrieval/company_alias_v1.yaml"

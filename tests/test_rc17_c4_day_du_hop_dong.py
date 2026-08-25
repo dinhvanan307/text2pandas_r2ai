@@ -15,7 +15,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from data_pipeline.gates import _gate_c4  # noqa: E402
+from text2pandas.pipelines.a6.gates import _gate_c4  # noqa: E402
 
 CONTRACT = yaml.safe_load(
     (ROOT / "configs" / "rc2_contracts_v1.yaml").read_text(encoding="utf-8"))

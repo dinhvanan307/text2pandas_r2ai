@@ -1,6 +1,6 @@
 """Nguyên mẫu quy tắc phân cấp DỰA TRÊN BẰNG CHỨNG — chỉ để kiểm chứng, chưa vào pipeline."""
 import sys; sys.path.insert(0, 'src')
-from data_pipeline.structure import _level_of
+from text2pandas.pipelines.a6.structure import _level_of
 
 # Bản đồ cha-con Thông tư 200 B01-DN, TƯỜNG MINH. Không suy từ độ dài mã.
 PARENT_CODE_B01DN = {

@@ -23,9 +23,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.release_docs import (  # noqa: E402
+from text2pandas.pipelines.a6.release_docs import (  # noqa: E402
     DOC_FILES, _DROP_VERDICT, build_docs)
-from data_pipeline.release_schema import (  # noqa: E402
+from text2pandas.pipelines.a6.release_schema import (  # noqa: E402
     RELEASE_CARD_DDL, RELEASE_DDL, RELEASE_FTS_DDL, RELEASE_LONG_DDL)
 
 

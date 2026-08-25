@@ -7,7 +7,7 @@ hoặc sai năm. Một bộ gold dựng như thế **đo chính cái lỗi thay 
 và tệ hơn: nó MIỄN TỘI cho Retrieval ở đúng những câu Retrieval đang làm hỏng.
 
 Ranh giới phải giữ:
-  * `src/retrieval/**` KHÔNG đổi một byte — Retrieval khi được CHẤM vẫn mang
+  * `src/text2pandas/pipelines/retrieval/**` KHÔNG đổi một byte — Retrieval khi được CHẤM vẫn mang
     nguyên bốn lỗi ấy và vẫn bị trừ điểm ở 12 câu này. Đó là điều đúng.
   * Ghi đè là DỮ LIỆU KHAI BÁO (`data/curated/dev-legacy/gold_entity_override_v1.json`), có
     `evidence` từng câu, không phải suy diễn lúc chạy.
@@ -29,12 +29,12 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 import gold_pool_v4 as v4                                    # noqa: E402
 from gold_pool_v5 import vai_tro_chat                        # noqa: E402
-from retrieval.alias_store import load_aliases               # noqa: E402
-from retrieval.evalkit.cli import _load_cfg                  # noqa: E402
-from retrieval.evalkit.goldset import ProxyGoldV2            # noqa: E402
-from retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
+from text2pandas.pipelines.retrieval.alias_store import load_aliases               # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg                  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.goldset import ProxyGoldV2            # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
                                       HardFilterGenerator)
-from retrieval.question_intent import Intent, parse_intent   # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import Intent, parse_intent   # noqa: E402
 
 POOL_V5 = v4.DEV / "gold_tay_pool_v5.jsonl"
 POOL_V6 = v4.DEV / "gold_tay_pool_v6.jsonl"

@@ -1,8 +1,8 @@
 import sys,json,collections
 sys.path.insert(0,'src')
-from retrieval.alias_store import load_aliases
-from retrieval.evalkit.cli import _load_cfg
-from retrieval.question_intent import parse_intent
+from text2pandas.pipelines.retrieval.alias_store import load_aliases
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg
+from text2pandas.pipelines.retrieval.question_intent import parse_intent
 cfg=_load_cfg("base",{}); alias=load_aliases(brands=cfg.brands)
 Q=[json.loads(l) for l in open('data/raw/btc/questions/questions.jsonl') if l.strip()]
 mode=collections.Counter(); byid={}

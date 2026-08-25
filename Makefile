@@ -88,7 +88,7 @@ dp-release: ## Dựng thư mục phát hành. DB= BRONZE= QUALITY= OUTPUT= REPOR
 	# `acceptance_status`. Không truyền thì manifest ghi
 	# `not_accepted_no_gate_report` — nói thẳng là chưa có cổng, thay vì suy ra
 	# một trạng thái nghe có vẻ đúng.
-	@$(PY) -m data_pipeline.cli release --db "$(DB)" --bronze "$(BRONZE)" \
+	@$(PY) -m text2pandas.pipelines.a6.cli release --db "$(DB)" --bronze "$(BRONZE)" \
 	                                     --quality "$(QUALITY)" \
 	                                     --out "$(OUTPUT)" \
 	                                     --report-dir "$(REPORT_DIR)" \

@@ -27,7 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from text2pandas.answer_pipeline.frame import classify_operation  # noqa: E402
+from text2pandas.pipelines.answering.frame import classify_operation  # noqa: E402
 
 ARG_LABEL = "ARG_LABEL"
 EXTREME_VALUE = "EXTREME_VALUE"

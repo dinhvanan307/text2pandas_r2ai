@@ -41,7 +41,7 @@ CANONICAL_FINAL = {
 
 # RC2-030 · Bon bang nay KHONG BAO GIO co trong DB ban dung — do trực tiếp tren
 # ca RC1 (b927c3e8f90aed74) lan RC2 (5ffc07216708d9fd): vang o ca hai. Chung do
-# `src/data_pipeline/release.py` sinh ra o buoc release.
+# `src/text2pandas/pipelines/a6/release.py` sinh ra o buoc release.
 #
 # De chung trong CANONICAL_FINAL khien C0-final TUYEN BO 15 bang ma chi DO duoc
 # 11. Cong cu van bao "bo qua" chu khong im lang, nen no khong noi doi — nhung

@@ -468,7 +468,7 @@ def tinh_argmax_year(question, bangs, tickers, nam_list, basis=None):
 # hiện trong câu.
 #
 # `parse_question` (src/text2pandas) mắc ĐÚNG lỗi RC-2 mà docs/83 đã trace trong
-# `src/retrieval/question_intent.py`:
+# `src/text2pandas/pipelines/retrieval/question_intent.py`:
 #
 #     if literal:  tickers = literal
 #     else:        tickers = name_matches

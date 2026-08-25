@@ -5,7 +5,7 @@ Defect gốc, đo được trên bản dựng thật:
   `configs/execution_sequence_v1.yaml` v1.0 khai `replay (P8) → rc20_gate (P8)
   → release (P9)`. Nhưng `tools/replay_report.py` đọc
   `SELECT * FROM v_long_dataframe`, và view đó CHỈ tồn tại trong release DB —
-  `src/data_pipeline/release.py` sinh nó. Build DB `5ffc07216708d9fd` chỉ có
+  `src/text2pandas/pipelines/a6/release.py` sinh nó. Build DB `5ffc07216708d9fd` chỉ có
   `v_execution_ready` và `v_retrieval_ready`.
 
   Nghĩa là `replay` — một trong năm report BẮT BUỘC của `gate_report` — chỉ sinh

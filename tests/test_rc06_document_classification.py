@@ -24,7 +24,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from data_pipeline.release_schema import (  # noqa: E402
+from text2pandas.pipelines.a6.release_schema import (  # noqa: E402
     RELEASE_DDL, RELEASE_DOC_CLASS_DDL)
 
 COLS = ("document_uid, directory_doc_id, ticker, doc_year, basis, rel_path,"
@@ -89,7 +89,7 @@ def test_chua_do_van_ban_goc_thi_noi_KHONG_BIET(rel):
 
 def test_khong_hard_code_ten_tep(rel):
     """Điều kiện phải là HÀM của hai con số, không phải danh sách tên."""
-    src = (Path(__file__).resolve().parents[1] / "src" / "data_pipeline"
+    src = (Path(__file__).resolve().parents[1] / "src" / "text2pandas" / "pipelines" / "a6"
            / "release_schema.py").read_text(encoding="utf-8")
     i = src.index("RELEASE_DOC_CLASS_DDL")
     block = src[i:src.index('"""', src.index('"""', i) + 3)]

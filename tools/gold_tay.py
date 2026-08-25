@@ -62,15 +62,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from retrieval.alias_store import load_aliases            # noqa: E402
-from retrieval.evalkit.cli import OUTDIR, _load_cfg       # noqa: E402
-from retrieval.evalkit.goldset import ProxyGoldV2         # noqa: E402
-from retrieval.evalkit.runner import _questions           # noqa: E402
-from retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
+from text2pandas.pipelines.retrieval.alias_store import load_aliases            # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import OUTDIR, _load_cfg       # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.goldset import ProxyGoldV2         # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.runner import _questions           # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
                                       HardFilterGenerator)
-from retrieval.metric_hint import metric_codes_hint, statement_hint  # noqa: E402
-from retrieval.query_terms import _fold, content_terms, drop_terms  # noqa: E402
-from retrieval.question_intent import (BASIS_OF_SCOPE,  # noqa: E402
+from text2pandas.pipelines.retrieval.metric_hint import metric_codes_hint, statement_hint  # noqa: E402
+from text2pandas.pipelines.retrieval.query_terms import _fold, content_terms, drop_terms  # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import (BASIS_OF_SCOPE,  # noqa: E402
                                        parse_intent)
 
 DEV = ROOT / "data/curated/dev-legacy"

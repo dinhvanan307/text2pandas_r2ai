@@ -95,7 +95,7 @@ def main() -> int:
     }
     try:
         sys.path.insert(0, str(Path.cwd() / "src"))
-        from data_pipeline.storage import source_fingerprint
+        from text2pandas.pipelines.a6.storage import source_fingerprint
         rep.update(source_fingerprint())
     except Exception as exc:                                  # pragma: no cover
         rep["source_fingerprint_error"] = repr(exc)

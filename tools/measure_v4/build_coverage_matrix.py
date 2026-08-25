@@ -18,8 +18,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from text2pandas.answer_pipeline.frame import classify_operation, extract_basis  # noqa: E402
-from unitlex import scan_question_unit  # noqa: E402
+from text2pandas.pipelines.answering.frame import classify_operation, extract_basis  # noqa: E402
+from text2pandas.domain.units.lexicon import scan_question_unit  # noqa: E402
 from audit_candidate_coverage import expand_ranges  # noqa: E402
 
 _TICKER = re.compile(r"\b([A-Z]{3,4})\b")

@@ -1,6 +1,6 @@
 """Đo Retrieval trên GOLD V2 — đúng đặc tả metric của BTC.
 
-Retrieval chạy bằng `src/retrieval/**` NGUYÊN TRẠNG (còn nguyên RC-1..RC-4).
+Retrieval chạy bằng `src/text2pandas/pipelines/retrieval/**` NGUYÊN TRẠNG (còn nguyên RC-1..RC-4).
 Gold thì đã được gỡ khỏi bốn lỗi ấy. Đó là chủ ý: gold phải là SỰ THẬT, và
 Retrieval phải bị trừ điểm cho lỗi của chính nó.
 
@@ -22,11 +22,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from retrieval.alias_store import load_aliases                 # noqa: E402
-from retrieval.evalkit.cli import _load_cfg                    # noqa: E402
-from retrieval.evalkit.stages import (Bm25StructuralRanker,    # noqa: E402
+from text2pandas.pipelines.retrieval.alias_store import load_aliases                 # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg                    # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker,    # noqa: E402
                                       HardFilterGenerator)
-from retrieval.question_intent import parse_intent             # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent             # noqa: E402
 
 DEV = ROOT / "data" / "curated" / "dev-legacy"
 OUT = ROOT / "artifacts" / "runs" / "retrieval" / "reaudit" / "refs_goldv2.json"
