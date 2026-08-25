@@ -80,6 +80,7 @@ class SubmissionRefs:
     n_policy: int
     n_candidates: int
     table_uids: list[str]
+    ranked_table_uids: list[str]
 
     def as_item(self, question: str, answer: str = "") -> dict:
         """Một phần tử của tệp JSON nộp bài. `answer` để trống là HỢP LỆ ở giai
@@ -121,7 +122,8 @@ class RetrievalToSubmission:
         o2 = self.s2.rank(conn, question, it, o1)
         o3 = self.s3.rerank(conn, question, it, o2)
         n = self.n_for(it)
-        chon = [r.table_uid for r in o3.ranked[:n]]
+        ranked = [r.table_uid for r in o3.ranked]
+        chon = ranked[:n]
         refs, docs = [], []
         for uid in chon:
             row = conn.execute(
@@ -138,4 +140,5 @@ class RetrievalToSubmission:
             if d not in docs:
                 docs.append(d)
         return SubmissionRefs(qid=qid, relevant_tables=refs, relevant_docs=docs,
-                              n_policy=n, n_candidates=o1.n, table_uids=chon)
+                              n_policy=n, n_candidates=o1.n, table_uids=chon,
+                              ranked_table_uids=ranked)

@@ -28,6 +28,15 @@ class CandidateCell:
     storage_exponent: Optional[int]   # log10(value / parsed_raw)
     unit: Unit                        # declared by the column header
     period: Optional[str] = None
+    table_uid: Optional[str] = None
+    entity: Optional[str] = None
+    basis: Optional[str] = None
+    metric_code: Optional[str] = None
+    period_role: Optional[str] = None
+    is_restated: bool = False
+    table_rank: int = 0
+    section_text: str = ""
+    table_context: str = ""
 
     def native_quantity(self) -> Quantity:
         """The cell expressed in the unit its *header* declares.
@@ -47,6 +56,13 @@ class CandidateCell:
             "stored_value": self.value,
             "storage_exponent": self.storage_exponent,
             "declared_unit": self.unit.describe(),
+            "table_uid": self.table_uid,
+            "entity": self.entity,
+            "basis": self.basis,
+            "metric_code": self.metric_code,
+            "period_role": self.period_role,
+            "is_restated": self.is_restated,
+            "section_text": self.section_text,
         }
 
 

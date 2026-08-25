@@ -109,6 +109,7 @@ def test_smoke_het_chuoi_mot_ma_mot_nam(conn):
     assert "line:" not in r.relevant_tables[0]
     assert r.relevant_docs == [r.relevant_tables[0].rsplit("|", 1)[0]]
     assert r.n_candidates >= 2                  # S1 giữ cả hợp nhất lẫn riêng
+    assert r.ranked_table_uids[:len(r.table_uids)] == r.table_uids
 
 
 def test_relevant_docs_luon_suy_ra_tu_relevant_tables(conn):

@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+import sqlite3
+
+from text2pandas.application.usecases.canonical_run import (
+    QuestionSelector,
+    load_candidate_cells,
+)
+from text2pandas.pipelines.answering import CandidateCell, Unit
+from text2pandas.pipelines.answering.ir import OperandSlot
+from text2pandas.pipelines.answering.units import MONEY
+
+
+def _cell(row: str, *, section: str = "", context: str = "", rank: int = 0) -> CandidateCell:
+    return CandidateCell(
+        df_var="df1",
+        csv_path="data/t.csv",
+        row_index=0,
+        row_path=row,
+        col_label="31.12.2022 Triệu VND",
+        value_raw="1.000",
+        value=1000.0,
+        parsed_raw=1000.0,
+        storage_exponent=0,
+        unit=Unit(MONEY, 6),
+        period="2022-12-31",
+        table_uid="t",
+        entity="ACB",
+        basis="separate",
+        table_rank=rank,
+        section_text=section,
+        table_context=context,
+    )
+
+
+def test_category_axis_outweighs_generic_metric_match() -> None:
+    question = "Số dư cho vay khách hàng ngành Thương mại của ACB cuối năm 2022"
+    category = _cell(
+        "9.6 Theo ngành nghề kinh doanh › Thương mại",
+        section="9.6 Theo ngành nghề kinh doanh",
+        context="Cho vay khách hàng | Thương mại | Sản xuất",
+    )
+    generic = _cell(
+        "Dự phòng rủi ro cho vay khách hàng",
+        section="Dự phòng rủi ro cho vay khách hàng",
+        context="Cho vay khách hàng",
+        rank=1,
+    )
+    selector = QuestionSelector(question, frozenset(), drop=("ACB",))
+
+    selected = selector.pick(
+        OperandSlot("value", period="2022", basis="separate", entity="ACB"),
+        [generic, category],
+    )
+
+    assert selected is category
+
+
+def test_selector_abstains_without_phrase_or_metric_evidence() -> None:
+    selector = QuestionSelector("Chi phí dự phòng của STB năm 2020", frozenset())
+    unrelated = _cell("Tài sản Có khác", section="Nghĩa vụ ngân sách")
+    assert selector.pick(OperandSlot("value", period="2020"), [unrelated]) is None
+
+
+def test_a6_loader_excludes_scale_conflicts() -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(
+        """
+        CREATE TABLE tables (
+          table_uid TEXT PRIMARY KEY, basis TEXT, section_text TEXT, context_clean TEXT
+        );
+        CREATE TABLE table_cards (table_uid TEXT PRIMARY KEY, table_search_text TEXT);
+        CREATE TABLE observation_readiness (
+          observation_uid TEXT PRIMARY KEY, execution_ready INTEGER
+        );
+        CREATE TABLE observations (
+          observation_uid TEXT PRIMARY KEY, table_uid TEXT, ticker TEXT,
+          row_path_text TEXT, metric_label_clean TEXT, col_path_text TEXT,
+          value_source_raw TEXT, value_decimal_text TEXT, unit_kind TEXT,
+          currency TEXT, scale_exponent INTEGER, period_end TEXT,
+          period_role TEXT, metric_code TEXT, is_restated INTEGER,
+          grid_row_idx INTEGER, grid_col_idx INTEGER
+        );
+        INSERT INTO tables VALUES ('t1', 'separate', 'Doanh thu', '');
+        INSERT INTO table_cards VALUES ('t1', 'Doanh thu thuần');
+        INSERT INTO observation_readiness VALUES ('ok', 1), ('bad', 1);
+        INSERT INTO observations VALUES
+          ('ok','t1','VNM','Doanh thu thuần',NULL,'2022 Triệu đồng',
+           '1.000','1000','money','VND',6,'2022-12-31','current','10',0,1,1),
+          ('bad','t1','VNM','Doanh thu khác',NULL,'2022 Triệu đồng',
+           '2.000','2000','money','VND',0,'2022-12-31','current',NULL,0,2,1);
+        """
+    )
+
+    cells, frames = load_candidate_cells(connection, ["t1"])
+
+    assert [cell.row_path for cell in cells] == ["Doanh thu thuần"]
+    assert list(frames) == ["data/t1.csv"]

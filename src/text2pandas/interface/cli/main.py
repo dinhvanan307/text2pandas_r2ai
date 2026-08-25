@@ -26,10 +26,6 @@ PROJECT_PATHS = ProjectPaths.from_repo_root(ROOT)
 ACTIVE_SNAPSHOTS = ActiveSnapshots.load(PROJECT_PATHS)
 CORPUS = PROJECT_PATHS.raw_btc / "financial_statements"
 QUESTIONS = PROJECT_PATHS.raw_btc / "questions" / "questions.jsonl"
-LEGACY_CATALOG_DB = PROJECT_PATHS.artifact_root / "runs" / "a6" / "bronze" / "catalog.sqlite"
-SILVER_DB = ACTIVE_SNAPSHOTS.a6_path / "silver.db"
-CARD_DB = ACTIVE_SNAPSHOTS.retrieval_path / "retrieval.db"
-CODE_STOCK = PROJECT_PATHS.raw_btc / "metadata" / "companies.csv"
 SUBMIT_DIR = PROJECT_PATHS.artifact_root / "submissions"
 
 # Thư mục nhân bản trên đĩa CỤC BỘ. Bắt buộc: kho code nằm trên FUSE mount,
@@ -178,46 +174,48 @@ def cmd_index(args: argparse.Namespace) -> int:
 def cmd_run(args: argparse.Namespace) -> int:
     import json
 
-    from text2pandas.application.usecases.run_pipeline import run_pipeline
+    from text2pandas.application.usecases.canonical_run import run_canonical_pipeline
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
         replay_zip,
         validate_zip,
     )
+    from text2pandas.infrastructure.snapshots import verify_active_snapshots
 
-    cat = _workdb("catalog.sqlite")
-    idx = _workdb("card_index.sqlite")
-    if not cat.exists():
-        cat = LEGACY_CATALOG_DB
-    if not idx.exists():
-        idx = CARD_DB
+    if (args.limit or args.offset) and not args.no_package:
+        raise BuildSafetyError("partial run requires --no-package")
+    verification = verify_active_snapshots(PROJECT_PATHS, scope="all")
+    failures = [item for item in verification.items if not item.ok]
+    if failures:
+        detail = "; ".join(f"{item.name}: {item.detail}" for item in failures)
+        raise BuildSafetyError(f"active snapshot preflight failed: {detail}")
 
-    stage = SCRATCH / "stage"
-    records = stage / "records.jsonl"
-    if args.offset == 0 and not args.resume:
-        import shutil as _sh
-        if stage.exists():
-            _sh.rmtree(stage)
-    stage.mkdir(parents=True, exist_ok=True)
-    rep = run_pipeline(
-        cat, idx, QUESTIONS, CODE_STOCK, stage / "data", records,
-        offset=args.offset, limit=args.limit, n_tables=args.n_tables, n_docs=args.n_docs,
+    stage = PROJECT_PATHS.run_dir("answer", args.run_id)
+    rep = run_canonical_pipeline(
+        ACTIVE_SNAPSHOTS.a6_path / "silver.db",
+        ACTIVE_SNAPSHOTS.retrieval_path / "retrieval.db",
+        QUESTIONS,
+        stage,
+        offset=args.offset,
+        limit=args.limit,
+        max_tables=args.n_tables,
+        answer_pool_tables=args.answer_pool_tables,
         progress=(lambda i, n: print(f"  ... {i} câu, {n} có đáp án", flush=True)) if args.verbose else None,
     )
     print("\n╔═══════════ PIPELINE ═══════════╗")
     print(f"  câu hỏi              : {rep.n_questions:,}")
-    print(f"  nhận diện được mã CK : {rep.n_with_ticker:,}  ({100*rep.n_with_ticker/max(rep.n_questions,1):.1f}%)")
+    print(f"  nhận diện thực thể   : {rep.n_with_entity:,}  ({100*rep.n_with_entity/max(rep.n_questions,1):.1f}%)")
     print(f"  nhận diện được năm   : {rep.n_with_year:,}  ({100*rep.n_with_year/max(rep.n_questions,1):.1f}%)")
-    print(f"  không có tài liệu    : {rep.n_zero_docs:,}")
     print(f"  truy hồi được bảng   : {rep.n_retrieved:,}  ({100*rep.n_retrieved/max(rep.n_questions,1):.1f}%)")
-    print(f"  rút được số          : {rep.n_answered:,}  ({100*rep.n_answered/max(rep.n_questions,1):.1f}%)")
-    print(f"  nguồn mã CK          : {rep.ticker_sources}")
+    print(f"  answer qua đủ gate   : {rep.n_answered:,}  ({100*rep.n_answered/max(rep.n_questions,1):.1f}%)")
+    print(f"  abstain              : {rep.n_abstained:,}")
     print(f"  thời gian            : {rep.seconds}s")
+    for reason, count in list(rep.abstain_reasons.items())[:8]:
+        print(f"    {reason:<48} {count:>5}")
 
     if args.no_package:
-        done = sum(1 for _ in records.open(encoding="utf-8"))
-        print(f"\n  đã ghi {done:,} bản ghi vào {records}")
+        print(f"\n  run artifacts: {stage}")
         return 0
 
     questions = {}
@@ -225,14 +223,10 @@ def cmd_run(args: argparse.Namespace) -> int:
         if line.strip():
             r = json.loads(line)
             questions[r["id"]] = r["question"]
-    expected = set(questions)
-    if args.limit:
-        expected = {r.qid for r in rep.results}
-
     cfg = SubmissionConfig(doc_id_variant=args.doc_id, locator_base=args.locator_base)
     zip_path = build_submission(rep.results, questions, stage, cfg)
 
-    val = validate_zip(zip_path, expected)
+    val = validate_zip(zip_path, set(questions))
     print("\n╔═══════════ VALIDATOR ═══════════╗")
     print(f"  bản ghi              : {val.n_records:,}")
     print(f"  lỗi                  : {len(val.errors)}")
@@ -249,9 +243,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     if stat["executed"]:
         print(f"  khớp answer  {100*stat['matched']/stat['executed']:.2f}% số câu chạy được")
 
-    SUBMIT_DIR.mkdir(parents=True, exist_ok=True)
-    final = SUBMIT_DIR / zip_path.name
-    _publish(zip_path, final)
+    final = SUBMIT_DIR / f"submission_{args.run_id}.zip"
+    publish_new_file(zip_path, final)
     print(f"\n  ZIP: {final}  ({zip_path.stat().st_size/1e6:.1f} MB)")
     return 0 if val.ok else 1
 
@@ -403,12 +396,12 @@ def main(argv: list[str] | None = None) -> int:
     cards = sub.add_parser("cards", help="Silver -> immutable legacy Table Card index")
     cards.add_argument("--run-id", required=True)
     cards.add_argument("--silver-db")
-    rn = sub.add_parser("run", help="Chạy pipeline end-to-end -> ZIP bài nộp")
+    rn = sub.add_parser("run", help="Chạy canonical A6/retrieval pipeline -> ZIP")
+    rn.add_argument("--run-id", required=True)
     rn.add_argument("--limit", type=int, default=0)
     rn.add_argument("--offset", type=int, default=0)
     rn.add_argument("--n-tables", dest="n_tables", type=int, default=20)
-    rn.add_argument("--n-docs", dest="n_docs", type=int, default=5)
-    rn.add_argument("--resume", action="store_true")
+    rn.add_argument("--answer-pool-tables", type=int, default=30)
     rn.add_argument("--no-package", action="store_true")
     rn.add_argument("--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped")
     rn.add_argument("--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1)
