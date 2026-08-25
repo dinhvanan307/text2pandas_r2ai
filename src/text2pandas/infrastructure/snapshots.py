@@ -14,6 +14,49 @@ import yaml
 from text2pandas.infrastructure.paths import ProjectPathError, ProjectPaths
 
 
+A6_RUNTIME_SCHEMA: dict[str, frozenset[str]] = {
+    "documents": frozenset({"document_uid", "directory_doc_id", "ticker", "doc_year", "basis"}),
+    "tables": frozenset(
+        {"table_uid", "directory_doc_id", "locator", "evidence_ref", "line_start_1based"}
+    ),
+    "observations": frozenset(
+        {
+            "observation_uid",
+            "table_uid",
+            "directory_doc_id",
+            "row_path_text",
+            "col_path_text",
+            "metric_code",
+            "value_decimal_text",
+            "unit_kind",
+            "scale_exponent",
+            "period_end",
+            "period_role",
+            "is_restated",
+        }
+    ),
+}
+
+RETRIEVAL_RUNTIME_SCHEMA: dict[str, frozenset[str]] = {
+    "table_cards": frozenset(
+        {
+            "table_uid",
+            "doc_id",
+            "locator",
+            "evidence_ref",
+            "ticker",
+            "doc_year",
+            "metric_codes",
+            "periods",
+            "retrieval_ready",
+        }
+    ),
+    "table_cards_fts": frozenset(
+        {"table_uid", "ticker", "section_text", "context_clean", "row_labels", "col_labels"}
+    ),
+}
+
+
 @dataclass(frozen=True, slots=True)
 class ActiveSnapshots:
     """Dataset identities selected by ``configs/datasets/active_snapshot.yaml``."""
@@ -144,6 +187,7 @@ def _verify_a6(active: ActiveSnapshots, items: list[VerificationItem]) -> None:
     if not database.is_file():
         return
     with _readonly_sqlite(database) as connection:
+        items.extend(verify_sqlite_contract(connection, A6_RUNTIME_SCHEMA, "a6.runtime"))
         meta = dict(connection.execute("SELECT key, value FROM build_meta"))
         _expect(items, "a6.build_meta.build_id", meta.get("build_id"), active.a6_build_id)
         expected = _nested(manifest, "dataframes", "table_cards")
@@ -170,6 +214,9 @@ def _verify_retrieval(active: ActiveSnapshots, items: list[VerificationItem]) ->
     expected_bytes = manifest.get("database_bytes")
     _expect(items, "retrieval.database_bytes", database.stat().st_size, expected_bytes)
     with _readonly_sqlite(database) as connection:
+        items.extend(
+            verify_sqlite_contract(connection, RETRIEVAL_RUNTIME_SCHEMA, "retrieval.runtime")
+        )
         meta = dict(connection.execute("SELECT key, value FROM build_meta"))
         _expect(
             items,
@@ -269,3 +316,35 @@ def _nested(mapping: Mapping[str, Any], parent: str, key: str) -> Any:
 
 def _readonly_sqlite(path: Path) -> sqlite3.Connection:
     return sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
+
+
+def verify_sqlite_contract(
+    connection: sqlite3.Connection,
+    required: Mapping[str, frozenset[str]],
+    label: str,
+) -> tuple[VerificationItem, ...]:
+    """Verify tables and columns consumed by the production runtime."""
+
+    available = {
+        row[0]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type IN ('table', 'view')"
+        )
+    }
+    items: list[VerificationItem] = []
+    for table, expected_columns in required.items():
+        if table not in available:
+            items.append(VerificationItem(f"{label}.{table}", False, "missing table"))
+            continue
+        actual_columns = {
+            row[1] for row in connection.execute(f'PRAGMA table_info("{table}")')
+        }
+        missing = sorted(expected_columns - actual_columns)
+        items.append(
+            VerificationItem(
+                f"{label}.{table}",
+                not missing,
+                f"columns={len(actual_columns)}" if not missing else f"missing columns={missing}",
+            )
+        )
+    return tuple(items)

@@ -12,6 +12,12 @@ import shutil
 import sys
 from pathlib import Path
 
+from text2pandas.infrastructure.builds import (
+    BuildSafetyError,
+    assert_not_active_snapshot,
+    build_output_path,
+    publish_new_file,
+)
 from text2pandas.infrastructure.paths import ProjectPaths
 from text2pandas.infrastructure.snapshots import ActiveSnapshots
 
@@ -20,9 +26,7 @@ PROJECT_PATHS = ProjectPaths.from_repo_root(ROOT)
 ACTIVE_SNAPSHOTS = ActiveSnapshots.load(PROJECT_PATHS)
 CORPUS = PROJECT_PATHS.raw_btc / "financial_statements"
 QUESTIONS = PROJECT_PATHS.raw_btc / "questions" / "questions.jsonl"
-BRONZE = PROJECT_PATHS.artifact_root / "runs" / "a6" / "bronze"
-CATALOG_DB = BRONZE / "catalog.sqlite"
-INDEX_DB = BRONZE / "table_index.sqlite"
+LEGACY_CATALOG_DB = PROJECT_PATHS.artifact_root / "runs" / "a6" / "bronze" / "catalog.sqlite"
 SILVER_DB = ACTIVE_SNAPSHOTS.a6_path / "silver.db"
 CARD_DB = ACTIVE_SNAPSHOTS.retrieval_path / "retrieval.db"
 CODE_STOCK = PROJECT_PATHS.raw_btc / "metadata" / "companies.csv"
@@ -44,6 +48,23 @@ def _publish(src: Path, dst: Path) -> None:
     shutil.copy2(src, dst)
 
 
+def _legacy_output(args: argparse.Namespace, filename: str) -> Path:
+    target = build_output_path(PROJECT_PATHS, "legacy-build", args.run_id, filename)
+    assert_not_active_snapshot(target, ACTIVE_SNAPSHOTS)
+    return target
+
+
+def _source_or_run_output(
+    args: argparse.Namespace,
+    explicit: str | None,
+    filename: str,
+) -> Path:
+    source = Path(explicit).expanduser().resolve() if explicit else _legacy_output(args, filename)
+    if not source.is_file():
+        raise BuildSafetyError(f"missing build input: {source}")
+    return source
+
+
 def cmd_catalog(args: argparse.Namespace) -> int:
     from text2pandas.application.usecases.build_catalog import build_catalog
 
@@ -54,10 +75,11 @@ def cmd_catalog(args: argparse.Namespace) -> int:
     def progress(i: int, n_tab: int) -> None:
         print(f"  ... {i} tài liệu, {n_tab:,} bảng", flush=True)
 
-    work = _workdb("catalog.sqlite")
+    target = _legacy_output(args, "catalog.sqlite")
+    work = _workdb(f"{args.run_id}-catalog.sqlite")
     work.unlink(missing_ok=True)
     rep = build_catalog(CORPUS, work, progress=progress if args.verbose else None)
-    _publish(work, CATALOG_DB)
+    publish_new_file(work, target)
 
     print("\n╔═══════════ CATALOG ═══════════╗")
     print(f"  tài liệu          : {rep.n_documents:,}")
@@ -68,7 +90,7 @@ def cmd_catalog(args: argparse.Namespace) -> int:
     print(f"  basis xung đột    : {rep.basis_conflicts}  (tên tệp ≠ nội dung)")
     print(f"  mẫu định danh     : {rep.by_pattern}")
     print(f"  thời gian         : {rep.seconds}s")
-    print(f"  db                : {CATALOG_DB}")
+    print(f"  db                : {target}")
     for name, err in rep.failures:
         print(f"  ✗ {name}: {err}")
     return 0 if rep.n_failed == 0 else 1
@@ -84,9 +106,9 @@ def cmd_parse_check(args: argparse.Namespace) -> int:
     )
     from text2pandas.infrastructure.parsing.html_table import parse_table_html
 
-    db = _workdb("catalog.sqlite")
-    if not db.exists():
-        db = CATALOG_DB
+    db = Path(args.catalog_db).expanduser().resolve()
+    if not db.is_file():
+        raise BuildSafetyError(f"missing catalog database: {db}")
     conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
     q = "SELECT doc_id_stripped, line_no_1based, raw_html FROM tables"
     if args.limit:
@@ -140,16 +162,16 @@ def cmd_parse_check(args: argparse.Namespace) -> int:
 def cmd_index(args: argparse.Namespace) -> int:
     from text2pandas.infrastructure.retrieval.index import build_index
 
-    cat = _workdb("catalog.sqlite")
-    if not cat.exists():
-        cat = CATALOG_DB
-    work = _workdb("table_index.sqlite")
+    cat = _source_or_run_output(args, args.catalog_db, "catalog.sqlite")
+    target = _legacy_output(args, "table_index.sqlite")
+    work = _workdb(f"{args.run_id}-table_index.sqlite")
+    work.unlink(missing_ok=True)
     rep = build_index(cat, work, progress=(lambda n: print(f"  ... {n:,} bảng", flush=True)) if args.verbose else None)
-    _publish(work, INDEX_DB)
+    publish_new_file(work, target)
     print("\n╔═══════════ INDEX ═══════════╗")
     for k, v in rep.items():
         print(f"  {k:<12} {v:,}" if isinstance(v, int) else f"  {k:<12} {v}")
-    print(f"  db           {INDEX_DB}")
+    print(f"  db           {target}")
     return 0
 
 
@@ -167,7 +189,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     cat = _workdb("catalog.sqlite")
     idx = _workdb("card_index.sqlite")
     if not cat.exists():
-        cat = CATALOG_DB
+        cat = LEGACY_CATALOG_DB
     if not idx.exists():
         idx = CARD_DB
 
@@ -306,17 +328,16 @@ def cmd_silver(args: argparse.Namespace) -> int:
     """Bronze -> Silver: đặc trưng bảng + ô định dạng dài."""
     from text2pandas.application.usecases.build_silver import build_silver
 
-    cat = _workdb("catalog.sqlite")
-    if not cat.exists():
-        cat = CATALOG_DB
-    work = _workdb("silver.sqlite")
+    cat = _source_or_run_output(args, args.catalog_db, "catalog.sqlite")
+    target = _legacy_output(args, "silver.sqlite")
+    work = _workdb(f"{args.run_id}-silver.sqlite")
+    work.unlink(missing_ok=True)
     rep = build_silver(
         cat, CORPUS, work, offset=args.offset, limit=args.limit,
         progress=(lambda k, t, c: print(f"  ... {k} tài liệu · {t:,} bảng · {c:,} ô", flush=True))
         if args.verbose else None,
     )
-    if not args.no_publish:
-        _publish(work, SILVER_DB)
+    publish_new_file(work, target)
     print("\n╔═══════════ SILVER ═══════════╗")
     print(f"  tài liệu           : {rep.n_documents:,}")
     print(f"  bảng               : {rep.n_tables:,}")
@@ -331,6 +352,7 @@ def cmd_silver(args: argparse.Namespace) -> int:
     print("  ── nguồn đơn vị ──")
     for k, v in sorted(rep.by_unit_source.items(), key=lambda x: -x[1]):
         print(f"    {k:<18} {v:>8,}  {100*v/rep.n_tables:5.1f}%")
+    print(f"  db                 : {target}")
     return 0
 
 
@@ -338,16 +360,17 @@ def cmd_cards(args: argparse.Namespace) -> int:
     """Silver -> chỉ mục Table Card (thay cho index văn bản phẳng)."""
     from text2pandas.infrastructure.retrieval.index import build_card_index
 
-    sil = _workdb("silver.sqlite")
-    if not sil.exists():
-        sil = SILVER_DB
-    work = _workdb("card_index.sqlite")
+    sil = _source_or_run_output(args, args.silver_db, "silver.sqlite")
+    target = _legacy_output(args, "card_index.sqlite")
+    work = _workdb(f"{args.run_id}-card_index.sqlite")
+    work.unlink(missing_ok=True)
     rep = build_card_index(sil, work,
                            progress=(lambda n: print(f"  ... {n:,}", flush=True)) if args.verbose else None)
-    _publish(work, CARD_DB)
+    publish_new_file(work, target)
     print("\n╔═══════════ CARD INDEX ═══════════╗")
     for k, v in rep.items():
         print(f"  {k:<16} {v:,}" if isinstance(v, int) else f"  {k:<16} {v}")
+    print(f"  db               {target}")
     return 0
 
 
@@ -367,13 +390,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("-v", "--verbose", action="store_true")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    sub.add_parser("catalog", help="Quét corpus, dựng catalog")
-    sub.add_parser("index", help="Dựng chỉ mục FTS5 cho bảng (cũ, văn bản phẳng)")
+    catalog = sub.add_parser("catalog", help="Quét corpus, dựng immutable legacy catalog")
+    catalog.add_argument("--run-id", required=True)
+    index = sub.add_parser("index", help="Dựng immutable FTS5 index legacy")
+    index.add_argument("--run-id", required=True)
+    index.add_argument("--catalog-db")
     sv = sub.add_parser("silver", help="Bronze -> Silver: đặc trưng bảng + ô")
+    sv.add_argument("--run-id", required=True)
+    sv.add_argument("--catalog-db")
     sv.add_argument("--offset", type=int, default=0)
     sv.add_argument("--limit", type=int, default=0)
-    sv.add_argument("--no-publish", action="store_true")
-    sub.add_parser("cards", help="Silver -> chỉ mục Table Card")
+    cards = sub.add_parser("cards", help="Silver -> immutable legacy Table Card index")
+    cards.add_argument("--run-id", required=True)
+    cards.add_argument("--silver-db")
     rn = sub.add_parser("run", help="Chạy pipeline end-to-end -> ZIP bài nộp")
     rn.add_argument("--limit", type=int, default=0)
     rn.add_argument("--offset", type=int, default=0)
@@ -387,6 +416,7 @@ def main(argv: list[str] | None = None) -> int:
     pk.add_argument("--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped")
     pk.add_argument("--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1)
     pc = sub.add_parser("parse-check", help="Parse thử bảng, thống kê chất lượng")
+    pc.add_argument("--catalog-db", required=True)
     pc.add_argument("--limit", type=int, default=0)
     vf = sub.add_parser("verify", help="Kiểm identity và lineage của active snapshots")
     vf.add_argument("scope", nargs="?", choices=["raw", "a6", "retrieval", "all"], default="all")
@@ -395,7 +425,11 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {"catalog": cmd_catalog, "parse-check": cmd_parse_check,
                 "index": cmd_index, "run": cmd_run, "package": cmd_package,
                 "silver": cmd_silver, "cards": cmd_cards, "verify": cmd_verify}
-    return handlers[args.cmd](args)
+    try:
+        return handlers[args.cmd](args)
+    except BuildSafetyError as error:
+        print(f"LỖI AN TOÀN BUILD: {error}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

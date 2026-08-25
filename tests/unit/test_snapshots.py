@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import sqlite3
 
 from text2pandas.infrastructure.paths import ProjectPathError, ProjectPaths
-from text2pandas.infrastructure.snapshots import ActiveSnapshots
+from text2pandas.infrastructure.snapshots import ActiveSnapshots, verify_sqlite_contract
 
 
 def _config(root: Path, content: str) -> ProjectPaths:
@@ -74,3 +75,24 @@ retrieval:
 
     with pytest.raises(ProjectPathError, match="escapes data root"):
         ActiveSnapshots.load(paths)
+
+
+def test_verify_sqlite_contract_reports_missing_table_and_columns() -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.execute("CREATE TABLE observations (observation_uid TEXT)")
+
+    report = verify_sqlite_contract(
+        connection,
+        {
+            "observations": frozenset({"observation_uid", "table_uid"}),
+            "tables": frozenset({"table_uid"}),
+        },
+        "runtime",
+    )
+
+    assert [(item.name, item.ok) for item in report] == [
+        ("runtime.observations", False),
+        ("runtime.tables", False),
+    ]
+    assert "table_uid" in report[0].detail
+    assert report[1].detail == "missing table"
