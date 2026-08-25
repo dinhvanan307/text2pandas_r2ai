@@ -45,9 +45,8 @@ THU_MUC=(
   configs        # 256 K  cấu hình (ontology, formula, retrieval, readiness)
   evaluation     # 1,3 M  question_plans_1012.jsonl + bộ đánh giá
   identity       # 384 K  source/environment/data identity + seal
-  env            #  28 K  bootstrap môi trường review
+  ops            #        Dockerfile + bootstrap môi trường review
   scripts        #  24 K  script vận hành
-  docker         #        Dockerfile (nếu có)
 )
 
 TEP=(
@@ -107,7 +106,7 @@ cat > "$STAGE/PACKAGE_README.md" <<EOF
 
 ## Gói này CÓ
 
-\`src/\` \`tools/\` \`tests/\` \`configs/\` \`evaluation/\` \`identity/\` \`env/\` \`scripts/\`
+\`src/\` \`tools/\` \`tests/\` \`configs/\` \`evaluation/\` \`identity/\` \`ops/\` \`scripts/\`
 + \`Makefile\` \`pyproject.toml\` \`requirements.lock\` \`README.md\` \`CLAUDE.md\` \`HANDOFF.md\`
 
 ## Gói này KHÔNG có, và vì sao

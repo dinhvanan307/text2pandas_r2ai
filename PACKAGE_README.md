@@ -5,7 +5,7 @@
 
 ## Gói này CÓ
 
-`src/` `tools/` `tests/` `configs/` `evaluation/` `identity/` `env/` `scripts/`
+`src/` `tools/` `tests/` `configs/` `evaluation/` `identity/` `ops/` `scripts/`
 + `Makefile` `pyproject.toml` `requirements.lock` `README.md` `CLAUDE.md` `HANDOFF.md`
 
 ## Gói này KHÔNG có, và vì sao

@@ -68,7 +68,12 @@ def main() -> int:
             {"n_pass": d["n_pass"], "n_fail": d["n_fail"], "n_skip": d["n_skip"],
              "fail": [c["check"] for c in d["checks"] if c["verdict"] == "FAIL"]})
     else:
-        add("P0_packet", "reviewer_replay_report", "NOT_MEASURED", "chưa chạy env/verify_packet.sh")
+        add(
+            "P0_packet",
+            "reviewer_replay_report",
+            "NOT_MEASURED",
+            "chưa chạy ops/environment/verify_packet.sh",
+        )
 
     wv = ROOT / "artifacts/retrieval/workdb_verify_report.json"
     if wv.is_file():

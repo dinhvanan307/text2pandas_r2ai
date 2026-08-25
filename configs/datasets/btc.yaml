@@ -1,0 +1,16 @@
+schema_version: "1.0"
+dataset_id: vifinqa-btc-2026
+owner: competition-organizer
+immutable: true
+format: text
+expected:
+  ticker_count: 100
+  financial_statement_txt_count: 1973
+  question_count: 1012
+paths:
+  financial_statements: raw/btc/financial_statements
+  questions: raw/btc/questions/questions.jsonl
+  companies: raw/btc/metadata/companies.csv
+provenance:
+  baseline_manifest: provenance/baseline_20260825.json
+  corpus_id: sha256:ca033190f2e9e99f8384bf59749484b0668c573e0a84e02a055d173d99de0cb9

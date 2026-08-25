@@ -25,12 +25,16 @@ export TZ             := UTC
 export LC_ALL         := C.UTF-8
 export LANG           := C.UTF-8
 
-.PHONY: help dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
-        dp-rebuild-check dp-package
+.PHONY: help paths-check dp-env-check dp-test dp-build dp-measure dp-release \
+        dp-verify dp-rebuild-check dp-package
 
 help:
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-20s\033[0m %s\n",$$1,$$2}'
+
+paths-check: ## In repository/data/artifact roots và kiểm active snapshot config
+	@test -f configs/datasets/active_snapshot.yaml
+	@$(PY) -c 'from text2pandas.infrastructure.paths import ProjectPaths; p=ProjectPaths.discover(); print("repo_root="+str(p.repo_root)); print("data_root="+str(p.data_root)); print("artifact_root="+str(p.artifact_root)); print("active_snapshot="+str(p.active_snapshot_config))'
 
 ## ── RC-00 ────────────────────────────────────────────────────────────────
 dp-env-check: ## In OS/Python/SQLite/deps/commit/config hash — chạy TRƯỚC mọi thứ

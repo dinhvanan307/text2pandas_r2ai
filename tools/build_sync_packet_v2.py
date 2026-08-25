@@ -8,8 +8,9 @@ KHÁC sync_122_1 ở ba điểm, cả ba đều là lỗi đã được chỉ ra
 2. **Không gửi lại A6, work.db, control ZIP.** SHA đã khớp hai máy; gửi lại
    1,68 GB để chứng minh một thứ đã chứng minh rồi là lãng phí băng thông.
    Packet này là BỔ SUNG, đọc cùng sync_122_1.
-3. **Chạy được từ bản giải nén sạch.** `env/bootstrap_review_env.sh` dựng venv,
-   `env/verify_packet.sh` chạy 8 mục và ghi verdict máy đọc được.
+3. **Chạy được từ bản giải nén sạch.** `ops/environment/bootstrap_review_env.sh`
+   dựng venv, `ops/environment/verify_packet.sh` chạy 8 mục và ghi verdict máy
+   đọc được.
 
 Chạy:  python3 tools/build_sync_packet_v2.py
 """
@@ -36,9 +37,9 @@ ITEMS: list[tuple[str, str]] = [
     ("identity/final_audit_seal.json", "identity/final_audit_seal.json"),
     ("identity/SOURCE_SELECTION.json", "identity/SOURCE_SELECTION.json"),
     # môi trường
-    ("env/bootstrap_review_env.sh", "env/bootstrap_review_env.sh"),
-    ("env/requirements-review.txt", "env/requirements-review.txt"),
-    ("env/verify_packet.sh", "env/verify_packet.sh"),
+    ("ops/environment/bootstrap_review_env.sh", "ops/environment/bootstrap_review_env.sh"),
+    ("ops/environment/requirements-review.txt", "ops/environment/requirements-review.txt"),
+    ("ops/environment/verify_packet.sh", "ops/environment/verify_packet.sh"),
     # tools mới / đã sửa
     ("tools/build_retrieval_workdb.sh", "tools/build_retrieval_workdb.sh"),
     ("tools/build_source_identity_v1.py", "tools/build_source_identity_v1.py"),
@@ -89,7 +90,7 @@ ITEMS: list[tuple[str, str]] = [
     ("reports/reviewer_replay_report.json", "reports/reviewer_replay_report.json"),
     ("reports/crossmachine/fact_slot__linux-aarch64-py3.10.12.json",
      "reports/crossmachine/fact_slot__linux-aarch64-py3.10.12.json"),
-    ("env/review_env_actual.json", "env/review_env_actual.json"),
+    ("ops/environment/review_env_actual.json", "ops/environment/review_env_actual.json"),
     ("reports/primary_boost_verification.json", "reports/primary_boost_verification.json"),
     ("reports/submission_P0I_clean_replay.json", "reports/submission_P0I_clean_replay.json"),
     # rebuild
@@ -196,9 +197,9 @@ def main() -> int:
 
 ```bash
 sha256sum -c MANIFEST.sha256          # {n_files} file
-bash env/bootstrap_review_env.sh      # dựng venv 3.11 + pandas/numpy
+bash ops/environment/bootstrap_review_env.sh  # dựng venv 3.11 + pandas/numpy
 . .venv-review/bin/activate
-bash env/verify_packet.sh             # 8 mục, ghi reports/reviewer_replay_report.json
+bash ops/environment/verify_packet.sh         # 8 mục, ghi reports/reviewer_replay_report.json
 ```
 
 `verify_packet.sh` **không dừng ở lỗi đầu tiên** — chạy hết rồi mới ra verdict,

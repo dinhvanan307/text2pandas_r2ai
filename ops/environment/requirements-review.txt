@@ -1,0 +1,17 @@
+# Bộ tối thiểu để MÁY REVIEW replay/evaluate packet — review 127 §2.5, §8 câu 3.
+#
+# Vì sao tồn tại: sync_122_1 không self-contained. Máy review chạy
+# `replay_submission_v1.py` và dừng ở `ModuleNotFoundError: No module named
+# 'numpy'`. wheelhouse_*.zip trong repo là CPython 3.11 **Linux x86_64** nên
+# vô dụng trên macOS/arm64. Đây là danh sách cài từ PyPI, không ghim hash, chỉ
+# ghim dải tương thích — đủ để replay, KHÔNG phải môi trường build.
+#
+# Môi trường ĐẦY ĐỦ, khoá hash, dùng cho build/test:
+#     python3.11 -m pip install --require-hashes -r source/requirements.lock
+#
+# Contract runtime: CPython >= 3.11 (pyproject.requires-python).
+# Nếu chỉ có 3.10: replay vẫn chạy, nhưng phải ghi nhãn
+# MEASURED_OFF_CONTRACT_PY310 lên mọi số — xem identity/environment_identity.json.
+
+pandas>=2.0,<3
+numpy>=1.24,<3

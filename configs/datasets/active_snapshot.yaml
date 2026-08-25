@@ -1,0 +1,12 @@
+schema_version: "1.0"
+raw:
+  dataset_id: vifinqa-btc-2026
+  snapshot_id: ca033190f2e9e99f
+  path: raw/btc
+a6:
+  build_id: b3e9684004679ffb
+  path: processed/a6/b3e9684004679ffb
+retrieval:
+  source_a6_build_id: b3e9684004679ffb
+  index_id: 286973b134a189ee
+  path: indexes/retrieval/b3e9684004679ffb/286973b134a189ee
