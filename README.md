@@ -98,6 +98,7 @@ make lint
 make test-offline
 make test-integration
 make materialize-h0
+make semantic-coverage
 make snapshots-verify
 ```
 
@@ -112,6 +113,10 @@ text2pandas run --run-id submission-candidate-001
 Full run chỉ publish ZIP sang `artifacts/submissions/` khi strict validator và
 replay cùng pass; output fail vẫn nằm trong run stage kèm
 `submission_manifest.json` để điều tra.
+
+`make semantic-coverage` phân loại deterministic toàn bộ 1.012 câu theo typed
+route và reason code. Chỉ số này không bao gồm retrieval/binding/accuracy; baseline
+được khóa bằng offline test để semantic gaps không thay đổi im lặng.
 
 Các target `dp-*` trong `Makefile` là delivery contract hiện hữu của A6 build,
 measurement, deterministic rebuild và release packaging; chúng được giữ nguyên
@@ -136,6 +141,7 @@ legacy A6 records/submissions, tái tạo chúng bằng `make materialize-h0`; c
 
 - `docs/REFACTOR_PLAN.md`: baseline, target architecture và migration gates.
 - `docs/REFACTOR_STATUS.md`: phần đã triển khai và compatibility debt còn lại.
+- `docs/GAP_CLOSURE_STATUS.md`: gap matrix định lượng và thứ tự fill tiếp theo.
 - `docs/adr/`: quyết định data layout, namespace và artifact retention.
 - `data/README.md`: ownership/lifecycle của từng data class.
 - `docs/competition/Text2Pandas.docx`: đề bài gốc.

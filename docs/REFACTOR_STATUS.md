@@ -25,6 +25,9 @@ Updated: 2026-08-26
   bắt buộc operands cùng report/currency, sandbox execution và fail-closed với
   công thức chưa review. Answer pool mặc định 50 bảng để không cắt mất operand
   hợp lệ ở các báo cáo ngân hàng phân mảnh.
+- Static semantic coverage contract cho đủ 1.012 câu, có corpus digest, per-QID
+  reason code, CLI/Make entry point và CI baseline. Scope được ghi rõ là route
+  coverage, không đánh tráo với retrieval/binding/answer accuracy.
 
 ## Intentionally retained
 
@@ -41,6 +44,8 @@ Updated: 2026-08-26
 ## Current gates
 
 - Offline: green.
+- Static semantic route: `578/1.012` eligible (`57,1146%`), `434` named gaps;
+  baseline được khóa trong offline suite.
 - Raw/A6/retrieval identity and lineage: green for the active local snapshots.
 - H0 materialized integration: green trên active local materialization (`22/22`).
   Adjudication ledger được dẫn xuất từ 34 record có provenance

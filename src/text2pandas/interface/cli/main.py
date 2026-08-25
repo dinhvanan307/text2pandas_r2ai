@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import sys
@@ -431,6 +432,37 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0 if report.ok else 1
 
 
+def cmd_coverage(args: argparse.Namespace) -> int:
+    """Audit static semantic routes without claiming end-to-end accuracy."""
+    from text2pandas.application.usecases.semantic_coverage import analyze_semantic_coverage
+    from text2pandas.pipelines.retrieval.alias_store import load_aliases
+
+    source = Path(args.questions).expanduser().resolve()
+    if not source.is_file():
+        raise BuildSafetyError(f"missing questions file: {source}")
+    questions = [
+        json.loads(line)
+        for line in source.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    report = analyze_semantic_coverage(questions, load_aliases("a6"))
+    document = json.dumps(
+        report.to_dict(include_records=not args.summary_only),
+        ensure_ascii=False,
+        indent=2,
+        sort_keys=True,
+    )
+    if args.output:
+        output = Path(args.output).expanduser().resolve()
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with output.open("x", encoding="utf-8") as handle:
+            handle.write(document + "\n")
+        print(output)
+    else:
+        print(document)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="text2pandas")
     p.add_argument("-v", "--verbose", action="store_true")
@@ -466,11 +498,22 @@ def main(argv: list[str] | None = None) -> int:
     pc.add_argument("--limit", type=int, default=0)
     vf = sub.add_parser("verify", help="Kiểm identity và lineage của active snapshots")
     vf.add_argument("scope", nargs="?", choices=["raw", "a6", "retrieval", "all"], default="all")
+    cv = sub.add_parser("coverage", help="Đo static semantic-route coverage, không đo accuracy")
+    cv.add_argument(
+        "--questions",
+        default=str(
+            PROJECT_PATHS.repo_root
+            / "data/curated/evaluation/legacy/question_plans_1012.jsonl"
+        ),
+    )
+    cv.add_argument("--output")
+    cv.add_argument("--summary-only", action="store_true")
 
     args = p.parse_args(argv)
     handlers = {"catalog": cmd_catalog, "parse-check": cmd_parse_check,
                 "index": cmd_index, "run": cmd_run, "package": cmd_package,
-                "silver": cmd_silver, "cards": cmd_cards, "verify": cmd_verify}
+                "silver": cmd_silver, "cards": cmd_cards, "verify": cmd_verify,
+                "coverage": cmd_coverage}
     try:
         return handlers[args.cmd](args)
     except BuildSafetyError as error:
