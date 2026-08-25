@@ -31,6 +31,8 @@ Updated: 2026-08-26
 
 - Offline: green.
 - Raw/A6/retrieval identity and lineage: green for the active local snapshots.
-- H0 materialized integration: fail-closed until its adjudication and determinism
-  artifacts are generated under `artifacts/execution/h0/`.
+- H0 materialized integration: green trên active local materialization (`22/22`).
+  Adjudication ledger được dẫn xuất từ 34 record có provenance
+  `A6_DEFECT_FIXED`; determinism report được tạo từ hai clean package builds bằng
+  `make materialize-h0`.
 - Phase 6 removal/tagging: pending compatibility-window sign-off.

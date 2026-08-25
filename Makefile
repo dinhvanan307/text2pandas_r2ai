@@ -26,7 +26,7 @@ export LC_ALL         := C.UTF-8
 export LANG           := C.UTF-8
 
 .PHONY: help paths-check lint test-offline test-integration snapshots-verify \
-        data-verify a6-verify retrieval-verify ci \
+        data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
         dp-rebuild-check dp-package
 
@@ -46,6 +46,9 @@ test-offline: ## Unit/contract/regression không cần materialized artifacts
 
 test-integration: ## Gate cần raw/A6/retrieval/submission artifacts
 	@$(PY) -m pytest -q -m integration
+
+materialize-h0: ## Tái tạo adjudication ledger + ZIP determinism report; FORCE=1 để ghi đè
+	@$(PY) tools/execution/materialize_h0.py $(if $(FORCE),--force)
 
 snapshots-verify: ## Kiểm toàn bộ active raw → A6 → retrieval lineage
 	@$(PY) -m text2pandas.interface.cli.main verify all

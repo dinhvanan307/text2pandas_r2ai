@@ -97,6 +97,7 @@ make help
 make lint
 make test-offline
 make test-integration
+make materialize-h0
 make snapshots-verify
 ```
 
@@ -114,6 +115,10 @@ measurement, deterministic rebuild và release packaging; chúng được giữ 
 - Generated DB, Parquet, ZIP và run output không commit vào Git.
 - `submission.answer` phải bằng kết quả chạy thật của `pandas_query` trên evidence
   đóng trong chính ZIP.
+
+Các H0 integration artifacts nhỏ không phải source input. Khi đã materialize
+legacy A6 records/submissions, tái tạo chúng bằng `make materialize-h0`; chỉ dùng
+`FORCE=1` khi chủ động refresh cùng output.
 
 ## Documentation
 
