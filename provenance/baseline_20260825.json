@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "captured_at": "2026-08-25",
+  "purpose": "pre-folder-refactor byte-integrity baseline",
+  "source_repository_commit": "79df690",
+  "raw_btc": {
+    "legacy_root": "../data/external/vifinqa",
+    "target_root": "data/raw/btc",
+    "tree_sha256": "57fd7ca41903dbb749d774b1ee34373c8243faec7ba0fd91c8b51fb082b0282a",
+    "financial_statement_txt_count": 1973,
+    "question_count": 1012,
+    "ticker_count": 100,
+    "included_paths": [
+      "financial_statements/**",
+      "questions/**",
+      "code_stock.csv"
+    ],
+    "excluded_paths": [
+      "_codebase/**",
+      ".cache/**"
+    ]
+  },
+  "a6": {
+    "legacy_root": "../release_finala6",
+    "target_root": "data/processed/a6/b3e9684004679ffb",
+    "build_id": "b3e9684004679ffb",
+    "tree_sha256": "1c0161c2c8be7389fb23fab8cbb40e1d1d602307db6db008461c7b8ae460f5d4",
+    "file_count": 16598,
+    "silver_db_sha256": "6622b913c3cc3d8b20cf1d45840da8eda6147230cfeb82df4f357fee4123b269"
+  },
+  "retrieval": {
+    "legacy_db": "../retrieval/work.db",
+    "target_db": "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db",
+    "source_a6_build_id": "b3e9684004679ffb",
+    "index_id": "286973b134a189ee",
+    "work_db_bytes": 4240060416,
+    "work_db_sha256": "e9f62775a75794d770954ba1903f7a90c8b97467e5398b0baa2057bec8e67d5f"
+  }
+}
