@@ -101,6 +101,18 @@ make materialize-h0
 make snapshots-verify
 ```
 
+Canonical answering run bắt buộc có immutable `run-id` và tự ghi manifest
+lineage vào `artifacts/runs/answer/<run-id>/manifest.json`:
+
+```bash
+text2pandas run --run-id local-smoke-001 --offset 0 --limit 10 --no-package
+text2pandas run --run-id submission-candidate-001
+```
+
+Full run chỉ publish ZIP sang `artifacts/submissions/` khi strict validator và
+replay cùng pass; output fail vẫn nằm trong run stage kèm
+`submission_manifest.json` để điều tra.
+
 Các target `dp-*` trong `Makefile` là delivery contract hiện hữu của A6 build,
 measurement, deterministic rebuild và release packaging; chúng được giữ nguyên
 để không đổi behavior trong folder refactor.

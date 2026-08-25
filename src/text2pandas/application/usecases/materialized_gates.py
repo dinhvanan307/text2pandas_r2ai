@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from pathlib import Path
+
+from text2pandas.infrastructure.checksums import sha256_file
 
 
 class MaterializationError(ValueError):
@@ -17,14 +18,6 @@ _RAW_EVIDENCE = re.compile(
     r"raw\s+'(?P<token>[^']+)'\s+o\s+(?P<field>[a-z_]+)",
     re.IGNORECASE,
 )
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def resolved_unit_adjudications(records_path: Path, questions_path: Path) -> list[dict]:

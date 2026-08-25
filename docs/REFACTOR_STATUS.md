@@ -14,6 +14,12 @@ Updated: 2026-08-26
 - Reviewed evaluation fixtures moved to `data/curated/evaluation`.
 - Unified CLI snapshot verifier and reproducible Make/CI offline gates.
 - Offline suite separated from materialized H0 integration gates.
+- Canonical answering runtime đọc trực tiếp active A6 + retrieval snapshots,
+  dùng immutable run directory và machine-readable lineage manifest.
+- Submission ZIP deterministic, strict schema/grounding validation, AST-restricted
+  replay và fail-closed publish policy.
+- Typed period extrema (`MAX/MIN/ARGMAX/ARGMIN`) với guards cho metric drift,
+  signed extrema, filtered/derived ranking và select-at-arg chưa hỗ trợ.
 
 ## Intentionally retained
 

@@ -175,6 +175,11 @@ def cmd_run(args: argparse.Namespace) -> int:
     import json
 
     from text2pandas.application.usecases.canonical_run import run_canonical_pipeline
+    from text2pandas.application.usecases.run_manifest import (
+        pipeline_manifest,
+        submission_manifest,
+        write_manifest,
+    )
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
@@ -182,6 +187,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         validate_zip,
     )
     from text2pandas.infrastructure.snapshots import verify_active_snapshots
+    from text2pandas.infrastructure.source_identity import git_source_identity
 
     if (args.limit or args.offset) and not args.no_package:
         raise BuildSafetyError("partial run requires --no-package")
@@ -203,6 +209,28 @@ def cmd_run(args: argparse.Namespace) -> int:
         answer_pool_tables=args.answer_pool_tables,
         progress=(lambda i, n: print(f"  ... {i} câu, {n} có đáp án", flush=True)) if args.verbose else None,
     )
+    pipeline_manifest_path = stage / "manifest.json"
+    write_manifest(
+        pipeline_manifest_path,
+        pipeline_manifest(
+            PROJECT_PATHS,
+            ACTIVE_SNAPSHOTS,
+            args.run_id,
+            {
+                "offset": args.offset,
+                "limit": args.limit,
+                "max_tables": args.n_tables,
+                "answer_pool_tables": args.answer_pool_tables,
+                "package_requested": not args.no_package,
+                "doc_id_variant": args.doc_id,
+                "locator_base": args.locator_base,
+            },
+            rep,
+            verification,
+            git_source_identity(ROOT),
+            stage / "records.jsonl",
+        ),
+    )
     print("\n╔═══════════ PIPELINE ═══════════╗")
     print(f"  câu hỏi              : {rep.n_questions:,}")
     print(f"  nhận diện thực thể   : {rep.n_with_entity:,}  ({100*rep.n_with_entity/max(rep.n_questions,1):.1f}%)")
@@ -216,6 +244,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     if args.no_package:
         print(f"\n  run artifacts: {stage}")
+        print(f"  manifest     : {pipeline_manifest_path}")
         return 0
 
     questions = {}
@@ -243,10 +272,34 @@ def cmd_run(args: argparse.Namespace) -> int:
     if stat["executed"]:
         print(f"  khớp answer  {100*stat['matched']/stat['executed']:.2f}% số câu chạy được")
 
+    package_ok = (
+        val.ok
+        and stat["error"] == 0
+        and stat["matched"] == stat["executed"]
+    )
     final = SUBMIT_DIR / f"submission_{args.run_id}.zip"
-    publish_new_file(zip_path, final)
-    print(f"\n  ZIP: {final}  ({zip_path.stat().st_size/1e6:.1f} MB)")
-    return 0 if val.ok else 1
+    published = None
+    if package_ok:
+        publish_new_file(zip_path, final)
+        published = final
+        print(f"\n  ZIP: {final}  ({zip_path.stat().st_size/1e6:.1f} MB)")
+    else:
+        print("\n  CHẶN PUBLISH: submission chưa qua validator/replay", file=sys.stderr)
+    submission_manifest_path = stage / "submission_manifest.json"
+    write_manifest(
+        submission_manifest_path,
+        submission_manifest(
+            PROJECT_PATHS,
+            args.run_id,
+            pipeline_manifest_path,
+            zip_path,
+            published,
+            val,
+            stat,
+        ),
+    )
+    print(f"  submission manifest: {submission_manifest_path}")
+    return 0 if package_ok else 1
 
 
 

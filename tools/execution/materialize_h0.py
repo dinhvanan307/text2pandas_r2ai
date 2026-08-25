@@ -16,9 +16,9 @@ from execution.dong_goi_c1r import dung  # noqa: E402
 from text2pandas.application.usecases.materialized_gates import (  # noqa: E402
     determinism_report,
     resolved_unit_adjudications,
-    sha256_file,
     write_jsonl,
 )
+from text2pandas.infrastructure.checksums import sha256_file  # noqa: E402
 
 
 def main() -> int:
