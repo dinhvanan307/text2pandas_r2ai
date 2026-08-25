@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse, json, math, random
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 RE = ROOT / "artifacts/runs/retrieval/reaudit"
 K, CAP = 3, 30
 SEED = 20260821

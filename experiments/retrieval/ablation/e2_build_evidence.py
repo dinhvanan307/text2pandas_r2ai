@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib, json, os, shutil, sqlite3, subprocess, sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 RE = ROOT / "artifacts/runs/retrieval/reaudit"
 OUT = ROOT / "artifacts/runs/retrieval/bundles/retrieval_e2_evidence_v1"
 sys.path.insert(0, str(ROOT / "src"))
@@ -28,7 +28,7 @@ def main() -> int:
         shutil.rmtree(OUT)
     (OUT / "src/text2pandas/pipelines/retrieval/evalkit").mkdir(parents=True)
     (OUT / "tests").mkdir(parents=True)
-    (OUT / "tools/retrieval_exp").mkdir(parents=True)
+    (OUT / "experiments/retrieval/ablation").mkdir(parents=True)
 
     SRC = ["src/text2pandas/pipelines/retrieval/rank_s2.py", "src/text2pandas/pipelines/retrieval/pipeline.py",
            "src/text2pandas/pipelines/retrieval/evalkit/stages.py", "src/text2pandas/pipelines/retrieval/evalkit/runner.py",
@@ -38,8 +38,8 @@ def main() -> int:
         d = OUT / f
         d.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / f, d)
-    for f in sorted((ROOT / "tools/retrieval_exp").glob("*.py")):
-        shutil.copy2(f, OUT / "tools/retrieval_exp" / f.name)
+    for f in sorted((ROOT / "experiments/retrieval/ablation").glob("*.py")):
+        shutil.copy2(f, OUT / "experiments/retrieval/ablation" / f.name)
 
     # ── source_identity ─────────────────────────────────────────────────────
     from text2pandas.pipelines.retrieval.evalkit.runner import SCHEMA_VERSION, EvalConfig

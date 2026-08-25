@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse, json, os, sqlite3, sys, time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "src"))
 from text2pandas.pipelines.retrieval.alias_store import load_aliases                 # noqa: E402
 from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg                    # noqa: E402

@@ -7,7 +7,7 @@ from __future__ import annotations
 import json, math, random, statistics as st
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 RE = ROOT / "artifacts/runs/retrieval/reaudit"
 K, CAP = 3, 30
 GRID = {0.00: "base", 0.15: "pri015", 0.30: "pri030_bsis",
