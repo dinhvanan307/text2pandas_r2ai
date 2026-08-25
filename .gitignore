@@ -40,11 +40,7 @@ env/
 
 # Generated artifacts. Large payloads are reproducible from source + manifests.
 /artifacts/**
-!/artifacts/**/
 !/artifacts/README.md
-!/artifacts/**/README.md
-!/artifacts/**/manifest.json
-!/artifacts/**/*.sha256
 
 # External/reference repositories are materialized locally, never vendored as
 # nested Git repositories.

@@ -25,16 +25,41 @@ export TZ             := UTC
 export LC_ALL         := C.UTF-8
 export LANG           := C.UTF-8
 
-.PHONY: help paths-check dp-env-check dp-test dp-build dp-measure dp-release \
-        dp-verify dp-rebuild-check dp-package
+.PHONY: help paths-check lint test-offline test-integration snapshots-verify \
+        data-verify a6-verify retrieval-verify ci \
+        dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
+        dp-rebuild-check dp-package
 
 help:
-	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^[a-z0-9-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-20s\033[0m %s\n",$$1,$$2}'
 
 paths-check: ## In repository/data/artifact roots và kiểm active snapshot config
 	@test -f configs/datasets/active_snapshot.yaml
 	@$(PY) -c 'from text2pandas.infrastructure.paths import ProjectPaths; p=ProjectPaths.discover(); print("repo_root="+str(p.repo_root)); print("data_root="+str(p.data_root)); print("artifact_root="+str(p.artifact_root)); print("active_snapshot="+str(p.active_snapshot_config))'
+
+lint: ## Static gate cho syntax/import/undefined names
+	@$(PY) -m ruff check --select E9,F63,F7,F82 src tests
+
+test-offline: ## Unit/contract/regression không cần materialized artifacts
+	@$(PY) -m pytest -q -m "not integration"
+
+test-integration: ## Gate cần raw/A6/retrieval/submission artifacts
+	@$(PY) -m pytest -q -m integration
+
+snapshots-verify: ## Kiểm toàn bộ active raw → A6 → retrieval lineage
+	@$(PY) -m text2pandas.interface.cli.main verify all
+
+data-verify: ## Kiểm active raw snapshot
+	@$(PY) -m text2pandas.interface.cli.main verify raw
+
+a6-verify: ## Kiểm active A6 identity và table-card count
+	@$(PY) -m text2pandas.interface.cli.main verify a6
+
+retrieval-verify: ## Kiểm retrieval identity, size và index contract
+	@$(PY) -m text2pandas.interface.cli.main verify retrieval
+
+ci: lint test-offline ## Local equivalent của CI offline gate
 
 ## ── RC-00 ────────────────────────────────────────────────────────────────
 dp-env-check: ## In OS/Python/SQLite/deps/commit/config hash — chạy TRƯỚC mọi thứ

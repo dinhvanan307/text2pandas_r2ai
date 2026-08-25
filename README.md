@@ -1,82 +1,124 @@
-# Text-to-Pandas — Trợ lý truy vấn Báo cáo tài chính Việt Nam
+# Text2Pandas
 
-Hệ thống AI nhận **câu hỏi tiếng Việt** về báo cáo tài chính doanh nghiệp niêm yết, tự **truy hồi đúng bảng dữ liệu**, **sinh mã Pandas**, **thực thi an toàn** và trả về **con số đã kiểm chứng kèm dẫn nguồn**.
+Pipeline trả lời câu hỏi tiếng Việt trên báo cáo tài chính bằng retrieval,
+Pandas execution và evidence có thể kiểm chứng. Repository này dùng một data
+lineage rõ ràng, không trộn dữ liệu nguồn với output sinh ra:
 
-Dự án dự thi **R2AI 2026 — Text-to-Pandas** (AI Guru / Dagoras Group).
-
----
-
-## Bắt đầu từ đâu
-
-| Bạn là | Đọc theo thứ tự |
-|---|---|
-| **Người mới** | `docs/PROJECT_OVERVIEW.md` → `docs/COMPETITION_SPEC.md` → `docs/ARCHITECTURE.md` |
-| **Dev implement module** | `docs/MODULES.md` (module của bạn) → `docs/API.md` → `docs/CODING_GUIDELINES.md` |
-| **AI agent** | `CLAUDE.md` (bắt buộc đọc trước) |
-| **Muốn biết "vì sao"** | `docs/TECH_DECISIONS.md` |
-
----
-
-## Bản đồ tài liệu
-
+```text
+data/raw/btc
+    │  BTC source: 1.973 báo cáo, 1.012 câu hỏi, 100 mã cổ phiếu
+    ▼
+data/processed/a6/<build_id>
+    │  normalized tables, observations, metadata
+    ▼
+data/indexes/retrieval/<a6_build_id>/<index_id>
+    │  index chỉ hợp lệ với đúng A6 build
+    ▼
+answering → validation → artifacts/submissions
 ```
-docs/sources/                     # ⭐ Bản chụp thể lệ BTC — BẤT BIẾN, không sửa, không xoá
-README.md                         # bạn đang ở đây
-CLAUDE.md                         # hợp đồng cho AI agent
-docs/
-├── PROJECT_OVERVIEW.md           # bối cảnh · mục tiêu · phạm vi · thuật ngữ
-├── COMPETITION_SPEC.md           # ràng buộc C01–C20 · metric · format nộp · câu hỏi mở
-├── DOMAIN_KNOWLEDGE.md           # Mã số VAS · glossary · công thức chỉ số · bẫy nghiệp vụ
-├── ARCHITECTURE.md               # kiến trúc 3 tầng · mô hình dữ liệu · các luồng
-├── MODULES.md                    # đặc tả M01–M32 + demo D01–D05
-├── API.md                        # contract Python + REST endpoint
-├── EVALUATION.md                 # dẫn xuất F2 · dev set tự sinh · chống rò rỉ
-├── TECH_DECISIONS.md             # ADR log — vì sao chọn, vì sao loại
-├── CODING_GUIDELINES.md          # chuẩn code · bảo mật · số kiểu VN · test
-├── PROMPTS.md                    # prompt & template sinh mã
-├── ROADMAP.md                    # giai đoạn · phân công · rủi ro
-└── archive/                      # ⛔ tài liệu đã bị thay thế — KHÔNG dùng
-```
-
-**Thứ tự ưu tiên khi mâu thuẫn:** `docs/sources/` › `docs/RULES_SOURCES.md` › `docs/` › code › `archive/`
-
----
-
-## Nguyên tắc bất di bất dịch
-
-Vi phạm bất kỳ dòng nào dưới đây ⇒ **bị loại khỏi cuộc thi**. Chi tiết: `docs/COMPETITION_SPEC.md`.
-
-1. **Chỉ dùng model mở, ≤14B, phát hành trước 01/06/2026** (C05–C07) — không GPT/Gemini/Claude.
-2. **Dữ liệu ngoài được phép, nhưng phải khai báo nguồn đầy đủ** (C04) — mọi nguồn ngoài đi qua registry: URL, revision, checksum, license, mục đích.
-3. **Corpus BTC là nguồn duy nhất cho `answer`/`evidence`** — đây là quyết định chất lượng của team (ADR-024), **không phải luật BTC**.
-4. **Corpus là `.txt`** (C01) — không có PDF, không cần OCR.
-
-> ⚠️ Bản trước của mục này ghi "cấm dữ liệu ngoài" như luật tuyệt đối. Sai — xem `docs/RULES_SOURCES.md §5`.
-
-Và một bất biến kỹ thuật: **`answer` luôn bằng kết quả thực thi thật của `pandas_query`** trên đúng CSV nằm trong ZIP nộp bài.
-
----
 
 ## Quick start
 
+Yêu cầu Python 3.11+.
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
 
-# Chạy test offline (không cần corpus)
-pytest tests/ -v
-
-# Sinh bài nộp từ corpus + test set
-python -m tools.run_submission --corpus data/corpus --test data/test.json --out submission.zip
-
-# Chạy API demo
-python -m src.api.app          # → http://localhost:8000
+make paths-check
+text2pandas verify all
+make test-offline
 ```
 
----
+`test-offline` là CI gate, không yêu cầu materialized dataset. `test-integration`
+chạy các gate cần raw/A6/retrieval/submission artifacts và fail rõ đường dẫn còn
+thiếu; không chuyển prerequisite thiếu thành false-green skip.
 
-## Trạng thái
+## Active snapshots
 
-Giai đoạn **G0 — dựng khung** (trước 01/08/2026). Corpus chính thức chưa được cấp; mọi module phát triển trên mock corpus theo contract trong `docs/API.md`.
+Source of truth là `configs/datasets/active_snapshot.yaml`:
 
-Mốc quan trọng: public test **01–31/08** · private test **01–03/09** (chỉ 5 lượt nộp) · kết quả **06/09**.
+| Layer | Identity hiện tại | Canonical location |
+|---|---|---|
+| Raw BTC | `ca033190f2e9e99f` | `data/raw/btc/` |
+| A6 processed | `b3e9684004679ffb` | `data/processed/a6/b3e9684004679ffb/` |
+| Retrieval | `286973b134a189ee` | `data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/` |
+
+Kiểm từng layer:
+
+```bash
+text2pandas verify raw
+text2pandas verify a6
+text2pandas verify retrieval
+```
+
+Verifier kiểm config, manifest, count, A6 `build_meta`, kích thước retrieval DB và
+các SQLite index bắt buộc. Kiểm integrity raw sâu hơn bằng:
+
+```bash
+python tools/data_acquisition/download_vifinqa.py --verify-only --skip-github
+```
+
+Payload lớn không nằm trong Git. Git chỉ giữ code, config, documentation, curated
+fixture nhỏ, manifest và provenance. Có thể mount data/artifact ở volume khác qua
+`T2P_DATA_ROOT` và `T2P_ARTIFACT_ROOT`.
+
+## Project layout
+
+```text
+configs/       active snapshots, pipeline config, policies
+src/text2pandas/
+  domain/      pure domain rules and value objects
+  application/ use cases
+  pipelines/   a6, retrieval, answering
+  infrastructure/ filesystem, SQLite, parsing, indexing
+  interface/   unified CLI
+tests/         unit, contract, regression, materialized integration
+data/          raw, processed A6, retrieval indexes, curated inputs
+artifacts/     generated runs, reports, submissions, handoffs
+experiments/   ablation and re-audit; never imported by production
+provenance/    committed identities, seals and baseline checksums
+ops/           Docker and environment evidence
+vendor/        locally materialized upstream reference code
+tools/         migration, audit and legacy thin commands
+docs/          competition source, ADRs and refactor records
+```
+
+Public runtime namespace là `text2pandas`. `data_pipeline`, `retrieval` và
+`text2pandas.answer_pipeline` hiện chỉ là compatibility shims trong một migration
+window; code mới không được import các namespace này.
+
+## Commands
+
+```bash
+text2pandas --help
+make help
+make lint
+make test-offline
+make test-integration
+make snapshots-verify
+```
+
+Các target `dp-*` trong `Makefile` là delivery contract hiện hữu của A6 build,
+measurement, deterministic rebuild và release packaging; chúng được giữ nguyên
+để không đổi behavior trong folder refactor.
+
+## Engineering rules
+
+- Đọc `CLAUDE.md` trước khi thay đổi model/data/rules của cuộc thi.
+- Raw BTC là immutable input; không ghi output vào `data/raw/btc`.
+- A6 là processed snapshot có `build_id`; không chọn ngầm thư mục `latest`.
+- Retrieval manifest phải trỏ đúng active A6 build.
+- Production không import từ `tools/` hoặc `experiments/`.
+- Generated DB, Parquet, ZIP và run output không commit vào Git.
+- `submission.answer` phải bằng kết quả chạy thật của `pandas_query` trên evidence
+  đóng trong chính ZIP.
+
+## Documentation
+
+- `docs/REFACTOR_PLAN.md`: baseline, target architecture và migration gates.
+- `docs/REFACTOR_STATUS.md`: phần đã triển khai và compatibility debt còn lại.
+- `docs/adr/`: quyết định data layout, namespace và artifact retention.
+- `data/README.md`: ownership/lifecycle của từng data class.
+- `docs/competition/Text2Pandas.docx`: đề bài gốc.
