@@ -454,7 +454,7 @@ def main(argv: list[str] | None = None) -> int:
     rn.add_argument("--limit", type=int, default=0)
     rn.add_argument("--offset", type=int, default=0)
     rn.add_argument("--n-tables", dest="n_tables", type=int, default=20)
-    rn.add_argument("--answer-pool-tables", type=int, default=30)
+    rn.add_argument("--answer-pool-tables", type=int, default=50)
     rn.add_argument("--no-package", action="store_true")
     rn.add_argument("--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped")
     rn.add_argument("--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1)

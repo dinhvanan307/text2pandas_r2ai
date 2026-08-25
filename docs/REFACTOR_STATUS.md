@@ -20,6 +20,11 @@ Updated: 2026-08-26
   replay và fail-closed publish policy.
 - Typed period extrema (`MAX/MIN/ARGMAX/ARGMIN`) với guards cho metric drift,
   signed extrema, filtered/derived ranking và select-at-arg chưa hỗ trợ.
+- Reviewed formula engine cho 8 công thức tài chính (`debt/current/quick ratios`,
+  margins và intensities): bind từng metric leaf, quy đổi unit trước phép toán,
+  bắt buộc operands cùng report/currency, sandbox execution và fail-closed với
+  công thức chưa review. Answer pool mặc định 50 bảng để không cắt mất operand
+  hợp lệ ở các báo cáo ngân hàng phân mảnh.
 
 ## Intentionally retained
 

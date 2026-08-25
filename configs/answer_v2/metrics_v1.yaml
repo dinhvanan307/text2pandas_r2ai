@@ -17,7 +17,7 @@ match_policy: prefix_normalized
 
 metrics:
   - metric_id: total_assets
-    aliases: ["tong cong tai san", "tong tai san"]
+    aliases: ["tong cong tai san", "tong tai san co", "tong tai san"]
     statement_types: [balance_sheet]
     value_kind: money
     period_semantics: point_in_time

@@ -13,14 +13,15 @@ import re
 import sqlite3
 import time
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 import pandas as pd
 
 from text2pandas.application.usecases.answer import AnswerResult
-from text2pandas.domain.units.lexicon import MONEY as LEXICON_MONEY, scan_unit
+from text2pandas.domain.units.lexicon import MONEY as LEXICON_MONEY
+from text2pandas.domain.units.lexicon import scan_unit
 from text2pandas.infrastructure.retrieval.index import tokenize
 from text2pandas.pipelines.answering import (
     DIVIDE,
@@ -31,12 +32,13 @@ from text2pandas.pipelines.answering import (
     classify_operation,
 )
 from text2pandas.pipelines.answering.adapters import requested_unit_of
+from text2pandas.pipelines.answering.formula_engine import answer_formula_question
 from text2pandas.pipelines.answering.ir import OperandSlot
 from text2pandas.pipelines.answering.units import MONEY, PERCENT, SHARES, UNKNOWN
 from text2pandas.pipelines.retrieval.alias_store import load_aliases
 from text2pandas.pipelines.retrieval.metric_hint import metric_codes_hint
-from text2pandas.pipelines.retrieval.question_intent import parse_intent
 from text2pandas.pipelines.retrieval.query_terms import content_terms, drop_terms
+from text2pandas.pipelines.retrieval.question_intent import parse_intent
 from text2pandas.pipelines.retrieval.submission_adapter import RetrievalToSubmission
 
 _PURE_NUMBER = re.compile(r"^\d+(?:[.,]\d+)?$")
@@ -130,18 +132,14 @@ class QuestionSelector(Selector):
             return None
 
         row_sequence = [token for token in tokenize(cell.row_path) if token not in _GENERIC]
-        section_sequence = [
-            token for token in tokenize(cell.section_text) if token not in _GENERIC
-        ]
+        section_sequence = [token for token in tokenize(cell.section_text) if token not in _GENERIC]
         context_sequence = [
             token for token in tokenize(cell.table_context) if token not in _GENERIC
         ]
         row_tokens = set(row_sequence)
         section_tokens = set(section_sequence)
         context_tokens = set(context_sequence)
-        if self.category_tokens and not self.category_tokens.issubset(
-            row_tokens | section_tokens
-        ):
+        if self.category_tokens and not self.category_tokens.issubset(row_tokens | section_tokens):
             return None
         overlap = len(self.question_tokens & row_tokens)
         section_overlap = len(self.question_tokens & section_tokens)
@@ -150,9 +148,7 @@ class QuestionSelector(Selector):
         section_run = _longest_common_run(self.question_sequence, section_sequence)
         context_run = _longest_common_run(self.question_sequence, context_sequence)
         code_hit = bool(cell.metric_code and cell.metric_code in self.code_hints)
-        semantic_gate = row_run >= 2 or (
-            row_run >= 1 and section_run >= 1 and context_run >= 2
-        )
+        semantic_gate = row_run >= 2 or (row_run >= 1 and section_run >= 1 and context_run >= 2)
         if not semantic_gate and not code_hit:
             return None
         lexical = overlap / math.sqrt(max(1, len(row_tokens)))
@@ -218,6 +214,10 @@ def load_candidate_cells(
         return [], {}
     rank = {uid: index for index, uid in enumerate(table_uids)}
     placeholders = ",".join("?" for _ in table_uids)
+    table_columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(tables)")}
+    document_expression = (
+        "t.directory_doc_id" if "directory_doc_id" in table_columns else "'table:' || t.table_uid"
+    )
     rows = connection.execute(
         f"""
         SELECT o.observation_uid, o.table_uid, o.ticker, t.basis,
@@ -225,7 +225,7 @@ def load_candidate_cells(
                o.value_source_raw, o.value_decimal_text, o.unit_kind,
                o.currency, o.scale_exponent, o.period_end, o.period_role,
                o.metric_code, o.is_restated, o.grid_row_idx, o.grid_col_idx,
-               t.section_text, tc.table_search_text
+               t.section_text, tc.table_search_text, {document_expression}
         FROM observations o
         JOIN observation_readiness r USING(observation_uid)
         JOIN tables t USING(table_uid)
@@ -263,6 +263,7 @@ def load_candidate_cells(
             _grid_col,
             section_text,
             table_context,
+            document_id,
         ) = row
         path = (row_path or metric_label or "").strip()
         if not path:
@@ -320,6 +321,7 @@ def load_candidate_cells(
                 unit=_unit(unit_kind, scale, currency),
                 period=period_end,
                 table_uid=table_uid,
+                document_id=document_id,
                 entity=ticker,
                 basis=basis,
                 metric_code=metric_code,
@@ -357,7 +359,7 @@ def run_canonical_pipeline(
     offset: int = 0,
     limit: int = 0,
     max_tables: int = 10,
-    answer_pool_tables: int = 30,
+    answer_pool_tables: int = 50,
     progress=None,
 ) -> CanonicalPipelineReport:
     """Run retrieval and fail-closed answer generation for a question slice."""
@@ -403,8 +405,6 @@ def run_canonical_pipeline(
                 frames_by_path: dict[str, pd.DataFrame] = {}
                 if len(intent.targets) != 1:
                     reason = "ANSWER_REQUIRES_SINGLE_ENTITY"
-                elif classify_operation(text).op == DIVIDE:
-                    reason = "DIVIDE_REQUIRES_PER_OPERAND_METRICS"
                 elif not refs.table_uids:
                     reason = "NO_RETRIEVED_TABLE"
                 else:
@@ -415,19 +415,34 @@ def run_canonical_pipeline(
                         for cell in pool
                         if cell.csv_path in frames_by_path
                     }
-                    pipeline_result = answer_question(
+                    requested_unit = requested_unit_of(text)
+                    pipeline_result = answer_formula_question(
                         text,
                         pool,
                         frames,
+                        entity=intent.targets[0],
+                        years=intent.years,
+                        basis=intent.basis,
+                        requested_unit=requested_unit,
                         qid=qid,
-                        requested_unit=requested_unit_of(text),
-                        selector=QuestionSelector(
-                            text,
-                            metric_codes_hint(text),
-                            drop=drop_terms(intent.targets, aliases),
-                        ),
                     )
-                    if not pipeline_result.ok:
+                    if pipeline_result is None:
+                        if classify_operation(text).op == DIVIDE:
+                            reason = "DIVIDE_REQUIRES_REVIEWED_FORMULA"
+                        else:
+                            pipeline_result = answer_question(
+                                text,
+                                pool,
+                                frames,
+                                qid=qid,
+                                requested_unit=requested_unit,
+                                selector=QuestionSelector(
+                                    text,
+                                    metric_codes_hint(text),
+                                    drop=drop_terms(intent.targets, aliases),
+                                ),
+                            )
+                    if pipeline_result is not None and not pipeline_result.ok:
                         reason = f"{pipeline_result.stage_failed}:{pipeline_result.reason}"
 
                 if pipeline_result is not None and pipeline_result.ok:

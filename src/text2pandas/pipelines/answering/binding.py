@@ -29,6 +29,7 @@ class CandidateCell:
     unit: Unit                        # declared by the column header
     period: Optional[str] = None
     table_uid: Optional[str] = None
+    document_id: Optional[str] = None
     entity: Optional[str] = None
     basis: Optional[str] = None
     metric_code: Optional[str] = None
@@ -57,6 +58,7 @@ class CandidateCell:
             "storage_exponent": self.storage_exponent,
             "declared_unit": self.unit.describe(),
             "table_uid": self.table_uid,
+            "document_id": self.document_id,
             "entity": self.entity,
             "basis": self.basis,
             "metric_code": self.metric_code,
