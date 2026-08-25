@@ -89,8 +89,13 @@ def test_g8_thieu_db_thi_fail(tmp_path):
 HOP_LE = {"CONFIRMED_A6", "A6_DEFECT", "FALLBACK_REQUIRED", "UNRESOLVED_BLOCKED"}
 
 
+def _require(path: Path) -> Path:
+    assert path.is_file(), f"missing materialized integration artifact: {path}"
+    return path
+
+
 def _phan_xu() -> list[dict]:
-    return [json.loads(l) for l in PX.open(encoding="utf-8") if l.strip()]
+    return [json.loads(l) for l in _require(PX).open(encoding="utf-8") if l.strip()]
 
 
 def test_g9_moi_conflict_co_trang_thai_cuoi_hop_le():
@@ -199,7 +204,8 @@ def test_g3_replay_toan_bo_query_chay_va_khop_answer():
 
 # ── G5 · đóng gói tất định (đọc báo cáo đã sinh) ──────────────────────────
 def test_g5_full_zip_sha256_tat_dinh():
-    rep = json.loads((H0 / "determinism_report_v2.json").read_text(encoding="utf-8"))
+    report = _require(H0 / "determinism_report_v2.json")
+    rep = json.loads(report.read_text(encoding="utf-8"))
     assert rep["deterministic_full_zip_sha256"] is True
     assert rep["run_1"]["zip_sha256"] == rep["run_2"]["zip_sha256"]
     assert rep["run_1"]["path"] != rep["run_2"]["path"], "phải build sang HAI đường dẫn khác nhau"
