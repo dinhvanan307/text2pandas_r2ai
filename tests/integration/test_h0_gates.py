@@ -13,9 +13,11 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
 from execution.a6_identity import A6IdentityError, kiem_dinh_danh  # noqa: E402
+
+pytestmark = pytest.mark.integration
 
 H0 = ROOT / "artifacts/execution/h0"
 CAU_HINH = ROOT / "configs/execution/a6_identity.yaml"
