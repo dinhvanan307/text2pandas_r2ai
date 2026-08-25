@@ -19,6 +19,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
+from text2pandas.infrastructure.sandbox.query import (
+    QuerySafetyError,
+    execute_query,
+    validate_query,
+)
+
 from .binding import BindingResult, BoundOperand, CandidateCell, Selector, bind
 from .frame import QuestionSemanticFrame, parse_question
 from .ir import OperationIR
@@ -92,17 +98,15 @@ def execute(query: str, frames: dict) -> tuple[Optional[float], Optional[str]]:
     The namespace contains only the dataframes and a tiny numeric allowlist --
     no builtins, no imports.
     """
-    safe = {"__builtins__": {"float": float, "abs": abs, "min": min, "max": max,
-                             "sum": sum, "len": len, "round": round}}
-    ns = dict(frames)
     try:
-        value = eval(query, safe, ns)  # noqa: S307 - expression is machine-generated
-    except Exception as exc:  # pragma: no cover - defensive
+        contract = validate_query(query, set(frames), require_all_evidence=False)
+        used_frames = {name: frames[name] for name in contract.dataframe_variables}
+        value = execute_query(query, used_frames)
+    except QuerySafetyError as exc:
         return None, f"EXECUTION_ERROR:{type(exc).__name__}:{exc}"
-    try:
-        return float(value), None
-    except (TypeError, ValueError):
-        return None, "EXECUTION_NON_NUMERIC"
+    except Exception as exc:  # pragma: no cover - defensive runtime boundary
+        return None, f"EXECUTION_ERROR:{type(exc).__name__}:{exc}"
+    return value, None
 
 
 def answer_question(question: str,

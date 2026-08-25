@@ -15,8 +15,8 @@ There is no QID whitelist in this package.
 """
 from .binding import BoundOperand, CandidateCell, Selector, bind
 from .frame import QuestionSemanticFrame, classify_operation, parse_question
-from .ir import (AVG, DIVIDE, GROWTH, LOOKUP, SUBTRACT, SUM, OperandSlot,
-                 OperationIR, ROLE_SPEC)
+from .ir import (ARGMAX, ARGMIN, AVG, DIVIDE, GROWTH, LOOKUP, MAXIMUM, MINIMUM,
+                 SUBTRACT, SUM, OperandSlot, OperationIR, ROLE_SPEC)
 from .pipeline import PipelineResult, answer_question, build_evidence, execute
 from .render import render
 from .router import route
@@ -25,7 +25,8 @@ from .units import (COUNT, MONEY, PERCENT, RATIO, SHARES, UNKNOWN, ConversionSta
 from .validate import validate
 
 __all__ = [
-    "AVG", "DIVIDE", "GROWTH", "LOOKUP", "SUBTRACT", "SUM",
+    "ARGMAX", "ARGMIN", "AVG", "DIVIDE", "GROWTH", "LOOKUP", "MAXIMUM",
+    "MINIMUM", "SUBTRACT", "SUM",
     "BoundOperand", "CandidateCell", "Selector", "bind",
     "QuestionSemanticFrame", "classify_operation", "parse_question",
     "OperandSlot", "OperationIR", "ROLE_SPEC",

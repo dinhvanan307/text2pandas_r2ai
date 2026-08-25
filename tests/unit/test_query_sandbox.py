@@ -37,3 +37,13 @@ def test_unsafe_queries_are_rejected(query: str) -> None:
 def test_query_must_use_every_and_only_evidence_variable() -> None:
     with pytest.raises(QuerySafetyError, match="variable mismatch"):
         validate_query("float(df1['value'].values[0])", {"df1", "df2"})
+
+
+def test_internal_execution_can_select_a_safe_subset_of_candidate_frames() -> None:
+    contract = validate_query(
+        "float(df1['value'].values[0])",
+        {"df1", "df2"},
+        require_all_evidence=False,
+    )
+
+    assert contract.dataframe_variables == frozenset({"df1"})

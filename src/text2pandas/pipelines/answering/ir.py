@@ -21,8 +21,12 @@ SUBTRACT = "SUBTRACT"
 GROWTH = "GROWTH"
 SUM = "SUM"
 AVG = "AVG"
+MAXIMUM = "MAXIMUM"
+MINIMUM = "MINIMUM"
+ARGMAX = "ARGMAX"
+ARGMIN = "ARGMIN"
 
-OPERATIONS = (LOOKUP, DIVIDE, SUBTRACT, GROWTH, SUM, AVG)
+OPERATIONS = (LOOKUP, DIVIDE, SUBTRACT, GROWTH, SUM, AVG, MAXIMUM, MINIMUM, ARGMAX, ARGMIN)
 
 # --------------------------------------------------------------- operand roles
 VALUE = "value"
@@ -43,10 +47,25 @@ ROLE_SPEC: dict[str, tuple[tuple[str, ...], bool]] = {
     GROWTH: ((NEW, OLD), False),
     SUM: ((SUMMAND,), True),
     AVG: ((SUMMAND,), True),
+    MAXIMUM: ((VALUE,), True),
+    MINIMUM: ((VALUE,), True),
+    ARGMAX: ((VALUE,), True),
+    ARGMIN: ((VALUE,), True),
 }
 
 #: minimum operand count per operation
-MIN_ARITY = {LOOKUP: 1, DIVIDE: 2, SUBTRACT: 2, GROWTH: 2, SUM: 2, AVG: 2}
+MIN_ARITY = {
+    LOOKUP: 1,
+    DIVIDE: 2,
+    SUBTRACT: 2,
+    GROWTH: 2,
+    SUM: 2,
+    AVG: 2,
+    MAXIMUM: 2,
+    MINIMUM: 2,
+    ARGMAX: 2,
+    ARGMIN: 2,
+}
 
 
 class IRError(ValueError):
@@ -87,6 +106,7 @@ class OperationIR:
     #: policy flags kept explicit so they show up in traces
     abstain_on_missing_operand: bool = True
     notes: tuple[str, ...] = field(default_factory=tuple)
+    result_kind: Optional[str] = None
 
     def __post_init__(self):
         if self.op not in OPERATIONS:
@@ -117,6 +137,7 @@ class OperationIR:
                             "currency": self.output_unit.currency},
             "abstain_on_missing_operand": self.abstain_on_missing_operand,
             "notes": list(self.notes),
+            "result_kind": self.result_kind,
         }
 
     @classmethod
@@ -128,6 +149,7 @@ class OperationIR:
             output_unit=Unit(u["dimension"], u.get("scale_exponent"), u.get("currency")),
             abstain_on_missing_operand=d.get("abstain_on_missing_operand", True),
             notes=tuple(d.get("notes", ())),
+            result_kind=d.get("result_kind"),
         )
 
     def slot(self, role: str) -> OperandSlot:
@@ -146,7 +168,7 @@ def result_dimension(op: str, operand_dimensions: list[str]) -> str:
     dims = list(operand_dimensions)
     if not dims or any(d == UNKNOWN for d in dims):
         return UNKNOWN
-    if op == LOOKUP:
+    if op in (LOOKUP, MAXIMUM, MINIMUM):
         return dims[0]
     if op == SUBTRACT:
         if len(set(dims)) != 1:
@@ -160,4 +182,6 @@ def result_dimension(op: str, operand_dimensions: list[str]) -> str:
         return RATIO if len(set(dims)) == 1 else UNKNOWN
     if op == GROWTH:
         return RATIO if len(set(dims)) == 1 else UNKNOWN
+    if op in (ARGMAX, ARGMIN):
+        return UNKNOWN
     return UNKNOWN

@@ -25,6 +25,7 @@ _ALLOWED_NODES = (
     ast.Subscript,
     ast.Compare,
     ast.Eq,
+    ast.IfExp,
     ast.BinOp,
     ast.Add,
     ast.Sub,
@@ -49,7 +50,12 @@ class QueryContract:
     dataframe_variables: frozenset[str]
 
 
-def validate_query(query: str, evidence_variables: set[str]) -> QueryContract:
+def validate_query(
+    query: str,
+    evidence_variables: set[str],
+    *,
+    require_all_evidence: bool = True,
+) -> QueryContract:
     """Parse and verify a small expression-only pandas grammar."""
 
     if not query or len(query) > 10_000:
@@ -82,7 +88,7 @@ def validate_query(query: str, evidence_variables: set[str]) -> QueryContract:
                     f"disallowed constant type: {type(node.value).__name__}"
                 )
 
-    if used != evidence_variables:
+    if require_all_evidence and used != evidence_variables:
         missing = sorted(evidence_variables - used)
         extra = sorted(used - evidence_variables)
         raise QuerySafetyError(f"query/evidence variable mismatch: missing={missing}, extra={extra}")

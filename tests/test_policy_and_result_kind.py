@@ -17,16 +17,18 @@ pd = pytest.importorskip("pandas")
 from text2pandas.pipelines.answering import CandidateCell, Unit, answer_question  # noqa: E402
 from text2pandas.pipelines.answering.binding import BoundOperand, Selector  # noqa: E402
 from text2pandas.pipelines.answering.ir import (  # noqa: E402
-    DENOMINATOR, DIVIDE, GROWTH, NEW, NUMERATOR, OLD, OperandSlot, OperationIR,
-    SUBTRACT, MINUEND, SUBTRAHEND, SUM, SUMMAND, VALUE, LOOKUP,
+    ARGMAX, DENOMINATOR, DIVIDE, GROWTH, MAXIMUM, NEW, NUMERATOR, OLD,
+    OperandSlot, OperationIR, SUBTRACT, MINUEND, SUBTRAHEND, SUM, SUMMAND,
+    VALUE, LOOKUP,
 )
 from text2pandas.pipelines.answering.policy import (  # noqa: E402
-    GROWTH_BASE_NEGATIVE, GROWTH_BASE_ZERO, MISSING_OPERAND_VALUE,
-    ZERO_DENOMINATOR, check_operand_policies,
+    CROSS_PERIOD_METRIC_DRIFT, GROWTH_BASE_NEGATIVE, GROWTH_BASE_ZERO,
+    MISSING_OPERAND_VALUE, SIGNED_EXTREMUM_AMBIGUOUS, ZERO_DENOMINATOR,
+    check_operand_policies,
 )
 from text2pandas.pipelines.answering import result_kind as RK  # noqa: E402
 from text2pandas.pipelines.answering.units import (  # noqa: E402
-    MONEY, PERCENT, PERCENT_POINT, RATIO, Quantity,
+    MONEY, PERCENT, PERCENT_POINT, RATIO, UNKNOWN, Quantity,
 )
 
 
@@ -123,6 +125,32 @@ def test_subtract_has_no_zero_restriction():
     assert check_operand_policies(ir, ops).ok
 
 
+def test_cross_period_operation_rejects_metric_drift():
+    slots = (OperandSlot(VALUE, period="2022"), OperandSlot(VALUE, period="2023"))
+    ir = OperationIR(MAXIMUM, slots, Unit(MONEY, 0))
+    cells = [money_cell("Doanh thu thuần", 100, 0, "2022"),
+             money_cell("Chi phí lãi vay", 200, 1, "2023")]
+    ops = [BoundOperand(VALUE, slot, cell, cell.native_quantity())
+           for slot, cell in zip(slots, cells)]
+
+    result = check_operand_policies(ir, ops)
+
+    assert not result.ok and result.reason == CROSS_PERIOD_METRIC_DRIFT
+
+
+def test_signed_extremum_abstains_until_sign_semantics_are_declared():
+    slots = (OperandSlot(VALUE, period="2022"), OperandSlot(VALUE, period="2023"))
+    ir = OperationIR(ARGMAX, slots, Unit(MONEY, 0))
+    cells = [money_cell("Giá vốn hàng bán", -100, 0, "2022"),
+             money_cell("Giá vốn hàng bán", -200, 1, "2023")]
+    ops = [BoundOperand(VALUE, slot, cell, cell.native_quantity())
+           for slot, cell in zip(slots, cells)]
+
+    result = check_operand_policies(ir, ops)
+
+    assert not result.ok and result.reason == SIGNED_EXTREMUM_AMBIGUOUS
+
+
 # ------------------------------------------------------- IR round-trip
 @pytest.mark.parametrize("ir", [
     OperationIR(LOOKUP, (OperandSlot(VALUE, metric_id="revenue", period="2023",
@@ -133,6 +161,9 @@ def test_subtract_has_no_zero_restriction():
                            OperandSlot(SUBTRAHEND, period="2022")), Unit(PERCENT_POINT)),
     OperationIR(SUM, tuple(OperandSlot(SUMMAND, period=str(y)) for y in (2021, 2022, 2023)),
                 Unit(MONEY, 0)),
+    OperationIR(ARGMAX, (OperandSlot(VALUE, period="2022"),
+                         OperandSlot(VALUE, period="2023")),
+                Unit(UNKNOWN), result_kind=RK.PERIOD_YEAR),
 ])
 def test_ir_serialization_round_trip(ir):
     back = OperationIR.from_dict(ir.to_dict())

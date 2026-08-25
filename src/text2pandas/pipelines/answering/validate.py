@@ -11,7 +11,8 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from .binding import BoundOperand
-from .ir import OperationIR, result_dimension
+from .ir import ARGMAX, ARGMIN, OperationIR, result_dimension
+from .result_kind import from_unit, is_plausible
 from .units import COUNT, MONEY, PERCENT, RATIO, SHARES, UNKNOWN, Unit
 
 PASS = "PASS"
@@ -58,19 +59,29 @@ def validate(ir: OperationIR, operands: list[BoundOperand],
             reasons.append(VReason.DUPLICATE_OPERAND_CELLS)
 
     dims = [o.quantity.unit.dimension for o in operands]
-    got = result_dimension(ir.op, dims)
     want = ir.output_unit.dimension
-    if got == UNKNOWN:
-        reasons.append(VReason.UNDERIVABLE_RESULT_DIMENSION)
-    elif got != want:
-        # RATIO and PERCENT are the one declared-compatible pair
-        if not {got, want} <= {RATIO, PERCENT}:
-            reasons.append(VReason.OUTPUT_DIMENSION_MISMATCH)
+    if ir.op in (ARGMAX, ARGMIN):
+        if len(set(dims)) != 1 or UNKNOWN in dims:
+            reasons.append(VReason.UNDERIVABLE_RESULT_DIMENSION)
+    else:
+        got = result_dimension(ir.op, dims)
+        if got == UNKNOWN:
+            reasons.append(VReason.UNDERIVABLE_RESULT_DIMENSION)
+        elif got != want:
+            # RATIO and PERCENT are the one declared-compatible pair
+            if not {got, want} <= {RATIO, PERCENT}:
+                reasons.append(VReason.OUTPUT_DIMENSION_MISMATCH)
 
     if value is None or (isinstance(value, float) and (math.isnan(value) or math.isinf(value))):
         reasons.append(VReason.NON_FINITE)
     elif want == PERCENT and abs(value) > percent_abs_limit:
         reasons.append(VReason.PERCENT_OUT_OF_PLAUSIBLE_RANGE)
+
+    result_kind = ir.result_kind or from_unit(ir.output_unit)
+    allowed_years = [slot.period[:4] for slot in ir.slots if slot.period]
+    plausible, plausible_reason = is_plausible(value, result_kind, allowed_years)
+    if not plausible and plausible_reason:
+        reasons.append(plausible_reason)
 
     if not reasons:
         return ValidationResult(PASS, [], value)

@@ -22,11 +22,31 @@ UNSUPPORTED = "UNSUPPORTED"
 
 #: operations this pipeline can compile today. Anything else is declared, not
 #: silently coerced -- see ``OperationHint.reason``.
-SUPPORTED = (LOOKUP, DIVIDE, SUBTRACT, GROWTH, SUM, AVG)
+SUPPORTED = (LOOKUP, DIVIDE, SUBTRACT, GROWTH, SUM, AVG, "EXTREMUM")
 
 #: named gaps, kept as first-class values so coverage reports can show them
-EXTREMUM = "EXTREMUM"     # max / min / rank  -- no emitter yet
+EXTREMUM = "EXTREMUM"
 COUNT_OP = "COUNT"        # "bao nhiêu công ty" -- no emitter yet
+
+RANK_MAX = "MAX"
+RANK_MIN = "MIN"
+RETURN_VALUE = "VALUE"
+RETURN_PERIOD = "PERIOD"
+RETURN_SELECT_AT_ARG = "SELECT_AT_ARG"
+RETURN_FILTERED_VALUE = "FILTERED_VALUE"
+
+_DERIVED_RANKING = re.compile(
+    r"(m[ứu]c\s+(?:t[ăa]ng|gi[ảa]m|thay\s*đ[ổo]i|ch[êe]nh\s*l[ệe]ch)"
+    r"|t[ốo]c\s*đ[ộo]\s*t[ăa]ng|t[ăa]ng\s*tr[ưu][ởo]ng|cagr)"
+)
+_SELECT_AT_ARG = re.compile(
+    r"((?:t[ạa]i|v[àa]o|[ởo])\s+n[ăa]m\b|n[ăa]m\s+m[àa]\b"
+    r"|n[ăa]m\s+c[óo]\s+[^?]{0,160}(?:cao|th[ấa]p|l[ớo]n|nh[ỏo])\s*nh[ấa]t)"
+)
+_FILTERED_EXTREMUM = re.compile(
+    r"((?:x[ée]t|trong|[ởo])\s+(?:nh[ữu]ng|c[áa]c)\s+n[ăa]m\s+c[óo]\b"
+    r"|ch[ỉi]\s+t[íi]nh\s+(?:nh[ữu]ng|c[áa]c)\s+n[ăa]m\b)"
+)
 
 
 def _norm(s: str) -> str:
@@ -113,6 +133,9 @@ class OperationHint:
     op: str
     reason: str
     matched: Optional[str] = None
+    rank_direction: Optional[str] = None
+    return_mode: Optional[str] = None
+    requires_derived_metric: bool = False
 
     @property
     def supported(self) -> bool:
@@ -148,6 +171,9 @@ class QuestionSemanticFrame:
             "operation": self.operation.op,
             "operation_reason": self.operation.reason,
             "operation_supported": self.operation.supported,
+            "rank_direction": self.operation.rank_direction,
+            "return_mode": self.operation.return_mode,
+            "requires_derived_metric": self.operation.requires_derived_metric,
             "missing": list(self.missing),
         }
 
@@ -246,6 +272,28 @@ def classify_operation(question: str) -> OperationHint:
     for op, pat in _OP_PATTERNS:
         m = pat.search(t)
         if m:
+            if op == EXTREMUM:
+                direction = (
+                    RANK_MIN
+                    if re.search(r"(th[ấa]p|nh[ỏo]|[íi]t)\s*nh[ấa]t", m.group(0))
+                    else RANK_MAX
+                )
+                if re.search(r"\b(?:n[ăa]m|qu[ýy]|k[ỳy])\s+n[àa]o\b", t):
+                    return_mode = RETURN_PERIOD
+                elif _FILTERED_EXTREMUM.search(t):
+                    return_mode = RETURN_FILTERED_VALUE
+                elif _SELECT_AT_ARG.search(t):
+                    return_mode = RETURN_SELECT_AT_ARG
+                else:
+                    return_mode = RETURN_VALUE
+                return OperationHint(
+                    op,
+                    reason=f"cue:{op}",
+                    matched=m.group(0),
+                    rank_direction=direction,
+                    return_mode=return_mode,
+                    requires_derived_metric=bool(_DERIVED_RANKING.search(t)),
+                )
             return OperationHint(op, reason=f"cue:{op}", matched=m.group(0))
     return OperationHint(LOOKUP, reason="default:no_operation_cue")
 

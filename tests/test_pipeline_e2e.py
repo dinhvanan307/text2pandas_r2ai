@@ -15,7 +15,7 @@ import pytest  # noqa: E402
 pd = pytest.importorskip("pandas")
 
 from text2pandas.pipelines.answering import (  # noqa: E402
-    CandidateCell, DIVIDE, GROWTH, LOOKUP, SUBTRACT, SUM, AVG,
+    ARGMAX, MAXIMUM, CandidateCell, DIVIDE, GROWTH, LOOKUP, SUBTRACT, SUM, AVG,
     Unit, answer_question, build_evidence,
 )
 from text2pandas.pipelines.answering.units import MONEY, PERCENT, RATIO, UNKNOWN  # noqa: E402
@@ -220,12 +220,105 @@ def test_unknown_requested_unit_abstains_at_route():
     assert res.reason == "UNKNOWN_REQUESTED_UNIT"
 
 
-def test_extremum_is_declared_unsupported_not_silently_looked_up():
+def test_cross_entity_extremum_abstains_instead_of_becoming_a_lookup():
     c = cell("df1", "Doanh thu", "2023VND", "1.000", 1000.0, 1000.0, 0, Unit(MONEY, 0))
     res = answer_question("Công ty nào có doanh thu cao nhất năm 2023, bao nhiêu tỷ đồng?",
                           [c], frames_from([c]), qid=12, requested_unit=Unit(MONEY, 9))
     assert res.status == "ABSTAIN"
-    assert res.reason.startswith("UNSUPPORTED_OPERATION")
+    assert res.reason == "EXTREMUM_NEEDS_TWO_PERIODS"
+
+
+def test_period_argmax_returns_the_year_from_executed_evidence():
+    cells = [
+        cell(
+            "df1",
+            "Doanh thu",
+            f"{year}VND",
+            str(value),
+            value,
+            value,
+            0,
+            Unit(MONEY, 0),
+            row_index=index,
+            period=str(year),
+        )
+        for index, (year, value) in enumerate(((2021, 100.0), (2022, 300.0), (2023, 200.0)))
+    ]
+    result = answer_question(
+        "Năm nào doanh thu cao nhất trong các năm 2021, 2022 và 2023?",
+        cells,
+        frames_from(cells),
+        qid=14,
+        requested_unit=Unit(UNKNOWN),
+        selector=InOrder(),
+    )
+
+    assert result.status == "OK", result.reason
+    assert result.ir.op == ARGMAX
+    assert result.ir.result_kind == "PERIOD_YEAR"
+    assert result.answer == 2022.0
+    assert "max(" in result.query
+
+
+def test_period_maximum_returns_value_in_requested_unit():
+    cells = [
+        cell(
+            "df1",
+            "Doanh thu",
+            f"{year}Triệu đồng",
+            str(value),
+            value,
+            value,
+            0,
+            Unit(MONEY, 6),
+            row_index=index,
+            period=str(year),
+        )
+        for index, (year, value) in enumerate(((2021, 100.0), (2022, 300.0), (2023, 200.0)))
+    ]
+    result = answer_question(
+        "Doanh thu cao nhất trong các năm 2021, 2022 và 2023 là bao nhiêu triệu đồng?",
+        cells,
+        frames_from(cells),
+        qid=15,
+        requested_unit=Unit(MONEY, 6),
+        selector=InOrder(),
+    )
+
+    assert result.status == "OK", result.reason
+    assert result.ir.op == MAXIMUM
+    assert result.answer == 300.0
+
+
+def test_select_at_arg_abstains_until_two_metrics_are_bound():
+    result = answer_question(
+        "Tại năm có chi phí XDCB cao nhất, số dư nợ đủ tiêu chuẩn là bao nhiêu triệu đồng?",
+        [],
+        {},
+        qid=16,
+        requested_unit=Unit(MONEY, 6),
+    )
+
+    assert result.status == "ABSTAIN"
+    assert result.reason == "EXTREMUM_SELECT_AT_ARG_REQUIRES_TWO_METRICS"
+
+
+def test_filtered_and_derived_extrema_abstain_instead_of_ignoring_semantics():
+    filtered = answer_question(
+        "Trong các năm có biên lợi nhuận trên 10%, doanh thu thấp nhất là bao nhiêu tỷ đồng?",
+        [],
+        {},
+        requested_unit=Unit(MONEY, 9),
+    )
+    derived = answer_question(
+        "Năm nào có mức tăng doanh thu cao nhất trong các năm 2021, 2022 và 2023?",
+        [],
+        {},
+        requested_unit=Unit(UNKNOWN),
+    )
+
+    assert filtered.reason == "EXTREMUM_FILTERS_NOT_SUPPORTED"
+    assert derived.reason == "EXTREMUM_DERIVED_RANKING_NOT_SUPPORTED"
 
 
 def test_validator_never_edits_the_number():

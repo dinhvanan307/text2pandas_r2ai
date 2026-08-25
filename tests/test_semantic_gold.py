@@ -161,11 +161,12 @@ def test_operation_precedence_after_gold_fixes(q, expected):
     assert classify_operation(q).op == expected
 
 
-def test_count_is_declared_unsupported_not_silently_routed():
-    """COUNT is detected but has no IR yet -- it must abstain loudly."""
+def test_count_is_declared_unsupported_but_extremum_is_supported():
+    """COUNT remains explicit; the period-extremum compiler is now live."""
     from text2pandas.pipelines.answering.frame import SUPPORTED
     assert classify_operation("Có bao nhiêu công ty lãi năm 2024?").op == "COUNT"
     assert "COUNT" not in SUPPORTED
+    assert "EXTREMUM" in SUPPORTED
 
 
 def test_parser_scores_are_reproducible():

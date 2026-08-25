@@ -9,8 +9,25 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .binding import BoundOperand
-from .ir import (AVG, DENOMINATOR, DIVIDE, GROWTH, LOOKUP, MINUEND, NEW, NUMERATOR,
-                 OLD, OperationIR, SUBTRACT, SUBTRAHEND, SUM)
+from .ir import (
+    ARGMAX,
+    ARGMIN,
+    AVG,
+    DENOMINATOR,
+    DIVIDE,
+    GROWTH,
+    LOOKUP,
+    MAXIMUM,
+    MINIMUM,
+    MINUEND,
+    NEW,
+    NUMERATOR,
+    OLD,
+    OperationIR,
+    SUBTRACT,
+    SUBTRAHEND,
+    SUM,
+)
 from .units import (ConversionStatus, PERCENT, PERCENT_POINT, RATIO, Quantity,
                     Unit, UNKNOWN, conversion_factor, query_factor)
 
@@ -63,7 +80,7 @@ def render(ir: OperationIR, operands: list[BoundOperand]) -> RenderResult:
         dims = {o.quantity.unit.dimension for o in operands}
         if len(dims) != 1 or UNKNOWN in dims:
             return _abstain(f"OPERAND_DIMENSIONS_NOT_UNIFORM:{sorted(dims)}")
-        if ir.op in (DIVIDE, GROWTH):
+        if ir.op in (DIVIDE, GROWTH, ARGMAX, ARGMIN):
             target_each = operands[0].quantity.unit    # any common unit cancels
         elif ir.op == SUBTRACT and ir.output_unit.dimension == PERCENT_POINT:
             # A percentage POINT is the unit of the RESULT, never of an operand.
@@ -113,6 +130,25 @@ def render(ir: OperationIR, operands: list[BoundOperand]) -> RenderResult:
         body = "(" + " + ".join(parts) + ")"
         if ir.op == AVG:
             body = f"({body} / {len(parts)})"
+        return RenderResult("OK", body, per_operand_factor=factors, output_factor=1.0)
+
+    if ir.op in (MAXIMUM, MINIMUM):
+        function = "max" if ir.op == MAXIMUM else "min"
+        body = f"{function}({', '.join(exprs['value'])})"
+        return RenderResult("OK", body, per_operand_factor=factors, output_factor=1.0)
+
+    if ir.op in (ARGMAX, ARGMIN):
+        values = exprs["value"]
+        periods = [operand.slot.period for operand in operands]
+        if any(period is None or not period[:4].isdigit() for period in periods):
+            return _abstain("ARG_EXTREMUM_REQUIRES_YEAR_PERIODS")
+        function = "max" if ir.op == ARGMAX else "min"
+        ranked = f"{function}({', '.join(values)})"
+        # Stable first-operand tie break. Every branch remains an expression and
+        # references the same evidence values, so replay proves the ranking.
+        body = f"float({int(periods[-1][:4])})"
+        for value, period in reversed(list(zip(values[:-1], periods[:-1]))):
+            body = f"float({int(period[:4])} if {value} == {ranked} else {body})"
         return RenderResult("OK", body, per_operand_factor=factors, output_factor=1.0)
 
     return _abstain(f"NO_RENDERER:{ir.op}")

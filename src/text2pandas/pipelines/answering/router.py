@@ -9,10 +9,37 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from .frame import EXTREMUM, QuestionSemanticFrame, UNSUPPORTED
-from .ir import (AVG, DENOMINATOR, DIVIDE, GROWTH, LOOKUP, MINUEND, NEW, NUMERATOR,
-                 OLD, OperandSlot, OperationIR, SUBTRACT, SUBTRAHEND, SUM, SUMMAND,
-                 VALUE)
+from .frame import (
+    EXTREMUM,
+    RANK_MIN,
+    RETURN_FILTERED_VALUE,
+    RETURN_PERIOD,
+    RETURN_SELECT_AT_ARG,
+    QuestionSemanticFrame,
+)
+from .ir import (
+    ARGMAX,
+    ARGMIN,
+    AVG,
+    DENOMINATOR,
+    DIVIDE,
+    GROWTH,
+    LOOKUP,
+    MAXIMUM,
+    MINIMUM,
+    MINUEND,
+    NEW,
+    NUMERATOR,
+    OLD,
+    OperandSlot,
+    OperationIR,
+    SUBTRACT,
+    SUBTRAHEND,
+    SUM,
+    SUMMAND,
+    VALUE,
+)
+from .result_kind import PERIOD_YEAR
 from .units import PERCENT, PERCENT_POINT, RATIO, UNKNOWN, Unit
 
 
@@ -42,10 +69,32 @@ def route(frame: QuestionSemanticFrame) -> RouteResult:
         return _abstain(f"UNSUPPORTED_OPERATION:{op}")
 
     out_unit = frame.requested_unit
+    common = dict(metric_id=frame.metric_id, basis=frame.basis, entity=frame.entity)
+
+    if op == EXTREMUM:
+        if frame.operation.requires_derived_metric:
+            return _abstain("EXTREMUM_DERIVED_RANKING_NOT_SUPPORTED")
+        if frame.operation.return_mode == RETURN_SELECT_AT_ARG:
+            return _abstain("EXTREMUM_SELECT_AT_ARG_REQUIRES_TWO_METRICS")
+        if frame.operation.return_mode == RETURN_FILTERED_VALUE:
+            return _abstain("EXTREMUM_FILTERS_NOT_SUPPORTED")
+        if len(frame.periods) < 2:
+            return _abstain("EXTREMUM_NEEDS_TWO_PERIODS")
+        slots = tuple(OperandSlot(VALUE, period=p, **common) for p in frame.periods)
+        is_minimum = frame.operation.rank_direction == RANK_MIN
+        if frame.operation.return_mode == RETURN_PERIOD:
+            rank_op = ARGMIN if is_minimum else ARGMAX
+            return RouteResult(
+                OperationIR(rank_op, slots, Unit(UNKNOWN), result_kind=PERIOD_YEAR),
+                "OK",
+            )
+        rank_op = MINIMUM if is_minimum else MAXIMUM
+        if out_unit.dimension == UNKNOWN:
+            return _abstain("UNKNOWN_REQUESTED_UNIT")
+        return RouteResult(OperationIR(rank_op, slots, out_unit), "OK")
+
     if out_unit.dimension == UNKNOWN:
         return _abstain("UNKNOWN_REQUESTED_UNIT")
-
-    common = dict(metric_id=frame.metric_id, basis=frame.basis, entity=frame.entity)
 
     if op == LOOKUP:
         slots = (OperandSlot(VALUE, period=_period(frame, 0), **common),)
