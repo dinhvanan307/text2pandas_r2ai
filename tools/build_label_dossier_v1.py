@@ -92,7 +92,7 @@ def dossier_md(p: dict, cands: list[dict] | None, blind: bool) -> str:
 def main() -> int:
     plans = {p["qid"]: p for p in
              (json.loads(l) for l in
-              (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
+              (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8"))}
     dev = json.loads((ROOT / "data/curated/dev-legacy/execution_gold/dev60_selection.json").read_text())
     aud = json.loads((ROOT / "data/curated/dev-legacy/execution_gold/audit40_selection.json").read_text())
     con = sqlite3.connect(

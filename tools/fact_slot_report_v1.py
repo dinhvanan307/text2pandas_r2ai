@@ -20,9 +20,9 @@ không kéo lên được. Hai loại miss này cần hai cách sửa khác nhau
 
 Sinh:
     reports/fact_slot_evidence_v1.json           (tổng hợp + kiểm chứng số cũ)
-    evaluation/fact_candidates_gold45_v10.jsonl  (per-slot, biến thể V1.0)
-    evaluation/fact_candidates_gold45_v11.jsonl
-    evaluation/fact_candidates_gold45_v12.jsonl
+    data/curated/evaluation/legacy/fact_candidates_gold45_v10.jsonl  (per-slot, biến thể V1.0)
+    data/curated/evaluation/legacy/fact_candidates_gold45_v11.jsonl
+    data/curated/evaluation/legacy/fact_candidates_gold45_v12.jsonl
 
 Chạy:  python3 tools/fact_slot_report_v1.py
 """
@@ -81,7 +81,7 @@ def main() -> int:
     con = sqlite3.connect(
         f"file:{ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'}?mode=ro&immutable=1", uri=True)
     plans = {p["qid"]: p for p in (json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8"))}
     gold = [g for g in (json.loads(l) for l in
             (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
             if not g.get("_meta")]
@@ -299,9 +299,9 @@ def main() -> int:
         "latency_pool_s": {"p50": round(lat[len(lat) // 2], 4),
                            "p95": round(lat[int(len(lat) * 0.95)], 4)},
         "per_slot_files": {
-            "V1.0": "evaluation/fact_candidates_gold45_v10.jsonl",
-            "V1.1": "evaluation/fact_candidates_gold45_v11.jsonl",
-            "V1.2": "evaluation/fact_candidates_gold45_v12.jsonl",
+            "V1.0": "data/curated/evaluation/legacy/fact_candidates_gold45_v10.jsonl",
+            "V1.1": "data/curated/evaluation/legacy/fact_candidates_gold45_v11.jsonl",
+            "V1.2": "data/curated/evaluation/legacy/fact_candidates_gold45_v12.jsonl",
         },
         "command": "python3 tools/fact_slot_report_v1.py",
     }
@@ -314,7 +314,7 @@ def main() -> int:
                 "target_row_path", "target_col", "target_raw", "leakage_flag",
                 "n_pool_sql", "n_pool_scorable", "pool_sql_present",
                 "pool_scorable_present", f"rank@{vn}", f"rank_ref_only@{vn}"]
-        with (ROOT / f"evaluation/fact_candidates_gold45_{fn}.jsonl").open(
+        with (ROOT / f"data/curated/evaluation/legacy/fact_candidates_gold45_{fn}.jsonl").open(
                 "w", encoding="utf-8") as f:
             for r in rows:
                 o = {k: r[k] for k in keep}

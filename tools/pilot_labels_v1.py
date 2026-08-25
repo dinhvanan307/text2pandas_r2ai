@@ -49,7 +49,7 @@ def init() -> int:
     sel = json.loads(SEL.read_text(encoding="utf-8"))
     qids = sel["qids"][:N_BATCH]          # THỨ TỰ FILE — không xáo, không chọn tay
     plans = {p["qid"]: p for p in (json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8"))}
 
     if OUT.exists():
         done = sum(1 for l in OUT.open(encoding="utf-8")

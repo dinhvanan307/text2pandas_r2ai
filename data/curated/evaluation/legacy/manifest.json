@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "legacy-202608",
+  "classification": "reviewed evaluation fixtures",
+  "source_path": "evaluation/",
+  "files": {
+    "arith_traces_v1.jsonl": "193af019ca2154395ecc3a56c4c6d18fcf5db31b5703a5466466fc52f6929cea",
+    "fact_candidates_gold45_v10.jsonl": "1ddde81f67f78ae9db18f5fd37de83e02ee13ded39ddb1ae197e099292b8fe01",
+    "fact_candidates_gold45_v11.jsonl": "116851775d7f69b062d9c3af2bee411494184ceb9e07e4cb653cf4af993da561",
+    "fact_candidates_gold45_v12.jsonl": "d3732ee895b4a2cc30b4a098082e675f3f627bb7e4a025f3ce76b3dc52d4edf5",
+    "operand_candidates_sample.jsonl": "831f099b5c6d1cb90717a759caf9a34c0d19d14a99293a7e2ca51d9026f2efcb",
+    "qid_slices.json": "9976dc73ff9c430683f81a94ca778c3dc4b409b89a3b2a96d59b6b05e17df728",
+    "question_plans_1012.jsonl": "45dc64f890b13c77a4fef44b5d599873ce457cea5e02bc3c23bb6311736f2a0d",
+    "run_trace_1012.jsonl": "49151a31ffdd4c2e8011326202f558c7f45afe804c4935160c54224e518c84ca"
+  }
+}

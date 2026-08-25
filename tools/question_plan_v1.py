@@ -2,7 +2,7 @@
 """QuestionPlan parser v1 — D1 của plan 124 (bản 122.1), rule-based, không LLM.
 
 Sinh:
-    evaluation/question_plans_1012.jsonl   một QuestionPlan/QID (contract 121 §3.2 rút gọn)
+    data/curated/evaluation/legacy/question_plans_1012.jsonl   một QuestionPlan/QID (contract 121 §3.2 rút gọn)
     reports/question_plan_v1_report.json   distribution PROVISIONAL + agreement vs `lop`
                                             + entity/year check trên gold-45
                                             + bảng chéo intent × n_evidence(C0)
@@ -179,7 +179,7 @@ def build_plans() -> list[dict]:
 def main() -> int:
     plans = build_plans()
     (ROOT / "evaluation").mkdir(exist_ok=True)
-    with (ROOT / "evaluation/question_plans_1012.jsonl").open("w", encoding="utf-8") as f:
+    with (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open("w", encoding="utf-8") as f:
         for p in plans:
             f.write(json.dumps(p, ensure_ascii=False) + "\n")
 

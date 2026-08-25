@@ -13,7 +13,7 @@ Hit lỏng (chỉ ref) báo riêng để tách lỗi chọn Ô vs chọn BẢNG.
 
 Sinh:
     reports/fact_candidates_v1_recall.json
-    evaluation/operand_candidates_sample.jsonl (top-20 của 45 QID gold)
+    data/curated/evaluation/legacy/operand_candidates_sample.jsonl (top-20 của 45 QID gold)
 """
 from __future__ import annotations
 
@@ -149,7 +149,7 @@ def main() -> int:
                           uri=True)
     plans = {p["qid"]: p for p in
              (json.loads(l) for l in
-              (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
+              (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8"))}
     gold = [json.loads(l) for l in
             (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8")]
     gold = [g for g in gold if not g.get("_meta")]
@@ -159,7 +159,7 @@ def main() -> int:
     slot_hit_ref_only = {k: 0 for k in K_LIST}
     qid_all20 = 0
     lat = []
-    sample_out = (ROOT / "evaluation/operand_candidates_sample.jsonl").open(
+    sample_out = (ROOT / "data/curated/evaluation/legacy/operand_candidates_sample.jsonl").open(
         "w", encoding="utf-8")
     misses = []
     for g in gold:

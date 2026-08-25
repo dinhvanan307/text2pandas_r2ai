@@ -103,7 +103,7 @@ def main() -> int:
     gold = {r["qid"]: r for r in (json.loads(l) for l in
             (GD / "answer_gold_wave1_final.jsonl").open(encoding="utf-8") if l.strip())}
     plans = {r["qid"]: r for r in (json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8")
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8")
              if l.strip())}
     proj = collections.defaultdict(list)
     for r in (json.loads(l) for l in

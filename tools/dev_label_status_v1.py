@@ -33,7 +33,7 @@ REQUIRED_FIELDS = ("dap_an_gold", "don_vi_dap_an", "intent_gold", "operands",
 def main() -> int:
     sel = json.loads((GOLD_DIR / "dev60_selection.json").read_text(encoding="utf-8"))
     plans = {p["qid"]: p for p in (json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8"))}
 
     lab_f = GOLD_DIR / "dev60_labels.jsonl"
     labels = ([json.loads(l) for l in lab_f.open(encoding="utf-8") if l.strip()]

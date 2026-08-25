@@ -106,7 +106,7 @@ def main() -> int:
 
     inputs = {p: sha256(ROOT / p) for p in (
         "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db",
-        "evaluation/question_plans_1012.jsonl",
+        "data/curated/evaluation/legacy/question_plans_1012.jsonl",
         "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl")}
 
     rows, n_pass = [], 0

@@ -66,9 +66,9 @@ ITEMS: list[tuple[str, str]] = [
     ("tools/execution/emit_arith_v1.py", "tools/execution/emit_arith_v1.py"),
     ("tools/execution/joint_search_v1.py", "tools/execution/joint_search_v1.py"),
 
-    ("evaluation/qid_slices.json", "evaluation/qid_slices.json"),
-    ("evaluation/arith_traces_v1.jsonl", "evaluation/arith_traces_v1.jsonl"),
-    ("evaluation/fact_candidates_gold45_v12.jsonl", "evaluation/fact_candidates_gold45_v12.jsonl"),
+    ("data/curated/evaluation/legacy/qid_slices.json", "data/curated/evaluation/legacy/qid_slices.json"),
+    ("data/curated/evaluation/legacy/arith_traces_v1.jsonl", "data/curated/evaluation/legacy/arith_traces_v1.jsonl"),
+    ("data/curated/evaluation/legacy/fact_candidates_gold45_v12.jsonl", "data/curated/evaluation/legacy/fact_candidates_gold45_v12.jsonl"),
 
     ("tests/expected_p0_cases.jsonl", "tests/expected_p0_cases.jsonl"),
     ("tests/expected_p0_cases.meta.json", "tests/expected_p0_cases.meta.json"),

@@ -38,7 +38,7 @@ def main() -> int:
     con = sqlite3.connect(
         f"file:{ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'}?mode=ro&immutable=1", uri=True)
     plans = {p["qid"]: p for p in (json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8"))}
     labs = registry_labels()
     C3 = LADDER["C3"]
     sub, _ = load_control()

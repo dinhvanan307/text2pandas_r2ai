@@ -285,14 +285,14 @@ git commit -m "prereg(d1a): đăng ký giả thuyết/ngưỡng TRƯỚC khi đo
 #    lịch sử và dễ lệch với code. Lựa chọn khác: thêm vào .gitignore và
 #    chỉ đóng gói trong packet evidence có MANIFEST.sha256.
 #    Quyết định này là của người chủ repo — script để sẵn cả hai đường.
-# git add 'evaluation/arith_traces_v1.jsonl'
-# git add 'evaluation/fact_candidates_gold45_v10.jsonl'
-# git add 'evaluation/fact_candidates_gold45_v11.jsonl'
-# git add 'evaluation/fact_candidates_gold45_v12.jsonl'
-# git add 'evaluation/operand_candidates_sample.jsonl'
-# git add 'evaluation/qid_slices.json'
-# git add 'evaluation/question_plans_1012.jsonl'
-# git add 'evaluation/run_trace_1012.jsonl'
+# git add 'data/curated/evaluation/legacy/arith_traces_v1.jsonl'
+# git add 'data/curated/evaluation/legacy/fact_candidates_gold45_v10.jsonl'
+# git add 'data/curated/evaluation/legacy/fact_candidates_gold45_v11.jsonl'
+# git add 'data/curated/evaluation/legacy/fact_candidates_gold45_v12.jsonl'
+# git add 'data/curated/evaluation/legacy/operand_candidates_sample.jsonl'
+# git add 'data/curated/evaluation/legacy/qid_slices.json'
+# git add 'data/curated/evaluation/legacy/question_plans_1012.jsonl'
+# git add 'data/curated/evaluation/legacy/run_trace_1012.jsonl'
 # git add 'identity/AUDIT_SELECTION_SEAL.json'
 # git add 'identity/SOURCE_SELECTION.json'
 # git add 'identity/access_log.json'

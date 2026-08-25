@@ -135,7 +135,7 @@ def self_check() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--self-check", action="store_true")
-    ap.add_argument("--traces", default="evaluation/arith_traces_v1.jsonl")
+    ap.add_argument("--traces", default="data/curated/evaluation/legacy/arith_traces_v1.jsonl")
     ap.add_argument("--rung", default="C3")
     a = ap.parse_args()
     if a.self_check:

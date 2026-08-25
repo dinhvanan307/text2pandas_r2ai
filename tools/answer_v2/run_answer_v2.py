@@ -46,7 +46,7 @@ import verifier as VF                  # noqa: E402
 from execution.answer_type_v1 import kiem, suy_hop_dong  # noqa: E402
 
 WORK = ROOT / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
-PLANS = ROOT / "evaluation/question_plans_1012.jsonl"
+PLANS = ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl"
 REPORTS = ROOT / "reports/answer_v2"
 PARENT_DEFAULT = ROOT / "artifacts/submissions/legacy/submission_P0I.zip"
 

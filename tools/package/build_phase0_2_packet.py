@@ -99,8 +99,8 @@ def main() -> int:
                                       "<DOC>/<DOC>_extracted.txt",
             "KHONG_GUI": "379 MB — packet gửi excerpt + SHA256 từng tài liệu"},
         "question_plans": {
-            "path": "evaluation/question_plans_1012.jsonl",
-            "sha256": shaf(ROOT / "evaluation/question_plans_1012.jsonl")},
+            "path": "data/curated/evaluation/legacy/question_plans_1012.jsonl",
+            "sha256": shaf(ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl")},
         "configs": {p.name: shaf(p) for p in
                     sorted((ROOT / "configs/answer_v2").glob("*.yaml"))},
     }

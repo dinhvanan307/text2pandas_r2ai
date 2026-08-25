@@ -7,7 +7,7 @@ non-lookup, còn C2B chỉ exercise 12 câu. Muốn nói "templates tạo gain" 
 báo C0 trên **đúng 12 QID đó**.
 
 Tệp này sinh:
-    evaluation/qid_slices.json     danh sách QID từng slice, khoá lại
+    data/curated/evaluation/legacy/qid_slices.json     danh sách QID từng slice, khoá lại
     reports/paired_slices_v1.json  bảng paired đúng mẫu số cho mọi bậc
 
 Slice được định nghĩa bởi **cờ intent**, không phải bởi kết quả — nên nó khoá
@@ -51,7 +51,7 @@ def main() -> int:
             if not g.get("_meta")}
     sub0, _ = load_control()
     c0 = {r["id"]: r for r in sub0}
-    tf = ROOT / "evaluation/arith_traces_v1.jsonl"
+    tf = ROOT / "data/curated/evaluation/legacy/arith_traces_v1.jsonl"
     traces = ([json.loads(l) for l in tf.open(encoding="utf-8") if l.strip()]
               if tf.is_file() else [])
 
@@ -59,7 +59,7 @@ def main() -> int:
     # một bảng trong đó candidate == C0 ở mọi bậc — tức "C2B 0/12" thay vì
     # "3/12". Một báo cáo sai mà exit 0 nguy hiểm hơn một lần crash.
     if not traces:
-        print("✗ evaluation/arith_traces_v1.jsonl RỖNG hoặc không có.", file=sys.stderr)
+        print("✗ data/curated/evaluation/legacy/arith_traces_v1.jsonl RỖNG hoặc không có.", file=sys.stderr)
         print("  Bảng paired sẽ sai (candidate = C0 ở mọi bậc).", file=sys.stderr)
         print("  Chạy TRƯỚC:  python3 tools/run_arith_eval_v1.py", file=sys.stderr)
         return 2
@@ -79,7 +79,7 @@ def main() -> int:
             "intents_bat": [i for i in ARITH_INTENTS if fl.enabled(i)],
         }
 
-    (ROOT / "evaluation/qid_slices.json").write_text(json.dumps(
+    (ROOT / "data/curated/evaluation/legacy/qid_slices.json").write_text(json.dumps(
         {"_schema": "qid_slices v1 — slice định nghĩa bởi CỜ INTENT, khoá trước khi xem điểm",
          "date": "2026-08-21", "dataset": "gold_dap_an_v1",
          "slices": {k: v | {"n": len(v["qids"])} for k, v in slices.items()}},
@@ -136,7 +136,7 @@ def main() -> int:
     print("\nQID từng slice:")
     for rung, t in tables.items():
         print(f"  S_{rung} (n={t['n']}): {t['qids']}")
-    print("\n-> evaluation/qid_slices.json · reports/paired_slices_v1.json")
+    print("\n-> data/curated/evaluation/legacy/qid_slices.json · reports/paired_slices_v1.json")
     return 0
 
 

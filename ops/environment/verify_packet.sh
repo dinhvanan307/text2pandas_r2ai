@@ -184,7 +184,7 @@ if [ -n "$CTRL" ]; then run evaluator_smoke python3 tools/eval_answer_v1.py "$CT
 else na evaluator_smoke "packet '$PACKET_KIND' KHÔNG chứa controls/*.zip (đúng thiết kế). Dùng --repo hoặc sync_122_1."; fi
 
 echo "── 7. clean replay (kỳ vọng OK=1011, NO_QUERY=1) ──"
-# `replay_submission_v1.py` mặc định ghi `evaluation/run_trace_1012.jsonl` và
+# `replay_submission_v1.py` mặc định ghi `data/curated/evaluation/legacy/run_trace_1012.jsonl` và
 # `reports/*_clean_replay.json` — CẢ HAI nằm trong MANIFEST. Chạy trong packet
 # mà không đổi đường ghi thì lần verify thứ hai sẽ báo `manifest FAIL` do chính
 # lần thứ nhất gây ra. Đây là lỗi đã quan sát được, không phải giả định.

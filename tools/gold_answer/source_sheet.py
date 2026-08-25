@@ -51,7 +51,7 @@ def main() -> int:
     a = ap.parse_args()
 
     plans = {r["qid"]: r for r in (json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8")
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8")
              if l.strip())}
     p = plans[a.qid]
     tickers = a.ticker or (p.get("entities") or [])

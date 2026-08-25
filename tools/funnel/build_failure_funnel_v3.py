@@ -104,7 +104,7 @@ def main() -> int:
             (ROOT / "data/curated/dev-legacy/answer_gold/answer_gold_wave1_final.jsonl")
             .open(encoding="utf-8") if l.strip())}
     plans = {r["qid"]: r for r in (json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8")
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8")
              if l.strip())}
     zf = zipfile.ZipFile(a.zip)
     names = set(zf.namelist())

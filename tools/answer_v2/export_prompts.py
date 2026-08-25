@@ -50,7 +50,7 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(f"file:{WORK}?mode=ro&immutable=1", uri=True)
     plans = {p["qid"]: p for p in (json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8"))}
     labs, al, fl = registry_labels(), load_aliases(), SL["S5"]
 
     if a.scope == "eval":

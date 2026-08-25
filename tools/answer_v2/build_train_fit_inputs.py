@@ -70,7 +70,7 @@ def main() -> int:
 
     con = sqlite3.connect(f"file:{WORK}?mode=ro&immutable=1", uri=True)
     plans = {p["qid"]: p for p in (json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8"))}
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8"))}
     gold = {g["qid"]: g for g in (json.loads(l) for l in
             (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8"))
             if not g.get("_meta")}
@@ -205,7 +205,7 @@ def main() -> int:
         "n_qid": len({s["qid"] for s in slots}),
         "n_slot": len(slots),
         "unique_qid_slot": len({(s["qid"], s["slot_id"]) for s in slots}),
-        "question_plan_sha256": sha_file(ROOT / "evaluation/question_plans_1012.jsonl"),
+        "question_plan_sha256": sha_file(ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl"),
         "gold_label_sha256": sha_file(p_gold),
         "candidate_pool_sha256": sha_file(p_pools),
         "slots_sha256": sha_file(p_slots),

@@ -60,7 +60,7 @@ def stratified(pool_by_intent: dict[str, list[int]], n_total: int,
 
 def main() -> int:
     plans = [json.loads(l) for l in
-             (ROOT / "evaluation/question_plans_1012.jsonl").open(encoding="utf-8")]
+             (ROOT / "data/curated/evaluation/legacy/question_plans_1012.jsonl").open(encoding="utf-8")]
     gold_qids = {json.loads(l)["qid"] for l in
                  (ROOT / "data/curated/dev-legacy/gold_dap_an/gold_dap_an_v1.jsonl").open(encoding="utf-8")
                  if not json.loads(l).get("_meta")}

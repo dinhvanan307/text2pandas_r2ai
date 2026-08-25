@@ -5,7 +5,7 @@ Sinh ra (plan 124 §3.3, feedback 125 §8.1 mục 11–12):
 
 1. `reports/<zip>_clean_replay.json` — bất biến `answer == eval(pandas_query)`
    chạy lại TỪ ZIP SẠCH (giải nén tạm, không đọc workspace).
-2. `evaluation/run_trace_1012.jsonl` — mỗi QID một dòng với
+2. `data/curated/evaluation/legacy/run_trace_1012.jsonl` — mỗi QID một dòng với
    `runtime_terminal_stage`. KHÔNG sinh `first_correctness_failure` ở đây:
    trường đó chỉ tồn tại trên execution Gold (124 §3.3).
 
@@ -122,7 +122,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("zip")
     ap.add_argument("--tol", type=float, default=1e-9)
-    ap.add_argument("--trace-out", default="evaluation/run_trace_1012.jsonl")
+    ap.add_argument("--trace-out", default="data/curated/evaluation/legacy/run_trace_1012.jsonl")
     ap.add_argument("--report-out", default=None)
     ap.add_argument("--machine", default=None,
                     help="nhãn máy; mặc định lấy hostname+OS+arch THẬT")

@@ -65,11 +65,11 @@ ITEMS: list[tuple[str, str]] = [
     ("configs/execution/formula_registry_v1.yaml", "configs/execution/formula_registry_v1.yaml"),
     ("configs/execution/a6_identity.yaml", "configs/execution/a6_identity.yaml"),
     # evaluation (per-slot evidence — thứ review 127 §7 đòi)
-    ("evaluation/question_plans_1012.jsonl", "evaluation/question_plans_1012.jsonl"),
-    ("evaluation/fact_candidates_gold45_v10.jsonl", "evaluation/fact_candidates_gold45_v10.jsonl"),
-    ("evaluation/fact_candidates_gold45_v11.jsonl", "evaluation/fact_candidates_gold45_v11.jsonl"),
-    ("evaluation/fact_candidates_gold45_v12.jsonl", "evaluation/fact_candidates_gold45_v12.jsonl"),
-    ("evaluation/run_trace_1012.jsonl", "evaluation/run_trace_1012.jsonl"),
+    ("data/curated/evaluation/legacy/question_plans_1012.jsonl", "data/curated/evaluation/legacy/question_plans_1012.jsonl"),
+    ("data/curated/evaluation/legacy/fact_candidates_gold45_v10.jsonl", "data/curated/evaluation/legacy/fact_candidates_gold45_v10.jsonl"),
+    ("data/curated/evaluation/legacy/fact_candidates_gold45_v11.jsonl", "data/curated/evaluation/legacy/fact_candidates_gold45_v11.jsonl"),
+    ("data/curated/evaluation/legacy/fact_candidates_gold45_v12.jsonl", "data/curated/evaluation/legacy/fact_candidates_gold45_v12.jsonl"),
+    ("data/curated/evaluation/legacy/run_trace_1012.jsonl", "data/curated/evaluation/legacy/run_trace_1012.jsonl"),
     # selections + schema nhãn
     ("data/curated/dev-legacy/execution_gold/dev60_selection.json", "data/curated/dev-legacy/execution_gold/dev60_selection.json"),
     ("data/curated/dev-legacy/execution_gold/audit40_selection.json", "data/curated/dev-legacy/execution_gold/audit40_selection.json"),
@@ -218,7 +218,7 @@ bash tools/build_retrieval_workdb.sh --verify-only <work.db>
 
 ## Per-slot evidence (thứ §7 của review 127 đòi)
 
-`evaluation/fact_candidates_gold45_v1{{0,1,2}}.jsonl` — mỗi dòng một slot, đủ
+`data/curated/evaluation/legacy/fact_candidates_gold45_v1{{0,1,2}}.jsonl` — mỗi dòng một slot, đủ
 `qid · slot_id · target_ref · target_label · leakage_flag · pool_sql_present ·
 pool_scorable_present · rank@V1.0/V1.1/V1.2 · top20_candidate_ids ·
 miss_reason`. Tổng hợp + kiểm chứng số cũ: `reports/fact_slot_evidence_v1.json`.

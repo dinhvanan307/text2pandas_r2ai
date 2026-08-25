@@ -106,7 +106,7 @@ cat > "$STAGE/PACKAGE_README.md" <<EOF
 
 ## Gói này CÓ
 
-\`src/\` \`tools/\` \`tests/\` \`configs/\` \`evaluation/\` \`identity/\` \`ops/\` \`scripts/\`
+\`src/\` \`tools/\` \`tests/\` \`configs/\` \`data/curated/evaluation/legacy/\` \`identity/\` \`ops/\` \`scripts/\`
 + \`Makefile\` \`pyproject.toml\` \`requirements.lock\` \`README.md\` \`CLAUDE.md\` \`HANDOFF.md\`
 
 ## Gói này KHÔNG có, và vì sao

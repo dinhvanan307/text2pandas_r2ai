@@ -78,7 +78,7 @@ RULES: list[tuple[str, str, str]] = [
     ("COMMIT", "override thực thể", "data/curated/dev-legacy/gold_entity_override_"),
     ("COMMIT", "audit retrieval (nhỏ)", "data/curated/dev-legacy/audit/"),
     ("COMMIT", "báo cáo JSON nhỏ", "reports/"),
-    ("COMMIT", "evaluation JSONL nhỏ", "evaluation/"),
+    ("COMMIT", "evaluation JSONL nhỏ", "data/curated/evaluation/legacy/"),
     ("COMMIT", "manifest packet", "packet_kind.json"),
     ("COMMIT", "manifest packet", "sync_122_2.sha256"),
     ("COMMIT", "build config", "pyproject.toml"),
