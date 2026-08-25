@@ -23,11 +23,11 @@ ROOT = Path(__file__).resolve().parents[1]
 NAME = "sync_133_evidence"
 
 ITEMS: list[tuple[str, str]] = [
-    ("identity/source_identity.json", "identity/source_identity.json"),
-    ("identity/environment_identity.json", "identity/environment_identity.json"),
-    ("identity/SOURCE_SELECTION.json", "identity/SOURCE_SELECTION.json"),
-    ("identity/AUDIT_SELECTION_SEAL.json", "identity/AUDIT_SELECTION_SEAL.json"),
-    ("identity/access_log.json", "identity/access_log.json"),
+    ("provenance/identity/source_identity.json", "identity/source_identity.json"),
+    ("provenance/identity/environment_identity.json", "identity/environment_identity.json"),
+    ("provenance/identity/SOURCE_SELECTION.json", "identity/SOURCE_SELECTION.json"),
+    ("provenance/identity/AUDIT_SELECTION_SEAL.json", "identity/AUDIT_SELECTION_SEAL.json"),
+    ("provenance/identity/access_log.json", "identity/access_log.json"),
 
     ("reports/reference_eval_v1.json", "reports/reference_eval_v1.json"),
     ("reports/arith_eval_v1.json", "reports/arith_eval_v1.json"),
@@ -168,7 +168,7 @@ def main() -> int:
     # provenance chung cho cả gói
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
                           capture_output=True, text=True).stdout.strip()
-    sid = json.loads((ROOT / "identity/source_identity.json").read_text(encoding="utf-8"))
+    sid = json.loads((ROOT / "provenance/identity/source_identity.json").read_text(encoding="utf-8"))
     prov = {
         "_schema": "provenance chung cho sync_133_evidence",
         "date": "2026-08-21",

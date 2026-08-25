@@ -41,8 +41,8 @@ def main() -> int:
     sl = J("reports/paired_slices_v1.json")
     gi = J("reports/git_inventory_v1.json")
     rr = J("reports/reviewer_replay_report.json")
-    env = J("identity/environment_identity.json")
-    sid = J("identity/source_identity.json")
+    env = J("provenance/identity/environment_identity.json")
+    sid = J("provenance/identity/source_identity.json")
 
     # 1 · identity đã pin
     add("candidate_parent_source_config_data_identity_pinned",

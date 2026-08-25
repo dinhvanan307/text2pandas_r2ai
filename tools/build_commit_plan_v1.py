@@ -36,7 +36,7 @@ LON_MB = 5.0
 def phan_loai(p: str) -> str:
     if any(s in p for s in RAC):
         return "RAC_KHONG_COMMIT"
-    if p.startswith(("reports/", "artifacts/", "data/curated/evaluation/legacy/", "identity/",
+    if p.startswith(("reports/", "artifacts/", "data/curated/evaluation/legacy/", "provenance/identity/",
                      "submissions/", "logs/", "verify_out/")) or p.endswith(
                          (".sha256", ".zip")) or p == "packet_kind.json":
         return "GENERATED_artifact"

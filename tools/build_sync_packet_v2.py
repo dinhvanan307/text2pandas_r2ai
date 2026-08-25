@@ -30,12 +30,12 @@ DST = ROOT / "sync_122_2"
 ITEMS: list[tuple[str, str]] = [
     ("packet_kind.json", "packet_kind.json"),
     # identity
-    ("identity/source_identity.json", "identity/source_identity.json"),
-    ("identity/environment_identity.json", "identity/environment_identity.json"),
-    ("identity/AUDIT_SELECTION_SEAL.json", "identity/AUDIT_SELECTION_SEAL.json"),
-    ("identity/access_log.json", "identity/access_log.json"),
-    ("identity/final_audit_seal.json", "identity/final_audit_seal.json"),
-    ("identity/SOURCE_SELECTION.json", "identity/SOURCE_SELECTION.json"),
+    ("provenance/identity/source_identity.json", "identity/source_identity.json"),
+    ("provenance/identity/environment_identity.json", "identity/environment_identity.json"),
+    ("provenance/identity/AUDIT_SELECTION_SEAL.json", "identity/AUDIT_SELECTION_SEAL.json"),
+    ("provenance/identity/access_log.json", "identity/access_log.json"),
+    ("provenance/identity/final_audit_seal.json", "identity/final_audit_seal.json"),
+    ("provenance/identity/SOURCE_SELECTION.json", "identity/SOURCE_SELECTION.json"),
     # môi trường
     ("ops/environment/bootstrap_review_env.sh", "ops/environment/bootstrap_review_env.sh"),
     ("ops/environment/requirements-review.txt", "ops/environment/requirements-review.txt"),

@@ -68,7 +68,7 @@ RULES: list[tuple[str, str, str]] = [
     ("COMMIT", "test", "tests/"),
     ("COMMIT", "tài liệu", "docs/"),
     ("COMMIT", "môi trường", "env/"),
-    ("COMMIT", "identity/metadata nhỏ", "identity/"),
+    ("COMMIT", "identity/metadata nhỏ", "provenance/identity/"),
     ("COMMIT", "selection + dossier + schema nhãn", "data/curated/dev-legacy/execution_gold/"),
     ("COMMIT", "gold đáp án (nhỏ, là SSOT đo)", "data/curated/dev-legacy/gold_dap_an/"),
     # Các gold/sample nhỏ còn lại của data/curated/dev-legacy — đều là metadata đo, vài trăm KB.

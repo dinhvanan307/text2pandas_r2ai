@@ -5,13 +5,13 @@ Quy tắc:
 - seed cố định, stratified proportional theo `intent_v1` (sàn 2 câu/lớp có mặt);
 - LOẠI 45 QID của gold_dap_an_v1 (preregister overlap = 0 — câu 9 của 125);
 - DEV và AUDIT rời nhau;
-- AUDIT seal: manifest SHA ghi `identity/final_audit_seal.json`; dossier audit
+- AUDIT seal: manifest SHA ghi `provenance/identity/final_audit_seal.json`; dossier audit
   BLIND (không chứa prediction/ranking — 125 §P0-C).
 
 Sinh:
     data/curated/dev-legacy/execution_gold/dev60_selection.json
     data/curated/dev-legacy/execution_gold/audit40_selection.json
-    identity/final_audit_seal.json
+    provenance/identity/final_audit_seal.json
 """
 from __future__ import annotations
 
@@ -93,7 +93,7 @@ def main() -> int:
     a = dump(audit, "audit40_selection.json",
              "FINAL_AUDIT — SEALED, mở đúng 1 lần ở D10; directional only (n=40)")
     seal = hashlib.sha256(json.dumps(a, sort_keys=True).encode()).hexdigest()
-    (ROOT / "identity/final_audit_seal.json").write_text(json.dumps({
+    (ROOT / "provenance/identity/final_audit_seal.json").write_text(json.dumps({
         "sealed": "2026-08-20", "selection_sha256": seal,
         "open_policy": "mở đúng MỘT lần tại D10; tuyệt đối không đọc per-QID trước đó",
         "statistical_claim_limit": "directional only — Wilson CI n=40 quá rộng cho 0,65 (124 §4)",

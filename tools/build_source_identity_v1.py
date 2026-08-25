@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Sinh `identity/source_identity.json` — per-file SHA của SSOT source.
+"""Sinh `provenance/identity/source_identity.json` — per-file SHA của SSOT source.
 
 VÌ SAO TỆP NÀY TỒN TẠI (review 127 §3-D0)
 -----------------------------------------
 `SOURCE_SELECTION.json` khai *root nào là SSOT* và commit + patch, nhưng KHÔNG
 khai từng file. Người review vì thế không thể trả lời "file X trong packet có
 đúng là file X trên máy build không" nếu không giải nén và so tay. Packet 125
-yêu cầu `identity/source_identity.json` riêng; sync_122_1 thiếu.
+yêu cầu `provenance/identity/source_identity.json` riêng; sync_122_1 thiếu.
 
 Tệp này khoá:
   - per-file sha256 của `src/`, `tools/*.py|*.sh` cấp 1, `configs/`, `tests/`;
@@ -119,7 +119,7 @@ def main() -> int:
         "tree_sha256_definition": "sha256 của nối chuỗi f'{relpath}\\0{sha256}\\n' trên danh sách path ĐÃ SẮP XẾP (sorted, byte-order của str Python)",
         "files": files,
     }
-    dst = ROOT / "identity/source_identity.json"
+    dst = ROOT / "provenance/identity/source_identity.json"
     dst.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"n_files={len(files)}  tree_sha256={tree_sha}")
     print("->", dst)

@@ -11,7 +11,7 @@
 #
 # Contract runtime: CPython >= 3.11 (pyproject.requires-python).
 # Nếu chỉ có 3.10: replay vẫn chạy, nhưng phải ghi nhãn
-# MEASURED_OFF_CONTRACT_PY310 lên mọi số — xem identity/environment_identity.json.
+# MEASURED_OFF_CONTRACT_PY310 lên mọi số — xem provenance/identity/environment_identity.json.
 
 pandas>=2.0,<3
 numpy>=1.24,<3

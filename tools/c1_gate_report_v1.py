@@ -191,7 +191,7 @@ def main() -> int:
     # ── nhóm 5 · Process ────────────────────────────────────────────────────
     # Ba dòng này TỪNG là `PASS` hằng số — tức không kiểm gì mà vẫn tô xanh.
     # Một cổng có dòng luôn xanh là một cổng nói dối về số dòng nó đã kiểm.
-    si = json.loads((ROOT / "identity/source_identity.json").read_text(encoding="utf-8"))
+    si = json.loads((ROOT / "provenance/identity/source_identity.json").read_text(encoding="utf-8"))
     add("Process", "hash_day_du", "PASS", {
         "candidate_zip_sha256": sha256(cand),
         "control_zip_sha256": sha256(CONTROL),
