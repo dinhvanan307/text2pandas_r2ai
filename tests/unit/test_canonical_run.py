@@ -62,6 +62,16 @@ def test_selector_abstains_without_phrase_or_metric_evidence() -> None:
     assert selector.pick(OperandSlot("value", period="2020"), [unrelated]) is None
 
 
+def test_aggregate_question_never_binds_a_child_row() -> None:
+    selector = QuestionSelector("Tổng phải thu ngắn hạn khác của ACB năm 2022", frozenset())
+    child = _cell("Phải thu ngắn hạn khác › Bên thứ ba")
+    total = _cell("Phải thu ngắn hạn khác › Tổng cộng")
+
+    selected = selector.pick(OperandSlot("value", period="2022"), [child, total])
+
+    assert selected is total
+
+
 def test_a6_loader_excludes_scale_conflicts() -> None:
     connection = sqlite3.connect(":memory:")
     connection.executescript(

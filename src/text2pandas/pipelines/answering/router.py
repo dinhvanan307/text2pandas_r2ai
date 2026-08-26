@@ -123,6 +123,8 @@ def route(frame: QuestionSemanticFrame) -> RouteResult:
         if len(frame.periods) < 2:
             return _abstain("SUBTRACT_NEEDS_TWO_PERIODS")
         newest, oldest = _order_periods(frame.periods)
+        if frame.operation.reverse_difference:
+            newest, oldest = oldest, newest
         slots = (OperandSlot(MINUEND, period=newest, **common),
                  OperandSlot(SUBTRAHEND, period=oldest, **common))
         return RouteResult(OperationIR(SUBTRACT, slots, out_unit), "OK")

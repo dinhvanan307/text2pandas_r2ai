@@ -89,12 +89,14 @@ _LETTER = r"[a-zà-ỹ]"
 
 _MONEY_SCALE = [
     # most specific first
+    (re.compile(r"tr[ăa]m\s*t[ỷy](?:\s*(?:đồng|vnd))?" + _RB), 11),
     (re.compile(r"ngh[ìi]n\s*t[ỷy]" + _RB), 12),
     (re.compile(r"t[ỷy]\s*(?:đồng|vnd)" + _RB), 9),
     (re.compile(r"tri[ệe]u\s*(?:đồng|vnd)" + _RB), 6),
     (re.compile(r"ngh[ìi]n\s*(?:đồng|vnd)" + _RB), 3),
     (re.compile(r"tri[ệe]u" + _RB), 6),
     (re.compile(r"ngh[ìi]n" + _RB), 3),
+    (re.compile(r"vnđ" + _RB), 0),
     # bare "đồng" only when it is not the adverb/verb "đồng thời|ý|bộ|nhất|loạt"
     (re.compile(r"(?:đồng|vnd)" + _RB + r"(?!\s*(?:thời|ý|bộ|nhất|loạt|thu[ậa]n))"), 0),
 ]
@@ -107,6 +109,13 @@ _PERCENT = re.compile(r"(%|phần\s*trăm" + _RB + r")")
 _RATIO = re.compile(r"(?:l[ầa]n|h[ệe]\s*s[ốo]|t[ỷy]\s*l[ệe]|t[ỷy]\s*tr[ọo]ng|t[ỷy]\s*su[ấa]t)" + _RB)
 _SHARES = re.compile(r"(?:c[ổo]\s*phi[ếe]u|shares?)" + _RB)
 _COUNT = re.compile(r"(?:s[ốo]\s*l[ưu][ợo]ng|s[ốo]\s*ng[ưu][ờo]i|nh[âa]n\s*vi[êe]n)" + _RB)
+_QUESTION_SHARES = re.compile(r"(?:c[ổo]\s*phi[ếe]u|c[ổo]\s*ph[ầa]n)" + _RB)
+_QUESTION_COUNT = re.compile(
+    r"(?:n[ăa]m|c[ôo]ng\s*ty|doanh\s*nghi[ệe]p|m[ãa]|đ[ơo]n\s*v[ịi])" + _RB
+)
+_SHARE_COUNT_SUBJECT = re.compile(
+    r"s[ốo](?:\s*l[ưu][ợo]ng)?\s+(?:c[ổo]\s*phi[ếe]u|c[ổo]\s*ph[ầa]n)"
+)
 
 
 def scan_unit(text: str):
@@ -153,8 +162,10 @@ def scan_unit(text: str):
 # unit words that belong to the *subject* of the question.
 _ASK_ANCHORS = [
     re.compile(r"(?:l[àa]|b[ằa]ng|đ[ạa]t|chi[ếe]m)?\s*bao\s*nhi[êe]u\b(?P<tail>[^?]{0,40})"),
+    re.compile(r"\bm[ấa]y\b(?P<tail>[^?]{0,40})"),
     re.compile(r"\bt[íi]nh\s+(?:b[ằa]ng|theo)\b(?P<tail>[^?]{0,40})"),
-    re.compile(r"\bđơn\s*v[ịi]\s*(?:t[íi]nh)?\s*[:l[àa]]?(?P<tail>[^?]{0,40})"),
+    re.compile(r"\bđơn\s*v[ịi]\s*(?:t[íi]nh)?\s*:?(?P<tail>[^?,.]{0,40})"),
+    re.compile(r"\((?P<tail>[^()]{1,30})\)\s*[?.]?$"),
 ]
 
 
@@ -175,6 +186,15 @@ def scan_question_unit(question: str):
         dim, exp, tok = scan_unit(m.group("tail"))
         if dim != UNKNOWN:
             return dim, exp, tok
+        share = _QUESTION_SHARES.search(m.group("tail"))
+        if share:
+            return SHARES, None, share.group(0)
+        count = _QUESTION_COUNT.search(m.group("tail"))
+        if count:
+            return COUNT, None, count.group(0)
+    share_subject = _SHARE_COUNT_SUBJECT.search(t)
+    if share_subject:
+        return SHARES, None, share_subject.group(0)
     m = _PERCENT_POINT.search(t)
     if m:
         return PERCENT_POINT, None, m.group(0)

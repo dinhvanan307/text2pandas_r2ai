@@ -92,6 +92,13 @@ class QuestionSelector(Selector):
         code_hints: frozenset[str],
         drop: tuple[str, ...] = (),
     ) -> None:
+        normalized_question = tokenize(question)
+        self.aggregate_required = any(
+            token in {"tong", "tổng"}
+            and (index == 0 or normalized_question[index - 1] in {"co", "có", "tinh", "tính"})
+            and normalized_question[index + 1 : index + 3] not in (["cong", "ty"], ["công", "ty"])
+            for index, token in enumerate(normalized_question)
+        )
         self.question_sequence = [
             token.lower()
             for token in content_terms(question, drop=drop, stop_mode="dau")
@@ -132,6 +139,12 @@ class QuestionSelector(Selector):
             return None
 
         row_sequence = [token for token in tokenize(cell.row_path) if token not in _GENERIC]
+        leaf_sequence = tokenize(cell.row_path.rsplit("›", 1)[-1])
+        if self.aggregate_required and not (
+            leaf_sequence[:1] in (["tong"], ["tổng"], ["cong"], ["cộng"])
+            or leaf_sequence[:2] in (["toan", "bo"], ["toàn", "bộ"])
+        ):
+            return None
         section_sequence = [token for token in tokenize(cell.section_text) if token not in _GENERIC]
         context_sequence = [
             token for token in tokenize(cell.table_context) if token not in _GENERIC

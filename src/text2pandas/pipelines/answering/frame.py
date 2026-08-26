@@ -85,7 +85,9 @@ _CONSOLIDATED = re.compile(r"(h[ợo]p\s*nh[ấa]t|consolidated)")
 _DIFFERENCE_CUE = re.compile(
     r"(ch[êe]nh\s*l[ệe]ch|hi[ệe]u\s*s[ốo]|m[ứu]c\s*thay\s*đ[ổo]i"
     r"|thay\s*đ[ổo]i\s*(?:so\s*v[ớo]i|gi[ữu]a)|nhi[ềe]u\s*h[ơo]n|[íi]t\s*h[ơo]n"
-    r"|cao\s*h[ơo]n|th[ấa]p\s*h[ơo]n)")
+    r"|b[ée]\s*h[ơo]n|cao\s*h[ơo]n|th[ấa]p\s*h[ơo]n|bi[ếe]n\s*đ[ộo]ng"
+    r"|(?:k[ếe]t\s*qu[ảa]|l[ãa]i)\s+(?:thu[ầa]n|r[òo]ng)\s+(?:t[ừu]\s+)?ho[ạa]t\s*đ[ộo]ng\s+t[àa]i\s*ch[íi]nh)"
+)
 
 _OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     # A superlative marks the OUTER operation. A change/growth word inside such
@@ -102,7 +104,8 @@ _OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     (COUNT_OP, re.compile(
         r"(c[óo]\s*bao\s*nhi[êe]u\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p|m[ãa]|đơn\s*v[ịi])"
         r"|s[ốo]\s*l[ưu][ợo]ng\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)"
-        r"|bao\s*nhi[êe]u\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)\s*(?:c[óo]|đ[ạa]t|th[ỏo]a))")),
+        r"|bao\s*nhi[êe]u\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)\s*(?:c[óo]|đ[ạa]t|th[ỏo]a)"
+        r"|(?:c[óo]\s*)?bao\s*nhi[êe]u\s*n[ăa]m\b|s[ốo]\s*n[ăa]m\b)")),
     (GROWTH, re.compile(
         r"(t[ăa]ng\s*tr[ưu][ởo]ng|t[ốo]c\s*đ[ộo]\s*t[ăa]ng"
         r"|t[ăa]ng\s*(?:hay|hoặc)?\s*gi[ảa]m\s*bao\s*nhi[êe]u\s*(?:%|phần\s*trăm)"
@@ -112,13 +115,17 @@ _OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     (DIVIDE, re.compile(
         r"(chi[ếe]m\s*bao\s*nhi[êe]u|g[ấa]p\s*(?:bao\s*nhi[êe]u\s*)?l[ầa]n"
         r"|so\s*v[ớo]i\s*.{0,30}\s*g[ấa]p"
-        r"|tr[êe]n\s+(?![\d,.])[a-zà-ỹ]"
+        r"|tr[êe]n\s+(?!(?:b[áa]o\s*c[áa]o|bctc|m[ứu]c|ng[ưu][ỡo]ng|th[ịi]\s*tr[ưu][ờo]ng|c[ơo]\s*s[ởo])\b)(?![\d,.])[a-zà-ỹ]"
+        r"|t[ỷy]\s*tr[ọo]ng\s+[^?]{0,100}\s+trong\s+t[ổo]ng"
         r"|/\s*m[ỗo]i)")),
     # "Tổng cộng tài sản" is the NAME of a reported total line, not an
     # instruction to add things up. Require an explicit enumeration ("A và B")
     # or the verb form ("cộng lại").
-    (SUM, re.compile(r"(c[ộo]ng\s*l[ạa]i"
-                     r"|t[ổo]ng\s+[^?]{0,70}\bv[àa]\b[^?]{0,40}(?:n[ăa]m|qu[ýy]|c[ôo]ng\s*ty))")),
+    (SUM, re.compile(
+        r"(c[ộo]ng\s*l[ạa]i|t[íi]ch\s*l[ũu]y"
+        r"|t[íi]nh\s+t[ổo]ng\s+[^?]{0,100}(?:trong|qua)\s+c[áa]c\s+n[ăa]m"
+        r"|t[ổo]ng\s+[^?]{0,70}\bn[ăa]m\s+(?:19|20)\d{2}\s+v[àa]\s+n[ăa]m\s+(?:19|20)\d{2})"
+    )),
 ]
 
 #: metric nouns that merely describe a ratio-like QUANTITY. Kept separate so a
@@ -136,6 +143,7 @@ class OperationHint:
     rank_direction: Optional[str] = None
     return_mode: Optional[str] = None
     requires_derived_metric: bool = False
+    reverse_difference: bool = False
 
     @property
     def supported(self) -> bool:
@@ -174,6 +182,7 @@ class QuestionSemanticFrame:
             "rank_direction": self.operation.rank_direction,
             "return_mode": self.operation.return_mode,
             "requires_derived_metric": self.operation.requires_derived_metric,
+            "reverse_difference": self.operation.reverse_difference,
             "missing": list(self.missing),
         }
 
@@ -272,6 +281,11 @@ def classify_operation(question: str) -> OperationHint:
     for op, pat in _OP_PATTERNS:
         m = pat.search(t)
         if m:
+            if op == AVG and re.search(r"b[ìi]nh\s*qu[âa]n\s+gia\s+quy[ềe]n", t):
+                continue
+            if op == SUBTRACT and re.search(r"ch[êe]nh\s*l[ệe]ch\s+t[ỷy]\s+gi[áa]", t):
+                if not re.search(r"(gi[ữu]a|so\s+v[ớo]i|t[ừu].{0,80}đ[ếe]n)", t):
+                    continue
             if op == EXTREMUM:
                 direction = (
                     RANK_MIN
@@ -294,7 +308,14 @@ def classify_operation(question: str) -> OperationHint:
                     return_mode=return_mode,
                     requires_derived_metric=bool(_DERIVED_RANKING.search(t)),
                 )
-            return OperationHint(op, reason=f"cue:{op}", matched=m.group(0))
+            return OperationHint(
+                op,
+                reason=f"cue:{op}",
+                matched=m.group(0),
+                reverse_difference=bool(
+                    op == SUBTRACT and re.search(r"(?:b[ée]|[íi]t|th[ấa]p)\s+h[ơo]n", m.group(0))
+                ),
+            )
     return OperationHint(LOOKUP, reason="default:no_operation_cue")
 
 

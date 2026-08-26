@@ -55,6 +55,7 @@ def test_parse_raw_rejects(raw, status):
     ("Tỷ đồng", MONEY, 9),
     ("Nghìn đồng", MONEY, 3),
     ("Nghìn tỷ", MONEY, 12),
+    ("Trăm tỷ đồng", MONEY, 11),
     ("%", PERCENT, None),
     ("Tỷ lệ phần trăm", PERCENT, None),
     ("Cổ phiếu phổ thông", SHARES, None),
@@ -117,6 +118,25 @@ def test_von_dieu_le_question_is_money_million():
 def test_scan_question_unit(q, dim, exp):
     d, e, _ = scan_question_unit(q)
     assert (d, e) == (dim, exp)
+
+
+@pytest.mark.parametrize("q,dim,exp", [
+    ("Chi phí năm 2024 là mấy tỷ đồng?", MONEY, 9),
+    ("Doanh thu là mấy trăm tỷ đồng?", MONEY, 11),
+    ("Tính biến động số dư (triệu đồng).", MONEY, 6),
+    ("Tính kết quả theo đơn vị nghìn tỷ đồng.", MONEY, 12),
+    ("Số lượng cổ phiếu đang lưu hành cuối năm là bao nhiêu?", SHARES, None),
+    ("Tổng số lượng cổ phần là bao nhiêu cổ phần?", SHARES, None),
+    ("Có bao nhiêu năm ghi nhận lợi nhuận dương?", COUNT, None),
+])
+def test_scan_question_unit_corpus_phrasings(q, dim, exp):
+    d, e, _ = scan_question_unit(q)
+    assert (d, e) == (dim, exp)
+
+
+def test_eps_per_share_is_money_not_share_count():
+    d, e, _ = scan_question_unit("Lãi cơ bản trên cổ phiếu là bao nhiêu (VNĐ/cp)?")
+    assert (d, e) == (MONEY, 0)
 
 
 def test_question_without_unit_is_unknown():

@@ -146,9 +146,17 @@ def test_entity_stopwords_are_not_tickers():
     # cardinality questions
     ("Có bao nhiêu công ty đạt lợi nhuận dương năm 2024?", "COUNT"),
     ("Số lượng doanh nghiệp có ROE trên 15% là bao nhiêu?", "COUNT"),
+    ("Có bao nhiêu năm ghi nhận lợi nhuận dương?", "COUNT"),
     # "Tổng cộng X" is the NAME of a reported line, not an instruction to add
     ("Tổng cộng tài sản cuối năm 2025 là bao nhiêu?", "LOOKUP"),
     ("Giá trị lợi thế thương mại (tổng cộng) là bao nhiêu?", "LOOKUP"),
+    ("Tổng phải thu ngắn hạn khác cuối năm 2025 là bao nhiêu?", "LOOKUP"),
+    ("Số cổ phiếu phổ thông bình quân gia quyền năm 2020 là bao nhiêu?", "LOOKUP"),
+    ("Lỗ chênh lệch tỷ giá năm 2023 là bao nhiêu?", "LOOKUP"),
+    ("Khoản phải trả trên báo cáo hợp nhất là bao nhiêu?", "LOOKUP"),
+    ("Chi phí năm 2025 bé hơn năm 2024 mấy tỷ đồng?", "SUBTRACT"),
+    ("Tính biến động số dư giữa năm 2024 và 2023.", "SUBTRACT"),
+    ("Kết quả thuần từ hoạt động tài chính năm 2024 là bao nhiêu?", "SUBTRACT"),
     # a real enumeration is a SUM
     ("Tổng doanh thu năm 2021 và năm 2022 là bao nhiêu?", "SUM"),
     # earlier regressions must hold
