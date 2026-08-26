@@ -56,7 +56,8 @@ BASE = {"total_liabilities": 300.0, "equity": 150.0, "total_assets": 500.0,
         "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0,
         "financial_expense": 15.0, "financial_income": 25.0,
         "total_fixed_assets": 120.0, "intangible_fixed_assets": 30.0,
-        "tangible_fixed_assets": 90.0}
+        "tangible_fixed_assets": 90.0, "short_term_borrowings": 45.0,
+        "short_term_other_receivables": 30.0, "long_term_other_receivables": 10.0}
 
 
 @ca("MM1 · nhân MỌI lá tiền ×1000 ⇒ mọi formula wave 1 BẤT BIẾN")

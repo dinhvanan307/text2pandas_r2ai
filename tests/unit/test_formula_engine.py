@@ -58,7 +58,7 @@ def _frames(cells: list[CandidateCell]) -> dict[str, pd.DataFrame]:
 def test_registry_only_loads_reviewed_formulas() -> None:
     formulas, metrics = load_registry()
 
-    assert len(formulas) == 18
+    assert len(formulas) == 21
     assert "quick_ratio" in formulas
     assert "roe" not in formulas
     assert set(formulas["quick_ratio"].leaves) <= set(metrics)
@@ -193,6 +193,12 @@ def test_reviewed_expense_intensities_execute_with_absolute_numerator(
             "tangible_fixed_assets_share_of_total_fixed_assets",
         ),
         (
+            "Tỷ lệ vay ngắn hạn trên vốn chủ sở hữu năm 2024 là bao nhiêu phần trăm?",
+            "Vay ngắn hạn",
+            "Vốn chủ sở hữu",
+            "short_term_borrowings_to_equity",
+        ),
+        (
             "Tỷ trọng tài sản cố định vô hình trên tổng tài sản năm 2024 là bao nhiêu phần trăm?",
             "Tài sản cố định vô hình",
             "Tổng tài sản",
@@ -227,6 +233,49 @@ def test_reviewed_unambiguous_relational_formulas_execute(
     assert result is not None and result.ok
     assert result.formula_id == expected_formula
     assert result.answer == pytest.approx(20.0)
+
+
+@pytest.mark.parametrize(
+    ("question", "first_label", "second_label", "expected_formula", "expected"),
+    [
+        (
+            "Tỷ trọng tài sản cố định vô hình trong tổng tài sản cố định là bao nhiêu %?",
+            "Tài sản cố định vô hình",
+            "Tài sản cố định hữu hình",
+            "intangible_fixed_assets_share_of_component_total",
+            25.0,
+        ),
+        (
+            "Tỷ trọng khoản phải thu ngắn hạn khác trong tổng khoản phải thu khác là bao nhiêu %?",
+            "Phải thu ngắn hạn khác",
+            "Phải thu dài hạn khác",
+            "short_term_other_receivables_share",
+            25.0,
+        ),
+    ],
+)
+def test_reviewed_component_total_formulas_execute(
+    question: str,
+    first_label: str,
+    second_label: str,
+    expected_formula: str,
+    expected: float,
+) -> None:
+    cells = [_cell(first_label, 25, 0), _cell(second_label, 75, 1)]
+
+    result = answer_formula_question(
+        question,
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None and result.ok
+    assert result.formula_id == expected_formula
+    assert result.answer == pytest.approx(expected)
 
 
 def test_total_fixed_assets_metric_rejects_component_rows() -> None:

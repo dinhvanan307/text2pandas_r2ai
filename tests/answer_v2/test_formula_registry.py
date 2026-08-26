@@ -34,21 +34,24 @@ NORMAL = [
      "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0,
      "financial_expense": 15.0, "financial_income": 25.0,
      "total_fixed_assets": 120.0, "intangible_fixed_assets": 30.0,
-     "tangible_fixed_assets": 90.0},
+     "tangible_fixed_assets": 90.0, "short_term_borrowings": 45.0,
+     "short_term_other_receivables": 30.0, "long_term_other_receivables": 10.0},
     {"total_liabilities": 900.0, "equity": 300.0, "total_assets": 1200.0,
      "current_assets": 600.0, "current_liabilities": 400.0, "inventory": 100.0,
      "gross_profit": 150.0, "net_revenue": 1000.0, "profit_after_tax": -50.0,
      "selling_expense": -30.0, "admin_expense": 20.0, "cogs": -700.0,
      "financial_expense": -80.0, "financial_income": 160.0,
      "total_fixed_assets": 600.0, "intangible_fixed_assets": 120.0,
-     "tangible_fixed_assets": 480.0},
+     "tangible_fixed_assets": 480.0, "short_term_borrowings": 150.0,
+     "short_term_other_receivables": 80.0, "long_term_other_receivables": 20.0},
     {"total_liabilities": 1.0, "equity": 4.0, "total_assets": 5.0,
      "current_assets": 3.0, "current_liabilities": 3.0, "inventory": 0.0,
      "gross_profit": 0.0, "net_revenue": 7.0, "profit_after_tax": 7.0,
      "selling_expense": 1.0, "admin_expense": 1.0, "cogs": 0.0,
      "financial_expense": 2.0, "financial_income": 3.0,
      "total_fixed_assets": 4.0, "intangible_fixed_assets": 1.0,
-     "tangible_fixed_assets": 2.0},
+     "tangible_fixed_assets": 2.0, "short_term_borrowings": 1.0,
+     "short_term_other_receivables": 1.0, "long_term_other_receivables": 3.0},
 ]
 
 MONG_DOI = {
@@ -76,6 +79,14 @@ MONG_DOI = {
                                                         / abs(v["financial_expense"]) * 100.0,
     "tangible_fixed_assets_share_of_total_fixed_assets": lambda v: v["tangible_fixed_assets"]
                                                                    / v["total_fixed_assets"] * 100.0,
+    "intangible_fixed_assets_share_of_component_total": lambda v: v["intangible_fixed_assets"]
+                                                                   / (v["intangible_fixed_assets"]
+                                                                      + v["tangible_fixed_assets"]) * 100.0,
+    "short_term_borrowings_to_equity": lambda v: v["short_term_borrowings"]
+                                                  / v["equity"] * 100.0,
+    "short_term_other_receivables_share": lambda v: v["short_term_other_receivables"]
+                                                      / (v["short_term_other_receivables"]
+                                                         + v["long_term_other_receivables"]) * 100.0,
     "intangible_fixed_assets_to_assets": lambda v: v["intangible_fixed_assets"]
                                                         / v["total_assets"] * 100.0,
     "tangible_fixed_assets_to_assets": lambda v: v["tangible_fixed_assets"]
@@ -95,6 +106,13 @@ MAU = {
     "financial_expense_intensity": "net_revenue",
     "financial_income_to_financial_expense": "financial_expense",
     "tangible_fixed_assets_share_of_total_fixed_assets": "total_fixed_assets",
+    "intangible_fixed_assets_share_of_component_total": (
+        "intangible_fixed_assets", "tangible_fixed_assets"
+    ),
+    "short_term_borrowings_to_equity": "equity",
+    "short_term_other_receivables_share": (
+        "short_term_other_receivables", "long_term_other_receivables"
+    ),
     "intangible_fixed_assets_to_assets": "total_assets",
     "tangible_fixed_assets_to_assets": "total_assets",
 }
@@ -147,7 +165,11 @@ for _fid in FORMULAS:
     @ca(f"{_fid} · zero denominator ⇒ ZERO_DENOMINATOR, KHÔNG phát x/0")
     def _(fid=_fid):
         vals = dict(NORMAL[0])
-        vals[MAU[fid]] = 0.0
+        denominator_leaves = MAU[fid]
+        if isinstance(denominator_leaves, str):
+            denominator_leaves = (denominator_leaves,)
+        for leaf in denominator_leaves:
+            vals[leaf] = 0.0
         plan, bind, errs = _dung(fid, vals)
         assert not errs
         try:
@@ -162,7 +184,11 @@ for _fid in FORMULAS:
         """Mẫu âm (vốn chủ âm, doanh thu âm) là dữ liệu THẬT, không phải lỗi.
         Trả kết quả âm là đúng; chặn ở đây sẽ mất câu một cách vô cớ."""
         vals = dict(NORMAL[0])
-        vals[MAU[fid]] = -abs(vals[MAU[fid]]) or -100.0
+        denominator_leaves = MAU[fid]
+        if isinstance(denominator_leaves, str):
+            denominator_leaves = (denominator_leaves,)
+        for leaf in denominator_leaves:
+            vals[leaf] = -abs(vals[leaf]) or -100.0
         plan, bind, errs = _dung(fid, vals)
         assert not errs
         q, v = PR.render(plan, bind)
