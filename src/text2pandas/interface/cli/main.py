@@ -498,6 +498,147 @@ def cmd_coverage(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_shadow_v3(args: argparse.Namespace) -> int:
+    """Run Semantic Query Engine v3 without changing the canonical V2 path."""
+    import sqlite3
+    import time
+    from collections import Counter
+    from datetime import UTC, datetime
+
+    from text2pandas.application.parsing import SemanticParser
+    from text2pandas.application.usecases.run_manifest import write_manifest
+    from text2pandas.application.usecases.semantic_v3 import (
+        SemanticV3Engine,
+        classify_differential,
+    )
+    from text2pandas.infrastructure.checksums import sha256_file
+    from text2pandas.infrastructure.execution import PandasSandboxReplay
+    from text2pandas.infrastructure.ontology import load_ontology
+    from text2pandas.infrastructure.retrieval import SqliteOperandRetriever
+    from text2pandas.infrastructure.semantic import LegacyVietnameseAnnotator
+    from text2pandas.infrastructure.snapshots import verify_active_snapshots
+    from text2pandas.infrastructure.source_identity import git_source_identity
+    from text2pandas.pipelines.retrieval.alias_store import load_aliases
+
+    verification = verify_active_snapshots(PROJECT_PATHS, scope="a6")
+    if not verification.ok:
+        detail = "; ".join(item.detail for item in verification.items if not item.ok)
+        raise BuildSafetyError(f"active A6 snapshot preflight failed: {detail}")
+    source_identity = git_source_identity(ROOT)
+    stage = PROJECT_PATHS.run_dir("semantic-v3", args.run_id)
+    try:
+        stage.mkdir(parents=True)
+    except FileExistsError as error:
+        raise BuildSafetyError(f"immutable semantic-v3 run already exists: {stage}") from error
+    records_path = stage / "records.jsonl"
+    questions = [
+        json.loads(line)
+        for line in QUESTIONS.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    questions = questions[args.offset :]
+    if args.limit:
+        questions = questions[: args.limit]
+    legacy: dict[int, dict[str, object]] = {}
+    if args.legacy_run_id:
+        legacy_path = PROJECT_PATHS.run_dir("answer", args.legacy_run_id) / "records.jsonl"
+        if not legacy_path.is_file():
+            raise BuildSafetyError(f"missing legacy records: {legacy_path}")
+        for line in legacy_path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                record = json.loads(line)
+                legacy[int(record["qid"])] = record
+
+    ontology = load_ontology()
+    aliases = load_aliases("a6")
+    parser = SemanticParser(ontology, LegacyVietnameseAnnotator(aliases))
+    connection = sqlite3.connect(
+        f"file:{(ACTIVE_SNAPSHOTS.a6_path / 'silver.db').resolve()}?mode=ro&immutable=1",
+        uri=True,
+    )
+    engine = SemanticV3Engine(
+        parser,
+        SqliteOperandRetriever(connection, ontology, top_k=args.operand_k),
+        PandasSandboxReplay(),
+    )
+    statuses: Counter[str] = Counter()
+    reasons: Counter[str] = Counter()
+    differentials: Counter[str] = Counter()
+    started = time.time()
+    try:
+        with records_path.open("x", encoding="utf-8") as handle:
+            for index, item in enumerate(questions, 1):
+                qid = int(item["id"])
+                question = str(item["question"])
+                result = engine.answer(question, qid=qid)
+                differential = classify_differential(legacy.get(qid), result)
+                statuses[result.status] += 1
+                reasons[result.reason or "OK"] += 1
+                differentials[differential] += 1
+                record = {
+                    "question": question,
+                    **result.to_dict(),
+                    "differential": differential,
+                }
+                handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+                if args.verbose and index % 25 == 0:
+                    print(f"  ... {index:,} câu · {statuses['OK']:,} V3 OK", flush=True)
+    finally:
+        connection.close()
+    seconds = round(time.time() - started, 3)
+    manifest_path = stage / "manifest.json"
+    write_manifest(
+        manifest_path,
+        {
+            "schema_version": "3.0",
+            "kind": "text2pandas.semantic_v3_shadow_run",
+            "run_id": args.run_id,
+            "generated_at_utc": datetime.now(UTC).isoformat(),
+            "source": source_identity,
+            "a6": {
+                "build_id": ACTIVE_SNAPSHOTS.a6_build_id,
+                "path": str(ACTIVE_SNAPSHOTS.a6_path.relative_to(ROOT)),
+            },
+            "semantic_schema_version": 3,
+            "ontology_fingerprint": ontology.fingerprint,
+            "parameters": {
+                "offset": args.offset,
+                "limit": args.limit,
+                "operand_k": args.operand_k,
+                "legacy_run_id": args.legacy_run_id,
+            },
+            "metrics": {
+                "questions": len(questions),
+                "statuses": dict(statuses),
+                "reasons": dict(reasons.most_common()),
+                "differentials": dict(differentials),
+                "seconds": seconds,
+            },
+            "outputs": {
+                "records_jsonl": {
+                    "path": str(records_path.relative_to(ROOT)),
+                    "sha256": sha256_file(records_path),
+                    "records": len(questions),
+                }
+            },
+        },
+    )
+    print("\n╔═══════════ SEMANTIC V3 SHADOW ═══════════╗")
+    print(f"  câu hỏi          : {len(questions):,}")
+    print(f"  V3 OK            : {statuses['OK']:,}")
+    print(f"  V3 abstain       : {statuses['ABSTAIN']:,}")
+    print(f"  thời gian        : {seconds}s")
+    for reason, count in reasons.most_common(8):
+        print(f"    {reason:<52} {count:>5}")
+    if legacy:
+        print("  ── differential với canonical V2 ──")
+        for reason, count in differentials.most_common():
+            print(f"    {reason:<52} {count:>5}")
+    print(f"  records          : {records_path}")
+    print(f"  manifest         : {manifest_path}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="text2pandas")
     p.add_argument("-v", "--verbose", action="store_true")
@@ -544,12 +685,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     cv.add_argument("--output")
     cv.add_argument("--summary-only", action="store_true")
+    shadow = sub.add_parser("shadow-v3", help="Chạy Semantic Query Engine v3 ở chế độ shadow")
+    shadow.add_argument("--run-id", required=True)
+    shadow.add_argument("--limit", type=int, default=0)
+    shadow.add_argument("--offset", type=int, default=0)
+    shadow.add_argument("--operand-k", type=int, default=20)
+    shadow.add_argument("--legacy-run-id")
 
     args = p.parse_args(argv)
     handlers = {"catalog": cmd_catalog, "parse-check": cmd_parse_check,
                 "index": cmd_index, "run": cmd_run, "package": cmd_package,
                 "silver": cmd_silver, "cards": cmd_cards, "verify": cmd_verify,
-                "coverage": cmd_coverage}
+                "coverage": cmd_coverage, "shadow-v3": cmd_shadow_v3}
     try:
         return handlers[args.cmd](args)
     except BuildSafetyError as error:
