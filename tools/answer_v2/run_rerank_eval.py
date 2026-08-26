@@ -117,7 +117,8 @@ def main() -> int:
                     "gold_rank_trong_A": next(
                         (i for i, c in enumerate(ranked) if trung(c)), None)})
 
-    exercised = stats.n_llm_chon > 0
+    n_model_chosen = stats.valid_schema - stats.abstain
+    exercised = n_model_chosen > 0
     imp = [r for r in per_slot if r["B_dung"] and not r["A_dung"]]
     reg = [r for r in per_slot if r["A_dung"] and not r["B_dung"]]
 
@@ -158,12 +159,7 @@ def main() -> int:
         },
         "improved": imp, "regressed": reg,
         "mcnemar_p": round(mcnemar(len(imp), len(reg)), 4),
-        "rerank_stats": {
-            "n_slot": stats.n_slot, "n_goi": stats.n_goi,
-            "n_llm_chon": stats.n_llm_chon, "n_fallback": stats.n_fallback,
-            "n_chi_so_ngoai_khoang": stats.n_ngoai_khoang,
-            "n_doi_top1": stats.n_doi_top1,
-            "ly_do_fallback": stats.ly_do_fallback},
+        "rerank_stats": stats.tom_tat(),
         "llm": client.stats(),
         "K": CR.K_MAC_DINH,
         "prompt_template_hash": CR.prompt_hash(),
@@ -186,8 +182,8 @@ def main() -> int:
     print(f"  vị trí chọn (S5 order): {tv['phan_bo_vi_tri_chon_thu_tu_S5']}")
     print(f"  vị trí chọn (hoán vị) : {tv['phan_bo_vi_tri_chon_hoan_vi']}")
     print(f"  improved {len(imp)} · regressed {len(reg)} · p={rep['mcnemar_p']}")
-    print(f"  rerank: gọi {stats.n_goi} · LLM chọn {stats.n_llm_chon} · "
-          f"fallback {stats.n_fallback} · đổi top1 {stats.n_doi_top1}")
+    print(f"  rerank: thử {stats.attempted} · model chọn {n_model_chosen} · "
+          f"fallback {stats.fallback} · đổi top1 {stats.n_doi_top1}")
     print(f"  lý do fallback: {json.dumps(stats.ly_do_fallback, ensure_ascii=False)}")
     print(f"  llm: {json.dumps(client.stats()['identity'], ensure_ascii=False)}")
     print(f"-> {REP}/rerank_eval.json")
