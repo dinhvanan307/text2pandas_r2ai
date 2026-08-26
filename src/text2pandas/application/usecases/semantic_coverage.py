@@ -15,6 +15,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from text2pandas.pipelines.answering.adapters import requested_unit_of
+from text2pandas.pipelines.answering.count_engine import classify_count_predicate
 from text2pandas.pipelines.answering.formula_engine import match_formula
 from text2pandas.pipelines.answering.frame import classify_operation, parse_question
 from text2pandas.pipelines.answering.ir import DIVIDE, LOOKUP
@@ -152,6 +153,17 @@ def _classify(
         )
 
     requested_unit = requested_unit_of(question)
+    count_predicate, count_reason = classify_count_predicate(question)
+    if count_predicate is not None:
+        return CoverageRecord(
+            qid,
+            operation.op,
+            None,
+            ELIGIBLE,
+            "ELIGIBLE_TYPED_COUNT",
+        )
+    if count_reason is not None:
+        return CoverageRecord(qid, operation.op, None, GAP, count_reason)
     if formula is not None:
         if operation.op not in (LOOKUP, DIVIDE):
             reason = f"FORMULA_OUTER_OPERATION_NOT_SUPPORTED:{operation.op}"

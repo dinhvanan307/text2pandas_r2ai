@@ -32,6 +32,7 @@ from text2pandas.pipelines.answering import (
     classify_operation,
 )
 from text2pandas.pipelines.answering.adapters import requested_unit_of
+from text2pandas.pipelines.answering.count_engine import answer_count_periods
 from text2pandas.pipelines.answering.formula_engine import answer_formula_question
 from text2pandas.pipelines.answering.ir import OperandSlot
 from text2pandas.pipelines.answering.units import MONEY, PERCENT, SHARES, UNKNOWN
@@ -429,16 +430,32 @@ def run_canonical_pipeline(
                         if cell.csv_path in frames_by_path
                     }
                     requested_unit = requested_unit_of(text)
-                    pipeline_result = answer_formula_question(
+                    selector = QuestionSelector(
+                        text,
+                        metric_codes_hint(text),
+                        drop=drop_terms(intent.targets, aliases),
+                    )
+                    pipeline_result = answer_count_periods(
                         text,
                         pool,
                         frames,
                         entity=intent.targets[0],
                         years=intent.years,
                         basis=intent.basis,
-                        requested_unit=requested_unit,
+                        selector=selector,
                         qid=qid,
                     )
+                    if pipeline_result is None:
+                        pipeline_result = answer_formula_question(
+                            text,
+                            pool,
+                            frames,
+                            entity=intent.targets[0],
+                            years=intent.years,
+                            basis=intent.basis,
+                            requested_unit=requested_unit,
+                            qid=qid,
+                        )
                     if pipeline_result is None:
                         if classify_operation(text).op == DIVIDE:
                             reason = "DIVIDE_REQUIRES_REVIEWED_FORMULA"
@@ -449,11 +466,7 @@ def run_canonical_pipeline(
                                 frames,
                                 qid=qid,
                                 requested_unit=requested_unit,
-                                selector=QuestionSelector(
-                                    text,
-                                    metric_codes_hint(text),
-                                    drop=drop_terms(intent.targets, aliases),
-                                ),
+                                selector=selector,
                             )
                     if pipeline_result is not None and not pipeline_result.ok:
                         reason = f"{pipeline_result.stage_failed}:{pipeline_result.reason}"

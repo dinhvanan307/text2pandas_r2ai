@@ -81,7 +81,7 @@ def _metric_tokens(operand: BoundOperand) -> frozenset[str]:
     return frozenset(_WORD.findall(normalized))
 
 
-def _same_metric(operands: Sequence[BoundOperand]) -> bool:
+def same_metric(operands: Sequence[BoundOperand]) -> bool:
     codes = [operand.cell.metric_code for operand in operands]
     if all(codes):
         return len(set(codes)) == 1
@@ -105,7 +105,7 @@ def check_operand_policies(ir: OperationIR,
             return _abstain(f"{MISSING_OPERAND_VALUE}:{o.role}")
 
     periods = {operand.slot.period for operand in operands if operand.slot.period}
-    if ir.op in _SAME_METRIC_OPERATIONS and len(periods) > 1 and not _same_metric(operands):
+    if ir.op in _SAME_METRIC_OPERATIONS and len(periods) > 1 and not same_metric(operands):
         return _abstain(CROSS_PERIOD_METRIC_DRIFT)
 
     if ir.op in _EXTREMUM_OPERATIONS and any(
