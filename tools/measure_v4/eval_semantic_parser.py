@@ -11,7 +11,7 @@ against it would report noise as parser error.
 """
 from __future__ import annotations
 
-import argparse, collections, json, sys
+import argparse, collections, hashlib, json, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -45,6 +45,20 @@ UNIT_TO_RESULT_KIND = {
 }
 
 
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def implementation_fingerprint(paths: tuple[Path, ...]) -> str:
+    digest = hashlib.sha256()
+    for path in paths:
+        digest.update(str(path.relative_to(ROOT)).encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
 def strict_operation_family(hint):
     """Translate the typed EXTREMUM hint without collapsing its return mode."""
     if hint.op != "EXTREMUM":
@@ -67,7 +81,12 @@ def main() -> int:
             for l in Path(a.gold).read_text(encoding="utf-8").splitlines() if l.strip()}
     qs = {json.loads(l)["qid"]: json.loads(l)["question"]
           for l in Path(a.worksheet).read_text(encoding="utf-8").splitlines() if l.strip()}
-    out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
+    gold_path = Path(a.gold)
+    worksheet_path = Path(a.worksheet)
+    out = Path(a.out)
+    if out.exists():
+        raise SystemExit(f"immutable output already exists: {out}")
+    out.mkdir(parents=True)
 
     stats = collections.defaultdict(lambda: {"scored": 0, "correct": 0, "skipped": 0})
     rows = []
@@ -167,10 +186,25 @@ def main() -> int:
             fh.write(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n")
 
     summary = {
+        "schema_version": "1.0",
         "disclaimer": "SEMANTIC PARSE ACCURACY ONLY. Not answer accuracy, not "
                       "candidate/binding accuracy. Fields the two annotation "
                       "passes disagreed on are SKIPPED, not scored.",
         "n_gold_cases": len(gold),
+        "inputs": {
+            "gold": {"path": str(gold_path), "sha256": sha256_file(gold_path)},
+            "worksheet": {
+                "path": str(worksheet_path),
+                "sha256": sha256_file(worksheet_path),
+            },
+            "implementation_sha256": implementation_fingerprint((
+                ROOT / "src/text2pandas/pipelines/answering/frame.py",
+                ROOT / "src/text2pandas/pipelines/answering/ir.py",
+                ROOT / "src/text2pandas/pipelines/answering/units.py",
+                ROOT / "src/text2pandas/domain/units/lexicon.py",
+                ROOT / "tools/measure_v4/audit_candidate_coverage.py",
+            )),
+        },
         "metrics": {k: {"scored": v["scored"], "correct": v["correct"],
                         "accuracy": round(v["correct"] / v["scored"], 4) if v["scored"] else None,
                         "skipped_no_agreed_gold": v["skipped"]}
