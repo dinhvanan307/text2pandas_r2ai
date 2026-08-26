@@ -20,6 +20,7 @@ from .ast import (
     QuestionAST,
     Rank,
     SelectAtArg,
+    Unary,
 )
 from .types import AggregateFunction, Axis, Dimension, ResultKind
 
@@ -76,6 +77,9 @@ def _validate_expression(expression: Expression, path: str, issues: list[Semanti
     if isinstance(expression, Arithmetic):
         _validate_expression(expression.left, f"{path}.left", issues)
         _validate_expression(expression.right, f"{path}.right", issues)
+        return
+    if isinstance(expression, Unary):
+        _validate_expression(expression.expression, f"{path}.expression", issues)
         return
     if isinstance(expression, Aggregate):
         if len(expression.members) < 2:
@@ -136,6 +140,8 @@ def _references_axis(expression: Expression, axis: Axis) -> bool:
         return bool(expression.entities if axis == Axis.ENTITY else expression.periods)
     if isinstance(expression, Arithmetic):
         return _references_axis(expression.left, axis) or _references_axis(expression.right, axis)
+    if isinstance(expression, Unary):
+        return _references_axis(expression.expression, axis)
     if isinstance(expression, Aggregate):
         return expression.axis == axis or _references_axis(expression.expression, axis)
     if isinstance(expression, Filter):
@@ -149,4 +155,3 @@ def _references_axis(expression: Expression, axis: Axis) -> bool:
 
 def _issue(path: str, code: str, message: str) -> SemanticIssue:
     return SemanticIssue(path, code, message)
-

@@ -20,6 +20,7 @@ from .types import (
     OutputSpec,
     PeriodSemantics,
     RankDirection,
+    UnaryOperator,
     UnitSpec,
 )
 
@@ -47,6 +48,12 @@ class Arithmetic:
     operator: ArithmeticOperator
     left: Expression
     right: Expression
+
+
+@dataclass(frozen=True, slots=True)
+class Unary:
+    operator: UnaryOperator
+    expression: Expression
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,7 +106,9 @@ class SelectAtArg:
     expression: Expression
 
 
-Expression: TypeAlias = MetricRef | Literal | Arithmetic | Aggregate | Filter | Rank | SelectAtArg
+Expression: TypeAlias = (
+    MetricRef | Literal | Arithmetic | Unary | Aggregate | Filter | Rank | SelectAtArg
+)
 Predicate: TypeAlias = Comparison | Exists | LogicalPredicate
 
 
@@ -158,6 +167,12 @@ def expression_to_dict(expression: Expression) -> dict[str, Any]:
             "operator": expression.operator.value,
             "left": expression_to_dict(expression.left),
             "right": expression_to_dict(expression.right),
+        }
+    if isinstance(expression, Unary):
+        return {
+            "type": "unary",
+            "operator": expression.operator.value,
+            "expression": expression_to_dict(expression.expression),
         }
     if isinstance(expression, Aggregate):
         return {
@@ -240,6 +255,11 @@ def expression_from_dict(raw: Mapping[str, Any]) -> Expression:
             expression_from_dict(_mapping(raw["left"])),
             expression_from_dict(_mapping(raw["right"])),
         )
+    if kind == "unary":
+        return Unary(
+            UnaryOperator(str(raw["operator"])),
+            expression_from_dict(_mapping(raw["expression"])),
+        )
     if kind == "aggregate":
         return Aggregate(
             AggregateFunction(str(raw["function"])),
@@ -292,4 +312,3 @@ def _mapping(value: object) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
         raise TypeError(f"expected mapping, got {type(value).__name__}")
     return value
-

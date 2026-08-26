@@ -54,6 +54,11 @@ class ArithmeticOperator(StrEnum):
     GROWTH = "growth"
 
 
+class UnaryOperator(StrEnum):
+    ABSOLUTE = "absolute"
+    NEGATE = "negate"
+
+
 class AggregateFunction(StrEnum):
     SUM = "sum"
     AVERAGE = "average"

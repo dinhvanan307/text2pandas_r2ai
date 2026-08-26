@@ -1,0 +1,23 @@
+schema_version: 3
+ontology_id: vifinqa-financial-ontology
+language: vi
+
+# Migration boundary: V3 exposes one validated ontology while the reviewed V2
+# source files remain byte-identical for replay compatibility.  Their digests
+# make drift fail closed.  A later data-only release may materialize both lists
+# into this file without changing the domain API or consumers.
+sources:
+  metrics:
+    path: configs/answer_v2/metrics_v1.yaml
+    sha256: cda6287cbfd7c89e0e0ce12eedc0b7c2256ed147bb73f4931f446ac3c22d1e3b
+  formulas:
+    path: configs/answer_v2/formulas_v1.yaml
+    sha256: 23f3432855fbc091fa5039aed41a47fcd0611d343405d78276d87ec05b4e6686
+
+policies:
+  metric_match: longest_normalized_prefix
+  formula_match: longest_normalized_phrase
+  unknown_metric: abstain
+  ambiguous_alias: abstain
+  unreviewed_formula: abstain
+

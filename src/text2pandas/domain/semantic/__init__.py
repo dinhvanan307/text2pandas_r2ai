@@ -16,6 +16,7 @@ from .ast import (
     QuestionAST,
     Rank,
     SelectAtArg,
+    Unary,
     expression_from_dict,
     expression_to_dict,
 )
@@ -31,6 +32,7 @@ from .types import (
     PeriodSemantics,
     RankDirection,
     ResultKind,
+    UnaryOperator,
     UnitSpec,
 )
 from .validate import SemanticIssue, validate_question_ast
@@ -59,9 +61,10 @@ __all__ = [
     "ResultKind",
     "SelectAtArg",
     "SemanticIssue",
+    "Unary",
+    "UnaryOperator",
     "UnitSpec",
     "expression_from_dict",
     "expression_to_dict",
     "validate_question_ast",
 ]
-
