@@ -37,7 +37,9 @@ NORMAL = [
      "tangible_fixed_assets": 90.0, "short_term_borrowings": 45.0,
      "long_term_borrowings": 60.0, "cash_flow_from_operations": 30.0,
      "profit_before_tax": 20.0, "short_term_other_receivables": 30.0,
-     "long_term_other_receivables": 10.0},
+     "long_term_other_receivables": 10.0, "short_term_prepaid_expenses": 20.0,
+     "long_term_prepaid_expenses": 80.0, "common_loan_loss_provision": 30.0,
+     "total_loan_loss_provision": 50.0},
     {"total_liabilities": 900.0, "equity": 300.0, "total_assets": 1200.0,
      "current_assets": 600.0, "current_liabilities": 400.0, "inventory": 100.0,
      "gross_profit": 150.0, "net_revenue": 1000.0, "profit_after_tax": -50.0,
@@ -47,7 +49,9 @@ NORMAL = [
      "tangible_fixed_assets": 480.0, "short_term_borrowings": 150.0,
      "long_term_borrowings": 240.0, "cash_flow_from_operations": -50.0,
      "profit_before_tax": 40.0, "short_term_other_receivables": 80.0,
-     "long_term_other_receivables": 20.0},
+     "long_term_other_receivables": 20.0, "short_term_prepaid_expenses": 40.0,
+     "long_term_prepaid_expenses": 200.0, "common_loan_loss_provision": 60.0,
+     "total_loan_loss_provision": 100.0},
     {"total_liabilities": 1.0, "equity": 4.0, "total_assets": 5.0,
      "current_assets": 3.0, "current_liabilities": 3.0, "inventory": 0.0,
      "gross_profit": 0.0, "net_revenue": 7.0, "profit_after_tax": 7.0,
@@ -57,7 +61,9 @@ NORMAL = [
      "tangible_fixed_assets": 2.0, "short_term_borrowings": 1.0,
      "long_term_borrowings": 2.0, "cash_flow_from_operations": 1.0,
      "profit_before_tax": 2.0, "short_term_other_receivables": 1.0,
-     "long_term_other_receivables": 3.0},
+     "long_term_other_receivables": 3.0, "short_term_prepaid_expenses": 1.0,
+     "long_term_prepaid_expenses": 4.0, "common_loan_loss_provision": 2.0,
+     "total_loan_loss_provision": 5.0},
 ]
 
 MONG_DOI = {
@@ -103,6 +109,13 @@ MONG_DOI = {
                                                         / v["total_assets"] * 100.0,
     "tangible_fixed_assets_to_assets": lambda v: v["tangible_fixed_assets"]
                                                       / v["total_assets"] * 100.0,
+    "short_to_long_prepaid_expenses": lambda v: v["short_term_prepaid_expenses"]
+                                                   / v["long_term_prepaid_expenses"],
+    "current_liabilities_to_equity_ratio": lambda v: v["current_liabilities"]
+                                                        / v["equity"],
+    "common_loan_loss_provision_share": lambda v: abs(v["common_loan_loss_provision"])
+                                                        / abs(v["total_loan_loss_provision"])
+                                                        * 100.0,
 }
 
 # Lá nằm ở MẪU SỐ của từng formula — dùng cho ca zero/negative denominator.
@@ -130,6 +143,9 @@ MAU = {
     "cfo_to_profit_before_tax": "profit_before_tax",
     "intangible_fixed_assets_to_assets": "total_assets",
     "tangible_fixed_assets_to_assets": "total_assets",
+    "short_to_long_prepaid_expenses": "long_term_prepaid_expenses",
+    "current_liabilities_to_equity_ratio": "equity",
+    "common_loan_loss_provision_share": "total_loan_loss_provision",
 }
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))

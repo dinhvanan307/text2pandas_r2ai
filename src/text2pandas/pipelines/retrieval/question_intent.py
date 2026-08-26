@@ -21,7 +21,7 @@ from text2pandas.pipelines.retrieval.normalize import (
 )
 from text2pandas.pipelines.retrieval.subject import QuestionMode, classify, pick_subject
 
-__all__ = ["Intent", "parse_intent", "BASIS_OF_SCOPE", "SCOPE_DEFAULT", "QuestionMode"]
+__all__ = ["BASIS_OF_SCOPE", "SCOPE_DEFAULT", "Intent", "QuestionMode", "parse_intent"]
 
 # Dấu hiệu scope · nguyên văn của BTC, so trên chuỗi đã nén.
 _PARENT_MARKERS = ("congtyme", "baocaorieng", "bctcrieng")
@@ -50,8 +50,19 @@ class Intent:
 
     @property
     def basis(self) -> str | None:
-        """`documents.basis` để lọc cứng. `None` nghĩa là KHÔNG lọc."""
+        """Retrieval basis prior, including the organiser's default scope."""
         return BASIS_OF_SCOPE.get(self.explicit_scope or SCOPE_DEFAULT)
+
+    @property
+    def answer_basis(self) -> str | None:
+        """Hard answer constraint only when the question states a scope.
+
+        The organiser's consolidated default is useful as a retrieval prior,
+        but it is not evidence that an unqualified question excludes a valid
+        standalone-only report. Treating that prior as a binding constraint
+        caused fully retrieved operands to be discarded.
+        """
+        return BASIS_OF_SCOPE.get(self.explicit_scope)
 
     @property
     def targets(self) -> tuple[str, ...]:

@@ -9,9 +9,9 @@ def test_reviewed_sources_load_as_one_validated_ontology() -> None:
     ontology = load_ontology()
 
     assert ontology.schema_version == 3
-    assert sum(metric.review_status == "reviewed" for metric in ontology.metrics.values()) == 24
+    assert sum(metric.review_status == "reviewed" for metric in ontology.metrics.values()) == 28
     assert sum(metric.review_status == "reported" for metric in ontology.metrics.values()) > 300
-    assert len(ontology.formulas) == 24
+    assert len(ontology.formulas) == 27
     assert ontology.validate() == ()
     assert len(ontology.fingerprint) == 64
 

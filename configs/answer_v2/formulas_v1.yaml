@@ -1,6 +1,6 @@
 # formula_registry wave 1 — AG1_R2_FORMULA
 #
-# 24 formula SAFE. ROE/ROA chung/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
+# 27 formula SAFE. ROE/ROA chung/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
 # chúng thuộc nhóm NEEDS DOMAIN CONFIRMATION (biến thể cuối kỳ vs bình quân,
 # EBIT vs LNTT+lãi vay) — đưa vào deterministic registry khi chưa phân xử sẽ tạo
 # sai số CÓ HỆ THỐNG trên toàn bộ lớp câu, tệ hơn là không trả lời.
@@ -458,6 +458,58 @@ formulas:
         node: Divide
         num: {node: FactRef, metric_id: tangible_fixed_assets}
         den: {node: FactRef, metric_id: total_assets}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: short_to_long_prepaid_expenses
+    variant_id: ending_balances
+    aliases: ["ty le chi phi tra truoc ngan han tren chi phi tra truoc dai han",
+              "ty so chi phi tra truoc ngan han tren chi phi tra truoc dai han"]
+    leaves: [short_term_prepaid_expenses, long_term_prepaid_expenses]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: short_term_prepaid_expenses}
+      den: {node: FactRef, metric_id: long_term_prepaid_expenses}
+
+  - formula_id: current_liabilities_to_equity_ratio
+    variant_id: ending_balances
+    aliases: ["ty so no ngan han tren von chu so huu",
+              "he so no ngan han tren von chu so huu"]
+    leaves: [current_liabilities, equity]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: current_liabilities}
+      den: {node: FactRef, metric_id: equity}
+
+  - formula_id: common_loan_loss_provision_share
+    variant_id: ending_balances
+    aliases: ["ty trong du phong chung tren tong du phong rui ro cho vay khach hang",
+              "ty le du phong chung tren tong du phong rui ro cho vay khach hang"]
+    leaves: [common_loan_loss_provision, total_loan_loss_provision]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num:
+          node: Abs
+          child: {node: FactRef, metric_id: common_loan_loss_provision}
+        den:
+          node: Abs
+          child: {node: FactRef, metric_id: total_loan_loss_provision}
       right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
 
 # ── NEEDS DOMAIN CONFIRMATION — KHÔNG implement trong AG1 ──────────────────

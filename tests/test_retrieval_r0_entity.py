@@ -13,8 +13,12 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from text2pandas.pipelines.retrieval.normalize import ascii_compact, company_aliases, ticker_mentioned  # noqa: E402
-from text2pandas.pipelines.retrieval.question_intent import SCOPE_DEFAULT, parse_intent  # noqa: E402
+from text2pandas.pipelines.retrieval.normalize import (
+    ascii_compact,
+    company_aliases,
+    ticker_mentioned,
+)
+from text2pandas.pipelines.retrieval.question_intent import SCOPE_DEFAULT, parse_intent
 
 CS = ROOT / "data/raw/btc/metadata/companies.csv"
 ALIAS = ROOT / "configs/retrieval/company_alias_v1.yaml"
@@ -59,6 +63,7 @@ def test_mac_dinh_la_hop_nhat_theo_BTC(comp):
     i = parse_intent("Doanh thu thuần năm 2020 là bao nhiêu?", comp)
     assert i.explicit_scope is None
     assert i.basis == "consolidated", "BTC mặc định `hợp nhất` khi câu hỏi không nói"
+    assert i.answer_basis is None, "retrieval prior không được trở thành hard binding"
     assert SCOPE_DEFAULT == "hợp nhất"
 
 
@@ -68,7 +73,9 @@ def test_mac_dinh_la_hop_nhat_theo_BTC(comp):
     ("tổng tài sản hợp nhất", "consolidated"),
 ])
 def test_dau_hieu_scope(q, want, comp):
-    assert parse_intent(q, comp).basis == want
+    intent = parse_intent(q, comp)
+    assert intent.basis == want
+    assert intent.answer_basis == want
 
 
 def test_vua_rieng_vua_hop_nhat_thi_KHONG_ket_luan(comp):

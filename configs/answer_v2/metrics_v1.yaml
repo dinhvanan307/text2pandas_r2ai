@@ -1,6 +1,6 @@
 # metric_ontology wave 1 — AG1_R2_FORMULA
 #
-# 24 metric. `operating_profit` vẫn bị loại vì đo trên 2.633.554 observation
+# 28 metric. `operating_profit` vẫn bị loại vì đo trên 2.633.554 observation
 # của work.db cho **ground = 0%** với alias hiển nhiên (doc 145 §8, P1-5).
 # CFO đã được review lại bằng direct A6 rows trước khi đưa vào registry.
 #
@@ -58,7 +58,7 @@ metrics:
     forbidden_aliases: ["no ngan han khac", "no ngan han den han"]
 
   - metric_id: short_term_borrowings
-    aliases: ["vay ngan han"]
+    aliases: ["vay va trai phieu phat hanh ngan han", "vay ngan han"]
     statement_types: [balance_sheet, note]
     value_kind: money
     period_semantics: point_in_time
@@ -110,6 +110,45 @@ metrics:
     sign_policy: signed_as_reported
     preferred_scope: consolidated
     forbidden_aliases: []
+
+  - metric_id: short_term_prepaid_expenses
+    aliases: ["chi phi tra truoc ngan han"]
+    statement_types: [balance_sheet, note]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: []
+
+  - metric_id: long_term_prepaid_expenses
+    aliases: ["chi phi tra truoc dai han"]
+    statement_types: [balance_sheet, note]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: ["chi phi tra truoc dai han khac"]
+
+  - metric_id: common_loan_loss_provision
+    aliases: ["du phong chung"]
+    statement_types: [note]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: abs
+    preferred_scope: consolidated
+    forbidden_aliases: ["trich lap du phong chung", "hoan nhap du phong chung"]
+
+  - metric_id: total_loan_loss_provision
+    aliases: ["du phong rui ro cho vay khach hang"]
+    statement_types: [balance_sheet, note]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: abs
+    preferred_scope: consolidated
+    forbidden_aliases:
+      - "trich lap du phong rui ro cho vay khach hang"
+      - "hoan nhap du phong rui ro cho vay khach hang"
+      - "chi phi du phong rui ro cho vay khach hang"
 
   - metric_id: inventory
     aliases: ["hang ton kho"]

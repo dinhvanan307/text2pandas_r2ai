@@ -17,7 +17,7 @@ from .frame import classify_operation
 from .ir import DIVIDE, LOOKUP
 from .pipeline import execute
 from .render import cell_expr
-from .units import MONEY, PERCENT, RATIO, Unit, query_factor
+from .units import MONEY, PERCENT, RATIO, UNKNOWN, Unit, query_factor
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _FORMULAS = _REPO_ROOT / "configs" / "answer_v2" / "formulas_v1.yaml"
@@ -148,7 +148,10 @@ def answer_formula_question(
         return _fail(result, "ROUTE", f"FORMULA_OUTER_OPERATION_NOT_SUPPORTED:{operation}")
     if len(years) != 1:
         return _fail(result, "ROUTE", "FORMULA_REQUIRES_ONE_PERIOD")
-    if requested_unit.dimension != formula.output_dimension:
+    # A reviewed formula can define the implicit output unit when Vietnamese
+    # wording says only "tỷ lệ/tỷ số" without an explicit "%" or "lần".
+    # An explicit, conflicting unit still fails closed.
+    if requested_unit.dimension not in (UNKNOWN, formula.output_dimension):
         return _fail(
             result,
             "ROUTE",
@@ -370,7 +373,10 @@ def _metric_match(spec: MetricSpec, label: str) -> tuple[int, int] | None:
         return None
     direct = [alias for alias in spec.aliases if _prefix_match(normalized, alias)]
     if direct:
-        return 1, max(map(len, direct))
+        # Exact aggregate labels must outrank their component rows. Without
+        # this distinction, "Chi phí trả trước dài hạn khác" beat the exact
+        # "Chi phí trả trước dài hạn" solely because its table ranked higher.
+        return (2 if normalized in direct else 1), max(map(len, direct))
     stripped = normalized
     for prefix in _AGGREGATE_PREFIXES:
         if stripped.startswith(prefix):

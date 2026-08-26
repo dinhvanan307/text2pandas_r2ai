@@ -9,10 +9,10 @@ language: vi
 sources:
   metrics:
     path: configs/answer_v2/metrics_v1.yaml
-    sha256: cda6287cbfd7c89e0e0ce12eedc0b7c2256ed147bb73f4931f446ac3c22d1e3b
+    sha256: 72afebd451075d8522f1d15d81d3bdede15b19b690d378bd67d9d55fa6e7a6f1
   formulas:
     path: configs/answer_v2/formulas_v1.yaml
-    sha256: 23f3432855fbc091fa5039aed41a47fcd0611d343405d78276d87ec05b4e6686
+    sha256: 05fc522f5b316121e82922974abda944770633870d10b29c91f95ecd1b6e0755
   reported_metrics:
     path: configs/execution/metric_registry_v1.yaml
     sha256: 264d538e83f933c503d40d7ce35325f9b056fe033aeddee83e93abe3832ca9f8

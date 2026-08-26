@@ -24,6 +24,7 @@ from text2pandas.pipelines.answering.formula_engine import match_formula
 from text2pandas.pipelines.answering.frame import classify_operation, parse_question
 from text2pandas.pipelines.answering.ir import DIVIDE, LOOKUP
 from text2pandas.pipelines.answering.router import route
+from text2pandas.pipelines.answering.units import UNKNOWN
 from text2pandas.pipelines.retrieval.question_intent import parse_intent
 
 ELIGIBLE = "ELIGIBLE"
@@ -263,7 +264,7 @@ def _classify(
             reason = f"FORMULA_OUTER_OPERATION_NOT_SUPPORTED:{operation.op}"
         elif len(intent.years) != 1:
             reason = "FORMULA_REQUIRES_ONE_PERIOD"
-        elif requested_unit.dimension != formula.output_dimension:
+        elif requested_unit.dimension not in (UNKNOWN, formula.output_dimension):
             reason = (
                 "FORMULA_OUTPUT_DIMENSION_MISMATCH:"
                 f"{formula.output_dimension}:{requested_unit.dimension}"

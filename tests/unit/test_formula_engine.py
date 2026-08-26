@@ -9,7 +9,7 @@ from text2pandas.pipelines.answering.formula_engine import (
     load_registry,
     match_formula,
 )
-from text2pandas.pipelines.answering.units import MONEY, PERCENT, RATIO, Unit
+from text2pandas.pipelines.answering.units import MONEY, PERCENT, RATIO, UNKNOWN, Unit
 
 
 def _cell(
@@ -65,7 +65,7 @@ def _frames(cells: list[CandidateCell]) -> dict[str, pd.DataFrame]:
 def test_registry_only_loads_reviewed_formulas() -> None:
     formulas, metrics = load_registry()
 
-    assert len(formulas) == 24
+    assert len(formulas) == 27
     assert "quick_ratio" in formulas
     assert "roe" not in formulas
     assert set(formulas["quick_ratio"].leaves) <= set(metrics)
@@ -283,6 +283,130 @@ def test_reviewed_component_total_formulas_execute(
     assert result is not None and result.ok
     assert result.formula_id == expected_formula
     assert result.answer == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    ("question", "first_label", "second_label", "unit", "expected_formula", "expected"),
+    [
+        (
+            "Tính tỷ lệ chi phí trả trước ngắn hạn trên chi phí trả trước dài hạn năm 2024.",
+            "Chi phí trả trước ngắn hạn",
+            "Chi phí trả trước dài hạn",
+            Unit(RATIO),
+            "short_to_long_prepaid_expenses",
+            0.25,
+        ),
+        (
+            "Tính tỷ số nợ ngắn hạn trên vốn chủ sở hữu năm 2024.",
+            "Nợ ngắn hạn",
+            "Vốn chủ sở hữu",
+            Unit(RATIO),
+            "current_liabilities_to_equity_ratio",
+            0.25,
+        ),
+        (
+            "Tỷ trọng dự phòng chung trên tổng dự phòng rủi ro cho vay khách hàng là bao nhiêu phần trăm?",
+            "Dự phòng chung",
+            "Dự phòng rủi ro cho vay khách hàng",
+            Unit(PERCENT),
+            "common_loan_loss_provision_share",
+            25.0,
+        ),
+    ],
+)
+def test_additional_reviewed_relational_formulas(
+    question: str,
+    first_label: str,
+    second_label: str,
+    unit: Unit,
+    expected_formula: str,
+    expected: float,
+) -> None:
+    cells = [_cell(first_label, 25, 0), _cell(second_label, 100, 1)]
+
+    result = answer_formula_question(
+        question,
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=unit,
+    )
+
+    assert result is not None and result.ok, result.reason if result else None
+    assert result.formula_id == expected_formula
+    assert result.answer == pytest.approx(expected)
+
+
+def test_reviewed_ratio_supplies_implicit_unit_when_question_omits_lan() -> None:
+    cells = [
+        _cell("Chi phí trả trước ngắn hạn", 20, 0),
+        _cell("Chi phí trả trước dài hạn", 80, 1),
+    ]
+
+    result = answer_formula_question(
+        "Tính tỷ lệ chi phí trả trước ngắn hạn trên chi phí trả trước dài hạn năm 2024.",
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(UNKNOWN),
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(0.25)
+
+
+def test_short_term_borrowings_prefers_reported_aggregate_over_component() -> None:
+    cells = [
+        _cell("Trong đó: Chi phí lãi vay", 20, 0, statement_type="income_statement"),
+        _cell("Vay ngắn hạn", 50, 1, statement_type="note", period_role="closing"),
+        _cell(
+            "Vay và trái phiếu phát hành ngắn hạn",
+            100,
+            2,
+            statement_type="balance_sheet",
+            period_role="closing",
+        ),
+    ]
+
+    result = answer_formula_question(
+        "Tỷ lệ chi phí lãi vay trên nợ vay ngắn hạn là bao nhiêu %?",
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(20.0)
+    assert "Vay và trái phiếu phát hành ngắn hạn" in result.query
+
+
+def test_exact_metric_label_outranks_prefix_component() -> None:
+    cells = [
+        _cell("Chi phí trả trước ngắn hạn", 20, 0),
+        _cell("Chi phí trả trước dài hạn khác", 10, 1),
+        _cell("Chi phí trả trước dài hạn", 80, 2),
+    ]
+
+    result = answer_formula_question(
+        "Tỷ lệ chi phí trả trước ngắn hạn trên chi phí trả trước dài hạn",
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(RATIO),
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(0.25)
+    assert "Chi phí trả trước dài hạn khác" not in result.query
 
 
 @pytest.mark.parametrize(
