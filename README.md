@@ -253,6 +253,7 @@ The non-negotiable rules are:
 ## Documentation map
 
 - [Agent operating contract](AGENTS.md)
+- [Competition requirements traceability](docs/REQUIREMENTS_TRACEABILITY.md)
 - [Data ownership and lifecycle](data/README.md)
 - [Refactor plan](docs/REFACTOR_PLAN.md)
 - [Refactor status](docs/REFACTOR_STATUS.md)
