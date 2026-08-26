@@ -115,6 +115,39 @@ class RetrievalToSubmission:
         n_year = max(1, len(intent.years))
         return max(1, min(n_tick * n_year, self.max_n))
 
+    def submission_refs_for_uids(
+        self,
+        conn: sqlite3.Connection,
+        table_uids: list[str] | tuple[str, ...],
+    ) -> tuple[list[str], list[str]]:
+        """Map the exact downstream tables to submission references.
+
+        Retrieval's top-N is only a prior. Once answer binding has selected
+        concrete tables, those tables are the authoritative grounding set.
+        Publishing the earlier top-N can otherwise make a replayable answer
+        cite unrelated tables. First-use order is stable and duplicates fold.
+        """
+        refs: list[str] = []
+        docs: list[str] = []
+        seen_uids: set[str] = set()
+        for uid in table_uids:
+            if uid in seen_uids:
+                continue
+            seen_uids.add(uid)
+            row = conn.execute(
+                "SELECT evidence_ref FROM table_cards WHERE table_uid = ?",
+                (uid,),
+            ).fetchone()
+            if row is None or not row[0]:
+                raise ValueError(f"table_uid {uid} không có evidence_ref")
+            ref = to_submission_ref(row[0], self.off_by_one)
+            if ref not in refs:
+                refs.append(ref)
+            doc = ref.rsplit("|", 1)[0]
+            if doc not in docs:
+                docs.append(doc)
+        return refs, docs
+
     def refs_for(self, conn: sqlite3.Connection, qid: int,
                  question: str) -> SubmissionRefs:
         it = parse_intent(question, self.alias)
@@ -124,21 +157,7 @@ class RetrievalToSubmission:
         n = self.n_for(it)
         ranked = [r.table_uid for r in o3.ranked]
         chon = ranked[:n]
-        refs, docs = [], []
-        for uid in chon:
-            row = conn.execute(
-                "SELECT evidence_ref FROM table_cards WHERE table_uid = ?",
-                (uid,)).fetchone()
-            if row is None or not row[0]:
-                # KHÔNG bỏ qua im lặng: một bảng không có `evidence_ref` nghĩa là
-                # ta xếp hạng được nó nhưng không nộp được nó — phải nổ để sửa
-                # ở tầng dữ liệu, chứ không phải nộp thiếu rồi tự hỏi vì sao.
-                raise ValueError(f"table_uid {uid} không có evidence_ref")
-            ref = to_submission_ref(row[0], self.off_by_one)
-            refs.append(ref)
-            d = ref.rsplit("|", 1)[0]
-            if d not in docs:
-                docs.append(d)
+        refs, docs = self.submission_refs_for_uids(conn, chon)
         return SubmissionRefs(qid=qid, relevant_tables=refs, relevant_docs=docs,
                               n_policy=n, n_candidates=o1.n, table_uids=chon,
                               ranked_table_uids=ranked)

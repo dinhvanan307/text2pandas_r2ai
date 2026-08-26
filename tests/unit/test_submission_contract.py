@@ -100,6 +100,7 @@ def test_validator_rejects_contract_and_grounding_defects(tmp_path: Path) -> Non
     assert "trường thừa" in joined
     assert "số hữu hạn" in joined
     assert "relevant_docs chứa phần tử trùng" in joined
+    assert "relevant_docs phải suy ra đúng từ relevant_tables" in joined
     assert "locator không trỏ dòng mở table" in joined
     assert "allowlisted" in joined
     assert "evidence phải có đúng trường" in joined

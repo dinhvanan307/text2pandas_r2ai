@@ -237,6 +237,16 @@ def validate_zip(
                 tables = []
             if len(tables) != len(set(tables)):
                 rep.errors.append(f"C20 {tag}: relevant_tables chứa phần tử trùng")
+            table_docs = [
+                value.rsplit("|", 1)[0]
+                for value in tables
+                if _LOCATOR.fullmatch(value)
+            ]
+            expected_docs = list(dict.fromkeys(table_docs))
+            if docs != expected_docs:
+                rep.errors.append(
+                    f"C20 {tag}: relevant_docs phải suy ra đúng từ relevant_tables"
+                )
             if not isinstance(evidence, list):
                 rep.errors.append(f"C11 {tag}: evidence phải là list")
                 evidence = []

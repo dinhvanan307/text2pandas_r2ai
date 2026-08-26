@@ -586,12 +586,17 @@ def run_canonical_pipeline(
 
                 if pipeline_result is not None and pipeline_result.ok:
                     evidence = pipeline_result.evidence
+                    evidence_uids = [Path(item["csv_path"]).stem for item in evidence]
+                    evidence_tables, evidence_docs = retrieval.submission_refs_for_uids(
+                        ret_conn,
+                        evidence_uids,
+                    )
                     _write_evidence_frames(data_dir, evidence, frames_by_path)
                     result = AnswerResult(
                         qid=qid,
                         answer=pipeline_result.answer,
-                        relevant_docs=refs.relevant_docs,
-                        relevant_tables=refs.relevant_tables,
+                        relevant_docs=evidence_docs,
+                        relevant_tables=evidence_tables,
                         evidence=evidence,
                         pandas_query=pipeline_result.query or "",
                         confidence=0.5,

@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import pytest  # noqa: E402
 
-GOLD_DIR = ROOT / "data" / "gold"
+GOLD_DIR = ROOT / "data" / "curated" / "gold"
 GOLD = GOLD_DIR / "semantic_gold.jsonl"
 
 from text2pandas.pipelines.answering.frame import (  # noqa: E402

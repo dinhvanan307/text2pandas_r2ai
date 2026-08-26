@@ -121,6 +121,19 @@ def test_relevant_docs_luon_suy_ra_tu_relevant_tables(conn):
     assert len(set(r.relevant_docs)) == len(r.relevant_docs)
 
 
+def test_late_grounding_uses_exact_bound_tables(conn):
+    ad = RetrievalToSubmission(ALIAS)
+    refs, docs = ad.submission_refs_for_uids(
+        conn,
+        ["aaaa000000000002", "aaaa000000000001", "aaaa000000000002"],
+    )
+    assert refs == [
+        "VNM_financial_statements_2023_consolidated|954",
+        "VNM_financial_statements_2023_consolidated|288",
+    ]
+    assert docs == ["VNM_financial_statements_2023_consolidated"]
+
+
 def test_chinh_sach_N_theo_so_ma_va_so_nam(conn):
     ad = RetrievalToSubmission(ALIAS)
     r = ad.refs_for(conn, 3, "Doanh thu thuần của VNM và HPG năm 2023 "
