@@ -17,6 +17,10 @@ from text2pandas.pipelines.answering.units import MONEY, Unit
         ("Khoản phải trả trên báo cáo hợp nhất là bao nhiêu?", LOOKUP),
         ("Chi phí năm 2025 bé hơn năm 2024 mấy tỷ đồng?", SUBTRACT),
         ("Tính biến động số dư giữa năm 2024 và 2023.", SUBTRACT),
+        ("Doanh thu của VNM năm 2024 trừ đi doanh thu HPG.", SUBTRACT),
+        ("Hiệu giữa doanh thu VNM và HPG năm 2024 là bao nhiêu?", SUBTRACT),
+        ("Doanh thu VNM lớn hơn của HPG bao nhiêu tỷ đồng?", SUBTRACT),
+        ("Doanh thu VNM kém hơn HPG mấy tỷ đồng?", SUBTRACT),
         ("Kết quả thuần từ hoạt động tài chính năm 2024 là bao nhiêu?", SUBTRACT),
         ("Chi phí năm 2023 tăng bao nhiêu phần trăm so với năm 2022?", GROWTH),
         ("Tài sản từ năm 2018 đến năm 2023 tăng bao nhiêu triệu đồng?", SUBTRACT),
@@ -37,3 +41,12 @@ def test_less_than_difference_reverses_period_operands() -> None:
 
     assert result.ok and result.ir is not None
     assert [slot.period for slot in result.ir.slots] == ["2024", "2025"]
+
+
+def test_kem_hon_marks_reverse_difference() -> None:
+    operation = classify_operation(
+        "Doanh thu SCR kém hơn NLG bao nhiêu tỷ đồng?"
+    )
+
+    assert operation.op == SUBTRACT
+    assert operation.reverse_difference is True

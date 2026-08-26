@@ -72,6 +72,8 @@ _COMPARE = (
     "nhieu hon",
     "it hon",
     "be hon",
+    "kem hon",
+    "tru di",
 )
 _OWNER = ("cua",)
 _RELATED = ("voi", "cho", "tai", "den", "tu")

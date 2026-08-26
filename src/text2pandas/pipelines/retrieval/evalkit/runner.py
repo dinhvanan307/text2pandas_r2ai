@@ -63,6 +63,8 @@ __all__ = [
 #                         VAS code hint from overriding a specific metric (ADR 0007).
 #   evalkit-7 → evalkit-8   bind checkpoints to active A6/retrieval identities;
 #                         ranking behavior is unchanged.
+#   evalkit-8 → evalkit-9   preserve source mention order for directional
+#                         multi-entity comparisons (ADR 0011).
 #
 # VÌ SAO PHẢI BUMP, KHÔNG PHẢI CHỈ SỬA CODE
 # -----------------------------------------
@@ -74,7 +76,7 @@ __all__ = [
 # Kỷ luật con người không giữ được bất biến này (đã hỏng một lần rồi), nên
 # `tests/test_p0_unify.py::test_behavior_fingerprint` băm AST của các module
 # quyết định hành vi S2 và đỏ lên nếu chúng đổi mà hằng số này không đổi.
-SCHEMA_VERSION = "evalkit-8"
+SCHEMA_VERSION = "evalkit-9"
 
 
 @dataclass(frozen=True, slots=True)

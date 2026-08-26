@@ -48,6 +48,15 @@ class Intent:
     resolved_by: str                    # ticker | company_name | ticker_shadowed | none
     mode: str = "none"                  # single | screen | compare | related | none
     subject: str | None = None          # mã CHỦ THỂ khi xác định được
+    ticker_order: tuple[str, ...] = ()   # thứ tự thực thể xuất hiện trong câu
+
+    @property
+    def ordered_tickers(self) -> tuple[str, ...]:
+        """All resolved tickers in source order, with a deterministic fallback."""
+
+        if len(self.ticker_order) == len(self.tickers) and set(self.ticker_order) == self.tickers:
+            return self.ticker_order
+        return tuple(sorted(self.tickers))
 
     @property
     def basis(self) -> str | None:
@@ -73,8 +82,12 @@ class Intent:
         thật, ép chúng về một mã là làm hỏng chúng để cứu nhóm `related`.
         `related` trả về đúng chủ thể nếu xác định được, ngược lại rỗng.
         """
-        if self.mode in (QuestionMode.SCREEN, QuestionMode.COMPARE):
+        # Screening membership is a set and remains lexical for deterministic
+        # ranking/tie behaviour.  Comparison membership is directional.
+        if self.mode == QuestionMode.SCREEN:
             return tuple(sorted(self.tickers))
+        if self.mode == QuestionMode.COMPARE:
+            return self.ordered_tickers
         if self.subject:
             return (self.subject,)
         # KHÔNG quyết được chủ thể thì trả CẢ TẬP, không trả rỗng.
@@ -86,7 +99,7 @@ class Intent:
         #
         # Fail-closed thuộc về tầng TRẢ LỜI (S4/S5): ở đó, không phân giải được
         # thì từ chối. Ở tầng sinh ứng viên, recall là thứ phải giữ.
-        return tuple(sorted(self.tickers))
+        return self.ordered_tickers
 
     @property
     def is_resolved(self) -> bool:
@@ -191,4 +204,33 @@ def parse_intent(query: str, companies: Mapping[str, str | Sequence[str]],
     subject = (next(iter(tk)) if len(tk) == 1
                else pick_subject(query, names_of, tk) if mode == QuestionMode.RELATED
                else None)
-    return Intent(tk, scope, years, how, mode, subject)
+    ticker_order = _ticker_mention_order(words, tk, matched_aliases)
+    return Intent(tk, scope, years, how, mode, subject, ticker_order)
+
+
+def _ticker_mention_order(
+    normalized_query: str,
+    tickers: frozenset[str],
+    matched_aliases: Mapping[str, set[str]],
+) -> tuple[str, ...]:
+    """Return resolved tickers in question-source order.
+
+    Arithmetic meaning depends on this order (``A trừ B`` means ``A - B``),
+    therefore a set or lexical sort is not a valid representation.  Company
+    names and explicit ticker tokens share the same normalized coordinate
+    space; unmatched edge cases use lexical order only as a deterministic
+    final fallback.
+    """
+
+    def first_position(ticker: str) -> int:
+        starts: list[int] = []
+        for phrase in (*matched_aliases.get(ticker, set()), ticker.lower()):
+            match = re.search(
+                rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                normalized_query,
+            )
+            if match:
+                starts.append(match.start())
+        return min(starts, default=len(normalized_query) + 1)
+
+    return tuple(sorted(tickers, key=lambda ticker: (first_position(ticker), ticker)))

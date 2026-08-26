@@ -79,6 +79,62 @@ def test_two_entity_difference_preserves_first_minus_second_direction() -> None:
     assert result.answer == pytest.approx(-3.0)
 
 
+def test_less_than_entity_difference_reverses_semantic_operands() -> None:
+    cells = [_cell("AAA", 2_000), _cell("BBB", 5_000)]
+
+    result = answer_entity_difference(
+        "Doanh thu AAA kém hơn BBB năm 2024 bao nhiêu tỷ đồng?",
+        cells,
+        _frames(cells),
+        entities=["AAA", "BBB"],
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(MONEY, 9, "VND"),
+        selector=Selector(),
+        mode="compare",
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(3.0)
+    assert result.trace[0]["semantic_entity_order"] == ["AAA", "BBB"]
+    assert result.trace[0]["calculation_entity_order"] == ["BBB", "AAA"]
+
+
+def test_explicit_difference_cue_overrides_related_subject_heuristic() -> None:
+    cells = [_cell("AAA", 5_000), _cell("BBB", 2_000)]
+
+    result = answer_entity_difference(
+        "Doanh thu AAA năm 2024 trừ đi doanh thu BBB là bao nhiêu tỷ đồng?",
+        cells,
+        _frames(cells),
+        entities=["AAA", "BBB"],
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(MONEY, 9, "VND"),
+        selector=Selector(),
+        mode="related",
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(3.0)
+
+
+def test_related_lookup_without_difference_cue_is_not_routed() -> None:
+    result = answer_entity_difference(
+        "Doanh thu của AAA từ khách hàng BBB năm 2024 là bao nhiêu tỷ đồng?",
+        [],
+        {},
+        entities=["AAA", "BBB"],
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(MONEY, 9, "VND"),
+        selector=Selector(),
+        mode="related",
+    )
+
+    assert result is None
+
+
 def test_two_entity_difference_abstains_on_metric_drift() -> None:
     cells = [_cell("AAA", 5_000), _cell("BBB", 2_000, "Lợi nhuận sau thuế")]
 

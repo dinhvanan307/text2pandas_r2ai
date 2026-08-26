@@ -169,6 +169,26 @@ def test_compare_giu_ca_hai_ben(alias):
     assert {"DNH", "HND"} <= set(i.targets)
 
 
+def test_compare_preserves_explicit_ticker_mention_order(alias):
+    i = parse_intent(
+        "Doanh thu EIB năm 2024 trừ đi doanh thu ACB là bao nhiêu?",
+        alias,
+    )
+
+    assert i.mode == "compare"
+    assert i.targets == ("EIB", "ACB")
+
+
+def test_compare_preserves_company_name_mention_order(alias):
+    i = parse_intent(
+        "Doanh thu Ngân hàng TMCP Xuất nhập khẩu Việt Nam kém hơn "
+        "Ngân hàng TMCP Á Châu bao nhiêu?",
+        alias,
+    )
+
+    assert i.targets == ("EIB", "ACB")
+
+
 def test_related_chon_chu_the_sau_chu_CUA(alias):
     """Bên liên quan đứng sau `với`; chủ sở hữu báo cáo đứng sau `của`."""
     i = parse_intent(

@@ -78,8 +78,7 @@ def is_typed_entity_difference(
     """Return whether the question fits the narrow reviewed route contract."""
 
     return (
-        mode == "compare"
-        and len(entities) == 2
+        len(entities) == 2
         and len(set(entities)) == 2
         and len(years) == 1
         and classify_operation(question).op == SUBTRACT
@@ -101,11 +100,12 @@ def answer_entity_difference(
     mode: str,
     qid: int | None = None,
 ) -> EntityDifferenceAnswer | None:
-    """Bind the same metric once per entity and return first minus second.
+    """Bind the same metric once per entity and execute the semantic direction.
 
     Entity order is semantic: Vietnamese questions of the form ``A so với B``
-    ask for ``A - B``.  Taking ``abs`` silently discards the direction and
-    makes every case where A < B wrong while still looking plausible.
+    ask for ``A - B``; ``A kém/thấp/bé hơn B`` asks for ``B - A``.
+    Taking ``abs`` silently discards the direction and makes signed cases look
+    plausible while being semantically wrong.
     """
 
     if not is_typed_entity_difference(
@@ -140,10 +140,15 @@ def answer_entity_difference(
     physical = {(operand.cell.csv_path, operand.cell.row_index) for operand in operands}
     if len(physical) != 2:
         return _fail(result, "BIND", "ENTITY_DIFFERENCE_DUPLICATE_CELLS")
+    operation = classify_operation(question)
+    calculation_operands = list(reversed(operands)) if operation.reverse_difference else operands
     result.trace.append(
         {
             "stage": "BIND",
             "status": "OK",
+            "semantic_entity_order": [operand.slot.entity for operand in operands],
+            "calculation_entity_order": [operand.slot.entity for operand in calculation_operands],
+            "reverse_difference": operation.reverse_difference,
             "operands": {
                 operand.slot.entity: {
                     "row_path": operand.cell.row_path,
@@ -158,7 +163,7 @@ def answer_entity_difference(
         return _fail(result, "POLICY", "ENTITY_DIFFERENCE_METRIC_DRIFT")
 
     expressions: list[str] = []
-    for operand in operands:
+    for operand in calculation_operands:
         conversion = query_factor(
             operand.quantity.unit,
             requested_unit,

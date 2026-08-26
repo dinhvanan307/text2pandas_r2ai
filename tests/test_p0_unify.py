@@ -31,6 +31,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from text2pandas.pipelines.retrieval.evalkit import (  # noqa: E402
+    SCHEMA_VERSION as PACKAGE_SCHEMA_VERSION,
+)
 from text2pandas.pipelines.retrieval.evalkit.runner import SCHEMA_VERSION  # noqa: E402
 from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker,  # noqa: E402
                                       HardFilterGenerator)
@@ -228,6 +231,8 @@ _MODULE_HANH_VI = (
 #   28c7ebe62fec347a  Thêm `strict=True` vào `zip(uids, bm)`: hai list được sinh
 #                     từ cùng `uids`, nên output không đổi; invariant lệch độ
 #                     dài nay fail-fast thay vì cắt im lặng.
+#   42ce338e3c3c58e8  Comparison targets giữ source mention order thay vì
+#                     lexical order; bắt buộc cho phép trừ có hướng (ADR 0011).
 _FINGERPRINT = {
     "evalkit-2": "dce65cd2bfaf25e0",
     "evalkit-3": "89cd3974d9ad7579",
@@ -236,6 +241,7 @@ _FINGERPRINT = {
     "evalkit-6": "6d98371c9d8ccda1",
     "evalkit-7": "28c7ebe62fec347a",
     "evalkit-8": "28c7ebe62fec347a",
+    "evalkit-9": "42ce338e3c3c58e8",
 }
 
 _FIELD = {ast.Constant: "value", ast.Name: "id", ast.Attribute: "attr",
@@ -303,3 +309,9 @@ def test_behavior_fingerprint():
         f"  fingerprint thật = {behavior_fingerprint()}\n"
         f"đọc docstring của test này trước khi sửa."
     )
+
+
+def test_public_evalkit_schema_matches_runner() -> None:
+    """External tooling and the runner must never stamp different schemas."""
+
+    assert PACKAGE_SCHEMA_VERSION == SCHEMA_VERSION

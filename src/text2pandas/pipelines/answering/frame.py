@@ -93,8 +93,10 @@ _CONSOLIDATED = re.compile(r"(h[ợo]p\s*nh[ấa]t|consolidated)")
 # A bare metric noun no longer implies any operation; it only hints that the
 # RESULT is ratio-like, which is the Unit Contract's business, not the router's.
 _DIFFERENCE_CUE = re.compile(
-    r"(ch[êe]nh\s*l[ệe]ch|hi[ệe]u\s*s[ốo]|m[ứu]c\s*thay\s*đ[ổo]i"
+    r"(ch[êe]nh\s*l[ệe]ch|hi[ệe]u\s*(?:s[ốo]|gi[ữu]a)|tr[ừu]\s+đi"
+    r"|m[ứu]c\s*thay\s*đ[ổo]i"
     r"|thay\s*đ[ổo]i\s*(?:so\s*v[ớo]i|gi[ữu]a)|nhi[ềe]u\s*h[ơo]n|[íi]t\s*h[ơo]n"
+    r"|(?:l[ớo]n|k[ée]m|b[ée]|cao|th[ấa]p)\s+h[ơo]n\s+[^?]{0,100}(?:bao\s+nhi[êe]u|m[ấa]y)"
     r"|b[ée]\s*h[ơo]n|cao\s*h[ơo]n|th[ấa]p\s*h[ơo]n|bi[ếe]n\s*đ[ộo]ng"
     r"|(?:t[ăa]ng|gi[ảa]m)\s+bao\s+nhi[êe]u"
     r"|\bh[ơo]n\b[^?]{0,80}\bm[ấa]y\b"
@@ -355,7 +357,8 @@ def classify_operation(question: str) -> OperationHint:
                 reason=f"cue:{op}",
                 matched=m.group(0),
                 reverse_difference=bool(
-                    op == SUBTRACT and re.search(r"(?:b[ée]|[íi]t|th[ấa]p)\s+h[ơo]n", m.group(0))
+                    op == SUBTRACT
+                    and re.search(r"(?:b[ée]|k[ée]m|[íi]t|th[ấa]p)\s+h[ơo]n", m.group(0))
                 ),
             )
     return OperationHint(LOOKUP, reason="default:no_operation_cue")
