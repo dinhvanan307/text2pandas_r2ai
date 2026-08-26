@@ -43,6 +43,7 @@ class FormulaSpec:
     leaves: tuple[str, ...]
     output_dimension: str
     max_abs_percent: float
+    same_period: bool
     expression: dict
 
 
@@ -90,6 +91,7 @@ def load_registry() -> tuple[dict[str, FormulaSpec], dict[str, MetricSpec]]:
             leaves=tuple(str(value) for value in raw.get("leaves", [])),
             output_dimension=dimension,
             max_abs_percent=float(output.get("max_abs", 10_000.0)),
+            same_period=bool(raw.get("same_period", True)),
             expression=dict(raw["expression"]),
         )
         formulas[spec.formula_id] = spec
@@ -175,7 +177,10 @@ def answer_formula_question(
         if not candidates:
             return _fail(result, "BIND", f"FORMULA_METRIC_NOT_IN_POOL:{metric_id}")
         ranked_by_metric[metric_id] = candidates
-    bound = _bind_coherent_operands(ranked_by_metric)
+    bound = _bind_coherent_operands(
+        ranked_by_metric,
+        same_period=formula.same_period,
+    )
     if bound is None:
         return _fail(result, "BIND", "FORMULA_OPERANDS_NOT_COHERENT")
     physical = {(cell.csv_path, cell.row_index) for cell in bound.values()}
@@ -335,29 +340,40 @@ def _section_relevance(spec: MetricSpec, cell: CandidateCell) -> float:
 
 def _bind_coherent_operands(
     ranked_by_metric: Mapping[str, Sequence[tuple[tuple[float, ...], CandidateCell]]],
+    *,
+    same_period: bool,
 ) -> dict[str, CandidateCell] | None:
-    """Choose all leaves from one report and one currency.
+    """Choose all leaves from one report, period, and currency.
 
-    Period, entity and accounting basis alone are not sufficient: annual
-    reports repeat prior-year values in notes and dimensional breakdowns. A
-    cross-report formula can therefore be executable while being semantically
-    false. Formula operands must share the same source document; test fixtures
-    without document metadata are treated as one explicit unknown group.
+    A year filter alone is insufficient because reports contain acquisition,
+    interim, and closing dates in the same calendar year. Reviewed formulas
+    declare ``same_period`` in the registry; when enabled, candidates without
+    an exact period fail closed and all leaves must share that exact date.
+    Formula operands must also share the same source document. Test fixtures
+    without document metadata are treated as one explicit unknown document.
     """
 
-    document_sets = [
-        {cell.document_id or "__unknown__" for _, cell in ranked}
+    def scope(cell: CandidateCell) -> tuple[str, str | None] | None:
+        if same_period and cell.period is None:
+            return None
+        return (
+            cell.document_id or "__unknown__",
+            cell.period if same_period else None,
+        )
+
+    scope_sets = [
+        {value for _, cell in ranked if (value := scope(cell)) is not None}
         for ranked in ranked_by_metric.values()
     ]
-    common_documents = set.intersection(*document_sets) if document_sets else set()
-    groups: list[tuple[tuple[float, ...], str, dict[str, CandidateCell]]] = []
-    for document_id in sorted(common_documents):
+    common_scopes = set.intersection(*scope_sets) if scope_sets else set()
+    groups: list[
+        tuple[tuple[float, ...], tuple[str, str | None], dict[str, CandidateCell]]
+    ] = []
+    for common_scope in sorted(common_scopes):
         selected: dict[str, CandidateCell] = {}
         scores: list[tuple[float, ...]] = []
         for metric_id, ranked in ranked_by_metric.items():
-            score, cell = next(
-                item for item in ranked if (item[1].document_id or "__unknown__") == document_id
-            )
+            score, cell = next(item for item in ranked if scope(item[1]) == common_scope)
             selected[metric_id] = cell
             scores.append(score)
         currencies = {cell.unit.currency for cell in selected.values()}
@@ -367,7 +383,7 @@ def _bind_coherent_operands(
         if len(physical) != len(selected):
             continue
         aggregate = tuple(sum(score[index] for score in scores) for index in range(len(scores[0])))
-        groups.append((aggregate, document_id, selected))
+        groups.append((aggregate, common_scope, selected))
     if not groups:
         return None
     groups.sort(key=lambda item: (item[0], item[1]), reverse=True)

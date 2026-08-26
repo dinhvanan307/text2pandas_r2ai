@@ -22,6 +22,7 @@ def _cell(
     document_id: str | None = None,
     statement_type: str | None = None,
     period_role: str | None = None,
+    period: str | None = "2024-12-31",
     col_label: str = "2024 Triệu đồng",
     section_text: str = "",
 ) -> CandidateCell:
@@ -36,7 +37,7 @@ def _cell(
         parsed_raw=value,
         storage_exponent=0,
         unit=Unit(MONEY, 6, "VND"),
-        period="2024-12-31",
+        period=period,
         table_uid="table-1",
         document_id=document_id,
         entity="HPG",
@@ -70,6 +71,7 @@ def test_registry_only_loads_reviewed_formulas() -> None:
     assert "quick_ratio" in formulas
     assert "roe" not in formulas
     assert set(formulas["quick_ratio"].leaves) <= set(metrics)
+    assert all(formula.same_period for formula in formulas.values())
 
 
 def test_ambiguous_metric_requires_its_reviewed_financial_context() -> None:
@@ -653,6 +655,51 @@ def test_formula_operands_must_come_from_one_report() -> None:
 
     assert result is not None
     assert result.reason == "FORMULA_OPERANDS_NOT_COHERENT"
+
+
+def test_formula_operands_must_share_exact_period_within_requested_year() -> None:
+    cells = [
+        _cell(
+            "Dự phòng rủi ro cho vay khách hàng › Dự phòng chung",
+            20,
+            0,
+            document_id="report-a",
+            statement_type="note",
+            section_text="Dự phòng rủi ro cho vay khách hàng",
+        ),
+        _cell(
+            "Dự phòng rủi ro cho vay khách hàng",
+            1,
+            1,
+            document_id="report-a",
+            statement_type="note",
+            period="2024-06-30",
+            col_label="30/06/2024 Triệu đồng",
+        ),
+        _cell(
+            "Dự phòng rủi ro cho vay khách hàng",
+            100,
+            2,
+            document_id="report-a",
+            statement_type="note",
+        ),
+    ]
+
+    result = answer_formula_question(
+        "Tỷ trọng dự phòng chung trên tổng dự phòng rủi ro cho vay khách hàng "
+        "HPG năm 2024 là bao nhiêu phần trăm?",
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(20.0)
+    operands = result.trace[1]["operands"]
+    assert {item["period"] for item in operands.values()} == {"2024-12-31"}
 
 
 def test_bank_total_assets_alias_prefers_balance_sheet_wording() -> None:
