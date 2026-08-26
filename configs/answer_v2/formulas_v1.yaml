@@ -1,6 +1,6 @@
 # formula_registry wave 1 — AG1_R2_FORMULA
 #
-# 14 formula SAFE. ROE/ROA chung/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
+# 16 formula SAFE. ROE/ROA chung/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
 # chúng thuộc nhóm NEEDS DOMAIN CONFIRMATION (biến thể cuối kỳ vs bình quân,
 # EBIT vs LNTT+lãi vay) — đưa vào deterministic registry khi chưa phân xử sẽ tạo
 # sai số CÓ HỆ THỐNG trên toàn bộ lớp câu, tệ hơn là không trả lời.
@@ -276,6 +276,40 @@ formulas:
           node: Abs
           child: {node: FactRef, metric_id: financial_expense}
         den: {node: FactRef, metric_id: net_revenue}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: intangible_fixed_assets_to_assets
+    variant_id: carrying_value
+    aliases: ["ty trong tai san co dinh vo hinh tren tong tai san"]
+    leaves: [intangible_fixed_assets, total_assets]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: intangible_fixed_assets}
+        den: {node: FactRef, metric_id: total_assets}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: tangible_fixed_assets_to_assets
+    variant_id: carrying_value
+    aliases: ["ty trong tai san co dinh huu hinh tren tong tai san"]
+    leaves: [tangible_fixed_assets, total_assets]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: tangible_fixed_assets}
+        den: {node: FactRef, metric_id: total_assets}
       right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
 
 # ── NEEDS DOMAIN CONFIRMATION — KHÔNG implement trong AG1 ──────────────────

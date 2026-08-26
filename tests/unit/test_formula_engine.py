@@ -58,7 +58,7 @@ def _frames(cells: list[CandidateCell]) -> dict[str, pd.DataFrame]:
 def test_registry_only_loads_reviewed_formulas() -> None:
     formulas, metrics = load_registry()
 
-    assert len(formulas) == 14
+    assert len(formulas) == 16
     assert "quick_ratio" in formulas
     assert "roe" not in formulas
     assert set(formulas["quick_ratio"].leaves) <= set(metrics)
@@ -179,6 +179,18 @@ def test_reviewed_expense_intensities_execute_with_absolute_numerator(
             "Chi phí tài chính",
             "Doanh thu thuần",
             "financial_expense_intensity",
+        ),
+        (
+            "Tỷ trọng tài sản cố định vô hình trên tổng tài sản năm 2024 là bao nhiêu phần trăm?",
+            "Tài sản cố định vô hình",
+            "Tổng tài sản",
+            "intangible_fixed_assets_to_assets",
+        ),
+        (
+            "Tỷ trọng tài sản cố định hữu hình trên tổng tài sản năm 2024 là bao nhiêu phần trăm?",
+            "Tài sản cố định hữu hình",
+            "Tổng tài sản",
+            "tangible_fixed_assets_to_assets",
         ),
     ],
 )
