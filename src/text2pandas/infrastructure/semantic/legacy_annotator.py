@@ -7,6 +7,7 @@ composition moves to `application.parsing.SemanticParser`.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 
 from text2pandas.application.parsing.contracts import (
@@ -14,6 +15,7 @@ from text2pandas.application.parsing.contracts import (
     QuestionAnnotations,
     ReturnMode,
 )
+from text2pandas.domain.metrics import normalize_phrase
 from text2pandas.domain.semantic import Basis, Dimension, RankDirection, UnitSpec
 from text2pandas.domain.units.lexicon import scan_question_unit
 from text2pandas.pipelines.answering.frame import (
@@ -46,6 +48,46 @@ _DIMENSION = {
 }
 
 
+_TOTAL_PREFIX = re.compile(r"^tong\b")
+_LEGAL_ENTITY_PREFIX = re.compile(r"^tong\s+cong\s+ty\b")
+_FILTERED_ENTITY_SELECTION = re.compile(
+    r"\bcua\s+(?:cong\s+ty|doanh\s+nghiep)\s+co\b|\btrong\s+so\b"
+)
+_EXPLICIT_PERIOD_DOMAIN = re.compile(
+    r"\b(?:trong|qua|cho|tai)\s+cac\s+nam\b"
+)
+
+
+def _aggregate_override(
+    question: str,
+    *,
+    entity_count: int,
+    period_count: int,
+    operation: OperationKind,
+) -> tuple[OperationKind, str | None]:
+    """Recover explicit total domains that the legacy cue router cannot see.
+
+    ``Tổng`` is overloaded in financial Vietnamese: it can be part of a legal
+    entity name, a reported line label, or an instruction to aggregate.  V3 only
+    upgrades it to ``SUM`` when the question also declares a multi-entity or
+    multi-period domain.  Filter/select questions remain fail-closed instead of
+    being flattened into an unconditional sum.
+    """
+
+    if operation != OperationKind.LOOKUP:
+        return operation, None
+    normalized = normalize_phrase(question)
+    if not _TOTAL_PREFIX.search(normalized) or _LEGAL_ENTITY_PREFIX.search(normalized):
+        return operation, None
+    if _FILTERED_ENTITY_SELECTION.search(normalized):
+        return operation, None
+    if entity_count >= 2:
+        return OperationKind.SUM, "aggregate_domain:multi_entity_total"
+    if period_count >= 2 and _EXPLICIT_PERIOD_DOMAIN.search(normalized):
+        return OperationKind.SUM, "aggregate_domain:multi_period_total"
+    return operation, None
+
+
 class LegacyVietnameseAnnotator:
     def __init__(self, companies: Mapping[str, str | Sequence[str]]):
         self.companies = companies
@@ -53,6 +95,21 @@ class LegacyVietnameseAnnotator:
     def annotate(self, question: str) -> QuestionAnnotations:
         intent = parse_intent(question, self.companies)
         operation = classify_operation(question)
+        operation_kind = _OPERATION.get(operation.op, OperationKind.UNSUPPORTED)
+        operation_kind, aggregate_evidence = _aggregate_override(
+            question,
+            entity_count=len(intent.tickers),
+            period_count=len(intent.years),
+            operation=operation_kind,
+        )
+        aggregate_all_entities = (
+            aggregate_evidence == "aggregate_domain:multi_entity_total"
+        )
+        entities = (
+            tuple(sorted(intent.tickers))
+            if aggregate_all_entities
+            else intent.targets
+        )
         dimension, scale, _token = scan_question_unit(question)
         if intent.explicit_scope == "công ty mẹ":
             basis = Basis.SEPARATE
@@ -76,14 +133,14 @@ class LegacyVietnameseAnnotator:
         elif operation.rank_direction == "MIN":
             rank_direction = RankDirection.ASCENDING
         return QuestionAnnotations(
-            entities=intent.targets,
+            entities=entities,
             periods=tuple(str(value) for value in intent.years),
             basis=basis,
             requested_unit=UnitSpec(_DIMENSION[dimension], scale),
-            operation=_OPERATION.get(operation.op, OperationKind.UNSUPPORTED),
-            mode=intent.mode,
+            operation=operation_kind,
+            mode="screen" if aggregate_all_entities else intent.mode,
             rank_direction=rank_direction,
             return_mode=return_mode,
             reverse_difference=operation.reverse_difference,
-            operation_evidence=operation.matched,
+            operation_evidence=aggregate_evidence or operation.matched,
         )

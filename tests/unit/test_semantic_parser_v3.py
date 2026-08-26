@@ -208,6 +208,102 @@ def test_measured_vietnamese_annotator_drives_v3_without_legacy_semantic_ir() ->
     assert result.ast.expression.rank.members == ("BID", "CTG", "VCB")
 
 
+def test_total_over_named_companies_keeps_complete_entity_domain() -> None:
+    companies = {
+        "AAA": "CTCP Nhựa An Phát Xanh",
+        "DCM": "CTCP - Tổng công ty Phân bón Dầu khí Cà Mau",
+        "HPG": "CTCP Tập đoàn Hòa Phát",
+        "MSR": "CTCP Masan High-Tech Materials",
+    }
+    parser = SemanticParser(load_ontology(), LegacyVietnameseAnnotator(companies))
+
+    result = parser.parse(
+        "Tổng lưu chuyển tiền thuần từ hoạt động kinh doanh năm 2015 "
+        "của CTCP Masan High-Tech Materials công ty mẹ, CTCP Tập đoàn Hòa "
+        "Phát công ty mẹ, CTCP Nhựa An Phát Xanh công ty mẹ và CTCP - "
+        "Tổng công ty Phân bón Dầu khí Cà Mau công ty mẹ là bao nhiêu tỷ đồng?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+    assert result.ast.expression.axis == Axis.ENTITY
+    assert result.ast.expression.members == ("AAA", "DCM", "HPG", "MSR")
+
+
+def test_total_over_explicit_period_domain_compiles_period_sum() -> None:
+    parser = SemanticParser(
+        load_ontology(), LegacyVietnameseAnnotator({"NVB": "Ngân hàng TMCP Quốc Dân"})
+    )
+
+    result = parser.parse(
+        "Tổng lưu chuyển tiền thuần từ hoạt động kinh doanh của công ty "
+        "mẹ Ngân hàng TMCP Quốc Dân (NVB) trong các năm 2015, 2016, "
+        "2019, 2024 và 2025 là bao nhiêu nghìn tỷ đồng?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+    assert result.ast.expression.axis == Axis.PERIOD
+    assert result.ast.expression.members == ("2015", "2016", "2019", "2024", "2025")
+
+
+def test_filtered_entity_total_is_not_flattened_to_unconditional_sum() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {
+                "GEX": "CTCP Tập đoàn GELEX",
+                "HBC": "CTCP Tập đoàn Xây dựng Hòa Bình",
+                "PC1": "CTCP Tập đoàn PC1",
+            }
+        ),
+    )
+
+    annotations = parser.annotator.annotate(
+        "Tổng số phải trả sau 12 tháng của công ty có tỷ lệ quyền biểu quyết "
+        "tại các đơn vị liên doanh, liên kết đạt từ 50% trở lên trong số "
+        "GEX, HBC và PC1 năm 2024 là bao nhiêu nghìn tỷ đồng?"
+    )
+
+    assert annotations.operation == OperationKind.LOOKUP
+
+
+def test_bare_hon_may_is_difference_and_fails_closed_with_missing_entity() -> None:
+    parser = SemanticParser(
+        load_ontology(), LegacyVietnameseAnnotator({"MBB": ["MBBank", "MB Bank"]})
+    )
+
+    result = parser.parse(
+        "Cuối năm 2022, số dư dự phòng tài sản có khác của Eximbank hơn "
+        "MBBank mấy triệu đồng?"
+    )
+
+    assert not result.ok
+    assert result.reason == "BINARY_OPERANDS_UNRESOLVED"
+
+
+def test_unresolved_filtered_multi_entity_lookup_fails_before_binding() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {
+                "GEX": "CTCP Tập đoàn GELEX",
+                "HBC": "CTCP Tập đoàn Xây dựng Hòa Bình",
+                "PC1": "CTCP Tập đoàn PC1",
+            }
+        ),
+    )
+
+    result = parser.parse(
+        "Tổng tài sản của công ty có tỷ lệ quyền biểu quyết "
+        "tại các đơn vị liên doanh, liên kết đạt từ 50% trở lên trong số "
+        "GEX, HBC và PC1 năm 2024 là bao nhiêu nghìn tỷ đồng?"
+    )
+
+    assert not result.ok
+    assert result.reason == "LOOKUP_SCOPE_NON_SCALAR"
+
+
 def test_select_at_arg_uses_rank_clause_spans_not_global_mention_order() -> None:
     annotations = _annotations(
         entities=("HHS",),

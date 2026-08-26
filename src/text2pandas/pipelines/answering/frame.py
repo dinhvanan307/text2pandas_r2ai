@@ -97,6 +97,7 @@ _DIFFERENCE_CUE = re.compile(
     r"|thay\s*đ[ổo]i\s*(?:so\s*v[ớo]i|gi[ữu]a)|nhi[ềe]u\s*h[ơo]n|[íi]t\s*h[ơo]n"
     r"|b[ée]\s*h[ơo]n|cao\s*h[ơo]n|th[ấa]p\s*h[ơo]n|bi[ếe]n\s*đ[ộo]ng"
     r"|(?:t[ăa]ng|gi[ảa]m)\s+bao\s+nhi[êe]u"
+    r"|\bh[ơo]n\b[^?]{0,80}\bm[ấa]y\b"
     r"|(?:k[ếe]t\s*qu[ảa]|l[ãa]i)\s+(?:thu[ầa]n|r[òo]ng)\s+(?:t[ừu]\s+)?ho[ạa]t\s*đ[ộo]ng\s+t[àa]i\s*ch[íi]nh)"
 )
 

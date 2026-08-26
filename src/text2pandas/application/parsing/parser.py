@@ -186,6 +186,20 @@ class SemanticParser:
         formula_mentions: tuple[FormulaMention, ...],
     ) -> tuple[Expression, ResultKind] | str:
         operation = annotations.operation
+        axis, members = _operation_axis(annotations)
+        if operation == OperationKind.LOOKUP and (
+            len(annotations.entities) != 1 or len(annotations.periods) != 1
+        ):
+            return "LOOKUP_SCOPE_NON_SCALAR"
+        # Validate the requested scope before ontology promotion policy.  A
+        # derived operation with one missing side is a structural parse error,
+        # irrespective of whether the surviving metric is reviewed.
+        if operation in (OperationKind.SUM, OperationKind.AVERAGE, OperationKind.COUNT):
+            if axis is None or len(members) < 2:
+                return "AGGREGATE_AXIS_UNRESOLVED"
+        if operation in (OperationKind.SUBTRACT, OperationKind.GROWTH):
+            if _binary_scopes(annotations) is None:
+                return "BINARY_OPERANDS_UNRESOLVED"
         if (
             not isinstance(base, FormulaCall)
             and any(mention.metric.review_status != "reviewed" for mention in mentions)
@@ -197,10 +211,8 @@ class SemanticParser:
                 return "UNREVIEWED_RELATIONAL_FORMULA"
             return base, ResultKind.SCALAR
 
-        axis, members = _operation_axis(annotations)
         if operation in (OperationKind.SUM, OperationKind.AVERAGE, OperationKind.COUNT):
-            if axis is None or len(members) < 2:
-                return "AGGREGATE_AXIS_UNRESOLVED"
+            assert axis is not None
             function = {
                 OperationKind.SUM: AggregateFunction.SUM,
                 OperationKind.AVERAGE: AggregateFunction.AVERAGE,
@@ -212,8 +224,7 @@ class SemanticParser:
 
         if operation in (OperationKind.SUBTRACT, OperationKind.GROWTH):
             scoped = _binary_scopes(annotations)
-            if scoped is None:
-                return "BINARY_OPERANDS_UNRESOLVED"
+            assert scoped is not None
             left_scope, right_scope = scoped
             left = _rescope_expression(base, annotations, left_scope[0], left_scope[1])
             right = _rescope_expression(base, annotations, right_scope[0], right_scope[1])
