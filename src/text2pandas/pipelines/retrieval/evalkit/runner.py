@@ -313,7 +313,12 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
             qid=qid, mode=intent.mode, n_candidates=o1.n,
             n_gold=len(gold.tables) if gold.ok else 0,
             gold_in_candidates=gold_in_cand,
-            hits_at=pos_rank, hits_at_pre_rerank=pos_rank,
+            # ``hits_at`` is the post-rerank position. Passing ``pos_rank``
+            # here as well makes a real reranker look harmless: a gold table
+            # pushed out by S3 is still classified SUCCESS and
+            # F4_RERANK_MISS can never fire. Identity S3 masked that wiring
+            # defect because both tuples happen to be equal.
+            hits_at=pos_final, hits_at_pre_rerank=pos_rank,
             top_k=cfg.top_k_rerank,
             no_gold_reason=None if gold.ok else (gold.reason or NoGoldReason.NO_PHRASE_MATCH),
             drop_clauses=tuple(clauses), entity_suspect=ent_suspect,

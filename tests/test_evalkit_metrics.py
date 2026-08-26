@@ -7,6 +7,7 @@ không test được thì không ai kiểm được nó có đo đúng không.
 
 from __future__ import annotations
 
+import ast
 import math
 import sys
 from pathlib import Path
@@ -189,6 +190,23 @@ def test_rerank_miss_tach_khoi_rank_miss():
                  gold_in_candidates=True, hits_at=(30,),
                  hits_at_pre_rerank=(4,), top_k=10)
     assert d.bucket is Bucket.RERANK_MISS
+
+
+def test_runner_phan_biet_vi_tri_truoc_va_sau_rerank():
+    """Regression: runner must not feed S2 positions into both inputs."""
+    runner_path = (Path(__file__).resolve().parents[1] / "src/text2pandas/"
+                   "pipelines/retrieval/evalkit/runner.py")
+    tree = ast.parse(runner_path.read_text(encoding="utf-8"))
+    calls = [node for node in ast.walk(tree)
+             if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Name)
+             and node.func.id == "classify"]
+    assert len(calls) == 1
+    keywords = {kw.arg: kw.value for kw in calls[0].keywords}
+    assert isinstance(keywords["hits_at"], ast.Name)
+    assert keywords["hits_at"].id == "pos_final"
+    assert isinstance(keywords["hits_at_pre_rerank"], ast.Name)
+    assert keywords["hits_at_pre_rerank"].id == "pos_rank"
 
 
 def test_no_gold_reason_duoc_giu():
