@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 from text2pandas.infrastructure.checksums import sha256_file
 
@@ -20,7 +21,9 @@ _RAW_EVIDENCE = re.compile(
 )
 
 
-def resolved_unit_adjudications(records_path: Path, questions_path: Path) -> list[dict]:
+def resolved_unit_adjudications(
+    records_path: Path, questions_path: Path
+) -> list[dict[str, Any]]:
     """Reconstruct the historical final ledger from resolved record provenance.
 
     The resolved record is the surviving source of truth after the old H0 work
@@ -33,7 +36,7 @@ def resolved_unit_adjudications(records_path: Path, questions_path: Path) -> lis
         for record in _read_jsonl(questions_path)
     }
     source_sha = sha256_file(records_path)
-    output: list[dict] = []
+    output: list[dict[str, Any]] = []
     for record in _read_jsonl(records_path):
         provenance = record.get("provenance") or {}
         if provenance.get("unit_adjudication") != "A6_DEFECT_FIXED":
@@ -87,7 +90,9 @@ def resolved_unit_adjudications(records_path: Path, questions_path: Path) -> lis
     return sorted(output, key=lambda item: item["qid"])
 
 
-def write_jsonl(records: list[dict], output_path: Path, *, force: bool = False) -> None:
+def write_jsonl(
+    records: list[dict[str, Any]], output_path: Path, *, force: bool = False
+) -> None:
     if output_path.exists() and not force:
         raise FileExistsError(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -103,7 +108,7 @@ def determinism_report(
     *,
     canonical: Path | None = None,
     input_hashes: dict[str, str] | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Compare two independently built ZIPs and emit a checkable claim."""
 
     first = sha256_file(run_1)
@@ -125,7 +130,7 @@ def determinism_report(
     return report
 
 
-def _read_jsonl(path: Path) -> list[dict]:
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [
         json.loads(line)
         for line in path.read_text(encoding="utf-8").splitlines()

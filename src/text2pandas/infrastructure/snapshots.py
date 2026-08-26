@@ -156,7 +156,8 @@ def _verify_raw(active: ActiveSnapshots, items: list[VerificationItem]) -> None:
     _expect(items, "raw.dataset_id", manifest.get("dataset_id"), active.raw_dataset_id)
     _expect(items, "raw.snapshot_id", manifest.get("snapshot_id"), active.raw_snapshot_id)
 
-    counts = manifest.get("counts") if isinstance(manifest.get("counts"), dict) else {}
+    raw_counts = manifest.get("counts")
+    counts: Mapping[str, Any] = raw_counts if isinstance(raw_counts, dict) else {}
     statements = active.raw_path / "financial_statements"
     questions = active.raw_path / "questions" / "questions.jsonl"
     companies = active.raw_path / "metadata" / "companies.csv"
@@ -190,8 +191,8 @@ def _verify_a6(active: ActiveSnapshots, items: list[VerificationItem]) -> None:
         items.extend(verify_sqlite_contract(connection, A6_RUNTIME_SCHEMA, "a6.runtime"))
         meta = dict(connection.execute("SELECT key, value FROM build_meta"))
         _expect(items, "a6.build_meta.build_id", meta.get("build_id"), active.a6_build_id)
-        expected = _nested(manifest, "dataframes", "table_cards")
-        expected = expected.get("rows") if isinstance(expected, dict) else None
+        dataframes = _nested(manifest, "dataframes", "table_cards")
+        expected = dataframes.get("rows") if isinstance(dataframes, dict) else None
         actual = connection.execute("SELECT COUNT(*) FROM table_cards").fetchone()[0]
         _expect(items, "a6.table_cards", actual, expected)
 

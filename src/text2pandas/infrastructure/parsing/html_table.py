@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from typing import Any
 
 from lxml import html as lxml_html
 
@@ -53,7 +54,7 @@ class TableGrid:
         return [row[idx] if idx < len(row) else "" for row in self.cells]
 
 
-def _cell_text(el) -> str:
+def _cell_text(el: Any) -> str:
     """Văn bản của một ô, đã gộp con, chưa chuẩn hoá ngữ nghĩa."""
     txt = el.text_content()
     txt = _WS.sub(" ", txt.replace("\n", " "))

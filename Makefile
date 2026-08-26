@@ -25,7 +25,7 @@ export TZ             := UTC
 export LC_ALL         := C.UTF-8
 export LANG           := C.UTF-8
 
-.PHONY: help paths-check lint test-offline test-integration semantic-coverage snapshots-verify \
+.PHONY: help paths-check lint typecheck test-offline test-integration semantic-coverage snapshots-verify \
         data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
         dp-rebuild-check dp-package
@@ -40,6 +40,10 @@ paths-check: ## In repository/data/artifact roots và kiểm active snapshot con
 
 lint: ## Static gate cho syntax/import/undefined names
 	@$(PY) -m ruff check --select E9,F63,F7,F82 src tests
+
+typecheck: ## Strict mypy cho production architecture (domain/application/infrastructure/interface)
+	@$(PY) -m mypy src/text2pandas/domain src/text2pandas/application \
+		src/text2pandas/infrastructure src/text2pandas/interface
 
 test-offline: ## Unit/contract/regression không cần materialized artifacts
 	@$(PY) -m pytest -q -m "not integration"
@@ -65,7 +69,7 @@ a6-verify: ## Kiểm active A6 identity và table-card count
 retrieval-verify: ## Kiểm retrieval identity, size và index contract
 	@$(PY) -m text2pandas.interface.cli.main verify retrieval
 
-ci: lint test-offline ## Local equivalent của CI offline gate
+ci: lint typecheck test-offline ## Local equivalent của CI offline gate
 
 ## ── RC-00 ────────────────────────────────────────────────────────────────
 dp-env-check: ## In OS/Python/SQLite/deps/commit/config hash — chạy TRƯỚC mọi thứ

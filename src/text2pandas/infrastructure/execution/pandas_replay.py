@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import pandas as pd  # type: ignore[import-untyped]
+import pandas as pd
 
 from text2pandas.application.binding import BoundExecutionPlan
 from text2pandas.application.execution import PandasProgram

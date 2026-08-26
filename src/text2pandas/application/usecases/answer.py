@@ -17,6 +17,7 @@ import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 from text2pandas.domain.rules.question import QuestionSlots
 from text2pandas.domain.values.vn_number import (
@@ -125,7 +126,7 @@ def _score_row(question_tokens: set[str], label: str) -> float:
     lt = set(tokenize(label))
     if not lt:
         return 0.0
-    return len(question_tokens & lt) / (len(lt) ** 0.5)
+    return cast(float, len(question_tokens & lt) / (len(lt) ** 0.5))
 
 
 def _pick_cell(
@@ -207,9 +208,14 @@ def answer_question(
         if not rows:
             # Không có ô số nào: nộp bảng để giữ điểm truy hồi, không bịa evidence.
             return AnswerResult(
-                slots.qid, 0.0, docs_out or sorted({h.doc_id for h in chosen}),
-                [h.locator for h in chosen], [], "", 0.0,
-                [], "", ["bảng không chứa ô số parse được"],
+                qid=slots.qid,
+                answer=0.0,
+                relevant_docs=docs_out or sorted({h.doc_id for h in chosen}),
+                relevant_tables=[h.locator for h in chosen],
+                evidence=[],
+                pandas_query="",
+                confidence=0.0,
+                notes=["bảng không chứa ô số parse được"],
             )
         # Không khớp được nhãn: lấy ô đầu làm dự phòng. Giá trị gần như chắc
         # chắn sai, nhưng bất biến answer == eval(query) phải được giữ — nó là

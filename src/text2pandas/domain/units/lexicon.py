@@ -42,7 +42,7 @@ _PLAIN_INT = re.compile(r"^-?\d+$")
 _PLAIN_DEC = re.compile(r"^-?\d+[.,]\d+$")
 
 
-def parse_raw_number(s):
+def parse_raw_number(s: object) -> tuple[float | None, str]:
     """Parse a raw cell string into a float. Returns ``(value, status)``.
 
     status in {OK, EMPTY, NOT_A_NUMBER}. Handles VN grouping (1.234.567,89),
@@ -128,7 +128,7 @@ _SHARE_COUNT_SUBJECT = re.compile(
 )
 
 
-def scan_unit(text: str):
+def scan_unit(text: str) -> tuple[str, int | None, str | None]:
     """Return ``(dimension, scale_exponent|None, matched_token|None)``.
 
     ``scale_exponent`` is meaningful for MONEY (power of ten over VND) and
@@ -184,7 +184,7 @@ _ASK_ANCHORS = [
 ]
 
 
-def scan_question_unit(question: str):
+def scan_question_unit(question: str) -> tuple[str, int | None, str | None]:
     """Requested output ``(dimension, scale_exponent, token)`` of a question.
 
     Falls back to a whole-sentence scan restricted to PERCENT only, because a
@@ -231,7 +231,7 @@ def scan_question_unit(question: str):
 
 
 # ------------------------------------------------------------ storage scale
-def storage_ratio(value, value_raw):
+def storage_ratio(value: object, value_raw: object) -> tuple[float | None, str]:
     """``ratio = stored numeric / parsed raw text``. Returns (ratio, status).
 
     status in {OK, RAW_EMPTY, RAW_UNPARSEABLE, VALUE_UNPARSEABLE, ZERO_RAW}.
@@ -242,15 +242,17 @@ def storage_ratio(value, value_raw):
     if st != "OK":
         return None, "RAW_UNPARSEABLE"
     try:
-        v = float(value)
+        v = float(str(value))
     except (TypeError, ValueError):
         return None, "VALUE_UNPARSEABLE"
+    if raw is None:
+        return None, "RAW_UNPARSEABLE"
     if raw == 0:
         return None, "ZERO_RAW"
     return v / raw, "OK"
 
 
-def snap_power_of_ten(ratio, tol_rel: float = 1e-6):
+def snap_power_of_ten(ratio: float | None, tol_rel: float = 1e-6) -> int | None:
     """Snap a positive ratio to ``10**k`` when within relative tolerance."""
     if ratio is None or ratio <= 0:
         return None

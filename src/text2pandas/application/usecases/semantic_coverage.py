@@ -55,7 +55,7 @@ class SemanticCoverageReport:
     records: tuple[CoverageRecord, ...]
     questions_sha256: str
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, object]:
         by_operation = Counter(record.operation for record in self.records)
         by_reason = Counter(record.reason for record in self.records)
         by_status = Counter(record.status for record in self.records)
@@ -73,7 +73,7 @@ class SemanticCoverageReport:
             "by_reason": dict(sorted(by_reason.items())),
         }
 
-    def to_dict(self, *, include_records: bool = True) -> dict:
+    def to_dict(self, *, include_records: bool = True) -> dict[str, object]:
         result = self.summary()
         if include_records:
             result["records"] = [record.to_dict() for record in self.records]
@@ -81,7 +81,7 @@ class SemanticCoverageReport:
 
 
 def analyze_semantic_coverage(
-    questions: Sequence[Mapping],
+    questions: Sequence[Mapping[str, object]],
     aliases: Mapping[str, Sequence[str]],
 ) -> SemanticCoverageReport:
     """Classify every question against the exact canonical runtime routes."""
@@ -89,7 +89,10 @@ def analyze_semantic_coverage(
     normalized: list[tuple[int, str, tuple[str, ...] | None]] = []
     seen: set[int] = set()
     for raw in questions:
-        qid = int(raw.get("id", raw.get("qid")))
+        raw_qid = raw.get("id", raw.get("qid"))
+        if not isinstance(raw_qid, (int, str)) or isinstance(raw_qid, bool):
+            raise ValueError(f"invalid question id: {raw_qid!r}")
+        qid = int(raw_qid)
         question = str(raw["question"])
         if qid in seen:
             raise ValueError(f"duplicate question id: {qid}")
@@ -97,11 +100,14 @@ def analyze_semantic_coverage(
             raise ValueError(f"empty question: {qid}")
         seen.add(qid)
         expected_entities = raw.get("entities")
-        expected = (
-            tuple(str(value) for value in expected_entities)
-            if expected_entities is not None
-            else None
-        )
+        if expected_entities is None:
+            expected = None
+        elif isinstance(expected_entities, Sequence) and not isinstance(
+            expected_entities, (str, bytes)
+        ):
+            expected = tuple(str(value) for value in expected_entities)
+        else:
+            raise ValueError(f"invalid entities for qid {qid}: {expected_entities!r}")
         normalized.append((qid, question, expected))
     normalized.sort(key=lambda item: item[0])
 

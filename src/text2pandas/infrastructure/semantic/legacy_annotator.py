@@ -7,6 +7,8 @@ composition moves to `application.parsing.SemanticParser`.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+
 from text2pandas.application.parsing.contracts import (
     OperationKind,
     QuestionAnnotations,
@@ -45,7 +47,7 @@ _DIMENSION = {
 
 
 class LegacyVietnameseAnnotator:
-    def __init__(self, companies: dict[str, str | list[str]]):
+    def __init__(self, companies: Mapping[str, str | Sequence[str]]):
         self.companies = companies
 
     def annotate(self, question: str) -> QuestionAnnotations:

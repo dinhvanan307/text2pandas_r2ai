@@ -111,11 +111,11 @@ def cmd_parse_check(args: argparse.Namespace) -> int:
     if args.limit:
         q += f" LIMIT {args.limit}"
 
-    st = Counter()
-    conv = Counter()
-    cellstat = Counter()
-    dims = []
-    bad = []
+    st: Counter[str] = Counter()
+    conv: Counter[str] = Counter()
+    cellstat: Counter[str] = Counter()
+    dims: list[tuple[int, int]] = []
+    bad: list[tuple[str, int, str | None]] = []
     for doc_id, line_no, html in conn.execute(q):
         g = parse_table_html(html)
         st["tables"] += 1

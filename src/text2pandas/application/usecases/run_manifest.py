@@ -23,7 +23,7 @@ def pipeline_manifest(
     preflight: VerificationReport,
     source_identity: Mapping[str, object],
     records_path: Path,
-) -> dict:
+) -> dict[str, object]:
     """Describe the immutable inputs, code, parameters, and pipeline output."""
 
     return {
@@ -86,7 +86,7 @@ def submission_manifest(
     published_path: Path | None,
     validation: ValidationReport,
     replay: Mapping[str, int],
-) -> dict:
+) -> dict[str, object]:
     valid = (
         validation.ok
         and replay.get("error", 0) == 0

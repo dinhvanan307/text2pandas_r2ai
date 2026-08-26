@@ -15,8 +15,10 @@ from __future__ import annotations
 import re
 import sqlite3
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from text2pandas.infrastructure.parsing.html_table import parse_table_html
 
@@ -86,7 +88,11 @@ def _unit_exponent(text: str) -> int | None:
     return None
 
 
-def build_index(catalog_db: Path, index_db: Path, progress=None) -> dict[str, float]:
+def build_index(
+    catalog_db: Path,
+    index_db: Path,
+    progress: Callable[[int], None] | None = None,
+) -> dict[str, float]:
     t0 = time.time()
     index_db.unlink(missing_ok=True)
     src = sqlite3.connect(f"file:{catalog_db}?mode=ro", uri=True)
@@ -95,7 +101,7 @@ def build_index(catalog_db: Path, index_db: Path, progress=None) -> dict[str, fl
 
     n = n_fail = 0
     buf_fts: list[tuple[str, str, int]] = []
-    buf_meta: list[tuple] = []
+    buf_meta: list[tuple[Any, ...]] = []
     cur = src.execute("SELECT doc_id_stripped, line_no_1based, raw_html FROM tables")
     for doc_id, line_no, html in cur:
         grid = parse_table_html(html)
@@ -178,7 +184,11 @@ CREATE TABLE IF NOT EXISTS card_meta (
 """
 
 
-def build_card_index(silver_db, index_db, progress=None) -> dict:
+def build_card_index(
+    silver_db: Path,
+    index_db: Path,
+    progress: Callable[[int], None] | None = None,
+) -> dict[str, float]:
     """Dựng FTS5 trên Table Card thay vì văn bản phẳng của bảng.
 
     Index cũ có 44% token là số — chúng không bao giờ khớp câu hỏi nhưng làm
@@ -200,7 +210,8 @@ def build_card_index(silver_db, index_db, progress=None) -> dict:
         " is_data_table, unit_exponent, unit_raw, years, col_labels, context,"
         " n_rows, n_cols FROM table_features"
     )
-    buf_f, buf_m = [], []
+    buf_f: list[tuple[str, str, int]] = []
+    buf_m: list[tuple[Any, ...]] = []
     n = 0
     for (doc_id, line_no, ticker, year, basis, stype, is_data, uexp, uraw,
          years, col_labels, ctx, nr, nc) in rows:
@@ -238,7 +249,13 @@ def build_card_index(silver_db, index_db, progress=None) -> dict:
     return {"cards": n, "seconds": round(_t.time() - t0, 1)}
 
 
-def search_cards(conn, tokens, doc_ids, limit=40, data_only=True):
+def search_cards(
+    conn: sqlite3.Connection,
+    tokens: list[str],
+    doc_ids: list[str],
+    limit: int = 40,
+    data_only: bool = True,
+) -> list[TableHit]:
     """Truy hồi trên chỉ mục Card. `data_only` loại mục lục/nhân sự/danh sách."""
     if not tokens or not doc_ids:
         return []

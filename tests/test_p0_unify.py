@@ -222,15 +222,16 @@ _MODULE_HANH_VI = (
 #                     định — verify_no_behavior_change --tag base ĐỒNG NHẤT.
 #   89cd3974d9ad7579  Folder refactor: chỉ đổi namespace/path module sang
 #                     `text2pandas.pipelines.retrieval`; AST hành vi giữ nguyên.
-#   ddb55d144864c43f  Thêm `Intent.answer_basis` cho answer binding; S1/S2 vẫn
-#                     chỉ đọc `Intent.basis`, nên retrieval output không đổi.
+#   2b156d64d217e73d  Thêm `Intent.answer_basis`, rồi type-only migration của
+#                     `parse_intent.companies` sang Mapping/Sequence; S1/S2 vẫn
+#                     chỉ đọc `Intent.basis`, executable retrieval không đổi.
 _FINGERPRINT = {
     "evalkit-2": "dce65cd2bfaf25e0",
     "evalkit-3": "89cd3974d9ad7579",
     "evalkit-4": "86484532462fa1e2",
     "evalkit-5": "15d2ac63090c4be4",
     "evalkit-6": "6d98371c9d8ccda1",
-    "evalkit-7": "ddb55d144864c43f",
+    "evalkit-7": "2b156d64d217e73d",
 }
 
 _FIELD = {ast.Constant: "value", ast.Name: "id", ast.Attribute: "attr",

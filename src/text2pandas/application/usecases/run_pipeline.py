@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -67,7 +68,7 @@ def run_pipeline(
     limit: int = 0,
     n_tables: int = 20,
     n_docs: int = 5,
-    progress=None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> PipelineReport:
     # CSV được ghi NGAY trong vòng lặp. Giữ `csv_rows` của cả 1.012 câu trong
     # RAM làm tiến trình bị OOM giết im lặng ở khoảng câu 500 trên máy 3 GB —

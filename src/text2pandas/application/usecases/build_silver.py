@@ -13,8 +13,10 @@ from __future__ import annotations
 import re
 import sqlite3
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from text2pandas.domain.rules.row_path import build_row_paths, extract_section
 from text2pandas.domain.rules.table_features import extract_features
@@ -23,7 +25,7 @@ from text2pandas.domain.values.vn_number import (
     SepConvention,
     parse_vn_number,
 )
-from text2pandas.infrastructure.parsing.html_table import parse_table_html
+from text2pandas.infrastructure.parsing.html_table import TableGrid, parse_table_html
 
 __all__ = ["SilverReport", "build_silver", "SILVER_SCHEMA"]
 
@@ -93,7 +95,7 @@ class SilverReport:
     seconds: float
 
 
-def _col_labels(grid, conv: SepConvention) -> list[str]:
+def _col_labels(grid: TableGrid, conv: SepConvention) -> list[str]:
     """Nhãn cột — ghép các dòng tiêu đề ở đầu bảng.
 
     Dòng tiêu đề của BCTC LUÔN chứa chữ số (`31/12/2015VND`, `Quý 4/2023`),
@@ -130,7 +132,10 @@ def _context_before(lines: list[str], line_no_1based: int) -> str:
 
 
 def build_silver(
-    catalog_db: Path, corpus_root: Path, silver_db: Path, progress=None,
+    catalog_db: Path,
+    corpus_root: Path,
+    silver_db: Path,
+    progress: Callable[[int, int, int], None] | None = None,
     offset: int = 0, limit: int = 0,
 ) -> SilverReport:
     # Phân lô theo TÀI LIỆU: tiến trình nền trên máy chạy bị giết sau ~45 giây
@@ -154,8 +159,8 @@ def build_silver(
     by_type: dict[str, int] = {}
     by_unit: dict[str, int] = {}
     n_period = n_maso = 0
-    buf_t: list[tuple] = []
-    buf_c: list[tuple] = []
+    buf_t: list[tuple[Any, ...]] = []
+    buf_c: list[tuple[Any, ...]] = []
 
     for k, (doc_id, rel, ticker, year, basis) in enumerate(docs, 1):
         lines = (corpus_root / rel).read_text(encoding="utf-8").split("\n")

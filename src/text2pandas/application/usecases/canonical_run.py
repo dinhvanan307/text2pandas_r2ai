@@ -13,9 +13,10 @@ import re
 import sqlite3
 import time
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 import pandas as pd
 
@@ -99,6 +100,19 @@ class CanonicalPipelineReport:
     results: list[AnswerResult]
 
 
+class _PipelineAnswer(Protocol):
+    stage_failed: str | None
+    reason: str | None
+    query: str | None
+    answer: float | None
+    evidence: list[dict[str, str]]
+
+    @property
+    def ok(self) -> bool: ...
+
+    def to_dict(self) -> dict[str, object]: ...
+
+
 class QuestionSelector(Selector):
     """Select an A6 fact with hard semantic gates and deterministic scoring."""
 
@@ -124,6 +138,7 @@ class QuestionSelector(Selector):
         ]
         self.question_tokens = set(self.question_sequence)
         self.code_hints = code_hints
+        self.requested_period_role: str | None
         role_text = question.casefold()
         if re.search(
             r"(?:cu[ốo]i\s+(?:n[ăa]m|k[ỳy])|s[ốo]\s+(?:d[ưu]\s+)?cu[ốo]i"
@@ -492,7 +507,7 @@ def run_canonical_pipeline(
     limit: int = 0,
     max_tables: int = 10,
     answer_pool_tables: int = 50,
-    progress=None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> CanonicalPipelineReport:
     """Run retrieval and fail-closed answer generation for a question slice."""
 
@@ -541,7 +556,7 @@ def run_canonical_pipeline(
                 n_retrieved += bool(refs.table_uids)
 
                 reason: str | None = None
-                pipeline_result = None
+                pipeline_result: _PipelineAnswer | None = None
                 frames_by_path: dict[str, pd.DataFrame] = {}
                 if not refs.table_uids:
                     reason = "NO_RETRIEVED_TABLE"

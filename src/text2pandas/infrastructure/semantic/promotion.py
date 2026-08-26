@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 from text2pandas.application.usecases.semantic_v3_readiness import PromotionPolicy
 
@@ -30,4 +30,3 @@ def load_promotion_policy(path: str | Path = _DEFAULT) -> PromotionPolicy:
         maximum_replay_mismatches=int(raw["maximum_replay_mismatches"]),
         maximum_submission_errors=int(raw["maximum_submission_errors"]),
     )
-

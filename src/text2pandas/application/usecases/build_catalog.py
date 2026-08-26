@@ -6,6 +6,7 @@ Chạy: `python -m text2pandas.interface.cli.main catalog`
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,7 +33,7 @@ def build_catalog(
     corpus_root: Path,
     db_path: Path,
     batch_size: int = 100,
-    progress=None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> CatalogReport:
     t0 = time.time()
     store = CatalogStore(db_path)

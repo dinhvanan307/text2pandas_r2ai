@@ -10,6 +10,7 @@ it is implemented together with query decomposition"), trong khi Silver có
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from text2pandas.pipelines.retrieval.normalize import (
@@ -98,7 +99,7 @@ class Intent:
         return len(self.tickers) == 1
 
 
-def parse_intent(query: str, companies: dict[str, str | list[str]],
+def parse_intent(query: str, companies: Mapping[str, str | Sequence[str]],
                  year_range: tuple[int, int] = (2015, 2025)) -> Intent:
     """`companies`: {ticker: tên} hoặc {ticker: [tên, biến thể...]}.
 

@@ -1,0 +1,43 @@
+name: Materialized acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      report_id:
+        description: Immutable acceptance report ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    runs-on: [self-hosted, text2pandas-data]
+    timeout-minutes: 180
+    env:
+      REPORT_DIR: artifacts/reports/${{ inputs.report_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install frozen dependencies
+        run: |
+          python -m pip install --require-hashes -r requirements.lock
+          python -m pip install --no-deps -e .
+      - name: Verify materialized lineage
+        run: make snapshots-verify
+      - name: Run production gates
+        run: |
+          make ci
+          make test-integration
+          make dp-test REPORT_DIR="$REPORT_DIR/full-suite"
+      - name: Upload machine-readable evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.report_id }}
+          path: ${{ env.REPORT_DIR }}
+          if-no-files-found: error
