@@ -5,6 +5,7 @@ import pytest
 
 from text2pandas.pipelines.answering.binding import CandidateCell
 from text2pandas.pipelines.answering.formula_engine import (
+    _rank_metric_candidates,
     answer_formula_question,
     load_registry,
     match_formula,
@@ -69,6 +70,34 @@ def test_registry_only_loads_reviewed_formulas() -> None:
     assert "quick_ratio" in formulas
     assert "roe" not in formulas
     assert set(formulas["quick_ratio"].leaves) <= set(metrics)
+
+
+def test_ambiguous_metric_requires_its_reviewed_financial_context() -> None:
+    _, metrics = load_registry()
+    investment = _cell(
+        "Chứng khoán đầu tư sẵn sàng để bán › Dự phòng chung",
+        -20,
+        0,
+        statement_type="note",
+        section_text="Chứng khoán đầu tư sẵn sàng để bán",
+    )
+    lending = _cell(
+        "Dự phòng rủi ro cho vay khách hàng › Dự phòng chung",
+        -100,
+        1,
+        statement_type="note",
+        section_text="Dự phòng rủi ro cho vay khách hàng",
+    )
+
+    ranked = _rank_metric_candidates(
+        metrics["common_loan_loss_provision"],
+        [investment, lending],
+        entity="HPG",
+        year=2024,
+        basis="consolidated",
+    )
+
+    assert [cell for _, cell in ranked] == [lending]
 
 
 def test_current_ratio_binds_two_distinct_metrics_and_executes() -> None:
@@ -323,6 +352,13 @@ def test_additional_reviewed_relational_formulas(
     expected: float,
 ) -> None:
     cells = [_cell(first_label, 25, 0), _cell(second_label, 100, 1)]
+    if expected_formula == "common_loan_loss_provision_share":
+        cells[0] = _cell(
+            first_label,
+            25,
+            0,
+            section_text="Dự phòng rủi ro cho vay khách hàng",
+        )
 
     result = answer_formula_question(
         question,

@@ -131,6 +131,7 @@ metrics:
 
   - metric_id: common_loan_loss_provision
     aliases: ["du phong chung"]
+    required_context_any: ["du phong rui ro cho vay khach hang"]
     statement_types: [note]
     value_kind: money
     period_semantics: point_in_time

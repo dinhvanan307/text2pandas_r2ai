@@ -33,6 +33,7 @@ class MetricSpec:
     period_semantics: str
     forbidden_aliases: tuple[str, ...]
     forbidden_contains: tuple[str, ...]
+    required_context_any: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +105,9 @@ def load_registry() -> tuple[dict[str, FormulaSpec], dict[str, MetricSpec]]:
             ),
             forbidden_contains=tuple(
                 _normalize(value) for value in raw.get("forbidden_contains", [])
+            ),
+            required_context_any=tuple(
+                _normalize(value) for value in raw.get("required_context_any", [])
             ),
         )
         metrics[spec.metric_id] = spec
@@ -268,6 +272,11 @@ def _rank_metric_candidates(
         ):
             continue
         if cell.unit.dimension != MONEY:
+            continue
+        context = _normalize(f"{cell.row_path} {cell.section_text} {cell.table_context}")
+        if spec.required_context_any and not any(
+            required in context for required in spec.required_context_any
+        ):
             continue
         match = _metric_match(spec, cell.row_path.rsplit("›", 1)[-1])
         if match is None:
