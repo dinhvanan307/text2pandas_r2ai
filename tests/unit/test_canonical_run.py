@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import replace
 
 from text2pandas.application.usecases.canonical_run import (
     QuestionSelector,
@@ -54,6 +55,34 @@ def test_category_axis_outweighs_generic_metric_match() -> None:
     )
 
     assert selected is category
+
+
+def test_selector_prefers_closing_balance_when_question_says_end_of_year() -> None:
+    selector = QuestionSelector(
+        "Số dư tiền gửi cuối năm 2022 là bao nhiêu?",
+        frozenset(),
+    )
+    opening = replace(_cell("Tiền gửi"), period_role="opening")
+    closing = replace(_cell("Tiền gửi"), period_role="closing")
+
+    selected = selector.pick(OperandSlot("value", period="2022"), [opening, closing])
+
+    assert selected is closing
+
+
+def test_selector_does_not_reward_keyword_stuffing_in_ancestors() -> None:
+    selector = QuestionSelector(
+        "Chi phí dịch vụ mua ngoài năm 2023 là bao nhiêu?",
+        frozenset(),
+    )
+    direct = _cell("Chi phí bán hàng › Chi phí dịch vụ mua ngoài")
+    stuffed = _cell(
+        "Chi phí thuế thu nhập › Chi phí sản xuất kinh doanh › Chi phí dịch vụ mua ngoài"
+    )
+
+    selected = selector.pick(OperandSlot("value", period="2022"), [stuffed, direct])
+
+    assert selected is direct
 
 
 def test_selector_abstains_without_phrase_or_metric_evidence() -> None:

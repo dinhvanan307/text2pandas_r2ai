@@ -116,6 +116,19 @@ class QuestionSelector(Selector):
         ]
         self.question_tokens = set(self.question_sequence)
         self.code_hints = code_hints
+        role_text = question.casefold()
+        if re.search(
+            r"(?:cu[ốo]i\s+(?:n[ăa]m|k[ỳy])|s[ốo]\s+(?:d[ưu]\s+)?cu[ốo]i|31\s*/\s*12)",
+            role_text,
+        ):
+            self.requested_period_role = "closing"
+        elif re.search(
+            r"(?:đ[ầa]u\s+n[ăa]m|s[ốo]\s+(?:d[ưu]\s+)?đ[ầa]u|01\s*/\s*01)",
+            role_text,
+        ):
+            self.requested_period_role = "opening"
+        else:
+            self.requested_period_role = None
         category = _CATEGORY.search(question)
         self.category_tokens = (
             set(tokenize(category.group("value"))) - _GENERIC if category else set()
@@ -149,7 +162,11 @@ class QuestionSelector(Selector):
             return None
 
         row_sequence = [token for token in tokenize(cell.row_path) if token not in _GENERIC]
-        leaf_sequence = tokenize(cell.row_path.rsplit("›", 1)[-1])
+        leaf_sequence = [
+            token
+            for token in tokenize(cell.row_path.rsplit("›", 1)[-1])
+            if token not in _GENERIC
+        ]
         if self.aggregate_required and not (
             leaf_sequence[:1] in (["tong"], ["tổng"], ["cong"], ["cộng"])
             or leaf_sequence[:2] in (["toan", "bo"], ["toàn", "bộ"])
@@ -168,6 +185,7 @@ class QuestionSelector(Selector):
         section_overlap = len(self.question_tokens & section_tokens)
         context_overlap = len(self.question_tokens & context_tokens)
         row_run = _longest_common_run(self.question_sequence, row_sequence)
+        leaf_run = _longest_common_run(self.question_sequence, leaf_sequence)
         section_run = _longest_common_run(self.question_sequence, section_sequence)
         context_run = _longest_common_run(self.question_sequence, context_sequence)
         code_hit = bool(cell.metric_code and cell.metric_code in self.code_hints)
@@ -179,15 +197,29 @@ class QuestionSelector(Selector):
         semantic_coverage = len(
             self.question_tokens & (row_tokens | section_tokens | context_tokens)
         ) / math.sqrt(max(1, len(self.question_tokens)))
+        leaf_coverage = len(self.question_tokens & set(leaf_sequence)) / math.sqrt(
+            max(1, len(set(leaf_sequence)))
+        )
+        if self.requested_period_role is None:
+            period_role_score = 0.0
+        elif cell.period_role == self.requested_period_role:
+            period_role_score = 1.0
+        elif self.requested_period_role == "closing" and cell.period_role == "current":
+            period_role_score = 0.5
+        else:
+            period_role_score = 0.0
         return (
             1.0 if code_hit else 0.0,
+            float(leaf_run),
+            leaf_coverage,
+            -float(cell.row_path.count("›")),
             semantic_coverage,
             semantic_score,
             lexical,
+            period_role_score,
             section_overlap / math.sqrt(max(1, len(section_tokens))),
             context_overlap / math.sqrt(max(1, len(context_tokens))),
             1.0 if not cell.is_restated else 0.0,
-            -float(cell.row_path.count("›")),
             -float(cell.table_rank),
             -float(cell.row_index),
         )

@@ -64,6 +64,9 @@ CODE_OF: dict[str, tuple[str, ...]] = {
     "loi nhuan truoc thue": ("50",),
     "loi nhuan sau thue": ("60",),
     "lai co ban tren co phieu": ("70",),
+    "tai san co dinh huu hinh": ("221",),
+    "tai san co dinh vo hinh": ("227",),
+    "tai san co dinh": ("220",),
     "tai san ngan han": ("100",),
     "hang ton kho": ("140",),
     "tai san dai han": ("200",),
@@ -89,8 +92,26 @@ def statement_hint(question: str) -> str | None:
 def metric_codes_hint(question: str) -> frozenset[str]:
     """Mã chỉ tiêu VAS suy được từ câu hỏi. Rỗng = không có tín hiệu."""
     q = _fold(question)
+    matched = [
+        (phrase, match.start(), match.end())
+        for phrase in CODE_OF
+        for match in re.finditer(re.escape(phrase), q)
+    ]
+    # Only keep maximal phrases.  Otherwise "tổng tài sản cố định hữu hình"
+    # also fires the shorter "tổng tài sản" hint (270), which dominates the
+    # binder and selects the balance-sheet total instead of code 221.  The
+    # same rule disambiguates retained earnings (421) from net income (60).
+    maximal = {
+        phrase
+        for phrase, start, end in matched
+        if not any(
+            (other_end - other_start) > (end - start)
+            and start < other_end
+            and other_start < end
+            for _other, other_start, other_end in matched
+        )
+    }
     out: set[str] = set()
-    for phrase, codes in CODE_OF.items():
-        if phrase in q:
-            out.update(codes)
+    for phrase in maximal:
+        out.update(CODE_OF[phrase])
     return frozenset(out)
