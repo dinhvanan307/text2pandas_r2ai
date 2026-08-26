@@ -8,10 +8,10 @@ The project uses a strangler migration. Canonical V2 remains the submission engi
 
 | Runtime | Current state | Latest full-corpus result |
 |---|---|---:|
-| Canonical V2 | Validated submission candidate | 566 answers and 446 fail-closed abstentions |
-| Semantic V3 | Shadow only; promotion blocked | 206 answers and 806 fail-closed abstentions |
+| Canonical V2 | Validated submission candidate | 574 answers and 438 fail-closed abstentions |
+| Semantic V3 | Shadow only; promotion blocked | 207 answers and 805 fail-closed abstentions |
 
-The latest acceptance run validated all 1,012 output records and replayed 566 of 566 emitted Pandas queries. On the independently adjudicated local slice, 14 of 31 answers are correct and executable (45.16% local Answer and Execution Accuracy; 100% replay consistency among emitted answers). Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held gold is unavailable.
+The latest acceptance run validated all 1,012 output records and replayed 574 of 574 emitted Pandas queries. On the independently adjudicated local slice, 14 of 31 answers are correct and executable (45.16% local Answer and Execution Accuracy; 100% replay consistency among emitted answers). Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held gold is unavailable.
 
 Read the [current acceptance report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-27.md) before making a production-readiness claim.
 
@@ -272,7 +272,7 @@ The non-negotiable rules are:
 The project is structurally valid and replayable, but several measured gaps remain:
 
 - official Answer Accuracy and Execution Accuracy are unavailable without organiser gold
-- canonical executable coverage is 55.93%
+- canonical executable coverage is 56.72%
 - multi-entity execution and operand binding cause most V2 abstentions
 - the current V2 reranker is an identity stage without measured uplift
 - Semantic V3 lacks enough adjudicated semantic and evidence gold for promotion

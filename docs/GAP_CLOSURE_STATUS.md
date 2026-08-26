@@ -8,8 +8,8 @@ Updated: 2026-08-27
 
 `make semantic-coverage` chạy deterministic trên 1.012 câu hỏi curated và dùng đúng router/formula registry của canonical runtime. Kết quả hiện tại:
 
-- Static route eligible: **669/1.012 (66,1067%)**.
-- Named semantic gaps: **343/1.012**.
+- Static route eligible: **684/1.012 (67,5889%)**.
+- Named semantic gaps: **328/1.012**.
 - Corpus SHA-256: `59effd1ee7cf7214caee430b05b9305f5a71ed3fd57ba19eb1a6ff2f9c3ffa5d`.
 
 Đây không phải accuracy. Retrieval recall, operand binding và giá trị answer chỉ được kết luận bằng materialized evaluation/replay.
@@ -31,7 +31,7 @@ Updated: 2026-08-27
 | Period COUNT | Typed threshold/negative predicates over explicit years, reviewed metric aliases, sandboxed comparisons and fail-closed existence semantics |
 | Entity adjudication | Không để short nested brand xoá legal name độc lập; nhận `hiệu số` là comparison; 12 false mismatch được phân loại lại theo runtime scope thật |
 | Entity resolver P0-d | Word-boundary aliases, merge explicit ticker + company-name evidence, directional/`chênh lệch với` comparison cues; 6 strict xfails converted to regression passes |
-| Two-entity difference | Typed absolute difference cho đúng 2 entity/1 kỳ/1 metric, distinct evidence, same-metric gate và per-operand unit conversion |
+| Two-entity difference | Typed directional difference cho đúng 2 entity/1 kỳ/1 metric; source mention order, explicit reverse cue, distinct evidence, same-metric gate và per-operand unit conversion |
 | Share scale | `nghìn/triệu/tỷ cổ phiếu` là scaled `SHARES`, không còn bị đọc nhầm thành money |
 | Entity COUNT | Typed sign/threshold (`hơn`, `vượt`) predicate cho explicit entity set, one fact per entity, distinct evidence; `tổng số công ty` cue; compound multi-metric predicates fail-closed |
 | Entity average | Typed mean cho reviewed direct monetary/share metrics, one fact per entity, distinct evidence và per-operand unit conversion; percent/ratio, filtered cohort và unreviewed metric fail-closed |
@@ -41,7 +41,7 @@ Updated: 2026-08-27
 
 | Priority | Gap family | Questions | Fill strategy / exit gate |
 |---|---|---:|---|
-| P1 | Multi/global-entity aggregation/ranking | 243 | Extend the typed entity axis beyond reviewed difference, count, average, and sum routes; bind one fact per entity; prove no entity reuse; add rank emitters and multi-entity gold slices |
+| P1 | Multi/global-entity aggregation/ranking | 248 | Extend the typed entity axis beyond reviewed difference, count, average, and sum routes; bind one fact per entity; prove no entity reuse; add rank emitters and multi-entity gold slices |
 | P1 | Unreviewed relational formulas | 23 | Curate formula and metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
 | P1 | Complex extrema | 42 | Derived ranking: 4; filtered extrema: 6; select-at-arg: 32. Add separate rank metric/result metric and predicate IR |
 | P2 | Operand/period arity unresolved | 8 | SUBTRACT: 7; GROWTH: 1. Remaining cases need explicit two-operand semantics |
@@ -53,8 +53,8 @@ Updated: 2026-08-27
 | Priority | Gap | Evidence | Exit gate |
 |---|---|---|---|
 | P0 | Official Answer Accuracy và Execution Accuracy chưa đo được | Không có organiser-held answer gold. Local adjudicated slice: 14/31 correct + executable, 14/14 replay | Mở rộng independent answer/evidence gold hoặc chạy official scorer; luôn report riêng local/official scope |
-| P0 | Canonical executable coverage mới đạt 55,93% | V2 phát 566/1.012 answers và fail-closed 446 câu | Đóng các semantic gaps P1, bind/execute trên gold và giữ fail-closed cho route chưa đủ evidence |
-| P1 | Semantic V3 chưa đủ điều kiện promotion | V3 shadow phát 206 answers, abstain 806, có 72 value disagreements và 30 V3-only answers | Adjudicate tối thiểu 300 semantic gold và 300 evidence gold; tất cả metric trong promotion policy phải measured và pass |
+| P0 | Canonical executable coverage mới đạt 56,72% | V2 phát 574/1.012 answers và fail-closed 438 câu | Đóng các semantic gaps P1, bind/execute trên gold và giữ fail-closed cho route chưa đủ evidence |
+| P1 | Semantic V3 chưa đủ điều kiện promotion | V3 shadow phát 207 answers, abstain 805, có 73 value disagreements và 30 V3-only answers | Adjudicate tối thiểu 300 semantic gold và 300 evidence gold; tất cả metric trong promotion policy phải measured và pass |
 | P1 | Rerank S3 chỉ là identity/truncation | MRR@10 của S2 và S3 cùng bằng 0,5450; uplift `+0,0000` trên 95 manual-gold cases. S2 full-list MRR 0,5497 chỉ là diagnostic top-50 | Tạo held-out rerank gold, benchmark deterministic/open-weight candidates và chỉ promote khi uplift có ý nghĩa thống kê |
 | P1 | Retrieval gold chưa đủ đại diện | 95/1.012 câu có trusted table gold; 917 câu `NOT_MEASURED` | Mở rộng stratified evidence gold cho screen, multi-entity, bank, derived-metric và hard-negative slices |
 | CLOSED | Production strict typing | `make typecheck`: zero errors trên 78 source files thuộc `domain/application/infrastructure/interface` | Gate nằm trong `make ci`; legacy pipeline debt không được đưa ngược vào production boundary |
