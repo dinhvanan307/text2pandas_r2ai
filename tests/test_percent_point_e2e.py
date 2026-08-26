@@ -78,9 +78,11 @@ def test_requested_unit_distinguishes_points_from_percent(q, expected):
     # a bare ratio metric is a LOOKUP of a reported figure, not a division
     ("Tỷ lệ nợ xấu năm 2023 là bao nhiêu %?", LOOKUP),
     ("Hệ số thanh toán nhanh năm 2023 là bao nhiêu lần?", LOOKUP),
-    # genuine relational constructions still route to DIVIDE
-    ("Tỷ lệ nợ xấu trên tổng dư nợ năm 2023 là bao nhiêu %?", DIVIDE),
-    ("Lợi nhuận trên mỗi cổ phiếu năm 2023 là bao nhiêu đồng?", DIVIDE),
+        # genuine relational constructions still route to DIVIDE
+        ("Tỷ lệ nợ xấu trên tổng dư nợ năm 2023 là bao nhiêu %?", DIVIDE),
+        # reported per-share metrics are direct statement lookups; only an
+        # explicit numerator/denominator request should synthesize a division
+        ("Lợi nhuận trên mỗi cổ phiếu năm 2023 là bao nhiêu đồng?", LOOKUP),
     ("Doanh thu 2023 gấp bao nhiêu lần 2022?", DIVIDE),
     # growth still wins over difference
     ("Tăng trưởng doanh thu 2023 so với 2022 là bao nhiêu %?", GROWTH),
