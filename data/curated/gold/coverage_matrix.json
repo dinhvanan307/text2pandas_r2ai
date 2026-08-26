@@ -1,0 +1,278 @@
+{
+  "categories": {
+    "arg_extreme_period": {
+      "n_available_in_corpus": 53,
+      "required": 2,
+      "selected": [
+        501,
+        538
+      ]
+    },
+    "avg": {
+      "n_available_in_corpus": 119,
+      "required": 3,
+      "selected": [
+        367,
+        374,
+        385
+      ]
+    },
+    "basis_distinction": {
+      "n_available_in_corpus": 377,
+      "required": 2,
+      "selected": [
+        1,
+        2
+      ]
+    },
+    "count": {
+      "n_available_in_corpus": 14,
+      "required": 2,
+      "selected": [
+        366,
+        380
+      ]
+    },
+    "divide_ratio": {
+      "n_available_in_corpus": 102,
+      "required": 4,
+      "selected": [
+        382,
+        224,
+        296,
+        333
+      ]
+    },
+    "extreme_value": {
+      "n_available_in_corpus": 165,
+      "required": 3,
+      "selected": [
+        364,
+        380,
+        393
+      ]
+    },
+    "growth": {
+      "n_available_in_corpus": 49,
+      "required": 3,
+      "selected": [
+        385,
+        393,
+        364
+      ]
+    },
+    "multi_entity": {
+      "n_available_in_corpus": 200,
+      "required": 2,
+      "selected": [
+        364,
+        366
+      ]
+    },
+    "nested_operation": {
+      "n_available_in_corpus": 60,
+      "required": 2,
+      "selected": [
+        364,
+        393
+      ]
+    },
+    "period_year_result": {
+      "n_available_in_corpus": 53,
+      "required": 2,
+      "selected": [
+        501,
+        538
+      ]
+    },
+    "single_lookup": {
+      "n_available_in_corpus": 390,
+      "required": 4,
+      "selected": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "subtract_pct_point": {
+      "n_available_in_corpus": 23,
+      "required": 4,
+      "selected": [
+        367,
+        374,
+        393,
+        418
+      ]
+    },
+    "sum": {
+      "n_available_in_corpus": 17,
+      "required": 3,
+      "selected": [
+        36,
+        92,
+        114
+      ]
+    },
+    "two_period": {
+      "n_available_in_corpus": 110,
+      "required": 4,
+      "selected": [
+        367,
+        374,
+        382,
+        385
+      ]
+    }
+  },
+  "excluded_signals": [
+    "parent answer",
+    "parent pandas_query",
+    "pipeline prediction",
+    "heuristic subtype audit"
+  ],
+  "n_selected": 40,
+  "qid_to_categories": {
+    "1": [
+      "single_lookup",
+      "basis_distinction"
+    ],
+    "114": [
+      "sum"
+    ],
+    "2": [
+      "single_lookup",
+      "basis_distinction"
+    ],
+    "224": [
+      "divide_ratio"
+    ],
+    "296": [
+      "divide_ratio"
+    ],
+    "3": [
+      "single_lookup"
+    ],
+    "333": [
+      "divide_ratio"
+    ],
+    "36": [
+      "sum"
+    ],
+    "364": [
+      "growth",
+      "extreme_value",
+      "multi_entity",
+      "nested_operation"
+    ],
+    "366": [
+      "count",
+      "multi_entity"
+    ],
+    "367": [
+      "two_period",
+      "subtract_pct_point",
+      "avg"
+    ],
+    "374": [
+      "two_period",
+      "subtract_pct_point",
+      "avg"
+    ],
+    "377": [
+      "topup_high_semantic_load"
+    ],
+    "378": [
+      "topup_high_semantic_load"
+    ],
+    "380": [
+      "count",
+      "extreme_value"
+    ],
+    "382": [
+      "two_period",
+      "divide_ratio"
+    ],
+    "385": [
+      "two_period",
+      "growth",
+      "avg"
+    ],
+    "393": [
+      "subtract_pct_point",
+      "growth",
+      "extreme_value",
+      "nested_operation"
+    ],
+    "4": [
+      "single_lookup"
+    ],
+    "400": [
+      "topup_high_semantic_load"
+    ],
+    "410": [
+      "topup_high_semantic_load"
+    ],
+    "418": [
+      "subtract_pct_point"
+    ],
+    "422": [
+      "topup_high_semantic_load"
+    ],
+    "426": [
+      "topup_high_semantic_load"
+    ],
+    "441": [
+      "topup_high_semantic_load"
+    ],
+    "442": [
+      "topup_high_semantic_load"
+    ],
+    "443": [
+      "topup_high_semantic_load"
+    ],
+    "447": [
+      "topup_high_semantic_load"
+    ],
+    "449": [
+      "topup_high_semantic_load"
+    ],
+    "450": [
+      "topup_high_semantic_load"
+    ],
+    "451": [
+      "topup_high_semantic_load"
+    ],
+    "475": [
+      "topup_high_semantic_load"
+    ],
+    "479": [
+      "topup_high_semantic_load"
+    ],
+    "501": [
+      "arg_extreme_period",
+      "period_year_result"
+    ],
+    "538": [
+      "arg_extreme_period",
+      "period_year_result"
+    ],
+    "543": [
+      "topup_high_semantic_load"
+    ],
+    "556": [
+      "topup_high_semantic_load"
+    ],
+    "558": [
+      "topup_high_semantic_load"
+    ],
+    "570": [
+      "topup_high_semantic_load"
+    ],
+    "92": [
+      "sum"
+    ]
+  },
+  "selection_rule": "lowest QID matching each category predicate, reusing already chosen QIDs first so categories overlap; deterministic",
+  "target": 40
+}

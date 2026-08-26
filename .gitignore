@@ -37,6 +37,7 @@ env/
 !/data/**/*.sha256
 # Small reviewed evaluation fixtures are source-like curated data.
 !/data/curated/evaluation/**
+!/data/curated/gold/**
 
 # Generated artifacts. Large payloads are reproducible from source + manifests.
 /artifacts/**

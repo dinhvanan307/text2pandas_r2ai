@@ -7,8 +7,8 @@ Updated: 2026-08-26
 `make semantic-coverage` chạy deterministic trên 1.012 câu hỏi curated và dùng
 đúng router/formula registry của canonical runtime. Kết quả hiện tại:
 
-- Static route eligible: **657/1.012 (64,9209%)**.
-- Named semantic gaps: **355/1.012**.
+- Static route eligible: **659/1.012 (65,1186%)**.
+- Named semantic gaps: **353/1.012**.
 - Corpus SHA-256: `59effd1ee7cf7214caee430b05b9305f5a71ed3fd57ba19eb1a6ff2f9c3ffa5d`.
 
 Đây không phải accuracy. Retrieval recall, operand binding và giá trị answer chỉ

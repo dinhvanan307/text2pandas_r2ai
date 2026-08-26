@@ -41,7 +41,17 @@ _DERIVED_RANKING = re.compile(
 )
 _SELECT_AT_ARG = re.compile(
     r"((?:t[ạa]i|v[àa]o|[ởo])\s+n[ăa]m\b|n[ăa]m\s+m[àa]\b"
-    r"|n[ăa]m\s+c[óo]\s+[^?]{0,160}(?:cao|th[ấa]p|l[ớo]n|nh[ỏo])\s*nh[ấa]t)"
+    r"|n[ăa]m\s+c[óo]\s+[^?]{0,160}(?:cao|th[ấa]p|l[ớo]n|nh[ỏo])\s*nh[ấa]t"
+    r"|(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)\s+(?:đ[ạa]t|c[óo])\s+"
+    r"[^?]{0,180}(?:cao|th[ấa]p|l[ớo]n|nh[ỏo])\s*nh[ấa]t\s+"
+    r"[^?]{0,120}(?:c[óo]|b[ằa]ng|l[àa]|chi[ếe]m|g[ấa]p)"
+    r"|c[ủu]a\s+(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)\s+c[óo]\s+"
+    r"[^?]{0,180}(?:cao|th[ấa]p|l[ớo]n|nh[ỏo])\s*nh[ấa]t)"
+)
+_COMPARATIVE_SELECT_AT_ARG = re.compile(
+    r"c[ủu]a\s+doanh\s*nghi[ệe]p\s+c[óo]\s+[^?]{0,180}"
+    r"(?:l[ớo]n|cao|th[ấa]p|nh[ỏo])\s+h[ơo]n[^?]{0,100}"
+    r"trong\s+(?:hai|2)\s+doanh\s*nghi[ệe]p"
 )
 _FILTERED_EXTREMUM = re.compile(
     r"((?:x[ée]t|trong|[ởo])\s+(?:nh[ữu]ng|c[áa]c)\s+n[ăa]m\s+c[óo]\b"
@@ -96,27 +106,30 @@ _OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     # outer operation is SELECT_AT_ARG were captured by GROWTH because GROWTH
     # was tested first -- the same inner-cue-steals-outer-operation error as
     # the "tỷ lệ" -> DIVIDE bug.
-    (EXTREMUM, re.compile(
-        r"(cao\s*nh[ấa]t|th[ấa]p\s*nh[ấa]t|l[ớo]n\s*nh[ấa]t|nh[ỏo]\s*nh[ấa]t"
-        r"|đ[ứu]ng\s*đ[ầa]u|x[ếe]p\s*h[ạa]ng)")),
     # COUNT: "có bao nhiêu công ty/doanh nghiệp" asks for a cardinality, not a
-    # money amount. Must precede the generic cues.
+    # money amount. It is the root operation even when a nested filter says
+    # "top-5 ... lớn nhất", so it must precede EXTREMUM.
     (COUNT_OP, re.compile(
         r"(c[óo]\s*bao\s*nhi[êe]u\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p|m[ãa]|đơn\s*v[ịi])"
         r"|s[ốo]\s*l[ưu][ợo]ng\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)"
         r"|t[ổo]ng\s*s[ốo]\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p|đ[ơo]n\s*v[ịi])"
         r"|bao\s*nhi[êe]u\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)\s*(?:c[óo]|đ[ạa]t|th[ỏo]a)"
         r"|(?:c[óo]\s*)?bao\s*nhi[êe]u\s*n[ăa]m\b|s[ốo]\s*n[ăa]m\b)")),
+    (EXTREMUM, re.compile(
+        r"(cao\s*nh[ấa]t|th[ấa]p\s*nh[ấa]t|l[ớo]n\s*nh[ấa]t|nh[ỏo]\s*nh[ấa]t"
+        r"|đ[ứu]ng\s*đ[ầa]u|x[ếe]p\s*h[ạa]ng)")),
+    # In "tốc độ tăng trưởng ... bình quân", growth is the quantity being
+    # averaged. AVG is the root operation and must own the route.
+    (AVG, re.compile(r"(trung\s*b[ìi]nh|b[ìi]nh\s*qu[âa]n)")),
     (GROWTH, re.compile(
         r"(t[ăa]ng\s*tr[ưu][ởo]ng|t[ốo]c\s*đ[ộo]\s*t[ăa]ng"
         r"|t[ăa]ng\s*(?:hay|hoặc)?\s*gi[ảa]m\s*bao\s*nhi[êe]u\s*(?:%|phần\s*trăm)"
         r"|thay\s*đ[ổo]i\s*(?:bao\s*nhi[êe]u\s*)?(?:%|phần\s*trăm))")),
-    (AVG, re.compile(r"(trung\s*b[ìi]nh|b[ìi]nh\s*qu[âa]n)")),
     (SUBTRACT, _DIFFERENCE_CUE),
     (DIVIDE, re.compile(
         r"(chi[ếe]m\s*bao\s*nhi[êe]u|g[ấa]p\s*(?:bao\s*nhi[êe]u\s*)?l[ầa]n"
         r"|so\s*v[ớo]i\s*.{0,30}\s*g[ấa]p"
-        r"|tr[êe]n\s+(?!(?:b[áa]o\s*c[áa]o|bctc|m[ứu]c|ng[ưu][ỡo]ng|th[ịi]\s*tr[ưu][ờo]ng|c[ơo]\s*s[ởo])\b)(?![\d,.])[a-zà-ỹ]"
+        r"|tr[êe]n\s+(?!(?:b[áa]o\s*c[áa]o|bctc|m[ứu]c|ng[ưu][ỡo]ng|th[ịi]\s*tr[ưu][ờo]ng|c[ơo]\s*s[ởo]|m[ỗo]i\s+c[ổo]\s*phi[ếe]u|v[ốo]n\s+th[ựu]c\s+g[óo]p)\b)(?![\d,.])[a-zà-ỹ]"
         r"|t[ỷy]\s*tr[ọo]ng\s+[^?]{0,100}\s+trong\s+t[ổo]ng"
         r"|/\s*m[ỗo]i)")),
     # "Tổng cộng tài sản" is the NAME of a reported total line, not an
@@ -192,7 +205,7 @@ class QuestionSemanticFrame:
 _TICKER = re.compile(r"\b([A-Z]{3,4})\b")
 
 
-_TICKER_STOP = {"TMCP", "CTCP", "VND", "USD", "TNHH", "NHNN", "BCTC", "ROE",
+_TICKER_STOP = {"TMCP", "CTCP", "VND", "USD", "TNHH", "MTV", "NHNN", "BCTC", "ROE",
                 "ROA", "EPS", "CFO", "LNST", "TSC", "XDCB", "GTCG", "DN"}
 
 
@@ -279,6 +292,32 @@ def classify_operation(question: str) -> OperationHint:
     than mis-routing them to LOOKUP, so coverage reports stay honest.
     """
     t = _norm(question)
+    # When a question first identifies max/min entities and then asks for the
+    # difference between their output metrics, SUBTRACT is the root. Position
+    # is the disambiguator: "difference ... highest" ranks a difference,
+    # while "highest ... difference how much" subtracts selected values.
+    difference = re.search(r"(?:ch[êe]nh\s*l[ệe]ch|hi[ệe]u\s*s[ốo])\s+bao\s+nhi[êe]u", t)
+    extreme = re.search(
+        r"(cao\s*nh[ấa]t|th[ấa]p\s*nh[ấa]t|l[ớo]n\s*nh[ấa]t|nh[ỏo]\s*nh[ấa]t)",
+        t,
+    )
+    if difference and extreme and difference.start() > extreme.start():
+        return OperationHint(
+            SUBTRACT,
+            reason="root_cue:SUBTRACT_AFTER_EXTREMUM",
+            matched=difference.group(0),
+        )
+    comparative = _COMPARATIVE_SELECT_AT_ARG.search(t)
+    if comparative:
+        direction = RANK_MIN if re.search(r"(?:th[ấa]p|nh[ỏo])\s+h[ơo]n", comparative.group(0)) else RANK_MAX
+        return OperationHint(
+            EXTREMUM,
+            reason="root_cue:COMPARATIVE_SELECT_AT_ARG",
+            matched=comparative.group(0),
+            rank_direction=direction,
+            return_mode=RETURN_SELECT_AT_ARG,
+            requires_derived_metric=bool(_DERIVED_RANKING.search(t)),
+        )
     for op, pat in _OP_PATTERNS:
         m = pat.search(t)
         if m:

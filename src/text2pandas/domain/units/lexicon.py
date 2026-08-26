@@ -199,6 +199,12 @@ def scan_question_unit(question: str):
         if not m:
             continue
         tail = m.group("tail")
+        # "bao nhiêu doanh nghiệp ... mã cổ phiếu ..." asks for a COUNT.
+        # Share words belong to a nested subject and must not steal the output
+        # unit merely because they occur later in the bounded tail.
+        count = _QUESTION_COUNT.match(tail.lstrip())
+        if count:
+            return COUNT, None, count.group(0)
         scaled_share = next(
             ((exp, match.group(0)) for share_pattern, exp in _QUESTION_SHARE_SCALE
              if (match := share_pattern.search(tail))),
@@ -212,9 +218,6 @@ def scan_question_unit(question: str):
         share = _QUESTION_SHARES.search(m.group("tail"))
         if share:
             return SHARES, 0, share.group(0)
-        count = _QUESTION_COUNT.search(m.group("tail"))
-        if count:
-            return COUNT, None, count.group(0)
     share_subject = _SHARE_COUNT_SUBJECT.search(t)
     if share_subject:
         return SHARES, 0, share_subject.group(0)

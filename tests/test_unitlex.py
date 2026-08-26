@@ -129,6 +129,7 @@ def test_scan_question_unit(q, dim, exp):
     ("Số lượng cổ phiếu đang lưu hành cuối năm là bao nhiêu?", SHARES, 0),
     ("Tổng số lượng cổ phần là bao nhiêu cổ phần?", SHARES, 0),
     ("Có bao nhiêu năm ghi nhận lợi nhuận dương?", COUNT, None),
+    ("Có bao nhiêu doanh nghiệp trong nhóm mã cổ phiếu có CFO dương?", COUNT, None),
 ])
 def test_scan_question_unit_corpus_phrasings(q, dim, exp):
     d, e, _ = scan_question_unit(q)

@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from text2pandas.pipelines.answering.frame import (  # noqa: E402
+    RETURN_FILTERED_VALUE, RETURN_PERIOD, RETURN_SELECT_AT_ARG,
     classify_operation, extract_basis, extract_entities, extract_entity,
     extract_periods, resolve_basis)
 from text2pandas.domain.units.lexicon import scan_question_unit  # noqa: E402
@@ -44,6 +45,17 @@ UNIT_TO_RESULT_KIND = {
 }
 
 
+def strict_operation_family(hint):
+    """Translate the typed EXTREMUM hint without collapsing its return mode."""
+    if hint.op != "EXTREMUM":
+        return hint.op
+    if hint.return_mode == RETURN_PERIOD:
+        return "ARG_EXTREME_PERIOD"
+    if hint.return_mode in (RETURN_SELECT_AT_ARG, RETURN_FILTERED_VALUE):
+        return "SELECT_AT_ARG"
+    return "EXTREME_VALUE"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gold", required=True)
@@ -66,14 +78,14 @@ def main() -> int:
         rec = {"qid": qid}
 
         # ---- operation family (parser EXTREMUM covers 3 gold ops) -----------
-        p_op = classify_operation(q).op
+        operation = classify_operation(q)
+        p_op = operation.op
         g_op = g.get("operation_family")
         if "operation_family" in usable:
             ok = g_op in PARSER_TO_GOLD_OP.get(p_op, set())
             stats["operation_family"]["scored"] += 1
             stats["operation_family"]["correct"] += ok
-            # strict variant: EXTREMUM is not a specific enough answer
-            strict = (p_op == g_op)
+            strict = strict_operation_family(operation) == g_op
             stats["operation_family_strict"]["scored"] += 1
             stats["operation_family_strict"]["correct"] += strict
             rec.update(parser_operation=p_op, gold_operation=g_op,
@@ -95,6 +107,8 @@ def main() -> int:
         # ---- requested unit --------------------------------------------------
         if "requested_unit" in usable:
             dim, exp, _ = scan_question_unit(q)
+            if operation.return_mode == RETURN_PERIOD:
+                dim, exp = "PERIOD_YEAR", None
             gu = g.get("requested_unit") or {}
             ok = (dim == gu.get("dimension")) and (exp == gu.get("scale_exponent"))
             ok_dim = dim == gu.get("dimension")
@@ -107,7 +121,11 @@ def main() -> int:
         # ---- result kind (derived from unit -- parser has no ResultKind) -----
         if "result_kind" in usable:
             dim, _, _ = scan_question_unit(q)
-            p_kind = UNIT_TO_RESULT_KIND.get(dim)
+            p_kind = (
+                "PERIOD_YEAR"
+                if operation.return_mode == RETURN_PERIOD
+                else UNIT_TO_RESULT_KIND.get(dim)
+            )
             ok = p_kind == g.get("result_kind")
             stats["result_kind"]["scored"] += 1; stats["result_kind"]["correct"] += ok
             rec.update(parser_result_kind=p_kind, gold_result_kind=g.get("result_kind"),
@@ -115,7 +133,9 @@ def main() -> int:
 
         # ---- periods ---------------------------------------------------------
         if "periods" in usable:
-            p_years = set(extract_periods(q))
+            # Gold's period field is year-granular. A parser returning the more
+            # precise ``2016-12-31`` must not be marked wrong against ``2016``.
+            p_years = {period[:4] for period in extract_periods(q)}
             g_years = {p.get("year") for p in g.get("requested_periods") or []}
             ok = p_years == g_years
             stats["periods_exact"]["scored"] += 1; stats["periods_exact"]["correct"] += ok

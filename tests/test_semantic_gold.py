@@ -147,6 +147,7 @@ def test_entity_stopwords_are_not_tickers():
     ("Có bao nhiêu công ty đạt lợi nhuận dương năm 2024?", "COUNT"),
     ("Số lượng doanh nghiệp có ROE trên 15% là bao nhiêu?", "COUNT"),
     ("Có bao nhiêu năm ghi nhận lợi nhuận dương?", "COUNT"),
+    ("Trong 5 doanh nghiệp có doanh thu lớn nhất, có bao nhiêu doanh nghiệp có CFO dương?", "COUNT"),
     # "Tổng cộng X" is the NAME of a reported line, not an instruction to add
     ("Tổng cộng tài sản cuối năm 2025 là bao nhiêu?", "LOOKUP"),
     ("Giá trị lợi thế thương mại (tổng cộng) là bao nhiêu?", "LOOKUP"),
@@ -163,6 +164,8 @@ def test_entity_stopwords_are_not_tickers():
     ("Chênh lệch tỷ lệ nợ xấu 2023 so với 2022 là bao nhiêu điểm phần trăm?", "SUBTRACT"),
     ("Tỷ lệ nợ xấu trên tổng dư nợ năm 2023 là bao nhiêu %?", "DIVIDE"),
     ("Tăng trưởng doanh thu 2023 so với 2022 là bao nhiêu %?", "GROWTH"),
+    ("Tốc độ tăng trưởng doanh thu bình quân của nhóm là bao nhiêu phần trăm?", "AVG"),
+    ("ROA của doanh nghiệp cao nhất chênh lệch bao nhiêu điểm phần trăm so với doanh nghiệp thấp nhất?", "SUBTRACT"),
 ])
 def test_operation_precedence_after_gold_fixes(q, expected):
     """Gold-measured: operation family (lenient) 0.450 -> 0.825."""

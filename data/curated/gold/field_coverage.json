@@ -1,0 +1,92 @@
+{
+  "case_level_agreement_rate": 0.15,
+  "case_level_full_agreement": 6,
+  "field_agreement": {
+    "basis": {
+      "agree": 40,
+      "disagree": 0,
+      "n": 40,
+      "rate": 1.0
+    },
+    "basis_explicit": {
+      "agree": 40,
+      "disagree": 0,
+      "n": 40,
+      "rate": 1.0
+    },
+    "entity_tickers": {
+      "agree": 40,
+      "disagree": 0,
+      "n": 40,
+      "rate": 1.0
+    },
+    "metric_set": {
+      "agree": 7,
+      "disagree": 33,
+      "n": 40,
+      "rate": 0.175
+    },
+    "operand_role_metrics": {
+      "agree": 6,
+      "disagree": 34,
+      "n": 40,
+      "rate": 0.15
+    },
+    "operand_roles": {
+      "agree": 10,
+      "disagree": 30,
+      "n": 40,
+      "rate": 0.25
+    },
+    "operation_family": {
+      "agree": 40,
+      "disagree": 0,
+      "n": 40,
+      "rate": 1.0
+    },
+    "periods": {
+      "agree": 29,
+      "disagree": 11,
+      "n": 40,
+      "rate": 0.725
+    },
+    "rank_direction": {
+      "agree": 39,
+      "disagree": 1,
+      "n": 40,
+      "rate": 0.975
+    },
+    "requested_unit": {
+      "agree": 40,
+      "disagree": 0,
+      "n": 40,
+      "rate": 1.0
+    },
+    "result_kind": {
+      "agree": 40,
+      "disagree": 0,
+      "n": 40,
+      "rate": 1.0
+    },
+    "return_result_kind": {
+      "agree": 40,
+      "disagree": 0,
+      "n": 40,
+      "rate": 1.0
+    }
+  },
+  "method": "two_independent_model_passes_disjoint_context",
+  "method_caveat": "NOT a human blinded recheck. Two runs of one model share a prior; agreement bounds reliability from above and is not evidence of correctness.",
+  "n_cases": 40,
+  "n_disagreements": 109,
+  "provenance_status": {
+    "LOCATED": 3,
+    "NOT_ATTEMPTED": 30,
+    "NOT_LOCATED": 7
+  },
+  "status_distribution": {
+    "AMBIGUOUS": 4,
+    "RESOLVED": 6,
+    "UNRESOLVED": 30
+  }
+}

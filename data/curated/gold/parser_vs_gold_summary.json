@@ -1,0 +1,77 @@
+{
+  "disclaimer": "SEMANTIC PARSE ACCURACY ONLY. Not answer accuracy, not candidate/binding accuracy. Fields the two annotation passes disagreed on are SKIPPED, not scored.",
+  "metrics": {
+    "basis": {
+      "accuracy": 1.0,
+      "correct": 40,
+      "scored": 40,
+      "skipped_no_agreed_gold": 0
+    },
+    "basis_explicit": {
+      "accuracy": 1.0,
+      "correct": 40,
+      "scored": 40,
+      "skipped_no_agreed_gold": 0
+    },
+    "entity_first_in_gold": {
+      "accuracy": 0.975,
+      "correct": 39,
+      "scored": 40,
+      "skipped_no_agreed_gold": 0
+    },
+    "entity_set_exact": {
+      "accuracy": 0.975,
+      "correct": 39,
+      "scored": 40,
+      "skipped_no_agreed_gold": 0
+    },
+    "operation_family": {
+      "accuracy": 1.0,
+      "correct": 40,
+      "scored": 40,
+      "skipped_no_agreed_gold": 0
+    },
+    "operation_family_strict": {
+      "accuracy": 1.0,
+      "correct": 40,
+      "scored": 40,
+      "skipped_no_agreed_gold": 0
+    },
+    "periods_exact": {
+      "accuracy": 1.0,
+      "correct": 29,
+      "scored": 29,
+      "skipped_no_agreed_gold": 0
+    },
+    "periods_exact_with_range_expansion": {
+      "accuracy": 1.0,
+      "correct": 29,
+      "scored": 29,
+      "skipped_no_agreed_gold": 0
+    },
+    "result_kind": {
+      "accuracy": 1.0,
+      "correct": 40,
+      "scored": 40,
+      "skipped_no_agreed_gold": 0
+    },
+    "unit_dimension": {
+      "accuracy": 1.0,
+      "correct": 40,
+      "scored": 40,
+      "skipped_no_agreed_gold": 0
+    },
+    "unit_full": {
+      "accuracy": 1.0,
+      "correct": 40,
+      "scored": 40,
+      "skipped_no_agreed_gold": 0
+    }
+  },
+  "n_gold_cases": 40,
+  "not_measurable": {
+    "metric_exact_match": "gold agreement 0.175 -- no controlled vocabulary",
+    "operand_role_exact_match": "gold agreement 0.250 -- schema underspecified",
+    "operand_role_metric_match": "gold agreement 0.150"
+  }
+}
