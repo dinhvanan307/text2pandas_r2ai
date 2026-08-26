@@ -70,6 +70,19 @@ def test_selector_prefers_closing_balance_when_question_says_end_of_year() -> No
     assert selected is closing
 
 
+def test_selector_treats_written_31_december_as_closing_cue() -> None:
+    selector = QuestionSelector(
+        "Giá trị đến ngày 31 tháng 12 năm 2024 là bao nhiêu?",
+        frozenset({"metric"}),
+    )
+    prior = replace(_cell("Metric"), metric_code="metric", period_role="prior")
+    current = replace(_cell("Metric"), metric_code="metric", period_role="current")
+
+    selected = selector.pick(OperandSlot("value", period="2022"), [prior, current])
+
+    assert selected is current
+
+
 def test_selector_does_not_reward_keyword_stuffing_in_ancestors() -> None:
     selector = QuestionSelector(
         "Chi phí dịch vụ mua ngoài năm 2023 là bao nhiêu?",
@@ -91,7 +104,7 @@ def test_selector_abstains_without_phrase_or_metric_evidence() -> None:
     assert selector.pick(OperandSlot("value", period="2020"), [unrelated]) is None
 
 
-def test_aggregate_question_never_binds_a_child_row() -> None:
+def test_aggregate_question_prefers_aggregate_over_child_row() -> None:
     selector = QuestionSelector("Tổng phải thu ngắn hạn khác của ACB năm 2022", frozenset())
     child = _cell("Phải thu ngắn hạn khác › Bên thứ ba")
     total = _cell("Phải thu ngắn hạn khác › Tổng cộng")
@@ -99,6 +112,34 @@ def test_aggregate_question_never_binds_a_child_row() -> None:
     selected = selector.pick(OperandSlot("value", period="2022"), [child, total])
 
     assert selected is total
+
+
+def test_total_value_wording_accepts_direct_reported_metric() -> None:
+    selector = QuestionSelector(
+        "Tổng giá trị hàng tồn kho của công ty mẹ ACB cuối năm 2022",
+        frozenset(),
+    )
+    direct = _cell("Hàng tồn kho")
+
+    selected = selector.pick(OperandSlot("value", period="2022"), [direct])
+
+    assert selected is direct
+
+
+def test_generic_gia_tri_does_not_select_value_added_tax() -> None:
+    selector = QuestionSelector(
+        "Tổng giá trị đầu tư vào công ty con cuối năm 2024",
+        frozenset(),
+    )
+    investment = _cell("Đầu tư vào công ty con")
+    value_added_tax = _cell("Thuế giá trị gia tăng")
+
+    selected = selector.pick(
+        OperandSlot("value", period="2022"),
+        [value_added_tax, investment],
+    )
+
+    assert selected is investment
 
 
 def test_cross_entity_sum_does_not_require_an_aggregate_row_per_entity() -> None:
@@ -148,6 +189,42 @@ def test_a6_loader_excludes_scale_conflicts() -> None:
 
     assert [cell.row_path for cell in cells] == ["Doanh thu thuần"]
     assert list(frames) == ["data/t1.csv"]
+
+
+def test_a6_loader_repairs_explicit_unit_glued_to_header_token() -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(
+        """
+        CREATE TABLE tables (
+          table_uid TEXT PRIMARY KEY, basis TEXT, statement_type TEXT,
+          section_text TEXT, context_clean TEXT
+        );
+        CREATE TABLE table_cards (table_uid TEXT PRIMARY KEY, table_search_text TEXT);
+        CREATE TABLE observation_readiness (
+          observation_uid TEXT PRIMARY KEY, execution_ready INTEGER
+        );
+        CREATE TABLE observations (
+          observation_uid TEXT PRIMARY KEY, table_uid TEXT, ticker TEXT,
+          row_path_text TEXT, metric_label_clean TEXT, col_path_text TEXT,
+          value_source_raw TEXT, value_decimal_text TEXT, unit_kind TEXT,
+          currency TEXT, scale_exponent INTEGER, scale_source TEXT, period_end TEXT,
+          period_role TEXT, metric_code TEXT, is_restated INTEGER,
+          grid_row_idx INTEGER, grid_col_idx INTEGER
+        );
+        INSERT INTO tables VALUES ('t1', 'consolidated', 'note', 'Phải thu', '');
+        INSERT INTO table_cards VALUES ('t1', 'Phải thu');
+        INSERT INTO observation_readiness VALUES ('glued', 1);
+        INSERT INTO observations VALUES
+          ('glued','t1','NAB','Phải thu chuyển tiền',NULL,'Số cuối nămTriệu đồng',
+           '440.883','440883','money','VND',0,'column_path','2024-12-31',
+           'current',NULL,0,1,1);
+        """
+    )
+
+    cells, _frames = load_candidate_cells(connection, ["t1"])
+
+    assert len(cells) == 1
+    assert cells[0].unit.scale_exponent == 6
 
 
 def test_a6_loader_inherits_unanimous_explicit_table_scale_for_date_only_column() -> None:

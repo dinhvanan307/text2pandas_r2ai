@@ -50,6 +50,10 @@ from text2pandas.pipelines.retrieval.question_intent import parse_intent
 from text2pandas.pipelines.retrieval.submission_adapter import RetrievalToSubmission
 
 _PURE_NUMBER = re.compile(r"^\d+(?:[.,]\d+)?$")
+_GLUED_EXPLICIT_UNIT = re.compile(
+    r"(?:\d|n[ăa]m)(?:tri[ệe]u|ngh[ìi]n|t[ỷy]|vnd)\b",
+    re.IGNORECASE,
+)
 _CATEGORY = re.compile(
     r"\b(?:ngành|lĩnh\s*vực|khu\s*vực|nhóm|đối\s*tượng|loại\s*tiền|kỳ\s*hạn)\s+"
     r"(?P<value>.+?)(?=\s+(?:của|tại|năm|cuối|đầu|trong|là|đạt|bao\s+nhiêu)\b|[?,]|$)",
@@ -62,6 +66,10 @@ _GENERIC = frozenset(
         "nam",
         "cong",
         "ty",
+        "gia",
+        "giá",
+        "tri",
+        "trị",
         "me",
         "hop",
         "nhat",
@@ -118,7 +126,8 @@ class QuestionSelector(Selector):
         self.code_hints = code_hints
         role_text = question.casefold()
         if re.search(
-            r"(?:cu[ốo]i\s+(?:n[ăa]m|k[ỳy])|s[ốo]\s+(?:d[ưu]\s+)?cu[ốo]i|31\s*/\s*12)",
+            r"(?:cu[ốo]i\s+(?:n[ăa]m|k[ỳy])|s[ốo]\s+(?:d[ưu]\s+)?cu[ốo]i"
+            r"|31\s*/\s*12|ng[àa]y\s+31\s+th[áa]ng\s+12)",
             role_text,
         ):
             self.requested_period_role = "closing"
@@ -167,11 +176,10 @@ class QuestionSelector(Selector):
             for token in tokenize(cell.row_path.rsplit("›", 1)[-1])
             if token not in _GENERIC
         ]
-        if self.aggregate_required and not (
+        aggregate_row = (
             leaf_sequence[:1] in (["tong"], ["tổng"], ["cong"], ["cộng"])
             or leaf_sequence[:2] in (["toan", "bo"], ["toàn", "bộ"])
-        ):
-            return None
+        )
         section_sequence = [token for token in tokenize(cell.section_text) if token not in _GENERIC]
         context_sequence = [
             token for token in tokenize(cell.table_context) if token not in _GENERIC
@@ -189,7 +197,11 @@ class QuestionSelector(Selector):
         section_run = _longest_common_run(self.question_sequence, section_sequence)
         context_run = _longest_common_run(self.question_sequence, context_sequence)
         code_hit = bool(cell.metric_code and cell.metric_code in self.code_hints)
-        semantic_gate = row_run >= 2 or (row_run >= 1 and section_run >= 1 and context_run >= 2)
+        semantic_gate = (
+            row_run >= 2
+            or overlap >= 2
+            or (row_run >= 1 and section_run >= 1 and context_run >= 2)
+        )
         if not semantic_gate and not code_hit:
             return None
         lexical = overlap / math.sqrt(max(1, len(row_tokens)))
@@ -210,6 +222,7 @@ class QuestionSelector(Selector):
             period_role_score = 0.0
         return (
             1.0 if code_hit else 0.0,
+            1.0 if self.aggregate_required and aggregate_row else 0.0,
             float(leaf_run),
             leaf_coverage,
             -float(cell.row_path.count("›")),
@@ -368,17 +381,22 @@ def load_candidate_cells(
         row_dimension, row_scale, _ = scan_unit(
             " ".join(part for part in (row_path, metric_label) if part)
         )
+        effective_scale = scale
         if (
             unit_kind == "money"
             and detected_dimension == LEXICON_MONEY
             and detected_scale is not None
             and detected_scale != scale
         ):
-            # Two independent A6 fields disagree. Choosing either side here
-            # would recreate the measured 10^3/10^6 family, so this fact is not
-            # eligible for answer generation until adjudicated upstream.
-            continue
-        effective_scale = scale
+            # The legacy A6 parser missed explicit units glued to a preceding
+            # token (for example ``Số cuối nămTriệu đồng``) and recorded 1e0.
+            # The runtime lexicon recognizes that exact header. Correct only
+            # this measured parser-boundary defect; ordinary disagreements
+            # remain fail-closed.
+            if _GLUED_EXPLICIT_UNIT.search(col_path or ""):
+                effective_scale = detected_scale
+            else:
+                continue
         if (
             unit_kind == "money"
             and row_dimension == LEXICON_MONEY
