@@ -7,8 +7,8 @@ Updated: 2026-08-26
 `make semantic-coverage` chạy deterministic trên 1.012 câu hỏi curated và dùng
 đúng router/formula registry của canonical runtime. Kết quả hiện tại:
 
-- Static route eligible: **578/1.012 (57,1146%)**.
-- Named semantic gaps: **434/1.012**.
+- Static route eligible: **546/1.012 (53,9526%)**.
+- Named semantic gaps: **466/1.012**.
 - Corpus SHA-256: `59effd1ee7cf7214caee430b05b9305f5a71ed3fd57ba19eb1a6ff2f9c3ffa5d`.
 
 Đây không phải accuracy. Retrieval recall, operand binding và giá trị answer chỉ
@@ -30,19 +30,19 @@ Updated: 2026-08-26
 
 | Priority | Gap family | Questions | Fill strategy / exit gate |
 |---|---|---:|---|
-| P1 | Multi-entity aggregation/ranking | 248 | Typed entity axis; bind one fact per entity; prove no entity reuse; add COUNT/rank emitters and multi-entity gold slices |
-| P1 | Unreviewed relational formulas | 41 | Curate formula + metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
-| P1 | Complex extrema | 49 | Derived ranking: 5; filtered extrema: 9; select-at-arg: 33; insufficient periods: 2. Add separate rank metric/result metric and predicate IR |
-| P2 | Requested unit unresolved | 38 | Extend question-unit lexicon with reviewed corpus examples; keep `UNKNOWN_REQUESTED_UNIT` fail-closed |
-| P2 | Operand/period arity unresolved | 42 | AVG: 12; SUBTRACT: 16; SUM: 13; GROWTH: 1. Improve list/range extraction before changing binders |
-| P2 | Formula composition mismatch | 15 | Support formula inside aggregate/extremum/subtract only after nested typed IR and complete evidence are implemented |
-| P3 | Entity alias miss | 1 | Adjudicate alias against A6 evidence, then update attested alias registry |
+| P1 | Multi/global-entity aggregation/ranking | 311 | Typed entity axis; bind one fact per entity; prove no entity reuse; add COUNT/rank emitters and multi-entity gold slices |
+| P1 | Unreviewed relational formulas | 37 | Curate formula + metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
+| P1 | Complex extrema | 43 | Derived ranking: 4; filtered extrema: 6; select-at-arg: 32; insufficient periods: 1. Add separate rank metric/result metric and predicate IR |
+| P2 | Requested unit unresolved | 31 | Extend question-unit lexicon with reviewed corpus examples; keep `UNKNOWN_REQUESTED_UNIT` fail-closed |
+| P2 | Operand/period arity unresolved | 20 | AVG: 2; SUBTRACT: 6; SUM: 11; GROWTH: 1. Improve operation/list/range extraction before changing binders |
+| P2 | Formula composition mismatch | 12 | Support formula inside aggregate/extremum/subtract only after nested typed IR and complete evidence are implemented |
+| P2 | Entity resolution mismatch | 12 | Compare runtime resolution to curated entity-set, adjudicate aliases against A6 evidence |
 
 ## Non-semantic engineering debt
 
 | Priority | Gap | Exit gate |
 |---|---|---|
-| P1 | End-to-end score for the new canonical engine chưa được khóa trên gold | Report retrieval → bind → execute accuracy by slice; never infer accuracy from 57,1146% route coverage |
+| P1 | End-to-end score for the new canonical engine chưa được khóa trên gold | Report retrieval → bind → execute accuracy by slice; never infer accuracy from 53,9526% route coverage |
 | P2 | Retrieval snapshot đang copy đầy đủ A6 thay vì sidecar-only | Ordered top-K parity + manifest/storage migration test |
 | P3 | Compatibility shims và historical tools còn tồn tại | Downstream import inventory, deprecation window sign-off, then removal commit |
 

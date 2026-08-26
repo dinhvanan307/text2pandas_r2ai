@@ -80,7 +80,7 @@ def analyze_semantic_coverage(
 ) -> SemanticCoverageReport:
     """Classify every question against the exact canonical runtime routes."""
 
-    normalized: list[tuple[int, str]] = []
+    normalized: list[tuple[int, str, tuple[str, ...] | None]] = []
     seen: set[int] = set()
     for raw in questions:
         qid = int(raw.get("id", raw.get("qid")))
@@ -90,12 +90,18 @@ def analyze_semantic_coverage(
         if not question.strip():
             raise ValueError(f"empty question: {qid}")
         seen.add(qid)
-        normalized.append((qid, question))
+        expected_entities = raw.get("entities")
+        expected = (
+            tuple(str(value) for value in expected_entities)
+            if expected_entities is not None
+            else None
+        )
+        normalized.append((qid, question, expected))
     normalized.sort(key=lambda item: item[0])
 
     digest = hashlib.sha256()
     records: list[CoverageRecord] = []
-    for qid, question in normalized:
+    for qid, question, expected_entities in normalized:
         digest.update(
             json.dumps(
                 {"id": qid, "question": question},
@@ -105,7 +111,7 @@ def analyze_semantic_coverage(
             ).encode("utf-8")
         )
         digest.update(b"\n")
-        records.append(_classify(qid, question, aliases))
+        records.append(_classify(qid, question, aliases, expected_entities))
     return SemanticCoverageReport(tuple(records), digest.hexdigest())
 
 
@@ -113,12 +119,30 @@ def _classify(
     qid: int,
     question: str,
     aliases: Mapping[str, Sequence[str]],
+    expected_entities: tuple[str, ...] | None = None,
 ) -> CoverageRecord:
     intent = parse_intent(question, aliases)
     operation = classify_operation(question)
     formula = match_formula(question)
     formula_id = formula.formula_id if formula else None
-    if len(intent.targets) != 1:
+    if expected_entities is not None and len(expected_entities) != 1:
+        return CoverageRecord(
+            qid,
+            operation.op,
+            formula_id,
+            GAP,
+            f"MULTI_ENTITY_NOT_SUPPORTED:expected={len(expected_entities)}",
+        )
+    if expected_entities is not None and tuple(intent.targets) != expected_entities:
+        return CoverageRecord(
+            qid,
+            operation.op,
+            formula_id,
+            GAP,
+            "ENTITY_RESOLUTION_MISMATCH:"
+            f"expected={len(expected_entities)}:found={len(intent.targets)}",
+        )
+    if expected_entities is None and len(intent.targets) != 1:
         return CoverageRecord(
             qid,
             operation.op,
