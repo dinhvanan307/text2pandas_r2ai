@@ -1,6 +1,6 @@
 # formula_registry wave 1 — AG1_R2_FORMULA
 #
-# 16 formula SAFE. ROE/ROA chung/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
+# 18 formula SAFE. ROE/ROA chung/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
 # chúng thuộc nhóm NEEDS DOMAIN CONFIRMATION (biến thể cuối kỳ vs bình quân,
 # EBIT vs LNTT+lãi vay) — đưa vào deterministic registry khi chưa phân xử sẽ tạo
 # sai số CÓ HỆ THỐNG trên toàn bộ lớp câu, tệ hơn là không trả lời.
@@ -276,6 +276,42 @@ formulas:
           node: Abs
           child: {node: FactRef, metric_id: financial_expense}
         den: {node: FactRef, metric_id: net_revenue}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: financial_income_to_financial_expense
+    variant_id: reported_financial_lines
+    aliases: ["ty le doanh thu hoat dong tai chinh tren chi phi tai chinh"]
+    leaves: [financial_income, financial_expense]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: financial_income}
+        den:
+          node: Abs
+          child: {node: FactRef, metric_id: financial_expense}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: tangible_fixed_assets_share_of_total_fixed_assets
+    variant_id: carrying_value
+    aliases: ["ty trong tai san co dinh huu hinh trong tong tai san co dinh"]
+    leaves: [tangible_fixed_assets, total_fixed_assets]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: tangible_fixed_assets}
+        den: {node: FactRef, metric_id: total_fixed_assets}
       right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
 
   - formula_id: intangible_fixed_assets_to_assets

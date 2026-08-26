@@ -58,7 +58,7 @@ def _frames(cells: list[CandidateCell]) -> dict[str, pd.DataFrame]:
 def test_registry_only_loads_reviewed_formulas() -> None:
     formulas, metrics = load_registry()
 
-    assert len(formulas) == 16
+    assert len(formulas) == 18
     assert "quick_ratio" in formulas
     assert "roe" not in formulas
     assert set(formulas["quick_ratio"].leaves) <= set(metrics)
@@ -181,6 +181,18 @@ def test_reviewed_expense_intensities_execute_with_absolute_numerator(
             "financial_expense_intensity",
         ),
         (
+            "Tỷ lệ doanh thu hoạt động tài chính trên chi phí tài chính năm 2024 là bao nhiêu phần trăm?",
+            "Doanh thu hoạt động tài chính",
+            "Chi phí tài chính",
+            "financial_income_to_financial_expense",
+        ),
+        (
+            "Tỷ trọng tài sản cố định hữu hình trong tổng tài sản cố định năm 2024 là bao nhiêu phần trăm?",
+            "Tài sản cố định hữu hình",
+            "Tài sản cố định",
+            "tangible_fixed_assets_share_of_total_fixed_assets",
+        ),
+        (
             "Tỷ trọng tài sản cố định vô hình trên tổng tài sản năm 2024 là bao nhiêu phần trăm?",
             "Tài sản cố định vô hình",
             "Tổng tài sản",
@@ -215,6 +227,26 @@ def test_reviewed_unambiguous_relational_formulas_execute(
     assert result is not None and result.ok
     assert result.formula_id == expected_formula
     assert result.answer == pytest.approx(20.0)
+
+
+def test_total_fixed_assets_metric_rejects_component_rows() -> None:
+    cells = [
+        _cell("Tài sản cố định hữu hình", 20, 0),
+        _cell("Tài sản cố định vô hình", 80, 1),
+    ]
+
+    result = answer_formula_question(
+        "Tỷ trọng tài sản cố định hữu hình trong tổng tài sản cố định là bao nhiêu %?",
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None
+    assert result.reason == "FORMULA_METRIC_NOT_IN_POOL:total_fixed_assets"
 
 
 def test_formula_engine_fails_closed_on_scope_period_and_forbidden_child_metric() -> None:

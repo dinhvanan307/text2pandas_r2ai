@@ -32,19 +32,22 @@ NORMAL = [
      "current_assets": 200.0, "current_liabilities": 100.0, "inventory": 50.0,
      "gross_profit": 40.0, "net_revenue": 200.0, "profit_after_tax": 20.0,
      "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0,
-     "financial_expense": 15.0, "intangible_fixed_assets": 30.0,
+     "financial_expense": 15.0, "financial_income": 25.0,
+     "total_fixed_assets": 120.0, "intangible_fixed_assets": 30.0,
      "tangible_fixed_assets": 90.0},
     {"total_liabilities": 900.0, "equity": 300.0, "total_assets": 1200.0,
      "current_assets": 600.0, "current_liabilities": 400.0, "inventory": 100.0,
      "gross_profit": 150.0, "net_revenue": 1000.0, "profit_after_tax": -50.0,
      "selling_expense": -30.0, "admin_expense": 20.0, "cogs": -700.0,
-     "financial_expense": -80.0, "intangible_fixed_assets": 120.0,
+     "financial_expense": -80.0, "financial_income": 160.0,
+     "total_fixed_assets": 600.0, "intangible_fixed_assets": 120.0,
      "tangible_fixed_assets": 480.0},
     {"total_liabilities": 1.0, "equity": 4.0, "total_assets": 5.0,
      "current_assets": 3.0, "current_liabilities": 3.0, "inventory": 0.0,
      "gross_profit": 0.0, "net_revenue": 7.0, "profit_after_tax": 7.0,
      "selling_expense": 1.0, "admin_expense": 1.0, "cogs": 0.0,
-     "financial_expense": 2.0, "intangible_fixed_assets": 1.0,
+     "financial_expense": 2.0, "financial_income": 3.0,
+     "total_fixed_assets": 4.0, "intangible_fixed_assets": 1.0,
      "tangible_fixed_assets": 2.0},
 ]
 
@@ -69,6 +72,10 @@ MONG_DOI = {
                                                    / v["equity"] * 100.0,
     "financial_expense_intensity": lambda v: abs(v["financial_expense"])
                                                  / v["net_revenue"] * 100.0,
+    "financial_income_to_financial_expense": lambda v: v["financial_income"]
+                                                        / abs(v["financial_expense"]) * 100.0,
+    "tangible_fixed_assets_share_of_total_fixed_assets": lambda v: v["tangible_fixed_assets"]
+                                                                   / v["total_fixed_assets"] * 100.0,
     "intangible_fixed_assets_to_assets": lambda v: v["intangible_fixed_assets"]
                                                         / v["total_assets"] * 100.0,
     "tangible_fixed_assets_to_assets": lambda v: v["tangible_fixed_assets"]
@@ -86,6 +93,8 @@ MAU = {
     "return_on_ending_assets": "total_assets",
     "current_liabilities_to_equity": "equity",
     "financial_expense_intensity": "net_revenue",
+    "financial_income_to_financial_expense": "financial_expense",
+    "tangible_fixed_assets_share_of_total_fixed_assets": "total_fixed_assets",
     "intangible_fixed_assets_to_assets": "total_assets",
     "tangible_fixed_assets_to_assets": "total_assets",
 }

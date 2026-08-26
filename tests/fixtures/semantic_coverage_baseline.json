@@ -12,8 +12,8 @@
   "by_reason": {
     "COUNT_EXISTENCE_REQUIRES_NEGATIVE_EVIDENCE": 1,
     "COUNT_PREDICATE_NOT_SUPPORTED": 1,
-    "DIVIDE_REQUIRES_REVIEWED_FORMULA": 36,
-    "ELIGIBLE_REVIEWED_FORMULA": 12,
+    "DIVIDE_REQUIRES_REVIEWED_FORMULA": 34,
+    "ELIGIBLE_REVIEWED_FORMULA": 14,
     "ELIGIBLE_TYPED_COUNT": 3,
     "ELIGIBLE_TYPED_ENTITY_AVERAGE": 4,
     "ELIGIBLE_TYPED_ENTITY_COUNT": 7,
@@ -40,9 +40,9 @@
     "MULTI_ENTITY_NOT_SUPPORTED:resolved=3": 3,
     "SUBTRACT_NEEDS_TWO_PERIODS": 7
   },
-  "eligible": 649,
-  "eligible_percent": 64.1304,
-  "gaps": 363,
+  "eligible": 651,
+  "eligible_percent": 64.3281,
+  "gaps": 361,
   "questions_sha256": "59effd1ee7cf7214caee430b05b9305f5a71ed3fd57ba19eb1a6ff2f9c3ffa5d",
   "schema_version": 1,
   "scope": "semantic_route_only_no_retrieval_binding_or_accuracy",
