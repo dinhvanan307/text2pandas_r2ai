@@ -53,7 +53,8 @@ def _render(fid, vals):
 BASE = {"total_liabilities": 300.0, "equity": 150.0, "total_assets": 500.0,
         "current_assets": 200.0, "current_liabilities": 100.0, "inventory": 50.0,
         "gross_profit": 40.0, "net_revenue": 200.0, "profit_after_tax": 20.0,
-        "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0}
+        "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0,
+        "financial_expense": 15.0}
 
 
 @ca("MM1 · nhân MỌI lá tiền ×1000 ⇒ mọi formula wave 1 BẤT BIẾN")
@@ -90,6 +91,7 @@ def _():
         ("admin_expense_intensity", "admin_expense"),
         ("selling_expense_intensity", "selling_expense"),
         ("cogs_intensity", "cogs"),
+        ("financial_expense_intensity", "financial_expense"),
     ):
         a = _render(fid, BASE)
         b = _render(fid, {**BASE, metric: -BASE[metric]})

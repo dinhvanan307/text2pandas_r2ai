@@ -58,7 +58,7 @@ def _frames(cells: list[CandidateCell]) -> dict[str, pd.DataFrame]:
 def test_registry_only_loads_reviewed_formulas() -> None:
     formulas, metrics = load_registry()
 
-    assert len(formulas) == 11
+    assert len(formulas) == 14
     assert "quick_ratio" in formulas
     assert "roe" not in formulas
     assert set(formulas["quick_ratio"].leaves) <= set(metrics)
@@ -157,6 +157,52 @@ def test_reviewed_expense_intensities_execute_with_absolute_numerator(
     assert result.formula_id == expected_formula
     assert result.answer == pytest.approx(25.0)
     assert "abs(" in result.query
+
+
+@pytest.mark.parametrize(
+    ("question", "numerator_label", "denominator_label", "expected_formula"),
+    [
+        (
+            "Lợi nhuận sau thuế trên tổng tài sản cuối năm 2024 là bao nhiêu phần trăm?",
+            "Lợi nhuận sau thuế",
+            "Tổng tài sản",
+            "return_on_ending_assets",
+        ),
+        (
+            "Tỷ lệ nợ ngắn hạn trên vốn chủ sở hữu năm 2024 là bao nhiêu phần trăm?",
+            "Nợ ngắn hạn",
+            "Vốn chủ sở hữu",
+            "current_liabilities_to_equity",
+        ),
+        (
+            "Tỷ lệ chi phí tài chính trên doanh thu thuần năm 2024 là bao nhiêu phần trăm?",
+            "Chi phí tài chính",
+            "Doanh thu thuần",
+            "financial_expense_intensity",
+        ),
+    ],
+)
+def test_reviewed_unambiguous_relational_formulas_execute(
+    question: str,
+    numerator_label: str,
+    denominator_label: str,
+    expected_formula: str,
+) -> None:
+    cells = [_cell(numerator_label, 20, 0), _cell(denominator_label, 100, 1)]
+
+    result = answer_formula_question(
+        question,
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None and result.ok
+    assert result.formula_id == expected_formula
+    assert result.answer == pytest.approx(20.0)
 
 
 def test_formula_engine_fails_closed_on_scope_period_and_forbidden_child_metric() -> None:

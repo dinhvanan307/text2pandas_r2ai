@@ -7,8 +7,8 @@ Updated: 2026-08-26
 `make semantic-coverage` chạy deterministic trên 1.012 câu hỏi curated và dùng
 đúng router/formula registry của canonical runtime. Kết quả hiện tại:
 
-- Static route eligible: **639/1.012 (63,1423%)**.
-- Named semantic gaps: **373/1.012**.
+- Static route eligible: **642/1.012 (63,4387%)**.
+- Named semantic gaps: **370/1.012**.
 - Corpus SHA-256: `59effd1ee7cf7214caee430b05b9305f5a71ed3fd57ba19eb1a6ff2f9c3ffa5d`.
 
 Đây không phải accuracy. Retrieval recall, operand binding và giá trị answer chỉ
@@ -22,7 +22,7 @@ Updated: 2026-08-26
 | Lineage | Raw/A6/retrieval identities và portable run/submission manifests |
 | Submission | Exact schema, raw-corpus grounding, AST sandbox, replay, deterministic ZIP, fail-closed publish |
 | Extrema | Typed `MAX/MIN/ARGMAX/ARGMIN`, period result kind và policy guards |
-| Reviewed formulas | 11 công thức, gồm expense/COGS intensity; per-metric binding, per-leaf unit conversion, same-report/same-currency coherence |
+| Reviewed formulas | 14 công thức, gồm expense/COGS intensity, explicit ending-assets return và current-liabilities/equity; per-metric binding, per-leaf unit conversion, same-report/same-currency coherence |
 | A6 H0 | 34 provenance records, 22 materialized gates, two clean deterministic rebuilds |
 | Coverage governance | Per-QID status/reason, corpus digest, CLI/Make command và CI baseline |
 | Question unit parsing | Colloquial `mấy`, `trăm tỷ`, parenthesized/trailing units, share-count và year-count wording |
@@ -40,7 +40,7 @@ Updated: 2026-08-26
 | Priority | Gap family | Questions | Fill strategy / exit gate |
 |---|---|---:|---|
 | P1 | Multi/global-entity aggregation/ranking | 268 | Typed entity axis beyond reviewed differences, one-metric entity COUNT và reviewed direct averages; bind one fact per entity; prove no entity reuse; add aggregate/rank emitters and multi-entity gold slices |
-| P1 | Unreviewed relational formulas | 41 | Curate formula + metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
+| P1 | Unreviewed relational formulas | 38 | Curate formula + metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
 | P1 | Complex extrema | 43 | Derived ranking: 4; filtered extrema: 6; select-at-arg: 33. Add separate rank metric/result metric and predicate IR |
 | P2 | Operand/period arity unresolved | 8 | SUBTRACT: 7; GROWTH: 1. Remaining SUBTRACT cases are same-period derived finance metrics or unresolved two-operand semantics |
 | P2 | Formula composition mismatch | 11 | Support formula inside aggregate/extremum/subtract only after nested typed IR and complete evidence are implemented |
@@ -50,7 +50,7 @@ Updated: 2026-08-26
 
 | Priority | Gap | Exit gate |
 |---|---|---|
-| P1 | End-to-end score for the new canonical engine chưa được khóa trên gold | Report retrieval → bind → execute accuracy by slice; never infer accuracy from 63,1423% route coverage |
+| P1 | End-to-end score for the new canonical engine chưa được khóa trên gold | Report retrieval → bind → execute accuracy by slice; never infer accuracy from 63,4387% route coverage |
 | P2 | Retrieval snapshot đang copy đầy đủ A6 thay vì sidecar-only | Ordered top-K parity + manifest/storage migration test |
 | P3 | Compatibility shims và historical tools còn tồn tại | Downstream import inventory, deprecation window sign-off, then removal commit |
 

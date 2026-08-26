@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Formula reference tests — 11 formula × 8 ca = 88. Gate G1 đòi 100%.
+"""Formula reference tests — mọi reviewed formula × 8 ca. Gate G1 đòi 100%.
 
 Tám ca cho MỖI formula (doc 145 §9):
     3 normal · zero denominator · negative denominator · missing operand ·
@@ -31,15 +31,18 @@ NORMAL = [
     {"total_liabilities": 300.0, "equity": 150.0, "total_assets": 500.0,
      "current_assets": 200.0, "current_liabilities": 100.0, "inventory": 50.0,
      "gross_profit": 40.0, "net_revenue": 200.0, "profit_after_tax": 20.0,
-     "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0},
+     "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0,
+     "financial_expense": 15.0},
     {"total_liabilities": 900.0, "equity": 300.0, "total_assets": 1200.0,
      "current_assets": 600.0, "current_liabilities": 400.0, "inventory": 100.0,
      "gross_profit": 150.0, "net_revenue": 1000.0, "profit_after_tax": -50.0,
-     "selling_expense": -30.0, "admin_expense": 20.0, "cogs": -700.0},
+     "selling_expense": -30.0, "admin_expense": 20.0, "cogs": -700.0,
+     "financial_expense": -80.0},
     {"total_liabilities": 1.0, "equity": 4.0, "total_assets": 5.0,
      "current_assets": 3.0, "current_liabilities": 3.0, "inventory": 0.0,
      "gross_profit": 0.0, "net_revenue": 7.0, "profit_after_tax": 7.0,
-     "selling_expense": 1.0, "admin_expense": 1.0, "cogs": 0.0},
+     "selling_expense": 1.0, "admin_expense": 1.0, "cogs": 0.0,
+     "financial_expense": 2.0},
 ]
 
 MONG_DOI = {
@@ -57,6 +60,12 @@ MONG_DOI = {
     "selling_expense_intensity": lambda v: abs(v["selling_expense"])
                                            / v["net_revenue"] * 100.0,
     "cogs_intensity": lambda v: abs(v["cogs"]) / v["net_revenue"] * 100.0,
+    "return_on_ending_assets": lambda v: v["profit_after_tax"]
+                                                / v["total_assets"] * 100.0,
+    "current_liabilities_to_equity": lambda v: v["current_liabilities"]
+                                                   / v["equity"] * 100.0,
+    "financial_expense_intensity": lambda v: abs(v["financial_expense"])
+                                                 / v["net_revenue"] * 100.0,
 }
 
 # Lá nằm ở MẪU SỐ của từng formula — dùng cho ca zero/negative denominator.
@@ -67,6 +76,9 @@ MAU = {
     "inventory_to_assets": "total_assets", "sga_intensity": "net_revenue",
     "admin_expense_intensity": "net_revenue",
     "selling_expense_intensity": "net_revenue", "cogs_intensity": "net_revenue",
+    "return_on_ending_assets": "total_assets",
+    "current_liabilities_to_equity": "equity",
+    "financial_expense_intensity": "net_revenue",
 }
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))

@@ -1,6 +1,6 @@
 # metric_ontology wave 1 — AG1_R2_FORMULA
 #
-# 14 metric, KHÔNG phải 16. `operating_profit` và `CFO` bị loại vì đo trên
+# 15 metric. `operating_profit` và `CFO` bị loại vì đo trên
 # 2.633.554 observation của work.db cho **ground = 0%** với alias hiển nhiên
 # (doc 145 §8, P1-5). Đưa chúng vào wave 1 làm 4 formula chết im lặng.
 #
@@ -166,6 +166,15 @@ metrics:
 
   - metric_id: interest_expense
     aliases: ["chi phi lai vay"]
+    statement_types: [income_statement]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: abs
+    preferred_scope: consolidated
+    forbidden_aliases: []
+
+  - metric_id: financial_expense
+    aliases: ["chi phi tai chinh"]
     statement_types: [income_statement]
     value_kind: money
     period_semantics: flow

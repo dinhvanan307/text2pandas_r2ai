@@ -1,6 +1,6 @@
 # formula_registry wave 1 — AG1_R2_FORMULA
 #
-# 11 formula SAFE. ROE/ROA/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
+# 14 formula SAFE. ROE/ROA chung/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
 # chúng thuộc nhóm NEEDS DOMAIN CONFIRMATION (biến thể cuối kỳ vs bình quân,
 # EBIT vs LNTT+lãi vay) — đưa vào deterministic registry khi chưa phân xử sẽ tạo
 # sai số CÓ HỆ THỐNG trên toàn bộ lớp câu, tệ hơn là không trả lời.
@@ -222,12 +222,68 @@ formulas:
         den: {node: FactRef, metric_id: net_revenue}
       right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
 
+  - formula_id: return_on_ending_assets
+    variant_id: explicitly_ending_assets
+    aliases: ["loi nhuan sau thue tren tong tai san cuoi nam"]
+    leaves: [profit_after_tax, total_assets]
+    period_semantics: flow_over_explicit_ending_balance
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: profit_after_tax}
+        den: {node: FactRef, metric_id: total_assets}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: current_liabilities_to_equity
+    variant_id: percentage
+    aliases: ["ty le no ngan han tren von chu so huu"]
+    leaves: [current_liabilities, equity]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: current_liabilities}
+        den: {node: FactRef, metric_id: equity}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: financial_expense_intensity
+    variant_id: net_revenue
+    aliases: ["ty trong chi phi tai chinh tren doanh thu thuan",
+              "ti trong chi phi tai chinh tren doanh thu thuan",
+              "ty le chi phi tai chinh tren doanh thu thuan",
+              "ti le chi phi tai chinh tren doanh thu thuan"]
+    leaves: [financial_expense, net_revenue]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num:
+          node: Abs
+          child: {node: FactRef, metric_id: financial_expense}
+        den: {node: FactRef, metric_id: net_revenue}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
 # ── NEEDS DOMAIN CONFIRMATION — KHÔNG implement trong AG1 ──────────────────
 needs_domain_confirmation:
   - formula_id: roe
     cau_hoi_chua_tra_loi: "vốn chủ sở hữu CUỐI KỲ hay BÌNH QUÂN đầu-cuối kỳ?"
   - formula_id: roa
-    cau_hoi_chua_tra_loi: "tổng tài sản CUỐI KỲ hay BÌNH QUÂN?"
+    cau_hoi_chua_tra_loi: "nếu câu không chỉ rõ: tổng tài sản CUỐI KỲ hay BÌNH QUÂN?"
   - formula_id: interest_coverage
     cau_hoi_chua_tra_loi: "EBIT hay (LNTT + chi phí lãi vay)? dấu của chi phí lãi vay?"
   - formula_id: cagr
