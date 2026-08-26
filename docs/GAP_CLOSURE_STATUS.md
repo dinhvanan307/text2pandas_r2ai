@@ -28,17 +28,17 @@ Updated: 2026-08-26
 | Question unit parsing | Colloquial `mấy`, `trăm tỷ`, parenthesized/trailing units, share-count và year-count wording |
 | Operation precision | Aggregate metric vs SUM, weighted-average metric vs AVG, report-scope `trên` vs DIVIDE, signed less-than subtraction |
 | Period COUNT | Typed threshold/negative predicates over explicit years, reviewed metric aliases, sandboxed comparisons and fail-closed existence semantics |
+| Entity adjudication | Không để short nested brand xoá legal name độc lập; nhận `hiệu số` là comparison; 12 false mismatch được phân loại lại theo runtime scope thật |
 
 ## Open semantic gaps
 
 | Priority | Gap family | Questions | Fill strategy / exit gate |
 |---|---|---:|---|
-| P1 | Multi/global-entity aggregation/ranking | 311 | Typed entity axis; bind one fact per entity; prove no entity reuse; add COUNT/rank emitters and multi-entity gold slices |
+| P1 | Multi/global-entity aggregation/ranking | 322 | Typed entity axis; bind one fact per entity; prove no entity reuse; add COUNT/rank emitters and multi-entity gold slices |
 | P1 | Unreviewed relational formulas | 41 | Curate formula + metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
-| P1 | Complex extrema | 43 | Derived ranking: 4; filtered extrema: 6; select-at-arg: 32; insufficient periods: 1. Add separate rank metric/result metric and predicate IR |
+| P1 | Complex extrema | 44 | Derived ranking: 4; filtered extrema: 6; select-at-arg: 33; insufficient periods: 1. Add separate rank metric/result metric and predicate IR |
 | P2 | Operand/period arity unresolved | 11 | SUBTRACT: 10; GROWTH: 1. Four SUBTRACT cases are same-period derived finance metrics and require explicit two-metric IR |
 | P2 | Formula composition mismatch | 11 | Support formula inside aggregate/extremum/subtract only after nested typed IR and complete evidence are implemented |
-| P2 | Entity resolution mismatch | 12 | Compare runtime resolution to curated entity-set, adjudicate aliases against A6 evidence |
 | P2 | Single-entity conditional COUNT | 2 | Complex predicate: 1; existence/absence requiring negative-evidence completeness: 1. Two additional typed routes remain retrieval-dependent at runtime |
 
 ## Non-semantic engineering debt

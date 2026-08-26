@@ -44,6 +44,8 @@ __all__ = ["EvalConfig", "collect", "SCHEMA_VERSION"]
 # Phiên bản này vào `EvalConfig.sha`, nên đổi nó là VÔ HIỆU HOÁ mọi checkpoint cũ.
 #
 #   evalkit-1 → evalkit-2   P0-1: `drop` ở S2 nay gồm cả TÊN công ty, không chỉ mã.
+#   evalkit-3 → evalkit-4   S1 giữ legal name độc lập trước nested short brand;
+#                         nhận `hiệu số` là comparison (ADR 0004).
 #
 # VÌ SAO PHẢI BUMP, KHÔNG PHẢI CHỈ SỬA CODE
 # -----------------------------------------
@@ -55,7 +57,7 @@ __all__ = ["EvalConfig", "collect", "SCHEMA_VERSION"]
 # Kỷ luật con người không giữ được bất biến này (đã hỏng một lần rồi), nên
 # `tests/test_p0_unify.py::test_behavior_fingerprint` băm AST của các module
 # quyết định hành vi S2 và đỏ lên nếu chúng đổi mà hằng số này không đổi.
-SCHEMA_VERSION = "evalkit-3"   # bump: S2 có tiên nghiệm lớp báo cáo (docs/118)
+SCHEMA_VERSION = "evalkit-4"
 
 
 @dataclass(frozen=True, slots=True)

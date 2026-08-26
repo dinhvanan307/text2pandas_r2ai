@@ -223,6 +223,7 @@ _MODULE_HANH_VI = (
 _FINGERPRINT = {
     "evalkit-2": "dce65cd2bfaf25e0",
     "evalkit-3": "89cd3974d9ad7579",
+    "evalkit-4": "86484532462fa1e2",
 }
 
 _FIELD = {ast.Constant: "value", ast.Name: "id", ast.Attribute: "attr",

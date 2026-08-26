@@ -170,6 +170,29 @@ def test_related_chon_chu_the_sau_chu_CUA(alias):
     assert i.targets == ("HNG",)
 
 
+def test_short_nested_brand_does_not_shadow_independent_legal_name(alias):
+    i = parse_intent(
+        "Trong các năm 2015 và 2019 của Tổng Công ty Khí Việt Nam - CTCP, "
+        "giá trị bán hàng với Tổng Công ty Điện lực Dầu khí Việt Nam là bao nhiêu?",
+        alias,
+    )
+
+    assert {"GAS", "POW"} <= set(i.tickers)
+    assert i.mode == "related"
+    assert i.targets == ("GAS",)
+
+
+def test_hieu_so_is_a_two_entity_comparison(alias):
+    i = parse_intent(
+        "Hiệu số vốn chủ sở hữu của Tổng Công ty Khí Việt Nam - CTCP và "
+        "Tổng Công ty Điện lực Dầu khí Việt Nam là bao nhiêu?",
+        alias,
+    )
+
+    assert i.mode == "compare"
+    assert set(i.targets) == {"GAS", "POW"}
+
+
 def test_khong_quyet_duoc_chu_the_thi_TRA_CA_TAP_khong_tra_rong(alias):
     """S1 ưu tiên RECALL. Tập rỗng là bảo đảm 0 điểm; tập rộng vẫn cứu được.
 

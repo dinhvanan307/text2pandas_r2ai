@@ -134,6 +134,22 @@ def _classify(
             GAP,
             f"MULTI_ENTITY_NOT_SUPPORTED:expected={len(expected_entities)}",
         )
+    if (
+        expected_entities is not None
+        and len(intent.targets) > 1
+        and intent.mode in {"screen", "compare"}
+    ):
+        # Curated ``entities`` may contain only the winning/result entity for
+        # ranking and comparison questions. The question itself still needs
+        # every explicitly resolved entity, so this is a multi-entity runtime
+        # gap rather than an alias-resolution defect.
+        return CoverageRecord(
+            qid,
+            operation.op,
+            formula_id,
+            GAP,
+            f"MULTI_ENTITY_NOT_SUPPORTED:resolved={len(intent.targets)}",
+        )
     if expected_entities is not None and tuple(intent.targets) != expected_entities:
         return CoverageRecord(
             qid,

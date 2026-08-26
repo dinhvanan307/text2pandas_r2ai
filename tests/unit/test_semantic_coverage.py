@@ -50,3 +50,17 @@ def test_full_corpus_semantic_coverage_matches_reviewed_baseline() -> None:
     expected = json.loads(BASELINE.read_text(encoding="utf-8"))
 
     assert actual == expected
+
+
+def test_curated_winner_entity_does_not_hide_multi_entity_runtime_scope() -> None:
+    questions = [
+        {
+            "id": 1,
+            "question": "Trong nhóm HPG, HSG và NKG, công ty nào cao nhất năm 2024?",
+            "entities": ["HSG"],
+        }
+    ]
+
+    report = analyze_semantic_coverage(questions, {"HPG": [], "HSG": [], "NKG": []})
+
+    assert report.records[0].reason == "MULTI_ENTITY_NOT_SUPPORTED:resolved=3"

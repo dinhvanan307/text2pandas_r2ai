@@ -18,4 +18,6 @@ from __future__ import annotations
 
 __all__ = ["SCHEMA_VERSION"]
 
-SCHEMA_VERSION = "evalkit-1"
+# Public package marker; keep synchronized with ``evalkit.runner`` so external
+# checkpoint tooling cannot stamp the historical v1 value by importing here.
+SCHEMA_VERSION = "evalkit-4"

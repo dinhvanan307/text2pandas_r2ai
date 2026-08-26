@@ -28,6 +28,9 @@ Updated: 2026-08-26
 - Typed period COUNT cho threshold/negative predicates với explicit years,
   reviewed metric aliases, safe comparison AST và existence questions fail-closed
   khi chưa có negative-evidence completeness contract.
+- Entity resolver giữ full legal-name evidence khi short brand bị nested trong
+  tên counterparty, nhận diện `hiệu số` là comparison; coverage không còn đánh
+  tráo 11 câu multi-entity và 1 select-at-arg thành alias mismatch.
 - Static semantic coverage contract cho đủ 1.012 câu, có corpus digest, per-QID
   reason code, CLI/Make entry point và CI baseline. Scope được ghi rõ là route
   coverage, không đánh tráo với retrieval/binding/answer accuracy.

@@ -115,13 +115,22 @@ def parse_intent(query: str, companies: dict[str, str | list[str]],
     # sàng lọc nhiều mã là loại câu có thật ("Xét nhóm cổ phiếu CEO, HPX, …").
     def _bi_bao(t: str) -> bool:
         mine = {a for n in names_of[t] for a in company_aliases(n) if a in compact}
-        for u, _ in hit_len.items():
-            if u == t:
-                continue
-            theirs = {a for n in names_of[u] for a in company_aliases(n) if a in compact}
-            if any(m != o and m in o for m in mine for o in theirs):
-                return True
-        return False
+        theirs = {
+            alias
+            for u in hit_len
+            if u != t
+            for name in names_of[u]
+            for alias in company_aliases(name)
+            if alias in compact
+        }
+        # Chỉ shadow một ticker khi MỌI alias đã khớp của nó đều nằm trong
+        # alias dài hơn của ticker khác. Nếu còn một tên độc lập (ví dụ full
+        # legal name của GAS), short brand ``khivietnam`` trùng trong tên POW
+        # không được phép xoá mất chủ sở hữu báo cáo.
+        return bool(mine) and all(
+            any(mine_alias != other and mine_alias in other for other in theirs)
+            for mine_alias in mine
+        )
 
     name_matches = {t for t in hit_len if not _bi_bao(t)}
     ticker_matches = {t for t in companies if ticker_mentioned(query, t)}
