@@ -15,6 +15,7 @@ from text2pandas.domain.semantic import (
     Axis,
     Basis,
     Dimension,
+    Filter,
     FormulaCall,
     MetricRef,
     RankDirection,
@@ -104,6 +105,69 @@ def test_select_at_arg_keeps_rank_and_return_metrics_separate() -> None:
     assert isinstance(result.ast.expression, SelectAtArg)
     assert result.ast.expression.rank.by.metric_id == "total_assets"
     assert result.ast.expression.expression.metric_id == "profit_after_tax"
+
+
+def test_filtered_extremum_compiles_reviewed_predicate_and_complete_period_domain() -> None:
+    annotations = _annotations(
+        entities=("ASM",),
+        periods=("2016", "2018"),
+        operation=OperationKind.EXTREMUM,
+        rank_direction=RankDirection.ASCENDING,
+        return_mode=ReturnMode.FILTERED_VALUE,
+    )
+    result = _parse(
+        "Trong giai đoạn 2016–2018 của ASM, trong các năm có tỷ lệ lợi nhuận "
+        "sau thuế trên doanh thu thuần lớn hơn 10%, doanh thu thuần thấp nhất "
+        "là bao nhiêu tỷ đồng?",
+        annotations,
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+    assert result.ast.expression.members == ("2016", "2017", "2018")
+    assert isinstance(result.ast.expression.expression, Filter)
+    assert result.ast.expression.expression.expression.metric_id == "net_revenue"
+    assert result.ast.expression.expression.predicate.left.formula_id == "net_margin"
+    assert result.ast.expression.expression.predicate.right.value == 10.0
+
+
+def test_filtered_extremum_rejects_requested_dimension_that_needs_second_formula() -> None:
+    annotations = _annotations(
+        entities=("DCM",),
+        periods=("2020", "2022"),
+        operation=OperationKind.EXTREMUM,
+        requested_unit=UnitSpec(Dimension.RATIO),
+        rank_direction=RankDirection.ASCENDING,
+        return_mode=ReturnMode.FILTERED_VALUE,
+    )
+    result = _parse(
+        "Trong giai đoạn 2020–2022 của DCM, xét các năm có tỷ lệ lợi nhuận sau "
+        "thuế trên doanh thu thuần lớn hơn 10%, năm có doanh thu thuần thấp nhất "
+        "có tỷ lệ lưu chuyển tiền thuần từ hoạt động kinh doanh trên nợ ngắn hạn "
+        "là bao nhiêu lần?",
+        annotations,
+    )
+
+    assert not result.ok
+    assert result.reason == "FILTER_VALUE_UNIT_MISMATCH"
+
+
+def test_filtered_extremum_accepts_tren_as_explicit_numeric_threshold() -> None:
+    annotations = _annotations(
+        entities=("CEO",),
+        periods=("2022", "2024"),
+        operation=OperationKind.EXTREMUM,
+        rank_direction=RankDirection.ASCENDING,
+        return_mode=ReturnMode.FILTERED_VALUE,
+    )
+    result = _parse(
+        "Với CEO trong giai đoạn 2022-2024, ở các năm có biên lợi nhuận ròng "
+        "trên 10%, doanh thu thuần thấp nhất là bao nhiêu tỷ đồng?",
+        annotations,
+    )
+
+    assert result.ok
+    assert result.ast.expression.members == ("2022", "2023", "2024")
 
 
 def test_unreviewed_divide_fails_closed() -> None:

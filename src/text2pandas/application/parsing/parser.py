@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from text2pandas.domain.metrics import (
@@ -16,7 +17,10 @@ from text2pandas.domain.semantic import (
     Arithmetic,
     ArithmeticOperator,
     Axis,
+    Comparison,
+    ComparisonOperator,
     Dimension,
+    Filter,
     FormulaCall,
     Literal,
     MetricRef,
@@ -62,7 +66,7 @@ class SemanticParser:
         self.annotator = annotator
 
     def parse(self, question: str, *, qid: int | None = None) -> ParseResult:
-        annotations = self.annotator.annotate(question)
+        annotations = _expand_aggregate_period_range(question, self.annotator.annotate(question))
         normalized = normalize_phrase(question)
         formula = self.ontology.match_formula(normalized)
         mentions = self._metric_mentions(normalized)
@@ -102,7 +106,7 @@ class SemanticParser:
         base = self._base_expression(annotations, formula, mentions)
         if base is None:
             return _abstain("METRIC_UNRESOLVED")
-        expression_result = self._compose(base, annotations, mentions)
+        expression_result = self._compose(question, base, annotations, formula, mentions)
         if isinstance(expression_result, str):
             return _abstain(expression_result)
         expression, result_kind = expression_result
@@ -149,8 +153,10 @@ class SemanticParser:
 
     def _compose(
         self,
+        question: str,
         base: Expression,
         annotations: QuestionAnnotations,
+        formula: FormulaDefinition | None,
         mentions: tuple[MetricMention, ...],
     ) -> tuple[Expression, ResultKind] | str:
         operation = annotations.operation
@@ -197,7 +203,26 @@ class SemanticParser:
                 return "RANK_AXIS_UNRESOLVED"
             direction = annotations.rank_direction or RankDirection.DESCENDING
             if annotations.return_mode == ReturnMode.FILTERED_VALUE:
-                return "FILTER_PREDICATE_REQUIRED"
+                if formula is None:
+                    return "FILTER_PREDICATE_REQUIRED"
+                predicate = _threshold_predicate(question, formula, annotations)
+                if predicate is None:
+                    return "FILTER_PREDICATE_REQUIRED"
+                if not mentions:
+                    return "FILTER_VALUE_METRIC_UNRESOLVED"
+                selected_metric = mentions[-1].metric
+                if not _unit_dimensions_compatible(
+                    selected_metric.unit.dimension, annotations.requested_unit.dimension
+                ):
+                    return "FILTER_VALUE_UNIT_MISMATCH"
+                selected = _metric_ref(selected_metric, annotations)
+                filtered = Filter(axis, members, predicate, selected)
+                function = (
+                    AggregateFunction.MAXIMUM
+                    if direction == RankDirection.DESCENDING
+                    else AggregateFunction.MINIMUM
+                )
+                return Aggregate(function, axis, filtered, members), ResultKind.SCALAR
             if annotations.return_mode == ReturnMode.SELECT_AT_ARG:
                 if len(mentions) < 2:
                     return "SELECT_AT_ARG_REQUIRES_TWO_METRICS"
@@ -309,6 +334,95 @@ def _operation_axis(annotations: QuestionAnnotations) -> tuple[Axis | None, tupl
     if len(annotations.periods) >= 2:
         return Axis.PERIOD, annotations.periods
     return None, ()
+
+
+def _unit_dimensions_compatible(source: Dimension, requested: Dimension) -> bool:
+    if source == Dimension.UNKNOWN or requested == Dimension.UNKNOWN:
+        return True
+    if {source, requested} <= {Dimension.RATIO, Dimension.PERCENT}:
+        return True
+    return source == requested
+
+
+_PERCENT_THRESHOLD = re.compile(
+    r"\b(?P<operator>lon hon|vuot|cao hon|tren|it nhat|khong duoi|nho hon|thap hon|duoi)\s*"
+    r"(?P<value>\d+(?:[.,]\d+)?)\s*%"
+)
+
+
+def _threshold_predicate(
+    question: str,
+    formula: FormulaDefinition,
+    annotations: QuestionAnnotations,
+) -> Comparison | None:
+    """Compile an explicit percentage threshold into a typed predicate.
+
+    Only reviewed formula aliases and explicit numeric thresholds are accepted.
+    This deliberately rejects implicit comparisons and domain-specific defaults.
+    """
+
+    match = _PERCENT_THRESHOLD.search(normalize_phrase(question))
+    if match is None:
+        return None
+    operator = {
+        "lon hon": ComparisonOperator.GT,
+        "vuot": ComparisonOperator.GT,
+        "cao hon": ComparisonOperator.GT,
+        "tren": ComparisonOperator.GT,
+        "it nhat": ComparisonOperator.GE,
+        "khong duoi": ComparisonOperator.GE,
+        "nho hon": ComparisonOperator.LT,
+        "thap hon": ComparisonOperator.LT,
+        "duoi": ComparisonOperator.LT,
+    }[match.group("operator")]
+    value = float(match.group("value").replace(",", "."))
+    scoped_formula = FormulaCall(
+        formula.formula_id,
+        formula.variant_id,
+        _scope_expression(formula.expression, annotations),
+        formula.same_entity,
+        formula.same_period,
+    )
+    return Comparison(operator, scoped_formula, Literal(value, UnitSpec(Dimension.PERCENT)))
+
+
+def _expand_aggregate_period_range(
+    question: str, annotations: QuestionAnnotations
+) -> QuestionAnnotations:
+    """Materialize inclusive year domains for aggregate/rank operations.
+
+    The lexical recognizer intentionally extracts endpoints. Semantic operators
+    over a stated ``giai doan`` require the complete finite domain instead.
+    Binary change/difference operations keep endpoint semantics.
+    """
+
+    if annotations.operation not in {
+        OperationKind.SUM,
+        OperationKind.AVERAGE,
+        OperationKind.COUNT,
+        OperationKind.EXTREMUM,
+    }:
+        return annotations
+    if len(annotations.periods) != 2 or "giai doan" not in normalize_phrase(question):
+        return annotations
+    try:
+        start, end = sorted(int(value[:4]) for value in annotations.periods)
+    except ValueError:
+        return annotations
+    if end - start < 2 or end - start > 50:
+        return annotations
+    return QuestionAnnotations(
+        entities=annotations.entities,
+        periods=tuple(str(year) for year in range(start, end + 1)),
+        basis=annotations.basis,
+        requested_unit=annotations.requested_unit,
+        operation=annotations.operation,
+        mode=annotations.mode,
+        rank_direction=annotations.rank_direction,
+        return_mode=annotations.return_mode,
+        reverse_difference=annotations.reverse_difference,
+        operation_evidence=annotations.operation_evidence,
+    )
 
 
 def _binary_scopes(

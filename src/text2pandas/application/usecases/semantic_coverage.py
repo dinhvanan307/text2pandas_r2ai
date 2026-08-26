@@ -21,10 +21,15 @@ from text2pandas.pipelines.answering.entity_count import classify_entity_count
 from text2pandas.pipelines.answering.entity_difference import is_typed_entity_difference
 from text2pandas.pipelines.answering.entity_sum import is_typed_entity_sum
 from text2pandas.pipelines.answering.formula_engine import match_formula
-from text2pandas.pipelines.answering.frame import classify_operation, parse_question
+from text2pandas.pipelines.answering.frame import (
+    EXTREMUM,
+    RETURN_FILTERED_VALUE,
+    classify_operation,
+    parse_question,
+)
 from text2pandas.pipelines.answering.ir import DIVIDE, LOOKUP
 from text2pandas.pipelines.answering.router import route
-from text2pandas.pipelines.answering.units import UNKNOWN
+from text2pandas.pipelines.answering.units import MONEY, UNKNOWN
 from text2pandas.pipelines.retrieval.question_intent import parse_intent
 
 ELIGIBLE = "ELIGIBLE"
@@ -91,7 +96,7 @@ def analyze_semantic_coverage(
     for raw in questions:
         raw_qid = raw.get("id", raw.get("qid"))
         if not isinstance(raw_qid, (int, str)) or isinstance(raw_qid, bool):
-            raise ValueError(f"invalid question id: {raw_qid!r}")
+            raise TypeError(f"invalid question id: {raw_qid!r}")
         qid = int(raw_qid)
         question = str(raw["question"])
         if qid in seen:
@@ -265,6 +270,20 @@ def _classify(
         )
     if count_reason is not None:
         return CoverageRecord(qid, operation.op, None, GAP, count_reason)
+    if (
+        operation.op == EXTREMUM
+        and operation.return_mode == RETURN_FILTERED_VALUE
+        and formula is not None
+        and requested_unit.dimension == MONEY
+        and len(intent.years) >= 2
+    ):
+        return CoverageRecord(
+            qid,
+            operation.op,
+            formula_id,
+            ELIGIBLE,
+            "ELIGIBLE_TYPED_FILTERED_EXTREMUM",
+        )
     if formula is not None:
         if operation.op not in (LOOKUP, DIVIDE):
             reason = f"FORMULA_OUTER_OPERATION_NOT_SUPPORTED:{operation.op}"

@@ -101,3 +101,34 @@ def test_reviewed_entity_sum_requires_gold_compatible_entity_set() -> None:
 
     assert compatible.records[0].reason == "ELIGIBLE_TYPED_ENTITY_SUM"
     assert mismatch.records[0].reason == "MULTI_ENTITY_NOT_SUPPORTED:expected=3"
+
+
+def test_reviewed_formula_threshold_enables_money_filtered_extremum_only() -> None:
+    aliases = {"ASM": []}
+    money = analyze_semantic_coverage(
+        [
+            {
+                "id": 1,
+                "question": "Trong các năm 2016, 2017 và 2018 của ASM, trong các năm có "
+                "tỷ lệ lợi nhuận sau thuế trên doanh thu thuần lớn hơn 10%, doanh thu "
+                "thuần thấp nhất là bao nhiêu tỷ đồng?",
+                "entities": ["ASM"],
+            }
+        ],
+        aliases,
+    )
+    second_formula = analyze_semantic_coverage(
+        [
+            {
+                "id": 2,
+                "question": "Trong các năm 2016, 2017 và 2018 của ASM, trong các năm có "
+                "tỷ lệ lợi nhuận sau thuế trên doanh thu thuần lớn hơn 10%, năm có doanh "
+                "thu thấp nhất có tỷ lệ CFO trên nợ ngắn hạn là bao nhiêu lần?",
+                "entities": ["ASM"],
+            }
+        ],
+        aliases,
+    )
+
+    assert money.records[0].reason == "ELIGIBLE_TYPED_FILTERED_EXTREMUM"
+    assert second_formula.records[0].status == GAP

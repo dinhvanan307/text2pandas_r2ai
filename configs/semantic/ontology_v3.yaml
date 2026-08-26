@@ -12,7 +12,7 @@ sources:
     sha256: d990c072ffaba9a5d22384d2a68cb734ee235f5d01063a4e7ac077cdd7ac8073
   formulas:
     path: configs/answer_v2/formulas_v1.yaml
-    sha256: 05fc522f5b316121e82922974abda944770633870d10b29c91f95ecd1b6e0755
+    sha256: 9fb82ae66a52e32e13cf467aa10757510d50480dc3eefe8a7f009836eec317d7
   reported_metrics:
     path: configs/execution/metric_registry_v1.yaml
     sha256: 264d538e83f933c503d40d7ce35325f9b056fe033aeddee83e93abe3832ca9f8

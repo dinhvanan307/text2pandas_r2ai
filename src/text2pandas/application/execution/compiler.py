@@ -12,10 +12,15 @@ from text2pandas.domain.semantic import (
     Arithmetic,
     ArithmeticOperator,
     Axis,
+    Comparison,
+    ComparisonOperator,
     Dimension,
+    Exists,
     Filter,
     FormulaCall,
     Literal,
+    LogicalOperator,
+    LogicalPredicate,
     MetricRef,
     Rank,
     RankDirection,
@@ -24,7 +29,7 @@ from text2pandas.domain.semantic import (
     UnaryOperator,
     UnitSpec,
 )
-from text2pandas.domain.semantic.ast import Expression
+from text2pandas.domain.semantic.ast import Expression, Predicate
 
 from .contracts import Scope
 
@@ -59,6 +64,7 @@ class CompilationResult:
 class _RenderedQuantity:
     expression: str
     unit: UnitSpec
+    guard: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,7 +96,8 @@ def compile_pandas(bound: BoundExecutionPlan) -> CompilationResult:
             if len(rendered.values) != 1:
                 raise CompilationError(f"NON_SCALAR_NUMERIC_RESULT:{len(rendered.values)}")
             value = next(iter(rendered.values.values()))
-            query = _convert(value, output.unit).expression
+            converted = _convert(value, output.unit)
+            query = _guarded(converted)
         evidence = _evidence(bound, variables)
         return CompilationResult(
             "OK",
@@ -144,14 +151,14 @@ def _render(
         if expression.operator == UnaryOperator.ABSOLUTE:
             return _RenderedSeries(
                 {
-                    scope: _RenderedQuantity(f"abs({value.expression})", value.unit)
+                    scope: _RenderedQuantity(f"abs({value.expression})", value.unit, value.guard)
                     for scope, value in child.values.items()
                 }
             )
         if expression.operator == UnaryOperator.NEGATE:
             return _RenderedSeries(
                 {
-                    scope: _RenderedQuantity(f"(-{value.expression})", value.unit)
+                    scope: _RenderedQuantity(f"(-{value.expression})", value.unit, value.guard)
                     for scope, value in child.values.items()
                 }
             )
@@ -171,7 +178,15 @@ def _render(
         selected = _numeric(_render(expression.expression, f"{path}.expression", bound, variables))
         return _render_select_at_arg(rank, selected)
     if isinstance(expression, Filter):
-        raise CompilationError("FILTER_PANDAS_COMPILER_NOT_PROMOTED")
+        decisions = _render_predicate(expression.predicate, f"{path}.predicate", bound, variables)
+        filtered = _numeric(_render(expression.expression, f"{path}.expression", bound, variables))
+        aligned = _align_decisions(decisions, filtered)
+        return _RenderedSeries(
+            {
+                scope: _RenderedQuantity(value.expression, value.unit, _and(value.guard, decision))
+                for scope, value, decision in aligned
+            }
+        )
     raise CompilationError(f"UNSUPPORTED_EXPRESSION:{type(expression).__name__}")
 
 
@@ -184,23 +199,36 @@ def _arithmetic(
         unit = left.unit
         if operator == ArithmeticOperator.SUBTRACT and unit.dimension == Dimension.PERCENT:
             unit = UnitSpec(Dimension.PERCENT_POINT)
-        return _RenderedQuantity(f"({left.expression} {symbol} {right.expression})", unit)
+        return _RenderedQuantity(
+            f"({left.expression} {symbol} {right.expression})", unit, _and(left.guard, right.guard)
+        )
     if operator == ArithmeticOperator.GROWTH:
         left, right = _common(left, right)
         return _RenderedQuantity(
             f"(({left.expression} - {right.expression}) / abs({right.expression}))",
             UnitSpec(Dimension.RATIO),
+            _and(left.guard, right.guard),
         )
     if operator == ArithmeticOperator.DIVIDE:
         left, right = _common(left, right)
         return _RenderedQuantity(
-            f"({left.expression} / {right.expression})", UnitSpec(Dimension.RATIO)
+            f"({left.expression} / {right.expression})",
+            UnitSpec(Dimension.RATIO),
+            _and(left.guard, right.guard),
         )
     if operator == ArithmeticOperator.MULTIPLY:
         if left.unit.dimension == Dimension.RATIO:
-            return _RenderedQuantity(f"({left.expression} * {right.expression})", right.unit)
+            return _RenderedQuantity(
+                f"({left.expression} * {right.expression})",
+                right.unit,
+                _and(left.guard, right.guard),
+            )
         if right.unit.dimension == Dimension.RATIO:
-            return _RenderedQuantity(f"({left.expression} * {right.expression})", left.unit)
+            return _RenderedQuantity(
+                f"({left.expression} * {right.expression})",
+                left.unit,
+                _and(left.guard, right.guard),
+            )
         raise CompilationError(
             f"MULTIPLY_DIMENSION_UNSUPPORTED:{left.unit.dimension}:{right.unit.dimension}"
         )
@@ -212,20 +240,33 @@ def _render_aggregate(function: AggregateFunction, series: _RenderedSeries) -> _
     if not values:
         raise CompilationError("AGGREGATE_EMPTY")
     if function == AggregateFunction.COUNT:
+        body = " + ".join(f"(1 if {value.guard} else 0)" if value.guard else "1" for value in values)
         return _RenderedSeries(
-            {Scope(): _RenderedQuantity(str(len(values)), UnitSpec(Dimension.COUNT))}
+            {Scope(): _RenderedQuantity(f"({body})", UnitSpec(Dimension.COUNT))}
         )
     base = [_comparable(value) for value in values]
     dimensions = {value.unit.dimension for value in base}
     if len(dimensions) != 1:
         raise CompilationError(f"AGGREGATE_DIMENSION_MISMATCH:{sorted(dimensions)}")
     if function in (AggregateFunction.SUM, AggregateFunction.AVERAGE):
-        body = "(" + " + ".join(value.expression for value in base) + ")"
+        terms = [
+            f"({value.expression} if {value.guard} else 0)" if value.guard else value.expression
+            for value in base
+        ]
+        body = "(" + " + ".join(terms) + ")"
         if function == AggregateFunction.AVERAGE:
-            body = f"({body} / {len(base)})"
+            counts = [f"(1 if {value.guard} else 0)" if value.guard else "1" for value in base]
+            body = f"({body} / ({' + '.join(counts)}))"
     else:
         name = "max" if function == AggregateFunction.MAXIMUM else "min"
-        body = f"{name}({', '.join(value.expression for value in base)})"
+        sentinel = "float('-inf')" if function == AggregateFunction.MAXIMUM else "float('inf')"
+        candidates = [
+            f"({value.expression} if {value.guard} else {sentinel})"
+            if value.guard
+            else value.expression
+            for value in base
+        ]
+        body = f"{name}({', '.join(candidates)})"
     return _RenderedSeries({Scope(): _RenderedQuantity(body, base[0].unit)})
 
 
@@ -236,13 +277,22 @@ def _render_select_at_arg(rank: _RenderedRank, selected: _RenderedSeries) -> _Re
         raise CompilationError("SELECT_AT_ARG_MEMBER_MISMATCH")
     name = "max" if rank.direction == RankDirection.DESCENDING else "min"
     comparable_ranked = {member: _comparable(value) for member, value in ranked.items()}
-    winner = f"{name}({', '.join(value.expression for value in comparable_ranked.values())})"
+    sentinel = "float('-inf')" if rank.direction == RankDirection.DESCENDING else "float('inf')"
+    guarded_ranked = {
+        member: (
+            f"({value.expression} if {value.guard} else {sentinel})"
+            if value.guard
+            else value.expression
+        )
+        for member, value in comparable_ranked.items()
+    }
+    winner = f"{name}({', '.join(guarded_ranked.values())})"
     members = sorted(ranked)
-    body = output[members[-1]].expression
+    body = _guarded(output[members[-1]])
     for member in reversed(members[:-1]):
         body = (
-            f"({output[member].expression} if "
-            f"{comparable_ranked[member].expression} == {winner} else {body})"
+            f"({_guarded(output[member])} if "
+            f"{guarded_ranked[member]} == {winner} else {body})"
         )
     return _RenderedSeries({Scope(): _RenderedQuantity(body, output[members[0]].unit)})
 
@@ -255,13 +305,22 @@ def _render_rank_member(rank: _RenderedRank) -> str:
     ranked = _by_member(rank.values, rank.axis)
     comparable_ranked = {member: _comparable(value) for member, value in ranked.items()}
     name = "max" if rank.direction == RankDirection.DESCENDING else "min"
-    winner = f"{name}({', '.join(value.expression for value in comparable_ranked.values())})"
+    sentinel = "float('-inf')" if rank.direction == RankDirection.DESCENDING else "float('inf')"
+    guarded_ranked = {
+        member: (
+            f"({value.expression} if {value.guard} else {sentinel})"
+            if value.guard
+            else value.expression
+        )
+        for member, value in comparable_ranked.items()
+    }
+    winner = f"{name}({', '.join(guarded_ranked.values())})"
     members = sorted(ranked)
     body = f"float({int(members[-1][:4])})"
     for member in reversed(members[:-1]):
         body = (
             f"(float({int(member[:4])}) if "
-            f"{comparable_ranked[member].expression} == {winner} else {body})"
+            f"{guarded_ranked[member]} == {winner} else {body})"
         )
     return body
 
@@ -324,7 +383,92 @@ def _convert(value: _RenderedQuantity, target: UnitSpec) -> _RenderedQuantity:
     else:
         raise CompilationError(f"DIMENSION_MISMATCH:{source.dimension}:{target.dimension}")
     expression = value.expression if factor == 1 else f"({value.expression} * {_number(factor)})"
-    return _RenderedQuantity(expression, target)
+    return _RenderedQuantity(expression, target, value.guard)
+
+
+def _render_predicate(
+    predicate: Predicate,
+    path: str,
+    bound: BoundExecutionPlan,
+    variables: dict[str, str],
+) -> dict[Scope, str]:
+    if isinstance(predicate, Comparison):
+        left = _numeric(_render(predicate.left, f"{path}.left", bound, variables))
+        right = _numeric(_render(predicate.right, f"{path}.right", bound, variables))
+        symbols = {
+            ComparisonOperator.EQ: "==",
+            ComparisonOperator.NE: "!=",
+            ComparisonOperator.GT: ">",
+            ComparisonOperator.GE: ">=",
+            ComparisonOperator.LT: "<",
+            ComparisonOperator.LE: "<=",
+        }
+        output: dict[Scope, str] = {}
+        for scope, a, b in _align(left, right):
+            a, b = _common_comparable(a, b)
+            comparison = f"({a.expression} {symbols[predicate.operator]} {b.expression})"
+            output[scope] = _and(a.guard, b.guard, comparison) or comparison
+        return output
+    if isinstance(predicate, Exists):
+        values = _numeric(_render(predicate.expression, f"{path}.expression", bound, variables))
+        return {
+            scope: (
+                f"(not ({value.guard}))"
+                if predicate.negated and value.guard
+                else "False"
+                if predicate.negated
+                else value.guard or "True"
+            )
+            for scope, value in values.values.items()
+        }
+    if isinstance(predicate, LogicalPredicate):
+        children = [
+            _render_predicate(child, f"{path}.predicates[{index}]", bound, variables)
+            for index, child in enumerate(predicate.predicates)
+        ]
+        scopes = set().union(*(set(child) for child in children))
+        operator = " and " if predicate.operator == LogicalOperator.AND else " or "
+        return {
+            scope: "(" + operator.join(child.get(scope, "False") for child in children) + ")"
+            for scope in scopes
+        }
+    raise CompilationError(f"UNSUPPORTED_PREDICATE:{type(predicate).__name__}")
+
+
+def _align_decisions(
+    decisions: dict[Scope, str], values: _RenderedSeries
+) -> list[tuple[Scope, _RenderedQuantity, str]]:
+    if set(decisions) == set(values.values):
+        return [(scope, values.values[scope], decisions[scope]) for scope in sorted(decisions)]
+    scalar = Scope()
+    if set(decisions) == {scalar}:
+        return [(scope, value, decisions[scalar]) for scope, value in sorted(values.values.items())]
+    raise CompilationError(
+        f"FILTER_SCOPE_MISMATCH:{sorted(decisions)}:{sorted(values.values)}"
+    )
+
+
+def _common_comparable(
+    left: _RenderedQuantity, right: _RenderedQuantity
+) -> tuple[_RenderedQuantity, _RenderedQuantity]:
+    left = _comparable(left)
+    right = _comparable(right)
+    if left.unit.dimension != right.unit.dimension:
+        raise CompilationError(f"DIMENSION_MISMATCH:{left.unit.dimension}:{right.unit.dimension}")
+    return _common(left, right)
+
+
+def _and(*parts: str | None) -> str | None:
+    present = [part for part in parts if part]
+    if not present:
+        return None
+    return "(" + " and ".join(f"({part})" for part in present) + ")"
+
+
+def _guarded(value: _RenderedQuantity) -> str:
+    if value.guard is None:
+        return value.expression
+    return f"({value.expression} if {value.guard} else float('nan'))"
 
 
 def _by_member(series: _RenderedSeries, axis: Axis) -> dict[str, _RenderedQuantity]:

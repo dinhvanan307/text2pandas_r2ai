@@ -100,7 +100,8 @@ formulas:
   - formula_id: net_margin
     variant_id: default
     aliases: ["bien loi nhuan rong", "bien loi nhuan sau thue", "ty suat loi nhuan rong",
-              "bien lai rong", "ty suat loi nhuan sau thue"]
+              "bien lai rong", "ty suat loi nhuan sau thue",
+              "ty le loi nhuan sau thue tren doanh thu thuan"]
     leaves: [profit_after_tax, net_revenue]
     period_semantics: flow
     same_entity: true

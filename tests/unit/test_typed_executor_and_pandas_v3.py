@@ -164,3 +164,79 @@ def test_select_at_arg_executes_rank_metric_then_returns_a_different_metric() ->
             }
         )
     assert execute_query(compiled.program.query, frames) == 30.0
+
+
+def test_filtered_minimum_executes_and_compiles_the_same_qualifying_periods() -> None:
+    ontology = load_ontology()
+    annotations = QuestionAnnotations(
+        entities=("ASM",),
+        periods=("2016", "2017", "2018"),
+        basis=Basis.CONSOLIDATED,
+        requested_unit=UnitSpec(Dimension.MONEY, 6, "VND"),
+        operation=OperationKind.EXTREMUM,
+        mode="single",
+        rank_direction=RankDirection.ASCENDING,
+        return_mode=ReturnMode.FILTERED_VALUE,
+    )
+    parsed = SemanticParser(ontology, StaticAnnotator(annotations)).parse(
+        "Trong các năm 2016, 2017 và 2018 của ASM, xét các năm có tỷ lệ lợi "
+        "nhuận sau thuế trên doanh thu thuần lớn hơn 10%, doanh thu thuần thấp "
+        "nhất là bao nhiêu triệu đồng?"
+    )
+    assert parsed.ok
+    plan = compile_execution_plan(parsed.ast, ontology)
+    values = {
+        ("profit_after_tax", "2016"): Decimal(5),
+        ("net_revenue", "2016"): Decimal(100),
+        ("profit_after_tax", "2017"): Decimal(30),
+        ("net_revenue", "2017"): Decimal(200),
+        ("profit_after_tax", "2018"): Decimal(18),
+        ("net_revenue", "2018"): Decimal(150),
+    }
+    batches = {}
+    for request in plan.requests:
+        uid = f"obs:{request.metric_id}:{request.period}"
+        candidate = ObservationCandidate(
+            observation_uid=uid,
+            table_uid=f"table:{request.period}",
+            document_id=f"ASM-{request.period}",
+            entity="ASM",
+            basis=Basis.CONSOLIDATED,
+            statement_type="income_statement",
+            metric_id=request.metric_id,
+            row_path=request.metric_id,
+            column_path=request.period or "",
+            period=f"{request.period}-12-31",
+            period_role="current",
+            value=values[(request.metric_id, request.period)],
+            value_raw=str(values[(request.metric_id, request.period)]),
+            unit=UnitSpec(Dimension.MONEY, 6, "VND"),
+            is_restated=False,
+            score=10.0,
+            score_reasons=("fixture",),
+            grid_row=1,
+            grid_column=1,
+        )
+        batches[request.request_id] = CandidateBatch(request.request_id, (candidate,), {})
+    binding = JointBinder().bind(plan, batches)
+    assert binding.ok
+
+    typed = TypedExecutor().execute(binding.bound_plan)
+    compiled = compile_pandas(binding.bound_plan)
+
+    assert typed.ok and typed.answer == Decimal(150)
+    assert compiled.ok
+    frames = {}
+    for evidence in compiled.program.evidence:
+        rows = [
+            operand.candidate
+            for operand in binding.bound_plan.operands.values()
+            if operand.candidate.table_uid == evidence.table_uid
+        ]
+        frames[evidence.variable] = pd.DataFrame(
+            {
+                "observation_uid": [row.observation_uid for row in rows],
+                "value": [float(row.value) for row in rows],
+            }
+        )
+    assert execute_query(compiled.program.query, frames) == 150.0
