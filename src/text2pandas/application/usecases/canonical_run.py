@@ -240,38 +240,65 @@ def load_candidate_cells(
     rank = {uid: index for index, uid in enumerate(table_uids)}
     placeholders = ",".join("?" for _ in table_uids)
     table_columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(tables)")}
+    observation_columns = {
+        str(row[1]) for row in connection.execute("PRAGMA table_info(observations)")
+    }
     document_expression = (
         "t.directory_doc_id" if "directory_doc_id" in table_columns else "'table:' || t.table_uid"
     )
-    rows = connection.execute(
-        f"""
-        SELECT o.observation_uid, o.table_uid, o.ticker, t.basis,
-               o.row_path_text, o.metric_label_clean, o.col_path_text,
-               o.value_source_raw, o.value_decimal_text, o.unit_kind,
-               o.currency, o.scale_exponent, o.period_end, o.period_role,
-               o.metric_code, o.is_restated, o.grid_row_idx, o.grid_col_idx,
-               t.section_text, tc.table_search_text, {document_expression}
-        FROM observations o
-        JOIN observation_readiness r USING(observation_uid)
-        JOIN tables t USING(table_uid)
-        JOIN table_cards tc USING(table_uid)
-        WHERE o.table_uid IN ({placeholders})
-          AND r.execution_ready = 1
-          AND o.value_decimal_text IS NOT NULL
-        ORDER BY o.table_uid, o.grid_row_idx, o.grid_col_idx, o.observation_uid
-        """,
-        tuple(table_uids),
+    statement_expression = (
+        "t.statement_type" if "statement_type" in table_columns else "NULL"
     )
+    scale_source_expression = (
+        "o.scale_source" if "scale_source" in observation_columns else "'unknown'"
+    )
+    rows = list(
+        connection.execute(
+            f"""
+            SELECT o.observation_uid, o.table_uid, o.ticker, t.basis, {statement_expression},
+                   o.row_path_text, o.metric_label_clean, o.col_path_text,
+                   o.value_source_raw, o.value_decimal_text, o.unit_kind,
+                   o.currency, o.scale_exponent, {scale_source_expression},
+                   o.period_end, o.period_role,
+                   o.metric_code, o.is_restated, o.grid_row_idx, o.grid_col_idx,
+                   t.section_text, tc.table_search_text, {document_expression}
+            FROM observations o
+            JOIN observation_readiness r USING(observation_uid)
+            JOIN tables t USING(table_uid)
+            JOIN table_cards tc USING(table_uid)
+            WHERE o.table_uid IN ({placeholders})
+              AND r.execution_ready = 1
+              AND o.value_decimal_text IS NOT NULL
+            ORDER BY o.table_uid, o.grid_row_idx, o.grid_col_idx, o.observation_uid
+            """,
+            tuple(table_uids),
+        )
+    )
+
+    # A table-wide unit printed in header columns is inherited by closing
+    # columns whose own label is only a date. Infer only from unanimous,
+    # explicit column-path evidence; mixed explicit scales remain unresolved.
+    explicit_scales: dict[str, set[int]] = defaultdict(set)
+    for row in rows:
+        table_uid, unit_kind, scale, scale_source = row[1], row[10], row[12], row[13]
+        if unit_kind == "money" and scale is not None and scale_source == "column_path":
+            explicit_scales[str(table_uid)].add(int(scale))
+    inherited_scale = {
+        table_uid: next(iter(scales))
+        for table_uid, scales in explicit_scales.items()
+        if len(scales) == 1
+    }
 
     candidates: list[CandidateCell] = []
     frame_rows: dict[str, list[dict[str, object]]] = defaultdict(list)
-    keys: dict[str, dict[tuple[str, str], str]] = defaultdict(dict)
+    keys: dict[str, dict[tuple[str, str], tuple[str, int]]] = defaultdict(dict)
     for row in rows:
         (
             _observation_uid,
             table_uid,
             ticker,
             basis,
+            statement_type,
             row_path,
             metric_label,
             col_path,
@@ -280,6 +307,7 @@ def load_candidate_cells(
             unit_kind,
             currency,
             scale,
+            scale_source,
             period_end,
             period_role,
             metric_code,
@@ -311,6 +339,14 @@ def load_candidate_cells(
             # would recreate the measured 10^3/10^6 family, so this fact is not
             # eligible for answer generation until adjudicated upstream.
             continue
+        effective_scale = scale
+        if (
+            unit_kind == "money"
+            and scale_source != "column_path"
+            and detected_dimension != LEXICON_MONEY
+            and str(table_uid) in inherited_scale
+        ):
+            effective_scale = inherited_scale[str(table_uid)]
 
         csv_path = f"data/{table_uid}.csv"
         df_var = f"df{rank[table_uid] + 1}"
@@ -318,11 +354,15 @@ def load_candidate_cells(
         base_column = column
         suffix = 0
         current = keys[csv_path]
-        while (path, column) in current and current[(path, column)] != str(decimal_text):
+        while (
+            (path, column) in current
+            and current[(path, column)][0] != str(decimal_text)
+        ):
             suffix += 1
             column = f"{base_column} #{suffix}"
         if (path, column) not in current:
-            current[(path, column)] = str(decimal_text)
+            row_index = len(frame_rows[csv_path])
+            current[(path, column)] = (str(decimal_text), row_index)
             frame_rows[csv_path].append(
                 {
                     "row_path": path,
@@ -332,23 +372,26 @@ def load_candidate_cells(
                     "value": value,
                 }
             )
+        else:
+            row_index = current[(path, column)][1]
         candidates.append(
             CandidateCell(
                 df_var=df_var,
                 csv_path=csv_path,
-                row_index=len(frame_rows[csv_path]) - 1,
+                row_index=row_index,
                 row_path=path,
                 col_label=column,
                 value_raw=value_raw or str(decimal_text),
                 value=value,
                 parsed_raw=value,
                 storage_exponent=0,
-                unit=_unit(unit_kind, scale, currency),
+                unit=_unit(unit_kind, effective_scale, currency),
                 period=period_end,
                 table_uid=table_uid,
                 document_id=document_id,
                 entity=ticker,
                 basis=basis,
+                statement_type=statement_type,
                 metric_code=metric_code,
                 period_role=period_role,
                 is_restated=bool(is_restated),

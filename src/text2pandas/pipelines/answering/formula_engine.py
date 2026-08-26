@@ -29,6 +29,8 @@ _AGGREGATE_PREFIXES = ("tong cong ", "tong ", "cong ")
 class MetricSpec:
     metric_id: str
     aliases: tuple[str, ...]
+    statement_types: tuple[str, ...]
+    period_semantics: str
     forbidden_aliases: tuple[str, ...]
     forbidden_contains: tuple[str, ...]
 
@@ -39,6 +41,7 @@ class FormulaSpec:
     aliases: tuple[str, ...]
     leaves: tuple[str, ...]
     output_dimension: str
+    max_abs_percent: float
     expression: dict
 
 
@@ -85,6 +88,7 @@ def load_registry() -> tuple[dict[str, FormulaSpec], dict[str, MetricSpec]]:
             aliases=tuple(_normalize(value) for value in raw.get("aliases", [])),
             leaves=tuple(str(value) for value in raw.get("leaves", [])),
             output_dimension=dimension,
+            max_abs_percent=float(output.get("max_abs", 10_000.0)),
             expression=dict(raw["expression"]),
         )
         formulas[spec.formula_id] = spec
@@ -93,6 +97,8 @@ def load_registry() -> tuple[dict[str, FormulaSpec], dict[str, MetricSpec]]:
         spec = MetricSpec(
             metric_id=str(raw["metric_id"]),
             aliases=tuple(_normalize(value) for value in raw.get("aliases", [])),
+            statement_types=tuple(str(value) for value in raw.get("statement_types", [])),
+            period_semantics=str(raw.get("period_semantics", "")),
             forbidden_aliases=tuple(
                 _normalize(value) for value in raw.get("forbidden_aliases", [])
             ),
@@ -176,6 +182,9 @@ def answer_formula_question(
                 metric: {
                     "table_uid": cell.table_uid,
                     "row_path": cell.row_path,
+                    "col_label": cell.col_label,
+                    "value": cell.value,
+                    "unit": cell.unit.describe(),
                     "period": cell.period,
                 }
                 for metric, cell in bound.items()
@@ -206,7 +215,7 @@ def answer_formula_question(
     tolerance = 1e-9 * max(1.0, abs(expected))
     if abs(answer - expected) > tolerance:
         return _fail(result, "VALIDATE", "FORMULA_RENDER_VALUE_MISMATCH")
-    if formula.output_dimension == PERCENT and abs(answer) > 10_000:
+    if formula.output_dimension == PERCENT and abs(answer) > formula.max_abs_percent:
         return _fail(result, "VALIDATE", "FORMULA_PERCENT_OUT_OF_RANGE")
 
     result.query = query
@@ -249,6 +258,12 @@ def _rank_metric_candidates(
             continue
         if basis and cell.basis != basis:
             continue
+        if (
+            cell.statement_type
+            and spec.statement_types
+            and cell.statement_type not in spec.statement_types
+        ):
+            continue
         if cell.unit.dimension != MONEY:
             continue
         match = _metric_match(spec, cell.row_path.rsplit("›", 1)[-1])
@@ -260,6 +275,8 @@ def _rank_metric_candidates(
                 (
                     float(direct),
                     float(alias_length),
+                    _period_role_score(spec, cell),
+                    _section_relevance(spec, cell),
                     1.0 if not cell.is_restated else 0.0,
                     -float(cell.row_path.count("›")),
                     -float(cell.table_rank),
@@ -270,6 +287,38 @@ def _rank_metric_candidates(
         )
     ranked.sort(key=lambda item: item[0], reverse=True)
     return ranked
+
+
+def _period_role_score(spec: MetricSpec, cell: CandidateCell) -> float:
+    role = (cell.period_role or "").casefold()
+    column = _normalize(cell.col_label)
+    if spec.period_semantics == "point_in_time":
+        if role == "closing" or any(
+            cue in column for cue in ("so cuoi nam", "cuoi nam", "31 12", "tai ngay")
+        ):
+            return 3.0
+        if role in {"opening", "prior"}:
+            return 2.0
+        # A generic `current` column in a movement table is not a balance.
+        return 0.0 if role == "current" else 1.0
+    if role == "current":
+        return 3.0
+    if role == "prior":
+        return 2.0
+    return 1.0
+
+
+def _section_relevance(spec: MetricSpec, cell: CandidateCell) -> float:
+    section_tokens = set(_normalize(cell.section_text).split())
+    if not section_tokens:
+        return 0.0
+    return max(
+        (
+            len(section_tokens.intersection(alias.split())) / max(1, len(alias.split()))
+            for alias in spec.aliases
+        ),
+        default=0.0,
+    )
 
 
 def _bind_coherent_operands(

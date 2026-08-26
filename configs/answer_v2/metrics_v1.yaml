@@ -1,8 +1,8 @@
 # metric_ontology wave 1 — AG1_R2_FORMULA
 #
-# 22 metric. `operating_profit` và `CFO` bị loại vì đo trên
-# 2.633.554 observation của work.db cho **ground = 0%** với alias hiển nhiên
-# (doc 145 §8, P1-5). Đưa chúng vào wave 1 làm 4 formula chết im lặng.
+# 24 metric. `operating_profit` vẫn bị loại vì đo trên 2.633.554 observation
+# của work.db cho **ground = 0%** với alias hiển nhiên (doc 145 §8, P1-5).
+# CFO đã được review lại bằng direct A6 rows trước khi đưa vào registry.
 #
 # `match: prefix_normalized` — chuẩn hoá lower + bỏ dấu + gộp khoảng trắng, rồi
 # so khớp TIỀN TỐ. Chọn tiền tố (không phải bằng tuyệt đối) vì A6 nối hậu tố kỳ
@@ -59,12 +59,21 @@ metrics:
 
   - metric_id: short_term_borrowings
     aliases: ["vay ngan han"]
-    statement_types: [balance_sheet]
+    statement_types: [balance_sheet, note]
     value_kind: money
     period_semantics: point_in_time
     sign_policy: signed_as_reported
     preferred_scope: consolidated
     forbidden_aliases: []
+
+  - metric_id: long_term_borrowings
+    aliases: ["vay dai han", "no vay dai han"]
+    statement_types: [balance_sheet, note]
+    value_kind: money
+    period_semantics: point_in_time
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: ["vay dai han den han tra"]
 
   - metric_id: equity
     aliases: ["von chu so huu"]
@@ -86,7 +95,7 @@ metrics:
 
   - metric_id: short_term_other_receivables
     aliases: ["phai thu ngan han khac"]
-    statement_types: [balance_sheet]
+    statement_types: [balance_sheet, note]
     value_kind: money
     period_semantics: point_in_time
     sign_policy: signed_as_reported
@@ -95,7 +104,7 @@ metrics:
 
   - metric_id: long_term_other_receivables
     aliases: ["phai thu dai han khac"]
-    statement_types: [balance_sheet]
+    statement_types: [balance_sheet, note]
     value_kind: money
     period_semantics: point_in_time
     sign_policy: signed_as_reported
@@ -156,13 +165,26 @@ metrics:
       - "thieu so"
 
   - metric_id: profit_before_tax
-    aliases: ["tong loi nhuan ke toan truoc thue", "loi nhuan truoc thue"]
-    statement_types: [income_statement]
+    aliases: ["tong loi nhuan ke toan truoc thue", "loi nhuan truoc thue",
+              "xi tong loi nhuan truoc thue"]
+    statement_types: [income_statement, note]
     value_kind: money
     period_semantics: flow
     sign_policy: signed_as_reported
     preferred_scope: consolidated
     forbidden_aliases: []
+
+  - metric_id: cash_flow_from_operations
+    aliases: ["luu chuyen tien thuan tu hoat dong kinh doanh",
+              "dong tien thuan tu hoat dong kinh doanh"]
+    statement_types: [cash_flow]
+    value_kind: money
+    period_semantics: flow
+    sign_policy: signed_as_reported
+    preferred_scope: consolidated
+    forbidden_aliases: [
+      "luu chuyen tien thuan tu hoat dong kinh doanh truoc nhung thay doi"
+    ]
 
   - metric_id: cogs
     aliases: ["gia von hang ban"]
@@ -192,13 +214,13 @@ metrics:
     forbidden_aliases: []
 
   - metric_id: interest_expense
-    aliases: ["chi phi lai vay"]
+    aliases: ["chi phi lai vay", "trong do chi phi lai vay"]
     statement_types: [income_statement]
     value_kind: money
     period_semantics: flow
     sign_policy: abs
     preferred_scope: consolidated
-    forbidden_aliases: []
+    forbidden_aliases: ["chi phi lai vay va chi phi di vay"]
 
   - metric_id: financial_expense
     aliases: ["chi phi tai chinh"]
@@ -234,7 +256,7 @@ metrics:
 
   - metric_id: intangible_fixed_assets
     aliases: ["tai san co dinh vo hinh"]
-    statement_types: [balance_sheet]
+    statement_types: [balance_sheet, note]
     value_kind: money
     period_semantics: point_in_time
     sign_policy: signed_as_reported
@@ -243,7 +265,7 @@ metrics:
 
   - metric_id: tangible_fixed_assets
     aliases: ["tai san co dinh huu hinh"]
-    statement_types: [balance_sheet]
+    statement_types: [balance_sheet, note]
     value_kind: money
     period_semantics: point_in_time
     sign_policy: signed_as_reported
@@ -254,5 +276,3 @@ metrics:
 deferred:
   - metric_id: operating_profit
     ly_do: "ground 0% với alias 'loi nhuan thuan tu hoat dong kinh doanh'"
-  - metric_id: cfo
-    ly_do: "ground 0% với alias 'luu chuyen tien thuan tu hoat dong kinh doanh'"

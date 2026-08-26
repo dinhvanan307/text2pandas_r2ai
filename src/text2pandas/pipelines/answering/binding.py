@@ -32,6 +32,7 @@ class CandidateCell:
     document_id: Optional[str] = None
     entity: Optional[str] = None
     basis: Optional[str] = None
+    statement_type: Optional[str] = None
     metric_code: Optional[str] = None
     period_role: Optional[str] = None
     is_restated: bool = False
@@ -61,6 +62,7 @@ class CandidateCell:
             "document_id": self.document_id,
             "entity": self.entity,
             "basis": self.basis,
+            "statement_type": self.statement_type,
             "metric_code": self.metric_code,
             "period_role": self.period_role,
             "is_restated": self.is_restated,

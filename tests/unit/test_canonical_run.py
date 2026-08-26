@@ -119,3 +119,78 @@ def test_a6_loader_excludes_scale_conflicts() -> None:
 
     assert [cell.row_path for cell in cells] == ["Doanh thu thuần"]
     assert list(frames) == ["data/t1.csv"]
+
+
+def test_a6_loader_inherits_unanimous_explicit_table_scale_for_date_only_column() -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(
+        """
+        CREATE TABLE tables (
+          table_uid TEXT PRIMARY KEY, basis TEXT, statement_type TEXT,
+          section_text TEXT, context_clean TEXT
+        );
+        CREATE TABLE table_cards (table_uid TEXT PRIMARY KEY, table_search_text TEXT);
+        CREATE TABLE observation_readiness (
+          observation_uid TEXT PRIMARY KEY, execution_ready INTEGER
+        );
+        CREATE TABLE observations (
+          observation_uid TEXT PRIMARY KEY, table_uid TEXT, ticker TEXT,
+          row_path_text TEXT, metric_label_clean TEXT, col_path_text TEXT,
+          value_source_raw TEXT, value_decimal_text TEXT, unit_kind TEXT,
+          currency TEXT, scale_exponent INTEGER, scale_source TEXT, period_end TEXT,
+          period_role TEXT, metric_code TEXT, is_restated INTEGER,
+          grid_row_idx INTEGER, grid_col_idx INTEGER
+        );
+        INSERT INTO tables VALUES ('t1', 'consolidated', 'note', 'Vay ngắn hạn', '');
+        INSERT INTO table_cards VALUES ('t1', 'Vay ngắn hạn');
+        INSERT INTO observation_readiness VALUES ('movement', 1), ('closing', 1);
+        INSERT INTO observations VALUES
+          ('movement','t1','MSR','Vay ngắn hạn',NULL,'Tăng › Nghìn VND',
+           '2','2','money','VND',3,'column_path','2024-12-31','current',NULL,0,1,1),
+          ('closing','t1','MSR','Vay ngắn hạn',NULL,'31/12/2024',
+           '100','100','money','VND',0,'table_context','2024-12-31','closing',NULL,0,1,2);
+        """
+    )
+
+    cells, _frames = load_candidate_cells(connection, ["t1"])
+    closing = next(cell for cell in cells if cell.period_role == "closing")
+
+    assert closing.unit.scale_exponent == 3
+
+
+def test_a6_loader_reuses_original_row_index_for_duplicate_observation() -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(
+        """
+        CREATE TABLE tables (
+          table_uid TEXT PRIMARY KEY, basis TEXT, section_text TEXT, context_clean TEXT
+        );
+        CREATE TABLE table_cards (table_uid TEXT PRIMARY KEY, table_search_text TEXT);
+        CREATE TABLE observation_readiness (
+          observation_uid TEXT PRIMARY KEY, execution_ready INTEGER
+        );
+        CREATE TABLE observations (
+          observation_uid TEXT PRIMARY KEY, table_uid TEXT, ticker TEXT,
+          row_path_text TEXT, metric_label_clean TEXT, col_path_text TEXT,
+          value_source_raw TEXT, value_decimal_text TEXT, unit_kind TEXT,
+          currency TEXT, scale_exponent INTEGER, period_end TEXT,
+          period_role TEXT, metric_code TEXT, is_restated INTEGER,
+          grid_row_idx INTEGER, grid_col_idx INTEGER
+        );
+        INSERT INTO tables VALUES ('t1', 'separate', '', '');
+        INSERT INTO table_cards VALUES ('t1', 'Doanh thu');
+        INSERT INTO observation_readiness VALUES ('first', 1), ('other', 1), ('duplicate', 1);
+        INSERT INTO observations VALUES
+          ('first','t1','VNM','Doanh thu',NULL,'2024 VND','1','1','money','VND',0,
+           '2024-12-31','current',NULL,0,1,1),
+          ('other','t1','VNM','Chi phí',NULL,'2024 VND','2','2','money','VND',0,
+           '2024-12-31','current',NULL,0,2,1),
+          ('duplicate','t1','VNM','Doanh thu',NULL,'2024 VND','1','1','money','VND',0,
+           '2024-12-31','current',NULL,0,3,1);
+        """
+    )
+
+    cells, _frames = load_candidate_cells(connection, ["t1"])
+    revenue = [cell for cell in cells if cell.row_path == "Doanh thu"]
+
+    assert [cell.row_index for cell in revenue] == [0, 0]

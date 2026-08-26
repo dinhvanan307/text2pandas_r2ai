@@ -32,26 +32,32 @@ NORMAL = [
      "current_assets": 200.0, "current_liabilities": 100.0, "inventory": 50.0,
      "gross_profit": 40.0, "net_revenue": 200.0, "profit_after_tax": 20.0,
      "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0,
-     "financial_expense": 15.0, "financial_income": 25.0,
+     "financial_expense": 15.0, "interest_expense": 12.0, "financial_income": 25.0,
      "total_fixed_assets": 120.0, "intangible_fixed_assets": 30.0,
      "tangible_fixed_assets": 90.0, "short_term_borrowings": 45.0,
-     "short_term_other_receivables": 30.0, "long_term_other_receivables": 10.0},
+     "long_term_borrowings": 60.0, "cash_flow_from_operations": 30.0,
+     "profit_before_tax": 20.0, "short_term_other_receivables": 30.0,
+     "long_term_other_receivables": 10.0},
     {"total_liabilities": 900.0, "equity": 300.0, "total_assets": 1200.0,
      "current_assets": 600.0, "current_liabilities": 400.0, "inventory": 100.0,
      "gross_profit": 150.0, "net_revenue": 1000.0, "profit_after_tax": -50.0,
      "selling_expense": -30.0, "admin_expense": 20.0, "cogs": -700.0,
-     "financial_expense": -80.0, "financial_income": 160.0,
+     "financial_expense": -80.0, "interest_expense": -60.0, "financial_income": 160.0,
      "total_fixed_assets": 600.0, "intangible_fixed_assets": 120.0,
      "tangible_fixed_assets": 480.0, "short_term_borrowings": 150.0,
-     "short_term_other_receivables": 80.0, "long_term_other_receivables": 20.0},
+     "long_term_borrowings": 240.0, "cash_flow_from_operations": -50.0,
+     "profit_before_tax": 40.0, "short_term_other_receivables": 80.0,
+     "long_term_other_receivables": 20.0},
     {"total_liabilities": 1.0, "equity": 4.0, "total_assets": 5.0,
      "current_assets": 3.0, "current_liabilities": 3.0, "inventory": 0.0,
      "gross_profit": 0.0, "net_revenue": 7.0, "profit_after_tax": 7.0,
      "selling_expense": 1.0, "admin_expense": 1.0, "cogs": 0.0,
-     "financial_expense": 2.0, "financial_income": 3.0,
+     "financial_expense": 2.0, "interest_expense": 1.0, "financial_income": 3.0,
      "total_fixed_assets": 4.0, "intangible_fixed_assets": 1.0,
      "tangible_fixed_assets": 2.0, "short_term_borrowings": 1.0,
-     "short_term_other_receivables": 1.0, "long_term_other_receivables": 3.0},
+     "long_term_borrowings": 2.0, "cash_flow_from_operations": 1.0,
+     "profit_before_tax": 2.0, "short_term_other_receivables": 1.0,
+     "long_term_other_receivables": 3.0},
 ]
 
 MONG_DOI = {
@@ -87,6 +93,12 @@ MONG_DOI = {
     "short_term_other_receivables_share": lambda v: v["short_term_other_receivables"]
                                                       / (v["short_term_other_receivables"]
                                                          + v["long_term_other_receivables"]) * 100.0,
+    "interest_expense_to_short_term_borrowings": lambda v: abs(v["interest_expense"])
+                                                            / v["short_term_borrowings"] * 100.0,
+    "interest_expense_to_long_term_borrowings": lambda v: abs(v["interest_expense"])
+                                                           / v["long_term_borrowings"] * 100.0,
+    "cfo_to_profit_before_tax": lambda v: v["cash_flow_from_operations"]
+                                             / v["profit_before_tax"] * 100.0,
     "intangible_fixed_assets_to_assets": lambda v: v["intangible_fixed_assets"]
                                                         / v["total_assets"] * 100.0,
     "tangible_fixed_assets_to_assets": lambda v: v["tangible_fixed_assets"]
@@ -113,6 +125,9 @@ MAU = {
     "short_term_other_receivables_share": (
         "short_term_other_receivables", "long_term_other_receivables"
     ),
+    "interest_expense_to_short_term_borrowings": "short_term_borrowings",
+    "interest_expense_to_long_term_borrowings": "long_term_borrowings",
+    "cfo_to_profit_before_tax": "profit_before_tax",
     "intangible_fixed_assets_to_assets": "total_assets",
     "tangible_fixed_assets_to_assets": "total_assets",
 }

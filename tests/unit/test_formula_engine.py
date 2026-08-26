@@ -19,13 +19,17 @@ def _cell(
     *,
     metric_code: str | None = None,
     document_id: str | None = None,
+    statement_type: str | None = None,
+    period_role: str | None = None,
+    col_label: str = "2024 Triệu đồng",
+    section_text: str = "",
 ) -> CandidateCell:
     return CandidateCell(
         df_var="df1",
         csv_path="data/table.csv",
         row_index=row,
         row_path=label,
-        col_label="2024 Triệu đồng",
+        col_label=col_label,
         value_raw=str(value),
         value=value,
         parsed_raw=value,
@@ -36,7 +40,10 @@ def _cell(
         document_id=document_id,
         entity="HPG",
         basis="consolidated",
+        statement_type=statement_type,
         metric_code=metric_code,
+        period_role=period_role,
+        section_text=section_text,
     )
 
 
@@ -58,7 +65,7 @@ def _frames(cells: list[CandidateCell]) -> dict[str, pd.DataFrame]:
 def test_registry_only_loads_reviewed_formulas() -> None:
     formulas, metrics = load_registry()
 
-    assert len(formulas) == 21
+    assert len(formulas) == 24
     assert "quick_ratio" in formulas
     assert "roe" not in formulas
     assert set(formulas["quick_ratio"].leaves) <= set(metrics)
@@ -276,6 +283,144 @@ def test_reviewed_component_total_formulas_execute(
     assert result is not None and result.ok
     assert result.formula_id == expected_formula
     assert result.answer == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    ("question", "numerator_label", "denominator_label", "formula_id", "numerator"),
+    [
+        (
+            "Tỷ lệ chi phí lãi vay trên nợ vay ngắn hạn là bao nhiêu %?",
+            "Chi phí lãi vay",
+            "Vay ngắn hạn",
+            "interest_expense_to_short_term_borrowings",
+            -20,
+        ),
+        (
+            "Tỷ lệ lãi vay trên nợ vay dài hạn là bao nhiêu %?",
+            "Chi phí lãi vay",
+            "Vay dài hạn",
+            "interest_expense_to_long_term_borrowings",
+            -20,
+        ),
+        (
+            "Tỷ lệ dòng tiền thuần từ hoạt động kinh doanh trên lợi nhuận trước thuế là bao nhiêu %?",
+            "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
+            "XI. Tổng lợi nhuận trước thuế",
+            "cfo_to_profit_before_tax",
+            20,
+        ),
+    ],
+)
+def test_reviewed_flow_over_balance_formulas_execute(
+    question: str,
+    numerator_label: str,
+    denominator_label: str,
+    formula_id: str,
+    numerator: float,
+) -> None:
+    cells = [_cell(numerator_label, numerator, 0), _cell(denominator_label, 100, 1)]
+
+    result = answer_formula_question(
+        question,
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None and result.ok
+    assert result.formula_id == formula_id
+    assert result.answer == pytest.approx(20.0)
+
+
+def test_point_in_time_metric_prefers_closing_balance_over_movement_column() -> None:
+    cells = [
+        _cell(
+            "Trong đó: Chi phí lãi vay",
+            20,
+            0,
+            statement_type="income_statement",
+        ),
+        _cell(
+            "Vay ngắn hạn",
+            -60,
+            1,
+            statement_type="note",
+            period_role="current",
+            col_label="Biến động trong năm › Thanh toán",
+            section_text="Vay và trái phiếu phát hành ngắn hạn",
+        ),
+        _cell(
+            "Vay ngắn hạn",
+            100,
+            2,
+            statement_type="note",
+            period_role="closing",
+            col_label="31/12/2024",
+            section_text="Vay và trái phiếu phát hành ngắn hạn",
+        ),
+    ]
+
+    result = answer_formula_question(
+        "Tỷ lệ chi phí lãi vay trên nợ vay ngắn hạn là bao nhiêu %?",
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(20.0)
+    assert "31/12/2024" in result.query
+
+
+def test_metric_statement_contract_rejects_cash_flow_proxy_for_interest_expense() -> None:
+    cells = [
+        _cell(
+            "Chi phí lãi vay",
+            20,
+            0,
+            statement_type="cash_flow",
+        ),
+        _cell("Vay ngắn hạn", 100, 1, statement_type="note"),
+    ]
+
+    result = answer_formula_question(
+        "Tỷ lệ chi phí lãi vay trên nợ vay ngắn hạn là bao nhiêu %?",
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None
+    assert result.reason == "FORMULA_METRIC_NOT_IN_POOL:interest_expense"
+
+
+def test_formula_specific_percent_bound_allows_reviewed_extreme_ratio() -> None:
+    cells = [
+        _cell("Lưu chuyển tiền thuần từ hoạt động kinh doanh", 300, 0),
+        _cell("XI. Tổng lợi nhuận trước thuế", 1, 1),
+    ]
+
+    result = answer_formula_question(
+        "Tỷ lệ dòng tiền thuần từ hoạt động kinh doanh trên lợi nhuận trước thuế là bao nhiêu %?",
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(30_000.0)
 
 
 def test_total_fixed_assets_metric_rejects_component_rows() -> None:

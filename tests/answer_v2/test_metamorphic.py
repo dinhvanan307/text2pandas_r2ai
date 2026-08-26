@@ -54,10 +54,12 @@ BASE = {"total_liabilities": 300.0, "equity": 150.0, "total_assets": 500.0,
         "current_assets": 200.0, "current_liabilities": 100.0, "inventory": 50.0,
         "gross_profit": 40.0, "net_revenue": 200.0, "profit_after_tax": 20.0,
         "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0,
-        "financial_expense": 15.0, "financial_income": 25.0,
+        "financial_expense": 15.0, "interest_expense": 12.0, "financial_income": 25.0,
         "total_fixed_assets": 120.0, "intangible_fixed_assets": 30.0,
         "tangible_fixed_assets": 90.0, "short_term_borrowings": 45.0,
-        "short_term_other_receivables": 30.0, "long_term_other_receivables": 10.0}
+        "long_term_borrowings": 60.0, "cash_flow_from_operations": 30.0,
+        "profit_before_tax": 20.0, "short_term_other_receivables": 30.0,
+        "long_term_other_receivables": 10.0}
 
 
 @ca("MM1 · nhân MỌI lá tiền ×1000 ⇒ mọi formula wave 1 BẤT BIẾN")
@@ -95,6 +97,8 @@ def _():
         ("selling_expense_intensity", "selling_expense"),
         ("cogs_intensity", "cogs"),
         ("financial_expense_intensity", "financial_expense"),
+        ("interest_expense_to_short_term_borrowings", "interest_expense"),
+        ("interest_expense_to_long_term_borrowings", "interest_expense"),
     ):
         a = _render(fid, BASE)
         b = _render(fid, {**BASE, metric: -BASE[metric]})

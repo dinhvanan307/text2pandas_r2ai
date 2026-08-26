@@ -1,6 +1,6 @@
 # formula_registry wave 1 — AG1_R2_FORMULA
 #
-# 21 formula SAFE. ROE/ROA chung/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
+# 24 formula SAFE. ROE/ROA chung/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
 # chúng thuộc nhóm NEEDS DOMAIN CONFIRMATION (biến thể cuối kỳ vs bình quân,
 # EBIT vs LNTT+lãi vay) — đưa vào deterministic registry khi chưa phân xử sẽ tạo
 # sai số CÓ HỆ THỐNG trên toàn bộ lớp câu, tệ hơn là không trả lời.
@@ -371,6 +371,61 @@ formulas:
           right: {node: FactRef, metric_id: long_term_other_receivables}
       right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
 
+  - formula_id: interest_expense_to_short_term_borrowings
+    variant_id: flow_over_ending_balance
+    aliases: ["ty le chi phi lai vay tren no vay ngan han"]
+    leaves: [interest_expense, short_term_borrowings]
+    period_semantics: flow_over_ending_balance
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num:
+          node: Abs
+          child: {node: FactRef, metric_id: interest_expense}
+        den: {node: FactRef, metric_id: short_term_borrowings}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: interest_expense_to_long_term_borrowings
+    variant_id: flow_over_ending_balance
+    aliases: ["ty le lai vay tren no vay dai han"]
+    leaves: [interest_expense, long_term_borrowings]
+    period_semantics: flow_over_ending_balance
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num:
+          node: Abs
+          child: {node: FactRef, metric_id: interest_expense}
+        den: {node: FactRef, metric_id: long_term_borrowings}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: cfo_to_profit_before_tax
+    variant_id: reported_flows
+    aliases: ["ty le dong tien thuan tu hoat dong kinh doanh tren loi nhuan truoc thue"]
+    leaves: [cash_flow_from_operations, profit_before_tax]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent, max_abs: 1000000}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num: {node: FactRef, metric_id: cash_flow_from_operations}
+        den: {node: FactRef, metric_id: profit_before_tax}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
   - formula_id: intangible_fixed_assets_to_assets
     variant_id: carrying_value
     aliases: ["ty trong tai san co dinh vo hinh tren tong tai san"]
@@ -418,7 +473,7 @@ needs_domain_confirmation:
   - formula_id: working_capital
     cau_hoi_chua_tra_loi: "ra money — cần đơn vị câu hỏi, không phải ratio"
 
-# ── DEFER — grounding chưa đủ (operating_profit / CFO ground 0%) ───────────
+# ── DEFER — grounding chưa đủ (operating_profit ground 0%) ────────────────
 deferred:
   - operating_margin
   - cfo_margin
