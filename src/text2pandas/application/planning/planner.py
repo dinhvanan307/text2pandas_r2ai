@@ -11,16 +11,19 @@ from text2pandas.domain.metrics import MetricOntology
 from text2pandas.domain.semantic import (
     Aggregate,
     Arithmetic,
+    Comparison,
+    Exists,
     Filter,
     FormulaCall,
     Literal,
+    LogicalPredicate,
     MetricRef,
     QuestionAST,
     Rank,
     SelectAtArg,
     Unary,
 )
-from text2pandas.domain.semantic.ast import Expression
+from text2pandas.domain.semantic.ast import Expression, Predicate
 
 from .contracts import BindingConstraint, ConstraintKind, ExecutionPlan, OperandRequest
 
@@ -136,9 +139,9 @@ def _collect(
     if isinstance(expression, Aggregate):
         return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
     if isinstance(expression, Filter):
-        # Predicate operands will be added when the predicate compiler is
-        # promoted; current parser fails closed before emitting Filter.
-        return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
+        return _collect(
+            expression.expression, f"{path}.expression", requests, formula_scopes
+        ) | _collect_predicate(expression.predicate, f"{path}.predicate", requests, formula_scopes)
     if isinstance(expression, Rank):
         return _collect(expression.by, f"{path}.by", requests, formula_scopes)
     if isinstance(expression, SelectAtArg):
@@ -148,7 +151,28 @@ def _collect(
     raise TypeError(f"unsupported expression: {type(expression).__name__}")
 
 
+def _collect_predicate(
+    predicate: Predicate,
+    path: str,
+    requests: dict[tuple[object, ...], _RequestAccumulator],
+    formula_scopes: list[tuple[str, set[tuple[object, ...]]]],
+) -> set[tuple[object, ...]]:
+    if isinstance(predicate, Comparison):
+        return _collect(predicate.left, f"{path}.left", requests, formula_scopes) | _collect(
+            predicate.right, f"{path}.right", requests, formula_scopes
+        )
+    if isinstance(predicate, Exists):
+        return _collect(predicate.expression, f"{path}.expression", requests, formula_scopes)
+    if isinstance(predicate, LogicalPredicate):
+        keys: set[tuple[object, ...]] = set()
+        for index, child in enumerate(predicate.predicates):
+            keys |= _collect_predicate(
+                child, f"{path}.predicates[{index}]", requests, formula_scopes
+            )
+        return keys
+    raise TypeError(f"unsupported predicate: {type(predicate).__name__}")
+
+
 def _request_id(key: tuple[object, ...]) -> str:
     digest = hashlib.sha256(repr(key).encode("utf-8")).hexdigest()[:20]
     return f"operand:{digest}"
-

@@ -111,12 +111,15 @@ def _formula_definition(raw: dict[str, Any]) -> FormulaDefinition:
     output = _dict(raw.get("output"), f"formula {raw.get('formula_id')} output")
     output_kind = str(output.get("kind", "ratio"))
     output_unit = UnitSpec(Dimension.PERCENT if output_kind == "percentage" else Dimension.RATIO)
+    expression = _formula_expression(_dict(raw.get("expression"), "formula expression"))
+    if output_kind == "percentage":
+        expression = _strip_legacy_percentage_multiplier(expression)
     return FormulaDefinition(
         formula_id=str(raw["formula_id"]),
         variant_id=str(raw.get("variant_id", "default")),
         aliases=_normalized_tuple(raw.get("aliases", ())),
         leaves=tuple(str(value) for value in raw.get("leaves", ())),
-        expression=_formula_expression(_dict(raw.get("expression"), "formula expression")),
+        expression=expression,
         output_unit=output_unit,
         period_contract=str(raw.get("period_semantics", "unknown")),
         same_entity=bool(raw.get("same_entity", True)),
@@ -124,6 +127,21 @@ def _formula_definition(raw: dict[str, Any]) -> FormulaDefinition:
         zero_policy=str(raw.get("zero_policy", "unresolved")),
         max_abs=None if output.get("max_abs") is None else float(output["max_abs"]),
     )
+
+
+def _strip_legacy_percentage_multiplier(expression: Expression) -> Expression:
+    """V2 formulas encoded output formatting (`* 100`) inside arithmetic.
+
+    V3 expressions carry units, so ratio-to-percent conversion belongs to the
+    output contract.  Keeping both would multiply percentage answers twice.
+    """
+    if not isinstance(expression, Arithmetic) or expression.operator != ArithmeticOperator.MULTIPLY:
+        return expression
+    if isinstance(expression.right, Literal) and expression.right.value == 100.0:
+        return expression.left
+    if isinstance(expression.left, Literal) and expression.left.value == 100.0:
+        return expression.right
+    return expression
 
 
 def _formula_expression(raw: dict[str, Any]) -> Expression:
