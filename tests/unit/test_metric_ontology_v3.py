@@ -9,10 +9,20 @@ def test_reviewed_sources_load_as_one_validated_ontology() -> None:
     ontology = load_ontology()
 
     assert ontology.schema_version == 3
-    assert len(ontology.metrics) == 24
+    assert sum(metric.review_status == "reviewed" for metric in ontology.metrics.values()) == 24
+    assert sum(metric.review_status == "reported" for metric in ontology.metrics.values()) > 300
     assert len(ontology.formulas) == 24
     assert ontology.validate() == ()
     assert len(ontology.fingerprint) == 64
+
+
+def test_reported_catalog_is_versioned_but_not_promoted_to_reviewed_semantics() -> None:
+    ontology = load_ontology()
+    metric = ontology.match_metric(normalize_phrase("Chi phí dịch vụ mua ngoài năm 2024"))
+
+    assert metric is not None
+    assert metric.review_status == "reported"
+    assert metric.legal_aggregations == ("lookup",)
 
 
 def test_formula_leaves_are_derived_from_the_semantic_expression() -> None:
@@ -34,4 +44,3 @@ def test_longest_specific_alias_wins_for_metric_and_formula() -> None:
 
     assert metric is not None and metric.metric_id == "tangible_fixed_assets"
     assert formula is not None and formula.formula_id == "tangible_fixed_assets_to_assets"
-

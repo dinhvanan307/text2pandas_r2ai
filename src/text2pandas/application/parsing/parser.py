@@ -154,6 +154,12 @@ class SemanticParser:
         mentions: tuple[MetricMention, ...],
     ) -> tuple[Expression, ResultKind] | str:
         operation = annotations.operation
+        if (
+            not isinstance(base, FormulaCall)
+            and any(mention.metric.review_status != "reviewed" for mention in mentions)
+            and operation != OperationKind.LOOKUP
+        ):
+            return "REPORTED_METRIC_REQUIRES_REVIEW_FOR_DERIVED_OPERATION"
         if operation in (OperationKind.LOOKUP, OperationKind.DIVIDE):
             if operation == OperationKind.DIVIDE and not isinstance(base, FormulaCall):
                 return "UNREVIEWED_RELATIONAL_FORMULA"

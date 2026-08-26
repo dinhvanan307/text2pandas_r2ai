@@ -38,6 +38,7 @@ class MetricDefinition:
     period_semantics: PeriodSemantics
     sign_policy: str
     preferred_basis: Basis
+    review_status: str = "reviewed"
     forbidden_prefixes: tuple[str, ...] = ()
     forbidden_contains: tuple[str, ...] = ()
     legal_aggregations: tuple[str, ...] = ()
@@ -51,6 +52,7 @@ class MetricDefinition:
             "period_semantics": self.period_semantics.value,
             "sign_policy": self.sign_policy,
             "preferred_basis": self.preferred_basis.value,
+            "review_status": self.review_status,
             "forbidden_prefixes": list(self.forbidden_prefixes),
             "forbidden_contains": list(self.forbidden_contains),
             "legal_aggregations": list(self.legal_aggregations),

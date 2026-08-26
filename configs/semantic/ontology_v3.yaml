@@ -13,6 +13,9 @@ sources:
   formulas:
     path: configs/answer_v2/formulas_v1.yaml
     sha256: 23f3432855fbc091fa5039aed41a47fcd0611d343405d78276d87ec05b4e6686
+  reported_metrics:
+    path: configs/execution/metric_registry_v1.yaml
+    sha256: 264d538e83f933c503d40d7ce35325f9b056fe033aeddee83e93abe3832ca9f8
 
 policies:
   metric_match: longest_normalized_prefix
@@ -20,4 +23,4 @@ policies:
   unknown_metric: abstain
   ambiguous_alias: abstain
   unreviewed_formula: abstain
-
+  reported_metric_operations: [lookup]

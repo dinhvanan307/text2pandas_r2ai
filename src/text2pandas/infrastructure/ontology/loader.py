@@ -46,8 +46,12 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
     sources = _dict(manifest.get("sources"), "sources")
     metric_file, metric_digest = _verified_source(sources, "metrics", manifest_file)
     formula_file, formula_digest = _verified_source(sources, "formulas", manifest_file)
+    reported_file, reported_digest = _verified_source(
+        sources, "reported_metrics", manifest_file
+    )
     metric_document = _document(metric_file)
     formula_document = _document(formula_file)
+    reported_document = _document(reported_file)
 
     metrics: dict[str, MetricDefinition] = {}
     for raw_value in metric_document.get("metrics", []):
@@ -56,6 +60,26 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
         if metric.metric_id in metrics:
             raise OntologySourceError(f"duplicate metric_id: {metric.metric_id}")
         metrics[metric.metric_id] = metric
+
+    owned_aliases = {alias for metric in metrics.values() for alias in metric.aliases}
+    for raw_value in reported_document.get("metrics", []):
+        raw = _dict(raw_value, "reported metric")
+        label = normalize_phrase(str(raw.get("label", "")))
+        if not _reported_alias_is_semantic(label) or label in owned_aliases:
+            continue
+        metric_id = "reported_" + hashlib.sha256(label.encode("utf-8")).hexdigest()[:16]
+        metrics[metric_id] = MetricDefinition(
+            metric_id=metric_id,
+            aliases=(label,),
+            statement_types=(),
+            unit=UnitSpec(Dimension.UNKNOWN),
+            period_semantics=PeriodSemantics.UNKNOWN,
+            sign_policy="signed_as_reported",
+            preferred_basis=Basis.UNSPECIFIED,
+            review_status="reported",
+            legal_aggregations=("lookup",),
+        )
+        owned_aliases.add(label)
 
     formulas: dict[str, FormulaDefinition] = {}
     for raw_value in formula_document.get("formulas", []):
@@ -70,7 +94,11 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
         schema_version=3,
         metrics=metrics,
         formulas=formulas,
-        source_digests={"metrics": metric_digest, "formulas": formula_digest},
+        source_digests={
+            "metrics": metric_digest,
+            "formulas": formula_digest,
+            "reported_metrics": reported_digest,
+        },
     )
 
 
@@ -101,6 +129,7 @@ def _metric_definition(raw: dict[str, Any]) -> MetricDefinition:
         period_semantics=period,
         sign_policy=str(raw.get("sign_policy", "signed_as_reported")),
         preferred_basis=basis,
+        review_status="reviewed",
         forbidden_prefixes=_normalized_tuple(raw.get("forbidden_aliases", ())),
         forbidden_contains=_normalized_tuple(raw.get("forbidden_contains", ())),
         legal_aggregations=legal,
@@ -201,3 +230,28 @@ def _normalized_tuple(values: object) -> tuple[str, ...]:
     if not isinstance(values, (list, tuple)):
         raise OntologySourceError("aliases must be a sequence")
     return tuple(normalize_phrase(str(value)) for value in values)
+
+
+def _reported_alias_is_semantic(alias: str) -> bool:
+    """Reject structural row labels without maintaining metric exceptions."""
+    tokens = set(alias.split())
+    structural = {
+        "tong",
+        "cong",
+        "khac",
+        "nam",
+        "nay",
+        "truoc",
+        "dau",
+        "cuoi",
+        "so",
+        "du",
+        "tai",
+        "ngay",
+        "ngan",
+        "dai",
+        "han",
+        "trong",
+        "ky",
+    }
+    return len(alias) >= 5 and bool(tokens - structural)

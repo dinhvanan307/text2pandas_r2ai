@@ -114,6 +114,18 @@ def test_unreviewed_divide_fails_closed() -> None:
     assert result.reason == "UNREVIEWED_RELATIONAL_FORMULA"
 
 
+def test_reported_metric_supports_lookup_but_not_unreviewed_derivation() -> None:
+    lookup = _parse("Chi phí dịch vụ mua ngoài VCB năm 2024 là bao nhiêu tỷ đồng?", _annotations())
+    derived = _parse(
+        "Chi phí dịch vụ mua ngoài VCB tăng bao nhiêu từ 2023 đến 2024?",
+        _annotations(periods=("2023", "2024"), operation=OperationKind.SUBTRACT),
+    )
+
+    assert lookup.ok
+    assert not derived.ok
+    assert derived.reason == "REPORTED_METRIC_REQUIRES_REVIEW_FOR_DERIVED_OPERATION"
+
+
 def test_measured_vietnamese_annotator_drives_v3_without_legacy_semantic_ir() -> None:
     companies = {
         "VCB": "Ngân hàng TMCP Ngoại thương Việt Nam",
