@@ -511,11 +511,18 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
         SemanticV3Engine,
         classify_differential,
     )
+    from text2pandas.application.usecases.semantic_v3_readiness import (
+        PromotionMetrics,
+        evaluate_promotion,
+    )
     from text2pandas.infrastructure.checksums import sha256_file
     from text2pandas.infrastructure.execution import PandasSandboxReplay
     from text2pandas.infrastructure.ontology import load_ontology
     from text2pandas.infrastructure.retrieval import SqliteOperandRetriever
-    from text2pandas.infrastructure.semantic import LegacyVietnameseAnnotator
+    from text2pandas.infrastructure.semantic import (
+        LegacyVietnameseAnnotator,
+        load_promotion_policy,
+    )
     from text2pandas.infrastructure.snapshots import verify_active_snapshots
     from text2pandas.infrastructure.source_identity import git_source_identity
     from text2pandas.pipelines.retrieval.alias_store import load_aliases
@@ -586,6 +593,17 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     finally:
         connection.close()
     seconds = round(time.time() - started, 3)
+    promotion = evaluate_promotion(
+        PromotionMetrics(
+            questions=len(questions),
+            replay_mismatches=sum(
+                count
+                for reason, count in reasons.items()
+                if reason.startswith("TYPED_PANDAS_MISMATCH")
+            ),
+        ),
+        load_promotion_policy(),
+    )
     manifest_path = stage / "manifest.json"
     write_manifest(
         manifest_path,
@@ -614,6 +632,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                 "differentials": dict(differentials),
                 "seconds": seconds,
             },
+            "promotion": promotion.to_dict(),
             "outputs": {
                 "records_jsonl": {
                     "path": str(records_path.relative_to(ROOT)),
@@ -628,6 +647,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     print(f"  V3 OK            : {statuses['OK']:,}")
     print(f"  V3 abstain       : {statuses['ABSTAIN']:,}")
     print(f"  thời gian        : {seconds}s")
+    print(f"  promotion        : {promotion.status}")
     for reason, count in reasons.most_common(8):
         print(f"    {reason:<52} {count:>5}")
     if legacy:
