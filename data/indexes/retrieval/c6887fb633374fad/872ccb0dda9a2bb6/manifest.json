@@ -1,0 +1,26 @@
+{
+  "config_fingerprint": "872ccb0dda9a2bb6",
+  "database": "retrieval.db",
+  "database_bytes": 4239663104,
+  "database_sha256": "72d307f8a2bb542a40f97e112456d537b90823e7b57a20eaef04a94545ab6daf",
+  "index_id": "872ccb0dda9a2bb6",
+  "index_spec_version": "1.0",
+  "indexes_added": [
+    "ix_tc_ticker_year",
+    "ix_tc_stmt_ticker",
+    "ix_doc_tky",
+    "ix_obs_tab_period"
+  ],
+  "row_counts": {
+    "documents": 1973,
+    "observations": 2634120,
+    "rows": 1524071,
+    "table_cards": 146246,
+    "tables": 146246
+  },
+  "schema_version": "1.0",
+  "source_a6_build_id": "c6887fb633374fad",
+  "source_a6_db": "data/processed/a6/c6887fb633374fad/silver.db",
+  "source_a6_db_bytes": 4140924928,
+  "source_a6_db_sha256": "fa6c46d6d46b4735f6a23fe1f2b8e2be16c206b712f47b8f22a5f0647f5dc3c8"
+}

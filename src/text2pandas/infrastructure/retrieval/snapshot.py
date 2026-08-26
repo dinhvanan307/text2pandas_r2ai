@@ -62,6 +62,7 @@ def build_retrieval_snapshot(
     sibling staging directory prevents consumers from observing a partial DB.
     """
 
+    source_db_label = source_db.as_posix()
     source_db = source_db.resolve(strict=True)
     output_root = output_root.resolve(strict=False)
     if output_root.exists():
@@ -89,7 +90,7 @@ def build_retrieval_snapshot(
             "index_spec_version": INDEX_SPEC_VERSION,
             "index_id": index_id,
             "source_a6_build_id": build_id,
-            "source_a6_db": str(source_db),
+            "source_a6_db": source_db_label,
             "source_a6_db_bytes": source_db.stat().st_size,
             "source_a6_db_sha256": sha256_file(source_db),
             "database": database.name,
