@@ -108,7 +108,7 @@ Evalkit schema `evalkit-8` ran all 1,012 questions with config fingerprint `26fe
 | Top-10 nDCG | 0.5516 |
 | Rank misses | 9 |
 
-S3 uses `IdentityReranker`. Its top-10 list equals S2 top-10, so it provides zero rerank uplift. S2 MRR is 0.5497 and S3 MRR is 0.5450 because S3 truncates ranks 11 to 50; that delta does not measure reranker quality.
+S3 uses `IdentityReranker`. S2 MRR@10 and S3 MRR@10 both equal 0.5450, so measured uplift is `+0.0000`. S2 full-list MRR is 0.5497 over top-50; it remains a diagnostic and is not compared with S3 top-10.
 
 The nine top-10 misses are q374, q376, q385, q397, q436, q542, q723, q767, and q975. Screen mode is the weakest measured slice: top-10 hit 23/29, or 0.7931.
 

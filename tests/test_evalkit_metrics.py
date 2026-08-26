@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from text2pandas.pipelines.retrieval.evalkit.metrics import (QueryOutcome, candidate_hit_rate,  # noqa: E402
                                        f2_at_k, gold_size_stats, hit_rate_at_k,
-                                       metric_block, mrr, ndcg_at_k,
+                                       metric_block, mrr, mrr_at_k, ndcg_at_k,
                                        precision_at_k, precision_at_k_capped,
                                        recall_at_k)
 from text2pandas.pipelines.retrieval.evalkit.taxonomy import (Bucket, NoGoldReason, classify,  # noqa: E402
@@ -108,6 +108,20 @@ def test_precision_at_1_bang_hit_rate_at_1():
 def test_mrr_dung_hang_dau_tien():
     rows = [oc(hits=(3, 7)), oc(2, hits=(1,)), oc(3, hits=())]
     assert mrr(rows) == pytest.approx((1 / 3 + 1 / 1 + 0) / 3)
+
+
+def test_mrr_at_k_uses_same_cutoff_for_stage_comparison():
+    rows = [
+        oc(1, 1, hits=(12,), n_ranked=50),
+        oc(2, 1, hits=(2,), n_ranked=50),
+    ]
+    assert mrr(rows) == pytest.approx((1 / 12 + 1 / 2) / 2)
+    assert mrr_at_k(rows, 10) == pytest.approx((0 + 1 / 2) / 2)
+
+
+def test_mrr_at_k_rejects_invalid_cutoff():
+    with pytest.raises(ValueError, match="k must be >= 1"):
+        mrr_at_k([], 0)
 
 
 def test_ndcg_bang_1_khi_gold_chiem_dung_dau_bang():

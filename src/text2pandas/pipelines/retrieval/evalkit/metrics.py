@@ -38,7 +38,8 @@ from dataclasses import dataclass, field
 __all__ = [
     "QueryOutcome", "MetricBlock",
     "candidate_hit_rate", "recall_at_k", "precision_at_k",
-    "precision_at_k_capped", "f2_at_k", "f2_from_pr", "mrr", "ndcg_at_k",
+    "precision_at_k_capped", "f2_at_k", "f2_from_pr", "mrr", "mrr_at_k",
+    "ndcg_at_k",
     "metric_block", "gold_size_stats", "f2_at_policy", "hit_rate_at_policy",
 ]
 
@@ -226,6 +227,26 @@ def mrr(rows: list[QueryOutcome]) -> float:
     if not m:
         return 0.0
     return sum(1.0 / r.best_rank for r in m if r.best_rank) / len(m)
+
+
+def mrr_at_k(rows: list[QueryOutcome], k: int) -> float:
+    """MRR trên cùng một cutoff K.
+
+    So sánh hai stage chỉ hợp lệ khi cùng cutoff. Nếu S2 giữ top-50 còn S3 giữ
+    top-10, `mrr(S2)` và `mrr(S3)` có sample space khác nhau: một gold ở hạng
+    12 đóng góp cho S2 nhưng bị truncation khỏi S3, dù reranker không đổi thứ
+    tự. `mrr_at_k` loại sai lệch đo lường đó.
+    """
+    if k < 1:
+        raise ValueError("k must be >= 1")
+    m = _measurable(rows)
+    if not m:
+        return 0.0
+    return sum(
+        1.0 / r.best_rank
+        for r in m
+        if r.best_rank is not None and r.best_rank <= k
+    ) / len(m)
 
 
 def ndcg_at_k(rows: list[QueryOutcome], k: int) -> float:

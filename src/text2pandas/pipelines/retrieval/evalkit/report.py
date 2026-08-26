@@ -19,6 +19,7 @@ from pathlib import Path
 
 from .metrics import (QueryOutcome, f2_at_k, f2_at_policy, gold_size_stats,
                       hit_rate_at_k, hit_rate_at_policy, metric_block, mrr,
+                      mrr_at_k,
                       ndcg_at_k, precision_at_k, precision_at_k_capped,
                       recall_at_k)
 from .taxonomy import Bucket
@@ -169,10 +170,15 @@ def render(rows: list[dict], ks: tuple[int, ...], top_k: int) -> str:
       "   ← đo trên TẬP ĐẦY ĐỦ, không phải top-K")
     P(f"    S1 · ứng viên/câu        : median={_med([r['s1_n'] for r in rows])}"
       f"  p90={_p90([r['s1_n'] for r in rows])}  max={max((r['s1_n'] for r in rows), default=0)}")
-    P(f"    S2 · MRR                 : {mrr(oc):.4f}")
+    s2_mrr_at_k = mrr_at_k(oc, top_k)
     ocf = to_outcomes(rows, use_final=True)
-    P(f"    S3 · MRR (sau rerank)    : {mrr(ocf):.4f}"
-      "   (IdentityReranker → phải TRÙNG khi K≥best_rank)")
+    s3_mrr_at_k = mrr_at_k(ocf, top_k)
+    P(f"    S2 · MRR@{top_k:<2d}              : {s2_mrr_at_k:.4f}")
+    P(f"    S3 · MRR@{top_k:<2d} sau rerank   : {s3_mrr_at_k:.4f}")
+    P(f"    S3 − S2 · MRR@{top_k:<2d} uplift  : {s3_mrr_at_k-s2_mrr_at_k:+.4f}"
+      "   (cùng cutoff, không lẫn truncation)")
+    P(f"    S2 · MRR toàn top-{max((r.get('s2_n', 0) for r in rows), default=0):<2d}"
+      f"      : {mrr(oc):.4f}   (diagnostic, không so trực tiếp với S3 top-{top_k})")
 
     # ── 4 · bảng K ─────────────────────────────────────────────────────────
     P("")
@@ -287,6 +293,8 @@ def write_artifacts(rows: list[dict], outdir: Path, ks: tuple[int, ...],
     ocf = to_outcomes(rows, use_final=True)
     mb = metric_block(oc, ks, n_total=len(rows))
     mbf = metric_block(ocf, ks, n_total=len(rows))
+    s2_mrr_at_top_k = mrr_at_k(oc, top_k)
+    s3_mrr_at_top_k = mrr_at_k(ocf, top_k)
 
     payload = {
         "cfg_sha": cfg_sha, "tag": tag, "n_rows": len(rows), "top_k": top_k,
@@ -299,8 +307,19 @@ def write_artifacts(rows: list[dict], outdir: Path, ks: tuple[int, ...],
         "no_gold_reasons": dict(Counter(r.get("gold_reason") for r in rows
                                        if not r.get("gold_ok"))),
         "after_rank": {"candidate_hit_rate": mb.candidate_hit_rate,
-                       "mrr": mb.mrr, "per_k": mb.per_k},
-        "after_rerank": {"mrr": mbf.mrr, "per_k": mbf.per_k},
+                       "mrr": mb.mrr,
+                       "mrr_at_top_k": s2_mrr_at_top_k,
+                       "per_k": mb.per_k},
+        "after_rerank": {"mrr": mbf.mrr,
+                           "mrr_at_top_k": s3_mrr_at_top_k,
+                           "per_k": mbf.per_k},
+        "rerank_comparison": {
+            "cutoff": top_k,
+            "s2_mrr": s2_mrr_at_top_k,
+            "s3_mrr": s3_mrr_at_top_k,
+            "mrr_uplift": s3_mrr_at_top_k - s2_mrr_at_top_k,
+            "comparison_scope": "same_cutoff",
+        },
         "drop_clauses": dict(Counter(c for r in rows
                                      for c in (r.get("drop_clauses") or []))),
         "entity_suspect": sum(1 for r in rows if r.get("entity_suspect")),
