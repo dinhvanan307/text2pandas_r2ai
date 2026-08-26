@@ -28,13 +28,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(ROOT / "src"))
 
-from text2pandas.pipelines.retrieval.evalkit.cli import _load_cfg, _preflight   # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import _ck, _load_cfg, _preflight  # noqa: E402
 
 _preflight()
 
 from text2pandas.pipelines.retrieval.alias_store import load_aliases            # noqa: E402
 from text2pandas.pipelines.retrieval.query_terms import content_terms           # noqa: E402
 from text2pandas.pipelines.retrieval.question_intent import parse_intent        # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.runner import (                    # noqa: E402
+    resolve_evaluation_dataset,
+)
 
 OUT = ROOT / "artifacts/runs/retrieval/evalkit"
 
@@ -93,7 +96,7 @@ def main(argv) -> int:
     # trên dữ liệu sai mà không một dòng nào báo. `cfg.checkpoint_name` suy ra từ
     # `cfg_sha` của cấu hình hiện tại, nên không còn chỗ cho nhập nhằng.
     cfg = _load_cfg(ns.tag, {})
-    ck = OUT / cfg.checkpoint_name
+    ck = _ck(cfg)
     if not ck.is_file():
         print(f"✗ chưa có checkpoint chính danh cho tag={ns.tag}: {ck.name}")
         khac = sorted(OUT.glob(f"ek_{ns.tag}_*.jsonl"))
@@ -115,7 +118,8 @@ def main(argv) -> int:
         (ROOT / "data/raw/btc/questions/questions.jsonl").open(encoding="utf-8")
         if l.strip())}
     alias = load_aliases(brands=True)
-    conn = sqlite3.connect(f"file:{ROOT/'data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db'}?mode=ro", uri=True)
+    dataset = resolve_evaluation_dataset(ROOT)
+    conn = sqlite3.connect(f"file:{dataset.database}?mode=ro", uri=True)
     conn.execute("PRAGMA cache_size=-300000")
 
     # Bốn cấu hình ràng buộc, mỗi cấu hình nới ĐÚNG MỘT chiều so với gốc.

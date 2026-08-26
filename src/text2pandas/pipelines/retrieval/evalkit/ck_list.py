@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(ROOT / "src"))
 
-from text2pandas.pipelines.retrieval.evalkit.cli import OUTDIR, _load_cfg  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.cli import OUTDIR, _ck, _load_cfg  # noqa: E402
 
 
 def main() -> int:
@@ -39,7 +39,7 @@ def main() -> int:
         tag = f.stem[len("ek_"):].rpartition("_")[0]
         if tag and tag not in canon:
             try:
-                canon[tag] = _load_cfg(tag, {}).checkpoint_name
+                canon[tag] = _ck(_load_cfg(tag, {})).name
             except SystemExit:
                 canon[tag] = None          # tag không còn trong eval_v1.yaml
     n_cu = 0

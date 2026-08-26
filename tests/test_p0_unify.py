@@ -235,6 +235,7 @@ _FINGERPRINT = {
     "evalkit-5": "15d2ac63090c4be4",
     "evalkit-6": "6d98371c9d8ccda1",
     "evalkit-7": "28c7ebe62fec347a",
+    "evalkit-8": "28c7ebe62fec347a",
 }
 
 _FIELD = {ast.Constant: "value", ast.Name: "id", ast.Attribute: "attr",

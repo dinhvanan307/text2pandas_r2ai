@@ -15,6 +15,7 @@ import argparse
 import importlib.util
 import json
 import os
+import sqlite3
 import sys
 import time
 from pathlib import Path
@@ -130,7 +131,11 @@ _preflight()
 
 from text2pandas.pipelines.retrieval.evalkit.report import (guard_single_config, load_rows,  # noqa: E402
                                       render, write_artifacts)
-from text2pandas.pipelines.retrieval.evalkit.runner import EvalConfig, collect  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.runner import (  # noqa: E402
+    EvalConfig,
+    checkpoint_path,
+    collect,
+)
 
 CFG_PATH = ROOT / "configs/retrieval/eval_v1.yaml"
 OUTDIR = ROOT / "artifacts/runs/retrieval/evalkit"
@@ -160,20 +165,25 @@ def _load_cfg(tag: str, overrides: dict) -> EvalConfig:
     return EvalConfig(**base)
 
 
-def _ck(cfg: EvalConfig) -> Path:
-    return OUTDIR / cfg.checkpoint_name
+def _ck(cfg: EvalConfig, db_path: Path | None = None) -> Path:
+    return checkpoint_path(ROOT, cfg, db_path)[0]
 
 
-def cmd_collect(cfg: EvalConfig, loop: bool, limit: int | None) -> int:
+def cmd_collect(
+    cfg: EvalConfig,
+    loop: bool,
+    limit: int | None,
+    db_path: Path | None = None,
+) -> int:
     if not loop:
-        return collect(ROOT, cfg, limit=limit)
+        return collect(ROOT, cfg, db_path=db_path, limit=limit)
     # Tự lặp: mỗi vòng tự dừng ở `budget_s`, vòng sau tiếp tục. Dùng khi chạy
     # trực tiếp trên máy không bị cắt tiến trình.
     for _ in range(200):
-        rc = collect(ROOT, cfg, limit=limit)
+        rc = collect(ROOT, cfg, db_path=db_path, limit=limit)
         if rc != 0:
             return rc
-        ck = _ck(cfg)
+        ck = _ck(cfg, db_path)
         if ck.is_file():
             n = sum(1 for l in ck.open(encoding="utf-8") if l.strip())
             if n >= 1012:
@@ -182,8 +192,12 @@ def cmd_collect(cfg: EvalConfig, loop: bool, limit: int | None) -> int:
     return 0
 
 
-def cmd_report(cfg: EvalConfig) -> int:
-    ck = _ck(cfg)
+def cmd_report(cfg: EvalConfig, db_path: Path | None = None) -> int:
+    try:
+        ck = _ck(cfg, db_path)
+    except (FileNotFoundError, ValueError, json.JSONDecodeError, sqlite3.Error) as error:
+        print(f"✗ retrieval snapshot không hợp lệ: {error}")
+        return 2
     if not ck.is_file():
         print(f"✗ chưa có checkpoint {ck.name} — chạy `collect --tag {cfg.tag}`")
         return 2
@@ -324,6 +338,7 @@ def main(argv: list[str]) -> int:
                        choices=("proxy_v2", "manual", "manual_then_proxy"))
         s.add_argument("--free-scan", type=int, choices=(0, 1))
         s.add_argument("--budget-s", type=float)
+        s.add_argument("--db", type=Path)
         if name == "collect":
             s.add_argument("--loop", action="store_true")
             s.add_argument("--limit", type=int)
@@ -348,8 +363,8 @@ def main(argv: list[str]) -> int:
     }
     cfg = _load_cfg(ns.tag, ov)
     if ns.cmd == "collect":
-        return cmd_collect(cfg, ns.loop, ns.limit)
-    return cmd_report(cfg)
+        return cmd_collect(cfg, ns.loop, ns.limit, ns.db)
+    return cmd_report(cfg, ns.db)
 
 
 if __name__ == "__main__":

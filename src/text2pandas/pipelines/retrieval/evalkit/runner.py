@@ -13,10 +13,10 @@ khác. Sửa một trọng số trong `rank_s2.py` rồi chạy `collect`: các 
 BỎ QUA** (đã có `id` trong tệp), câu mới chạy với trọng số mới, và `report`
 trộn hai cấu hình lại thành một bảng số — **không có gì phát hiện được**.
 
-Ở đây mỗi dòng mang `cfg_sha` = sha256 của toàn bộ cấu hình hiệu lực (trọng số,
-bonus, top_k, hints, basis_mode, gold provider, phiên bản lược đồ). `report`
-ĐẾM số `cfg_sha` khác nhau và **từ chối in bảng** nếu > 1, kèm hướng dẫn. Trộn
-cấu hình là lỗi im lặng đắt nhất của một khung đo — nó làm mọi A/B sau đó vô
+Ở đây mỗi dòng mang `cfg_sha` = sha256 của cấu hình hiệu lực VÀ identity của
+retrieval snapshot (A6 build, index ID, DB digest). `report` ĐẾM số `cfg_sha`
+khác nhau và **từ chối in bảng** nếu > 1, kèm hướng dẫn. Trộn cấu hình hoặc
+dataset là lỗi im lặng đắt nhất của một khung đo — nó làm mọi A/B sau đó vô
 nghĩa mà không ai biết.
 """
 
@@ -32,6 +32,8 @@ from pathlib import Path
 from text2pandas.pipelines.retrieval import rank_s2
 from text2pandas.pipelines.retrieval.alias_store import load_aliases
 from text2pandas.pipelines.retrieval.question_intent import parse_intent
+from text2pandas.infrastructure.paths import ProjectPaths
+from text2pandas.infrastructure.snapshots import ActiveSnapshots
 
 from . import goldset
 from .goldset import GoldProvider, GoldSet, ManualGold, ProxyGoldV2, free_ticker_histogram
@@ -39,7 +41,14 @@ from .stages import (Bm25StructuralRanker, HardFilterGenerator, IdentityReranker
                      period_ends_of)
 from .taxonomy import NoGoldReason, classify
 
-__all__ = ["EvalConfig", "collect", "SCHEMA_VERSION"]
+__all__ = [
+    "EvalConfig",
+    "EvaluationDataset",
+    "checkpoint_path",
+    "collect",
+    "resolve_evaluation_dataset",
+    "SCHEMA_VERSION",
+]
 
 # Phiên bản này vào `EvalConfig.sha`, nên đổi nó là VÔ HIỆU HOÁ mọi checkpoint cũ.
 #
@@ -52,6 +61,8 @@ __all__ = ["EvalConfig", "collect", "SCHEMA_VERSION"]
 #                         hoàn thiện comparison cues (ADR 0006).
 #   evalkit-6 → evalkit-7   maximal overlapping metric phrases prevent a short
 #                         VAS code hint from overriding a specific metric (ADR 0007).
+#   evalkit-7 → evalkit-8   bind checkpoints to active A6/retrieval identities;
+#                         ranking behavior is unchanged.
 #
 # VÌ SAO PHẢI BUMP, KHÔNG PHẢI CHỈ SỬA CODE
 # -----------------------------------------
@@ -63,7 +74,7 @@ __all__ = ["EvalConfig", "collect", "SCHEMA_VERSION"]
 # Kỷ luật con người không giữ được bất biến này (đã hỏng một lần rồi), nên
 # `tests/test_p0_unify.py::test_behavior_fingerprint` băm AST của các module
 # quyết định hành vi S2 và đỏ lên nếu chúng đổi mà hằng số này không đổi.
-SCHEMA_VERSION = "evalkit-7"
+SCHEMA_VERSION = "evalkit-8"
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,7 +155,74 @@ class EvalConfig:
 
     @property
     def checkpoint_name(self) -> str:
+        """Legacy config-only name; production callers use ``checkpoint_path``."""
         return f"ek_{self.tag}_{self.sha}.jsonl"
+
+
+@dataclass(frozen=True, slots=True)
+class EvaluationDataset:
+    database: Path
+    source_a6_build_id: str
+    retrieval_index_id: str
+    database_sha256: str
+
+    @property
+    def sha(self) -> str:
+        payload = {
+            "source_a6_build_id": self.source_a6_build_id,
+            "retrieval_index_id": self.retrieval_index_id,
+            "database_sha256": self.database_sha256,
+        }
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+
+
+def resolve_evaluation_dataset(
+    root: Path,
+    db_path: Path | None = None,
+) -> EvaluationDataset:
+    """Resolve and verify the immutable retrieval identity used by one eval."""
+
+    if db_path is None:
+        paths = ProjectPaths.from_repo_root(root)
+        active = ActiveSnapshots.load(paths)
+        database = active.retrieval_path / "retrieval.db"
+    else:
+        database = db_path if db_path.is_absolute() else root / db_path
+        database = database.resolve(strict=False)
+    if not database.is_file():
+        raise FileNotFoundError(f"missing retrieval database: {database}")
+    manifest_path = database.parent / "manifest.json"
+    if not manifest_path.is_file():
+        raise ValueError(f"retrieval evaluation requires a snapshot manifest: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict):
+        raise ValueError("retrieval snapshot manifest must be an object")
+    source_build = str(manifest.get("source_a6_build_id") or "").strip()
+    index_id = str(manifest.get("index_id") or "").strip()
+    database_sha = str(manifest.get("database_sha256") or "").strip()
+    if not source_build or not index_id or len(database_sha) != 64:
+        raise ValueError("retrieval snapshot manifest has incomplete identity")
+    if manifest.get("database", "retrieval.db") != database.name:
+        raise ValueError("retrieval snapshot manifest points to a different database")
+    if manifest.get("database_bytes") != database.stat().st_size:
+        raise ValueError("retrieval snapshot database size does not match manifest")
+    with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as connection:
+        meta = dict(connection.execute("SELECT key, value FROM build_meta"))
+    if meta.get("build_id") != source_build:
+        raise ValueError("retrieval database build_id does not match snapshot manifest")
+    return EvaluationDataset(database, source_build, index_id, database_sha)
+
+
+def checkpoint_path(
+    root: Path,
+    cfg: EvalConfig,
+    db_path: Path | None = None,
+) -> tuple[Path, EvaluationDataset, str]:
+    dataset = resolve_evaluation_dataset(root, db_path)
+    effective = hashlib.sha256(f"{cfg.sha}:{dataset.sha}".encode("ascii")).hexdigest()[:16]
+    path = root / "artifacts/runs/retrieval/evalkit" / f"ek_{cfg.tag}_{effective}.jsonl"
+    return path, dataset, effective
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -207,7 +285,7 @@ def _questions(root: Path) -> list[dict]:
 
 
 def _done(ck: Path, cfg_sha: str) -> set[int]:
-    """Chỉ tính là 'đã đo' nếu dòng đó cùng `cfg_sha`. Khác cấu hình = phải đo lại."""
+    """Count rows only when configuration and retrieval identity both match."""
     if not ck.is_file():
         return set()
     out = set()
@@ -238,22 +316,26 @@ def _build_gold_provider(cfg: EvalConfig, root: Path, conn, alias: dict):
 
 def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
             limit: int | None = None) -> int:
-    db = db_path or root / "data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/retrieval.db"
-    if not db.is_file():
-        print(f"✗ thiếu {db} — chạy tools/build_retrieval_workdb.sh")
+    try:
+        ck, dataset, evaluation_sha = checkpoint_path(root, cfg, db_path)
+    except (FileNotFoundError, ValueError, sqlite3.Error, json.JSONDecodeError) as error:
+        print(f"✗ retrieval snapshot không hợp lệ: {error}")
         return 2
+    db = dataset.database
     outdir = root / "artifacts/runs/retrieval/evalkit"
     outdir.mkdir(parents=True, exist_ok=True)
-    ck = outdir / cfg.checkpoint_name
 
     alias = load_aliases(brands=cfg.brands)
     qs = _questions(root)
-    xong = _done(ck, cfg.sha)
+    xong = _done(ck, evaluation_sha)
     todo = [q for q in qs if q["id"] not in xong]
     if limit:
         todo = todo[:limit]
     if not todo:
-        print(f"đã đo đủ {len(xong)}/{len(qs)} câu cho cfg={cfg.sha} → chạy `report`")
+        print(
+            f"đã đo đủ {len(xong)}/{len(qs)} câu cho eval={evaluation_sha} "
+            "→ chạy `report`"
+        )
         return 0
 
     conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
@@ -325,7 +407,13 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
         )
 
         row = {
-            "schema": SCHEMA_VERSION, "cfg_sha": cfg.sha, "cfg_tag": cfg.tag,
+            "schema": SCHEMA_VERSION,
+            "cfg_sha": evaluation_sha,
+            "config_sha": cfg.sha,
+            "dataset_sha": dataset.sha,
+            "source_a6_build_id": dataset.source_a6_build_id,
+            "retrieval_index_id": dataset.retrieval_index_id,
+            "cfg_tag": cfg.tag,
             "id": qid, "mode": intent.mode,
             "resolved_by": intent.resolved_by,
             "n_targets": len(intent.targets), "targets": list(intent.targets),
@@ -356,13 +444,13 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
             break
     fh.close()
     da = len(xong) + n
-    print(f"đo thêm {n} câu · tổng {da}/{len(qs)} · cfg={cfg.sha} · "
+    print(f"đo thêm {n} câu · tổng {da}/{len(qs)} · eval={evaluation_sha} · "
           f"{time.time()-t0:.0f}s" + ("" if da >= len(qs) else "  → gọi lại `collect`"))
-    _keu_neu_co_loi(outdir, cfg)
+    _keu_neu_co_loi(outdir, cfg, evaluation_sha)
     return 0
 
 
-def _keu_neu_co_loi(outdir: Path, cfg: EvalConfig) -> None:
+def _keu_neu_co_loi(outdir: Path, cfg: EvalConfig, evaluation_sha: str) -> None:
     """Lỗi truy vấn trong lượt chạy phải KÊU TO và để lại tệp.
 
     Hai danh sách này (`rank_s2.LAST_ERRORS`, `goldset.GOLD_ERRORS`) trước đây
@@ -376,7 +464,7 @@ def _keu_neu_co_loi(outdir: Path, cfg: EvalConfig) -> None:
            + [f"GOLD · {e}" for e in goldset.GOLD_ERRORS])
     if not loi:
         return
-    p = outdir / f"errors_{cfg.tag}_{cfg.sha}.txt"
+    p = outdir / f"errors_{cfg.tag}_{evaluation_sha}.txt"
     p.write_text("\n".join(loi) + "\n", encoding="utf-8")
     print(f"\n⚠ {len(loi)} LỖI TRUY VẤN trong lượt chạy — số đo KHÔNG đầy đủ.")
     for e in loi[:5]:
