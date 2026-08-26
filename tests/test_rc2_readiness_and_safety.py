@@ -521,6 +521,36 @@ def test_bien_trai_nhan_chu_so_nhung_tu_choi_chu_cai(text, want):
     assert _find_scale(text) == want
 
 
+@pytest.mark.parametrize("text, want", [
+    ("Giá trị ghi nhận tại thời điểm muaTriệu VND", 6),
+    ("Tổng cộngtriệu đồng", 6),
+    ("Năm nayNghìn VND", 3),
+    ("Tổng cộngTỷ đồng", 9),
+])
+def test_nhan_don_vi_dinh_vao_nhan_cot_bang_chu(text, want):
+    """Column extraction glues unit labels to words; the currency pair is exact."""
+    from text2pandas.pipelines.a6.models import UnitKind
+    from text2pandas.pipelines.a6.unit_resolver import resolve_unit
+
+    result = resolve_unit("", text, "", "", "", money_view=True)
+
+    assert result.unit_kind is UnitKind.MONEY
+    assert result.currency == "VND"
+    assert result.scale_exponent == want
+    assert result.scale_source.value == "column_path"
+
+
+def test_khong_noi_bien_trai_cho_row_prose():
+    from text2pandas.pipelines.a6.unit_resolver import resolve_unit
+
+    result = resolve_unit("", "Năm nay", "batriệu đồng", "", "", money_view=True)
+
+    assert result.scale_exponent == 0
+    # ``đồng`` still identifies VND at 10^0; the attached ``triệu`` token is
+    # deliberately not promoted outside the column axis.
+    assert result.scale_source.value == "row_context"
+
+
 def test_lop_bien_la_CHU_CAI_unicode_khong_phai_dai_liet_ke():
     """Chống hồi quy cho chính lỗi tôi vừa mắc.
 

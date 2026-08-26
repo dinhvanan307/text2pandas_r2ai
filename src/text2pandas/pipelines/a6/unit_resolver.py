@@ -26,7 +26,7 @@ from text2pandas.pipelines.a6.models import EvidenceSource, UnitKind
 
 __all__ = ["UnitResolution", "resolve_unit", "reconcile_scale", "UNIT_VERSION"]
 
-UNIT_VERSION = "1.7"
+UNIT_VERSION = "1.8"
 
 # ── RC-04 · biên trái: KHÔNG phải chữ cái, thay vì `\b` ─────────────────────
 #
@@ -71,6 +71,21 @@ _SCALE_STRICT: tuple[tuple[re.Pattern[str], int], ...] = (
                 + r"million\s*(?:vnd|dong)\b", re.I), 6),
     (re.compile(_NL + r"(?:nghìn|ngàn)\s*(?:đồng|vnd|đ)\b|" + _NL
                 + r"thousand\s*(?:vnd|dong)\b", re.I), 3),
+)
+# Extracted multi-level headers can concatenate the unit directly after a
+# textual header leaf: ``Tổng cộngtriệu đồng`` and
+# ``Giá trị ghi nhận tại thời điểm muaTriệu VND`` are common corpus forms.
+# The paired currency token makes these expressions unambiguous, but this
+# relaxed boundary is safe only on the column axis.  Applying it to prose or
+# row labels would turn narrative amounts into table-wide unit declarations.
+_SCALE_ATTACHED_COLUMN: tuple[tuple[re.Pattern[str], int], ...] = (
+    (re.compile(r"(?:nghìn|ngàn)\s*tỷ\s*(?:đồng|vnd|đ)\b", re.I), 12),
+    (re.compile(r"(?:tỷ|tỉ)\s*(?:đồng|vnd|đ)\b|billion\s*(?:vnd|dong)\b", re.I), 9),
+    (re.compile(r"triệu\s*(?:đồng|vnd|đ)\b|million\s*(?:vnd|dong)\b", re.I), 6),
+    (re.compile(
+        r"(?:nghìn|ngàn)\s*(?:đồng|vnd|đ)\b|thousand\s*(?:vnd|dong)\b",
+        re.I,
+    ), 3),
 )
 # Trong cụm `Đơn vị tính: …` thì từ chỉ bậc đứng một mình vẫn là lời khai hợp lệ
 # — "Đơn vị tính: triệu" không mơ hồ. Ngoài cụm đó thì có.
@@ -156,8 +171,20 @@ class UnitResolution:
         return out
 
 
-def _find_scale(text: str, in_declaration: bool = False) -> int | None:
-    for pat, exp in (_SCALE_IN_DECL if in_declaration else _SCALE_STRICT):
+def _find_scale(
+    text: str,
+    in_declaration: bool = False,
+    *,
+    allow_attached_column_unit: bool = False,
+) -> int | None:
+    patterns = (
+        _SCALE_IN_DECL
+        if in_declaration
+        else _SCALE_ATTACHED_COLUMN
+        if allow_attached_column_unit
+        else _SCALE_STRICT
+    )
+    for pat, exp in patterns:
         if pat.search(text):
             return exp
     return None
@@ -284,7 +311,13 @@ def resolve_unit(
                 kind, kind_src = k, source
         if currency is None and (c := _find_currency(text)):
             currency, cur_src = c, source
-        if allow_scale and scale is None and (sc := _find_scale(text, is_decl)):
+        if allow_scale and scale is None and (
+            sc := _find_scale(
+                text,
+                is_decl,
+                allow_attached_column_unit=source is EvidenceSource.COLUMN_PATH,
+            )
+        ):
             scale, scale_src = sc, source
             if not unit_raw:
                 unit_raw = text.strip()[:60]
