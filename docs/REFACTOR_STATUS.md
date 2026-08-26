@@ -34,6 +34,8 @@ Updated: 2026-08-26
 - Typed absolute difference cho đúng 2 entity, 1 kỳ và 1 metric với distinct
   evidence, same-metric policy, reviewed cross-label aliases và share-count
   scaling (`nghìn/triệu/tỷ cổ phiếu`).
+- Typed entity COUNT cho one-metric sign/threshold predicate trên explicit
+  entity set; compound multi-metric/scenario predicates tiếp tục fail-closed.
 - Static semantic coverage contract cho đủ 1.012 câu, có corpus digest, per-QID
   reason code, CLI/Make entry point và CI baseline. Scope được ghi rõ là route
   coverage, không đánh tráo với retrieval/binding/answer accuracy.
@@ -53,7 +55,7 @@ Updated: 2026-08-26
 ## Current gates
 
 - Offline: green.
-- Static semantic route: `624/1.012` eligible (`61,6601%`), `388` named gaps;
+- Static semantic route: `629/1.012` eligible (`62,1542%`), `383` named gaps;
   baseline được khóa trong offline suite.
 - Raw/A6/retrieval identity and lineage: green for the active local snapshots.
 - H0 materialized integration: green trên active local materialization (`22/22`).

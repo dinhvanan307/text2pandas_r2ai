@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 from text2pandas.pipelines.answering.adapters import requested_unit_of
 from text2pandas.pipelines.answering.count_engine import classify_count_predicate
+from text2pandas.pipelines.answering.entity_count import classify_entity_count
 from text2pandas.pipelines.answering.entity_difference import is_typed_entity_difference
 from text2pandas.pipelines.answering.formula_engine import match_formula
 from text2pandas.pipelines.answering.frame import classify_operation, parse_question
@@ -128,6 +129,24 @@ def _classify(
     formula = match_formula(question)
     formula_id = formula.formula_id if formula else None
     requested_unit = requested_unit_of(question)
+    entity_count, _entity_count_reason = classify_entity_count(
+        question,
+        intent.targets,
+        intent.years,
+        mode=intent.mode,
+    )
+    entity_count_gold_compatible = (
+        expected_entities is None
+        or set(intent.targets) == set(expected_entities)
+    )
+    if entity_count is not None and entity_count_gold_compatible:
+        return CoverageRecord(
+            qid,
+            operation.op,
+            None,
+            ELIGIBLE,
+            "ELIGIBLE_TYPED_ENTITY_COUNT",
+        )
     entity_gold_compatible = (
         expected_entities is None
         or len(expected_entities) == 1

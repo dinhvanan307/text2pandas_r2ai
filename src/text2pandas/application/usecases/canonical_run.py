@@ -33,6 +33,7 @@ from text2pandas.pipelines.answering import (
 )
 from text2pandas.pipelines.answering.adapters import requested_unit_of
 from text2pandas.pipelines.answering.count_engine import answer_count_periods
+from text2pandas.pipelines.answering.entity_count import answer_entity_count
 from text2pandas.pipelines.answering.entity_difference import answer_entity_difference
 from text2pandas.pipelines.answering.formula_engine import answer_formula_question
 from text2pandas.pipelines.answering.ir import OperandSlot
@@ -422,8 +423,8 @@ def run_canonical_pipeline(
                 frames_by_path: dict[str, pd.DataFrame] = {}
                 if not refs.table_uids:
                     reason = "NO_RETRIEVED_TABLE"
-                elif len(intent.targets) not in {1, 2}:
-                    reason = "ANSWER_REQUIRES_ONE_OR_TWO_ENTITIES"
+                elif not intent.targets:
+                    reason = "ANSWER_REQUIRES_ENTITY"
                 else:
                     answer_tables = refs.ranked_table_uids[:answer_pool_tables]
                     pool, frames_by_path = load_candidate_cells(a6_conn, answer_tables)
@@ -438,19 +439,31 @@ def run_canonical_pipeline(
                         metric_codes_hint(text),
                         drop=drop_terms(intent.targets, aliases),
                     )
-                    if len(intent.targets) == 2:
-                        pipeline_result = answer_entity_difference(
+                    if len(intent.targets) >= 2:
+                        pipeline_result = answer_entity_count(
                             text,
                             pool,
                             frames,
                             entities=intent.targets,
                             years=intent.years,
                             basis=intent.basis,
-                            requested_unit=requested_unit,
                             selector=selector,
                             mode=intent.mode,
                             qid=qid,
                         )
+                        if pipeline_result is None and len(intent.targets) == 2:
+                            pipeline_result = answer_entity_difference(
+                                text,
+                                pool,
+                                frames,
+                                entities=intent.targets,
+                                years=intent.years,
+                                basis=intent.basis,
+                                requested_unit=requested_unit,
+                                selector=selector,
+                                mode=intent.mode,
+                                qid=qid,
+                            )
                         if pipeline_result is None:
                             reason = "MULTI_ENTITY_OPERATION_NOT_SUPPORTED"
                     else:

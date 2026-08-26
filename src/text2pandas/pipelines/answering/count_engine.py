@@ -13,13 +13,15 @@ import unicodedata
 from dataclasses import dataclass, field
 from typing import Sequence
 
+from text2pandas.domain.units.lexicon import scan_unit
+
 from .binding import BoundOperand, CandidateCell, Selector
 from .frame import COUNT_OP, classify_operation
 from .ir import OperandSlot
 from .pipeline import execute
 from .policy import same_metric
 from .render import cell_expr
-from .units import COUNT, MONEY, Unit, query_factor
+from .units import COUNT, MONEY, SHARES, Unit, query_factor
 
 GT = "GT"
 LT = "LT"
@@ -27,11 +29,12 @@ LT = "LT"
 _COUNT_PERIOD = re.compile(r"(?:bao\s+nhi[êe]u\s+n[ăa]m|s[ốo]\s+n[ăa]m)")
 _EXISTENCE = re.compile(r"t[ồo]n\s+t[ạa]i\s+kho[ảa]n\s+m[ụu]c")
 _NEGATIVE = re.compile(r"\b[âa]m\b")
+_POSITIVE = re.compile(r"\bd[ưu][ơo]ng\b")
 _THRESHOLD = re.compile(
     r"(?P<direction>nhi[ềe]u|l[ớo]n|cao|[íi]t|nh[ỏo]|th[ấa]p)\s+h[ơo]n\s+"
     r"(?P<number>\d+(?:[.,]\d+)?)"
     r"(?P<unit>\s*(?:tr[ăa]m\s+t[ỷy]|ngh[ìi]n\s+t[ỷy]|t[ỷy]|tri[ệe]u|ngh[ìi]n)?"
-    r"\s*(?:đ[ồo]ng|vnd|vnđ)?)"
+    r"\s*(?:đ[ồo]ng|vnd|vnđ|c[ổo]\s*phi[ếe]u|c[ổo]\s*ph[ầa]n)?)"
 )
 
 
@@ -88,6 +91,18 @@ def classify_count_predicate(question: str) -> tuple[CountPredicate | None, str 
     folded = _fold(text)
     if classify_operation(text).op != COUNT_OP or not _COUNT_PERIOD.search(text):
         return None, None
+    return parse_positive_evidence_predicate(text, folded=folded)
+
+
+def parse_positive_evidence_predicate(
+    question: str,
+    *,
+    folded: str | None = None,
+) -> tuple[CountPredicate | None, str | None]:
+    """Parse a threshold/sign predicate shared by period and entity COUNT."""
+
+    text = unicodedata.normalize("NFC", question or "").casefold()
+    folded = folded or _fold(text)
     if _EXISTENCE.search(text):
         return None, "COUNT_EXISTENCE_REQUIRES_NEGATIVE_EVIDENCE"
     match = _THRESHOLD.search(text)
@@ -98,12 +113,14 @@ def classify_count_predicate(question: str) -> tuple[CountPredicate | None, str 
         unit_text = match.group("unit").strip()
         threshold_unit = None
         if unit_text:
-            from text2pandas.domain.units.lexicon import scan_unit
-
             dimension, scale, _ = scan_unit(unit_text)
-            if dimension != MONEY:
-                return None, "COUNT_THRESHOLD_UNIT_NOT_MONEY"
-            threshold_unit = Unit(MONEY, scale, "VND")
+            if dimension not in {MONEY, SHARES}:
+                return None, "COUNT_THRESHOLD_UNIT_NOT_SUPPORTED"
+            threshold_unit = Unit(
+                dimension,
+                scale,
+                "VND" if dimension == MONEY else None,
+            )
         return CountPredicate(
             operator,
             threshold,
@@ -112,6 +129,8 @@ def classify_count_predicate(question: str) -> tuple[CountPredicate | None, str 
         ), None
     if _NEGATIVE.search(text):
         return CountPredicate(LT, 0.0, metric_id=_match_metric(folded)), None
+    if _POSITIVE.search(text):
+        return CountPredicate(GT, 0.0, metric_id=_match_metric(folded)), None
     return None, "COUNT_PREDICATE_NOT_SUPPORTED"
 
 
