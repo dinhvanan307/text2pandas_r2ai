@@ -7,7 +7,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unicodedata
+from collections.abc import Mapping
 from dataclasses import dataclass, field
+from types import MappingProxyType
 
 from text2pandas.domain.semantic import (
     Aggregate,
@@ -102,11 +105,14 @@ class OntologyValidationError(ValueError):
 class MetricOntology:
     ontology_id: str
     schema_version: int
-    metrics: dict[str, MetricDefinition]
-    formulas: dict[str, FormulaDefinition]
-    source_digests: dict[str, str] = field(default_factory=dict)
+    metrics: Mapping[str, MetricDefinition]
+    formulas: Mapping[str, FormulaDefinition]
+    source_digests: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "metrics", MappingProxyType(dict(self.metrics)))
+        object.__setattr__(self, "formulas", MappingProxyType(dict(self.formulas)))
+        object.__setattr__(self, "source_digests", MappingProxyType(dict(self.source_digests)))
         issues = self.validate()
         errors = tuple(issue for issue in issues if issue.severity == "ERROR")
         if errors:
@@ -215,6 +221,14 @@ def expression_metric_ids(expression: Expression) -> frozenset[str]:
     return frozenset()
 
 
+def normalize_phrase(value: str) -> str:
+    """Corpus-independent Vietnamese normalization for ontology matching."""
+    decomposed = unicodedata.normalize("NFD", value.casefold())
+    plain = "".join(
+        character for character in decomposed if unicodedata.category(character) != "Mn"
+    )
+    return " ".join(plain.replace("đ", "d").split())
+
+
 def _error(code: str, subject: str, message: str) -> OntologyIssue:
     return OntologyIssue("ERROR", code, subject, message)
-

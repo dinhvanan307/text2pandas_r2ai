@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import hashlib
-import unicodedata
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 import yaml  # type: ignore[import-untyped]
 
-from text2pandas.domain.metrics import FormulaDefinition, MetricDefinition, MetricOntology
+from text2pandas.domain.metrics import (
+    FormulaDefinition,
+    MetricDefinition,
+    MetricOntology,
+    normalize_phrase,
+)
 from text2pandas.domain.semantic import (
     Arithmetic,
     ArithmeticOperator,
@@ -68,12 +72,6 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
         formulas=formulas,
         source_digests={"metrics": metric_digest, "formulas": formula_digest},
     )
-
-
-def normalize_phrase(value: str) -> str:
-    decomposed = unicodedata.normalize("NFD", value.casefold())
-    plain = "".join(character for character in decomposed if unicodedata.category(character) != "Mn")
-    return " ".join(plain.replace("đ", "d").split())
 
 
 def _metric_definition(raw: dict[str, Any]) -> MetricDefinition:

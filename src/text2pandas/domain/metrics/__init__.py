@@ -7,6 +7,7 @@ from .ontology import (
     OntologyIssue,
     OntologyValidationError,
     expression_metric_ids,
+    normalize_phrase,
 )
 
 __all__ = [
@@ -16,5 +17,5 @@ __all__ = [
     "OntologyIssue",
     "OntologyValidationError",
     "expression_metric_ids",
+    "normalize_phrase",
 ]
-
