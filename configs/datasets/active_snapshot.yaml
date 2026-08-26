@@ -4,9 +4,9 @@ raw:
   snapshot_id: ca033190f2e9e99f
   path: raw/btc
 a6:
-  build_id: b3e9684004679ffb
-  path: processed/a6/b3e9684004679ffb
+  build_id: c6887fb633374fad
+  path: processed/a6/c6887fb633374fad
 retrieval:
-  source_a6_build_id: b3e9684004679ffb
-  index_id: 286973b134a189ee
-  path: indexes/retrieval/b3e9684004679ffb/286973b134a189ee
+  source_a6_build_id: c6887fb633374fad
+  index_id: 872ccb0dda9a2bb6
+  path: indexes/retrieval/c6887fb633374fad/872ccb0dda9a2bb6
