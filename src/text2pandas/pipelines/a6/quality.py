@@ -19,7 +19,7 @@ from text2pandas.pipelines.a6.models import Severity, make_uid
 
 __all__ = ["run_quality", "QUALITY_VERSION"]
 
-QUALITY_VERSION = "1.8"
+QUALITY_VERSION = "1.9"
 
 # Chuẩn hoá vừa đủ cho SQL quality: SQLite `lower()` chỉ xử lý ASCII nên cần
 # đổi riêng chữ Đ. Bỏ khoảng trắng để cùng một invariant phủ cả ``Triệu VND``
@@ -29,18 +29,25 @@ _EXPLICIT_SCALE = (
     "CASE"
     f" WHEN {_COL_UNIT_PATH} LIKE '%nghìntỷđồng%'"
     f" OR {_COL_UNIT_PATH} LIKE '%nghìntỷvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%nghìntỷvnđ%'"
     f" OR {_COL_UNIT_PATH} LIKE '%ngàntỷđồng%'"
-    f" OR {_COL_UNIT_PATH} LIKE '%ngàntỷvnd%' THEN 12"
+    f" OR {_COL_UNIT_PATH} LIKE '%ngàntỷvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%ngàntỷvnđ%' THEN 12"
     f" WHEN {_COL_UNIT_PATH} LIKE '%tỷđồng%'"
     f" OR {_COL_UNIT_PATH} LIKE '%tỷvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%tỷvnđ%'"
     f" OR {_COL_UNIT_PATH} LIKE '%tỉđồng%'"
-    f" OR {_COL_UNIT_PATH} LIKE '%tỉvnd%' THEN 9"
+    f" OR {_COL_UNIT_PATH} LIKE '%tỉvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%tỉvnđ%' THEN 9"
     f" WHEN {_COL_UNIT_PATH} LIKE '%triệuđồng%'"
-    f" OR {_COL_UNIT_PATH} LIKE '%triệuvnd%' THEN 6"
+    f" OR {_COL_UNIT_PATH} LIKE '%triệuvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%triệuvnđ%' THEN 6"
     f" WHEN {_COL_UNIT_PATH} LIKE '%nghìnđồng%'"
     f" OR {_COL_UNIT_PATH} LIKE '%nghìnvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%nghìnvnđ%'"
     f" OR {_COL_UNIT_PATH} LIKE '%ngànđồng%'"
-    f" OR {_COL_UNIT_PATH} LIKE '%ngànvnd%' THEN 3"
+    f" OR {_COL_UNIT_PATH} LIKE '%ngànvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%ngànvnđ%' THEN 3"
     " END"
 )
 _HAS_EXPLICIT_SCALE = f"({_EXPLICIT_SCALE}) IS NOT NULL"

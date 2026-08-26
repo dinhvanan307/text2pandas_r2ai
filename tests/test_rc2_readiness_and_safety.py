@@ -531,6 +531,7 @@ def test_bien_trai_nhan_chu_so_nhung_tu_choi_chu_cai(text, want):
     ("31/12/2024Triệu VNDPhải thu/(Phải trả)", 6),
     ("Ngàn VNDTổng cộng › Nguyên giá", 3),
     ("Đơn vị tỉnh: Triệu đồngTổng cộng › Năm nay", 6),
+    ("31/12/2021Triệu VNĐ(trình bày lại theo KTNN)", 6),
 ])
 def test_nhan_don_vi_dinh_vao_nhan_cot_bang_chu(text, want):
     """Column extraction glues unit labels to words; the currency pair is exact."""

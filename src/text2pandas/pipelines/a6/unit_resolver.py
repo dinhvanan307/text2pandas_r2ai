@@ -26,7 +26,7 @@ from text2pandas.pipelines.a6.models import EvidenceSource, UnitKind
 
 __all__ = ["UnitResolution", "resolve_unit", "reconcile_scale", "UNIT_VERSION"]
 
-UNIT_VERSION = "1.9"
+UNIT_VERSION = "1.10"
 
 # ── RC-04 · biên trái: KHÔNG phải chữ cái, thay vì `\b` ─────────────────────
 #
@@ -64,12 +64,12 @@ _NL = r"(?<![^\W\d_])"
 #
 # "tỷ" một mình KHÔNG phải lời khai bậc. "tỷ đồng" mới là.
 _SCALE_STRICT: tuple[tuple[re.Pattern[str], int], ...] = (
-    (re.compile(_NL + r"(?:nghìn|ngàn)\s*tỷ\s*(?:đồng|vnd|đ)\b", re.I), 12),
-    (re.compile(_NL + r"(?:tỷ|tỉ)\s*(?:đồng|vnd|đ)\b|" + _NL
+    (re.compile(_NL + r"(?:nghìn|ngàn)\s*tỷ\s*(?:đồng|vnd|vnđ|đ)\b", re.I), 12),
+    (re.compile(_NL + r"(?:tỷ|tỉ)\s*(?:đồng|vnd|vnđ|đ)\b|" + _NL
                 + r"billion\s*(?:vnd|dong)\b", re.I), 9),
-    (re.compile(_NL + r"triệu\s*(?:đồng|vnd|đ)\b|" + _NL
+    (re.compile(_NL + r"triệu\s*(?:đồng|vnd|vnđ|đ)\b|" + _NL
                 + r"million\s*(?:vnd|dong)\b", re.I), 6),
-    (re.compile(_NL + r"(?:nghìn|ngàn)\s*(?:đồng|vnd|đ)\b|" + _NL
+    (re.compile(_NL + r"(?:nghìn|ngàn)\s*(?:đồng|vnd|vnđ|đ)\b|" + _NL
                 + r"thousand\s*(?:vnd|dong)\b", re.I), 3),
 )
 # Extracted multi-level headers can concatenate the unit directly after a
@@ -79,11 +79,11 @@ _SCALE_STRICT: tuple[tuple[re.Pattern[str], int], ...] = (
 # relaxed boundary is safe only on the column axis.  Applying it to prose or
 # row labels would turn narrative amounts into table-wide unit declarations.
 _SCALE_ATTACHED_COLUMN: tuple[tuple[re.Pattern[str], int], ...] = (
-    (re.compile(r"(?:nghìn|ngàn)\s*tỷ\s*(?:đồng|vnd|đ)", re.I), 12),
-    (re.compile(r"(?:tỷ|tỉ)\s*(?:đồng|vnd|đ)|billion\s*(?:vnd|dong)", re.I), 9),
-    (re.compile(r"triệu\s*(?:đồng|vnd|đ)|million\s*(?:vnd|dong)", re.I), 6),
+    (re.compile(r"(?:nghìn|ngàn)\s*tỷ\s*(?:đồng|vnd|vnđ|đ)", re.I), 12),
+    (re.compile(r"(?:tỷ|tỉ)\s*(?:đồng|vnd|vnđ|đ)|billion\s*(?:vnd|dong)", re.I), 9),
+    (re.compile(r"triệu\s*(?:đồng|vnd|vnđ|đ)|million\s*(?:vnd|dong)", re.I), 6),
     (re.compile(
-        r"(?:nghìn|ngàn)\s*(?:đồng|vnd|đ)|thousand\s*(?:vnd|dong)",
+        r"(?:nghìn|ngàn)\s*(?:đồng|vnd|vnđ|đ)|thousand\s*(?:vnd|dong)",
         re.I,
     ), 3),
 )
