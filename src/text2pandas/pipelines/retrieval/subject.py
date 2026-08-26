@@ -61,7 +61,18 @@ _SCREEN_RE = __import__("re").compile("|".join((
     # "doanh nghiệp có X cao nhất" — `cong ty co` phải LOẠI "công ty cổ phần"
     r"doanh nghiep co\b", r"cong ty co (?!phan)",
 )))
-_COMPARE = ("giua", "so voi", "chenh lech giua", "hieu so", "cao hon", "thap hon")
+_COMPARE = (
+    "giua",
+    "so voi",
+    "chenh lech giua",
+    "chenh lech voi",
+    "hieu so",
+    "cao hon",
+    "thap hon",
+    "nhieu hon",
+    "it hon",
+    "be hon",
+)
 _OWNER = ("cua",)
 _RELATED = ("voi", "cho", "tai", "den", "tu")
 

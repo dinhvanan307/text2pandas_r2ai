@@ -31,6 +31,9 @@ Updated: 2026-08-26
 - Entity resolver giữ full legal-name evidence khi short brand bị nested trong
   tên counterparty, nhận diện `hiệu số` là comparison; coverage không còn đánh
   tráo 11 câu multi-entity và 1 select-at-arg thành alias mismatch.
+- Resolver P0-d dùng word-boundary aliases, hợp nhất explicit ticker với
+  company-name evidence và giữ đủ hai vế của directional comparisons; 6 known
+  strict xfails đã thành regression passes.
 - Typed absolute difference cho đúng 2 entity, 1 kỳ và 1 metric với distinct
   evidence, same-metric policy, reviewed cross-label aliases và share-count
   scaling (`nghìn/triệu/tỷ cổ phiếu`).
@@ -55,7 +58,7 @@ Updated: 2026-08-26
 ## Current gates
 
 - Offline: green.
-- Static semantic route: `631/1.012` eligible (`62,3518%`), `381` named gaps;
+- Static semantic route: `635/1.012` eligible (`62,7470%`), `377` named gaps;
   baseline được khóa trong offline suite.
 - Raw/A6/retrieval identity and lineage: green for the active local snapshots.
 - H0 materialized integration: green trên active local materialization (`22/22`).

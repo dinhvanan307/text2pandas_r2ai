@@ -1,4 +1,4 @@
-"""P0-c · KHOÁ CƠ CHẾ của bốn lỗi phân giải thực thể tìm thấy ở `docs/82` §4.
+"""Regression contract for entity-resolution defects found in `docs/82` §4.
 
 Bộ test này chia làm hai loại, và sự phân biệt là chủ ý:
 
@@ -6,13 +6,8 @@ Bộ test này chia làm hai loại, và sự phân biệt là chủ ý:
     xoá khoảng trắng, `company_aliases` cắt tiền tố ở ngưỡng 6 ký tự…). Chúng
     xanh bây giờ và phải xanh mãi, vì chúng mô tả hợp đồng chứ không mô tả lỗi.
 
-  · **Test hành vi mong muốn** — đánh dấu `xfail(strict=True)`. Chúng ĐỎ trong
-    ý nghĩa "đã biết là chưa đúng", và ngay khi ai đó sửa `src/text2pandas/pipelines/retrieval/**`
-    thì `strict=True` biến chúng thành *unexpected pass* ⇒ pytest thất bại ⇒
-    người sửa buộc phải gỡ nhãn `xfail`. Cách này ghi lại nợ kỹ thuật mà không
-    bao giờ để nó chìm.
-
-P0-c KHÔNG sửa `src/text2pandas/pipelines/retrieval/**`. Đây là hồ sơ truy vết, không phải bản vá.
+  · **Regression tests** — khóa hành vi đã sửa: word-boundary aliases, hợp nhất
+    explicit ticker với company-name matches và `chênh lệch với` là comparison.
 
 Alias dùng ở đây chép nguyên văn từ `configs/retrieval/company_alias_v1.yaml`
 và `company_brand_v1.yaml` (chép chứ không nạp, để test chạy được ở mọi máy kể
@@ -102,17 +97,16 @@ def test_alias_ngan_khop_chuoi_con_khong_neo_bien_tu():
     assert re.search(r"\ban binh\b", _plain("Ngân hàng An Bình"))
 
 
-def test_q542_alias_anbinh_nuot_cho_cua_tix():
-    """`Tân Bình` (TIX) bị ABB chiếm chỗ. Ô `ABB/2021`, `ABB/2022` trong pool
-    v3 vì thế toàn thuyết minh ngân hàng — `docs/82` §4."""
+def test_q542_word_boundary_prevents_abb_from_swallowing_tan_binh():
     it = parse_intent(Q542, ALIAS)
-    assert "ABB" in it.tickers
+    assert "ABB" not in it.tickers
+    assert it.tickers == {"DCM", "DPM", "GVR"}
     assert it.resolved_by == "company_name"
 
 
-def test_q429_alias_anbinh_nuot_cho_cua_msn():
+def test_q429_word_boundary_prevents_abb_from_matching_binh_quan():
     it = parse_intent(Q429, ALIAS)
-    assert "ABB" in it.tickers
+    assert "ABB" not in it.tickers
 
 
 def test_q429_msn_khong_khop_vi_alias_qua_dai():
@@ -148,22 +142,15 @@ def test_tix_khong_ton_tai_trong_bang_alias():
     (Q774, "VIB", "SHB"),
     (Q790, "BID", "VIB"),
 ])
-def test_ten_cong_ty_khop_duoc_nhung_bi_nhanh_ticker_loai_bo(q, ma_ten, ma_ticker):
-    """Alias CÓ khớp — vấn đề nằm ở thứ tự nhánh, không ở bảng alias.
-
-    `parse_intent` chọn `explicit if explicit else name_matches`: hễ có một mã
-    được viết tường minh thì mọi công ty nhận ra qua TÊN đều bị bỏ. Câu so sánh
-    kiểu "X (mã) với Công ty Y" vì thế mất hẳn một vế, và `targets` chỉ còn một
-    mã ⇒ pool không có ô nào cho vế kia.
-    """
+def test_explicit_ticker_and_company_name_matches_are_merged(q, ma_ten, ma_ticker):
+    """One explicit ticker must not erase the company named on the other side."""
     comp = ascii_compact(q)
     assert any(a in comp for n in ALIAS[ma_ten] for a in company_aliases(n)), \
         "alias không khớp — nếu vậy đây là lỗi bảng alias, không phải lỗi nhánh"
     assert ticker_mentioned(q, ma_ticker)
     it = parse_intent(q, ALIAS)
-    assert it.resolved_by == "ticker"
-    assert it.tickers == {ma_ticker}
-    assert ma_ten not in it.targets
+    assert it.resolved_by == "ticker_and_company_name"
+    assert {ma_ten, ma_ticker} <= set(it.targets)
 
 
 def test_bidv_khong_duoc_tinh_la_nhac_ma_bid():
@@ -178,45 +165,8 @@ def test_bidv_khong_duoc_tinh_la_nhac_ma_bid():
 # C · CƠ CHẾ — `chênh lệch với` không nằm trong bộ mẫu `compare`
 # ═════════════════════════════════════════════════════════════════════════════
 
-def test_chenh_lech_voi_bi_xep_nham_thanh_related():
-    """q767. Bộ `_COMPARE` có `chenh lech giua` và `giua`, không có
-    `chenh lech voi`. Hai công ty bị coi là "chủ thể + bên liên quan", rồi
-    `pick_subject` giữ đúng một mã ⇒ vế ACV biến mất khỏi `targets`."""
+def test_chenh_lech_voi_is_a_comparison():
     p = _plain(Q767)
     assert "chenh lech voi" in p
     assert "chenh lech giua" not in p and " giua " not in f" {p} "
-    assert classify(Q767, 2) == QuestionMode.RELATED
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# D · HÀNH VI MONG MUỐN — chưa đúng, đã biết, chờ P0-d
-# ═════════════════════════════════════════════════════════════════════════════
-
-@pytest.mark.xfail(strict=True, reason="P0-c chỉ truy vết; sửa ở P0-d "
-                                       "(neo biên từ khi khớp alias)")
-def test_mong_muon_q542_khong_tra_ve_abb():
-    assert "ABB" not in parse_intent(Q542, ALIAS).tickers
-
-
-@pytest.mark.xfail(strict=True, reason="P0-c chỉ truy vết; sửa ở P0-d "
-                                       "(neo biên từ khi khớp alias)")
-def test_mong_muon_q429_khong_tra_ve_abb():
-    assert "ABB" not in parse_intent(Q429, ALIAS).tickers
-
-
-@pytest.mark.xfail(strict=True, reason="P0-c chỉ truy vết; sửa ở P0-d "
-                                       "(hợp nhất nhánh ticker và nhánh tên)")
-@pytest.mark.parametrize("q,ma_ten,ma_ticker", [
-    (Q791, "GAS", "GEG"),
-    (Q774, "VIB", "SHB"),
-    (Q790, "BID", "VIB"),
-])
-def test_mong_muon_giu_ca_hai_ve_khi_mot_ve_neu_bang_ten(q, ma_ten, ma_ticker):
-    it = parse_intent(q, ALIAS)
-    assert {ma_ten, ma_ticker} <= set(it.targets)
-
-
-@pytest.mark.xfail(strict=True, reason="P0-c chỉ truy vết; sửa ở P0-d "
-                                       "(thêm mẫu `chenh lech voi` vào compare)")
-def test_mong_muon_chenh_lech_voi_la_compare():
     assert classify(Q767, 2) == QuestionMode.COMPARE

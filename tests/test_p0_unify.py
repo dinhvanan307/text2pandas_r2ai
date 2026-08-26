@@ -202,6 +202,7 @@ _MODULE_HANH_VI = (
     "src/text2pandas/pipelines/retrieval/filter_s1.py",
     "src/text2pandas/pipelines/retrieval/rank_s2.py",
     "src/text2pandas/pipelines/retrieval/metric_hint.py",
+    "src/text2pandas/pipelines/retrieval/normalize.py",
     "src/text2pandas/pipelines/retrieval/question_intent.py",
     "src/text2pandas/pipelines/retrieval/subject.py",
     "src/text2pandas/pipelines/retrieval/evalkit/stages.py",
@@ -226,6 +227,7 @@ _FINGERPRINT = {
     "evalkit-3": "89cd3974d9ad7579",
     "evalkit-4": "86484532462fa1e2",
     "evalkit-5": "15d2ac63090c4be4",
+    "evalkit-6": "6d98371c9d8ccda1",
 }
 
 _FIELD = {ast.Constant: "value", ast.Name: "id", ast.Attribute: "attr",

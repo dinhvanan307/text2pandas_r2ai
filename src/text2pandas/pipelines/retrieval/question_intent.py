@@ -12,7 +12,13 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from text2pandas.pipelines.retrieval.normalize import ascii_compact, company_aliases, ticker_mentioned
+from text2pandas.pipelines.retrieval.normalize import (
+    ascii_compact,
+    ascii_words,
+    company_word_aliases,
+    phrase_mentioned,
+    ticker_mentioned,
+)
 from text2pandas.pipelines.retrieval.subject import QuestionMode, classify, pick_subject
 
 __all__ = ["Intent", "parse_intent", "BASIS_OF_SCOPE", "SCOPE_DEFAULT", "QuestionMode"]
@@ -93,16 +99,22 @@ def parse_intent(query: str, companies: dict[str, str | list[str]],
     xuống 49,7%. Mã khoá của dict phải LUÔN là mã chứng khoán thật.
     """
     compact = ascii_compact(query)
+    words = ascii_words(query)
     names_of = {t: ([n] if isinstance(n, str) else list(n))
                 for t, n in companies.items()}
 
-    # Độ dài alias DÀI NHẤT khớp được, theo từng mã.
-    hit_len: dict[str, int] = {}
-    for t, names in names_of.items():
-        best = max((len(a) for n in names for a in company_aliases(n)
-                    if a in compact), default=0)
-        if best:
-            hit_len[t] = best
+    # Giữ biên từ để alias ngắn ``an binh`` không khớp vào ``tan binh`` hoặc
+    # ``lan binh quan`` sau bước bỏ dấu.
+    matched_aliases = {
+        ticker: {
+            alias
+            for name in names
+            for alias in company_word_aliases(name)
+            if phrase_mentioned(words, alias)
+        }
+        for ticker, names in names_of.items()
+    }
+    matched_aliases = {ticker: values for ticker, values in matched_aliases.items() if values}
     # Tên LỒNG NHAU · khớp dài nhất thắng.
     #
     # "Công ty CP Nông nghiệp Quốc tế Hoàng Anh Gia Lai" (HNG) chứa trọn
@@ -114,25 +126,26 @@ def parse_intent(query: str, companies: dict[str, str | list[str]],
     # công ty cùng được nhắc một cách độc lập thì cả hai đều giữ, vì câu hỏi
     # sàng lọc nhiều mã là loại câu có thật ("Xét nhóm cổ phiếu CEO, HPX, …").
     def _bi_bao(t: str) -> bool:
-        mine = {a for n in names_of[t] for a in company_aliases(n) if a in compact}
+        mine = matched_aliases[t]
         theirs = {
             alias
-            for u in hit_len
+            for u in matched_aliases
             if u != t
-            for name in names_of[u]
-            for alias in company_aliases(name)
-            if alias in compact
+            for alias in matched_aliases[u]
         }
         # Chỉ shadow một ticker khi MỌI alias đã khớp của nó đều nằm trong
         # alias dài hơn của ticker khác. Nếu còn một tên độc lập (ví dụ full
         # legal name của GAS), short brand ``khivietnam`` trùng trong tên POW
         # không được phép xoá mất chủ sở hữu báo cáo.
         return bool(mine) and all(
-            any(mine_alias != other and mine_alias in other for other in theirs)
+            any(
+                mine_alias != other and phrase_mentioned(other, mine_alias)
+                for other in theirs
+            )
             for mine_alias in mine
         )
 
-    name_matches = {t for t in hit_len if not _bi_bao(t)}
+    name_matches = {t for t in matched_aliases if not _bi_bao(t)}
     ticker_matches = {t for t in companies if ticker_mentioned(query, t)}
 
     # Mã nằm LỌT trong tên một công ty đã khớp thì không phải một lần nhắc mã
@@ -144,7 +157,8 @@ def parse_intent(query: str, companies: dict[str, str | list[str]],
     explicit = ticker_matches - shadowed
 
     if explicit:
-        tickers, how = explicit, "ticker"
+        tickers = explicit | name_matches
+        how = "ticker_and_company_name" if name_matches - explicit else "ticker"
     elif name_matches:
         tickers, how = name_matches, "company_name"
     elif ticker_matches:

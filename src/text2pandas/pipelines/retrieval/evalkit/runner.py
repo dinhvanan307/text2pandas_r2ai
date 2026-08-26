@@ -48,6 +48,8 @@ __all__ = ["EvalConfig", "collect", "SCHEMA_VERSION"]
 #                         nhận `hiệu số` là comparison (ADR 0004).
 #   evalkit-4 → evalkit-5   nhận `tổng số công ty` là entity-screen cue và đưa
 #                         subject classifier vào behavior fingerprint (ADR 0005).
+#   evalkit-5 → evalkit-6   boundary-safe aliases, merge ticker/name matches và
+#                         hoàn thiện comparison cues (ADR 0006).
 #
 # VÌ SAO PHẢI BUMP, KHÔNG PHẢI CHỈ SỬA CODE
 # -----------------------------------------
@@ -59,7 +61,7 @@ __all__ = ["EvalConfig", "collect", "SCHEMA_VERSION"]
 # Kỷ luật con người không giữ được bất biến này (đã hỏng một lần rồi), nên
 # `tests/test_p0_unify.py::test_behavior_fingerprint` băm AST của các module
 # quyết định hành vi S2 và đỏ lên nếu chúng đổi mà hằng số này không đổi.
-SCHEMA_VERSION = "evalkit-5"
+SCHEMA_VERSION = "evalkit-6"
 
 
 @dataclass(frozen=True, slots=True)
