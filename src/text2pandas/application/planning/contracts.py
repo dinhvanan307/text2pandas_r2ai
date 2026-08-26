@@ -13,7 +13,9 @@ from text2pandas.domain.semantic import Basis, PeriodSemantics, QuestionAST, Uni
 
 class ConstraintKind(StrEnum):
     SAME_DOCUMENT = "same_document"
+    SAME_BASIS = "same_basis"
     SAME_CURRENCY = "same_currency"
+    SAME_DIMENSION = "same_dimension"
     DISTINCT_OBSERVATIONS = "distinct_observations"
 
 
@@ -82,4 +84,3 @@ class ExecutionPlan:
         }
         canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-

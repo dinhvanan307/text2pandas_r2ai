@@ -47,13 +47,14 @@ def _candidate(
     score: float,
     *,
     currency: str = "VND",
+    basis: Basis = Basis.CONSOLIDATED,
 ):
     return ObservationCandidate(
         observation_uid=uid,
         table_uid=f"table:{uid}",
         document_id=document,
         entity=request.entity or "?",
-        basis=Basis.CONSOLIDATED,
+        basis=basis,
         statement_type="income_statement",
         metric_id=request.metric_id,
         row_path=request.metric_id,
@@ -80,6 +81,12 @@ def test_planner_expands_formula_per_entity_and_scopes_coherence() -> None:
     ]
     assert len(same_document) == 2
     assert all(len(constraint.request_ids) == 2 for constraint in same_document)
+    assert any(
+        constraint.kind == ConstraintKind.SAME_BASIS for constraint in plan.constraints
+    )
+    assert any(
+        constraint.kind == ConstraintKind.SAME_DIMENSION for constraint in plan.constraints
+    )
     assert len(plan.fingerprint) == 64
 
 
@@ -137,3 +144,97 @@ def test_joint_binder_fails_closed_when_any_operand_has_no_candidates() -> None:
 
     assert not result.ok
     assert result.reason.startswith("NO_CANDIDATES:")
+
+
+def test_joint_binder_prefers_coherent_basis_over_incompatible_local_top1s() -> None:
+    ontology = load_ontology()
+    annotations = QuestionAnnotations(
+        entities=("VCB", "BID"),
+        periods=("2024",),
+        basis=Basis.UNSPECIFIED,
+        requested_unit=UnitSpec(Dimension.MONEY, 9, "VND"),
+        operation=OperationKind.AVERAGE,
+        mode="screen",
+    )
+    parsed = SemanticParser(ontology, StaticAnnotator(annotations)).parse(
+        "Tổng tài sản bình quân của VCB và BID năm 2024?"
+    )
+    assert parsed.ok
+    plan = compile_execution_plan(parsed.ast, ontology)
+    left, right = plan.requests
+    batches = {
+        left.request_id: CandidateBatch(
+            left.request_id,
+            (
+                _candidate(left, "left-local", "doc-left", 10.0, basis=Basis.CONSOLIDATED),
+                _candidate(left, "left-coherent", "doc-left-2", 8.5, basis=Basis.SEPARATE),
+            ),
+            {},
+        ),
+        right.request_id: CandidateBatch(
+            right.request_id,
+            (
+                _candidate(right, "right-local", "doc-right", 10.0, basis=Basis.SEPARATE),
+                _candidate(
+                    right,
+                    "right-coherent",
+                    "doc-right-2",
+                    9.0,
+                    basis=Basis.CONSOLIDATED,
+                ),
+            ),
+            {},
+        ),
+    }
+
+    result = JointBinder().bind(plan, batches)
+
+    assert result.ok
+    assert len(
+        {operand.candidate.basis for operand in result.bound_plan.operands.values()}
+    ) == 1
+    assert result.bound_plan.total_score == 19.0
+
+
+def test_joint_binder_abstains_on_equal_score_semantically_different_assignments() -> None:
+    plan = _formula_plan()
+    entity = plan.requests[0].entity
+    scoped_requests = tuple(request for request in plan.requests if request.entity == entity)
+    scoped_ids = {request.request_id for request in scoped_requests}
+    scoped_plan = replace(
+        plan,
+        requests=scoped_requests,
+        constraints=tuple(
+            constraint
+            for constraint in plan.constraints
+            if set(constraint.request_ids).issubset(scoped_ids)
+        ),
+    )
+    left, right = scoped_requests
+    batches = {
+        left.request_id: CandidateBatch(
+            left.request_id,
+            (
+                _candidate(left, "left-a", "doc-a", 10.0),
+                _candidate(left, "left-b", "doc-b", 10.0),
+            ),
+            {},
+        ),
+        right.request_id: CandidateBatch(
+            right.request_id,
+            (
+                _candidate(right, "right-a", "doc-a", 10.0),
+                replace(
+                    _candidate(right, "right-b", "doc-b", 10.0),
+                    value=Decimal(200),
+                ),
+            ),
+            {},
+        ),
+    }
+
+    result = JointBinder().bind(scoped_plan, batches)
+
+    assert not result.ok
+    assert result.reason == "AMBIGUOUS_BINDING"
+    assert result.trace[0]["tied_assignments"] == 2

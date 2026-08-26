@@ -73,6 +73,22 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
         )
 
     constraints: list[BindingConstraint] = []
+    by_consumer: dict[str, list[str]] = defaultdict(list)
+    for request in materialized.values():
+        for consumer in request.consumers:
+            by_consumer[consumer].append(request.request_id)
+    for consumer, request_ids in sorted(by_consumer.items()):
+        unique = tuple(sorted(set(request_ids)))
+        if len(unique) < 2:
+            continue
+        reason = f"semantic_series:{consumer}"
+        constraints.extend(
+            (
+                BindingConstraint(ConstraintKind.SAME_BASIS, unique, reason),
+                BindingConstraint(ConstraintKind.SAME_CURRENCY, unique, reason),
+                BindingConstraint(ConstraintKind.SAME_DIMENSION, unique, reason),
+            )
+        )
     for formula_id, keys in formula_scopes:
         by_scope: dict[tuple[str | None, str | None], list[str]] = defaultdict(list)
         for key in keys:
@@ -93,7 +109,7 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
     return ExecutionPlan(
         ast=ast,
         requests=tuple(sorted(materialized.values(), key=lambda value: value.request_id)),
-        constraints=tuple(constraints),
+        constraints=tuple(dict.fromkeys(constraints)),
         ontology_fingerprint=ontology.fingerprint,
     )
 

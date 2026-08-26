@@ -206,3 +206,101 @@ def test_measured_vietnamese_annotator_drives_v3_without_legacy_semantic_ir() ->
     assert result.ok
     assert isinstance(result.ast.expression, SelectAtArg)
     assert result.ast.expression.rank.members == ("BID", "CTG", "VCB")
+
+
+def test_select_at_arg_uses_rank_clause_spans_not_global_mention_order() -> None:
+    annotations = _annotations(
+        entities=("HHS",),
+        periods=("2015", "2016", "2017", "2020", "2021"),
+        operation=OperationKind.EXTREMUM,
+        rank_direction=RankDirection.DESCENDING,
+        return_mode=ReturnMode.SELECT_AT_ARG,
+    )
+    result = _parse(
+        "Trong các năm 2015, 2016, 2017, 2020 và 2021, giá gốc nguyên liệu, vật "
+        "liệu cuối năm của HHS tại năm có tổng giá gốc hàng tồn kho cuối năm cao "
+        "nhất là bao nhiêu tỷ đồng?",
+        annotations,
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, SelectAtArg)
+    assert result.ast.expression.rank.by.metric_id == "inventory"
+    selected = result.ast.expression.expression
+    assert selected.metric_id == "reported_477533b54944d591"
+    assert selected.expected_unit == annotations.requested_unit
+
+
+def test_select_at_arg_rejects_unreviewed_ratio_instead_of_using_one_operand() -> None:
+    annotations = _annotations(
+        entities=("ASM",),
+        periods=("2022", "2024", "2025"),
+        operation=OperationKind.EXTREMUM,
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        rank_direction=RankDirection.DESCENDING,
+        return_mode=ReturnMode.SELECT_AT_ARG,
+    )
+    result = _parse(
+        "Trong các năm 2022, 2024 và 2025 của ASM, tỷ lệ giữa lưu chuyển tiền "
+        "thuần từ hoạt động kinh doanh và doanh thu của năm có số dư vay ngắn "
+        "hạn cuối năm cao nhất là bao nhiêu %?",
+        annotations,
+    )
+
+    assert not result.ok
+    assert result.reason == "SELECT_AT_ARG_SELECTED_EXPRESSION_UNRESOLVED"
+
+
+def test_unresolved_rank_formula_abstains_instead_of_ranking_output_operand() -> None:
+    annotations = _annotations(
+        entities=("HPG",),
+        periods=("2017", "2023"),
+        operation=OperationKind.EXTREMUM,
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        rank_direction=RankDirection.ASCENDING,
+        return_mode=ReturnMode.SELECT_AT_ARG,
+    )
+    result = _parse(
+        "Trong giai đoạn 2017-2023, tại năm HPG có tỷ lệ CFO trên LNST thấp nhất, "
+        "hàng tồn kho cuối năm chiếm bao nhiêu phần trăm tổng tài sản cuối năm đó?",
+        annotations,
+    )
+
+    assert not result.ok
+    assert result.reason == "SELECT_AT_ARG_RANK_EXPRESSION_UNRESOLVED"
+
+
+def test_viet_nam_company_name_does_not_create_select_at_arg_clause() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {"VCB": "Ngân hàng TMCP Ngoại thương Việt Nam"}
+        ),
+    )
+    result = parser.parse(
+        "Ngân hàng TMCP Ngoại thương Việt Nam có mức thuế TNDN hiện hành phải "
+        "nộp trong năm lớn nhất là bao nhiêu tỷ đồng trong các năm 2015, 2017, "
+        "2018, 2022 và 2023?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+
+
+def test_select_at_arg_rejects_unresolved_composite_selected_expense() -> None:
+    annotations = _annotations(
+        entities=("MPC",),
+        periods=("2016", "2018", "2020", "2022", "2023"),
+        operation=OperationKind.EXTREMUM,
+        rank_direction=RankDirection.DESCENDING,
+        return_mode=ReturnMode.SELECT_AT_ARG,
+    )
+    result = _parse(
+        "Chi phí vận chuyển và chi phí dịch vụ mua ngoài của MPC trong năm có "
+        "số dư cuối năm xây dựng cơ bản dở dang cao nhất trong các năm 2016, "
+        "2018, 2020, 2022 và 2023 là bao nhiêu tỷ đồng?",
+        annotations,
+    )
+
+    assert not result.ok
+    assert result.reason == "SELECT_AT_ARG_SELECTED_COMPOSITE_UNRESOLVED"

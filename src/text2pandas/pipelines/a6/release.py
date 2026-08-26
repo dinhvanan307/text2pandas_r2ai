@@ -243,7 +243,7 @@ def _build_db(src_silver: Path, src_bronze: Path, out_db: Path,
     conn.execute("""
         INSERT INTO tables
         SELECT t.table_uid, t.document_uid, t.directory_doc_id, t.ticker,
-               t.doc_year, COALESCE(t.basis_from_text, t.basis_path),
+               t.doc_year, COALESCE(t.basis_path, t.basis_from_text),
                t.industry_class, t.statement_type, t.statement_rule,
                t.is_data_table, t.line_start_1based, bt.page_no,
                'line:' || t.line_start_1based,

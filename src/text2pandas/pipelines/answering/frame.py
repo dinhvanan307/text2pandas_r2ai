@@ -41,7 +41,7 @@ _DERIVED_RANKING = re.compile(
 )
 _SELECT_AT_ARG = re.compile(
     r"((?:t[ạa]i|v[àa]o|[ởo])\s+n[ăa]m\b|n[ăa]m\s+m[àa]\b"
-    r"|n[ăa]m\s+c[óo]\s+[^?]{0,160}(?:cao|th[ấa]p|l[ớo]n|nh[ỏo])\s*nh[ấa]t"
+    r"|(?<!vi[ệe]t\s)n[ăa]m\s+c[óo]\s+[^?]{0,160}(?:cao|th[ấa]p|l[ớo]n|nh[ỏo])\s*nh[ấa]t"
     r"|(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)\s+(?:đ[ạa]t|c[óo])\s+"
     r"[^?]{0,180}(?:cao|th[ấa]p|l[ớo]n|nh[ỏo])\s*nh[ấa]t\s+"
     r"[^?]{0,120}(?:c[óo]|b[ằa]ng|l[àa]|chi[ếe]m|g[ấa]p)"

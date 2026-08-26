@@ -53,6 +53,14 @@ class MetricMention:
     metric: MetricDefinition
 
 
+@dataclass(frozen=True, slots=True)
+class FormulaMention:
+    start: int
+    end: int
+    alias: str
+    formula: FormulaDefinition
+
+
 class SemanticParser:
     """Question -> validated `QuestionAST`, or a named abstention.
 
@@ -70,6 +78,7 @@ class SemanticParser:
         normalized = normalize_phrase(question)
         formula = self.ontology.match_formula(normalized)
         mentions = self._metric_mentions(normalized)
+        formula_mentions = self._formula_mentions(normalized)
         trace: list[dict[str, object]] = [
             {
                 "stage": "ANNOTATE",
@@ -82,11 +91,19 @@ class SemanticParser:
             {
                 "stage": "ONTOLOGY_MATCH",
                 "formula_id": formula.formula_id if formula else None,
+                "formula_mentions": [value.formula.formula_id for value in formula_mentions],
                 "metric_ids": [mention.metric.metric_id for mention in mentions],
                 "ontology_fingerprint": self.ontology.fingerprint,
             },
         ]
-        result = self._compile(question, annotations, formula, mentions, qid=qid)
+        result = self._compile(
+            question,
+            annotations,
+            formula,
+            mentions,
+            formula_mentions,
+            qid=qid,
+        )
         return ParseResult(result.status, result.ast, result.reason, tuple(trace) + result.trace)
 
     def _compile(
@@ -95,6 +112,7 @@ class SemanticParser:
         annotations: QuestionAnnotations,
         formula: FormulaDefinition | None,
         mentions: tuple[MetricMention, ...],
+        formula_mentions: tuple[FormulaMention, ...],
         *,
         qid: int | None,
     ) -> ParseResult:
@@ -106,7 +124,14 @@ class SemanticParser:
         base = self._base_expression(annotations, formula, mentions)
         if base is None:
             return _abstain("METRIC_UNRESOLVED")
-        expression_result = self._compose(question, base, annotations, formula, mentions)
+        expression_result = self._compose(
+            question,
+            base,
+            annotations,
+            formula,
+            mentions,
+            formula_mentions,
+        )
         if isinstance(expression_result, str):
             return _abstain(expression_result)
         expression, result_kind = expression_result
@@ -158,12 +183,13 @@ class SemanticParser:
         annotations: QuestionAnnotations,
         formula: FormulaDefinition | None,
         mentions: tuple[MetricMention, ...],
+        formula_mentions: tuple[FormulaMention, ...],
     ) -> tuple[Expression, ResultKind] | str:
         operation = annotations.operation
         if (
             not isinstance(base, FormulaCall)
             and any(mention.metric.review_status != "reviewed" for mention in mentions)
-            and operation != OperationKind.LOOKUP
+            and operation not in (OperationKind.LOOKUP, OperationKind.EXTREMUM)
         ):
             return "REPORTED_METRIC_REQUIRES_REVIEW_FOR_DERIVED_OPERATION"
         if operation in (OperationKind.LOOKUP, OperationKind.DIVIDE):
@@ -224,10 +250,15 @@ class SemanticParser:
                 )
                 return Aggregate(function, axis, filtered, members), ResultKind.SCALAR
             if annotations.return_mode == ReturnMode.SELECT_AT_ARG:
-                if len(mentions) < 2:
-                    return "SELECT_AT_ARG_REQUIRES_TWO_METRICS"
-                rank_expression = _metric_ref(mentions[0].metric, annotations)
-                selected_expression = _metric_ref(mentions[-1].metric, annotations)
+                roles = _select_at_arg_roles(
+                    question,
+                    annotations,
+                    mentions,
+                    formula_mentions,
+                )
+                if isinstance(roles, str):
+                    return roles
+                rank_expression, selected_expression = roles
                 return (
                     SelectAtArg(Rank(axis, members, rank_expression, direction), selected_expression),
                     ResultKind.SCALAR,
@@ -274,6 +305,24 @@ class SemanticParser:
         # list of metric-specific exceptions.
         selected: list[MetricMention] = []
         for mention in sorted(raw, key=lambda value: (-len(value.alias), value.start, value.metric.metric_id)):
+            if any(mention.start >= other.start and mention.end <= other.end for other in selected):
+                continue
+            selected.append(mention)
+        return tuple(sorted(selected, key=lambda value: (value.start, value.end)))
+
+    def _formula_mentions(self, normalized: str) -> tuple[FormulaMention, ...]:
+        raw: list[FormulaMention] = []
+        for formula in self.ontology.formulas.values():
+            for alias in formula.aliases:
+                start = normalized.find(alias)
+                while start >= 0:
+                    raw.append(FormulaMention(start, start + len(alias), alias, formula))
+                    start = normalized.find(alias, start + 1)
+        selected: list[FormulaMention] = []
+        for mention in sorted(
+            raw,
+            key=lambda value: (-len(value.alias), value.start, value.formula.formula_id),
+        ):
             if any(mention.start >= other.start and mention.end <= other.end for other in selected):
                 continue
             selected.append(mention)
@@ -342,6 +391,219 @@ def _unit_dimensions_compatible(source: Dimension, requested: Dimension) -> bool
     if {source, requested} <= {Dimension.RATIO, Dimension.PERCENT}:
         return True
     return source == requested
+
+
+@dataclass(frozen=True, slots=True)
+class _ExpressionMention:
+    start: int
+    end: int
+    identity: str
+    expression: Expression
+    dimension: Dimension
+
+
+_SUPERLATIVE = re.compile(r"\b(?:cao nhat|thap nhat|lon nhat|nho nhat)\b")
+_RANK_CLAUSE = re.compile(
+    r"\b(?:tai nam co|trong nam co|o nam co|nam co|tai nam|cong ty co|doanh nghiep co)\b"
+)
+
+
+def _select_at_arg_roles(
+    question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+    formula_mentions: tuple[FormulaMention, ...],
+) -> tuple[Expression, Expression] | str:
+    """Resolve ranking and selected expressions from their lexical spans.
+
+    Vietnamese select-at-arg questions place the ranking expression inside a
+    ``năm có ... cao/thấp nhất`` clause and the returned expression outside it.
+    Role assignment by mention order is therefore invalid in both common word
+    orders. This compiler uses clause boundaries and requested output types.
+    """
+
+    normalized = normalize_phrase(question)
+    extremes = tuple(_SUPERLATIVE.finditer(normalized))
+    if not extremes:
+        return "SELECT_AT_ARG_SUPERLATIVE_UNRESOLVED"
+    extreme = extremes[-1]
+    clause_matches = tuple(_RANK_CLAUSE.finditer(normalized, 0, extreme.start()))
+    if not clause_matches:
+        return "SELECT_AT_ARG_RANK_CLAUSE_UNRESOLVED"
+    clause_start = clause_matches[-1].start()
+    candidates = _expression_mentions(
+        normalized, annotations, metric_mentions, formula_mentions
+    )
+    ranked = [
+        value
+        for value in candidates
+        if value.start >= clause_start and value.end <= extreme.start()
+    ]
+    if not ranked:
+        return "SELECT_AT_ARG_RANK_EXPRESSION_UNRESOLVED"
+    rank = max(ranked, key=lambda value: (value.end, value.end - value.start))
+
+    requested = annotations.requested_unit.dimension
+    prefix = [
+        value
+        for value in candidates
+        if value.end <= clause_start
+        and _selected_dimension_compatible(value.dimension, requested)
+    ]
+    suffix = [
+        value
+        for value in candidates
+        if value.start >= extreme.end()
+        and _selected_dimension_compatible(value.dimension, requested)
+    ]
+    if suffix:
+        selected = min(suffix, key=lambda value: (value.start, -(value.end - value.start)))
+    elif prefix:
+        selected = max(prefix, key=lambda value: (value.end, value.end - value.start))
+    else:
+        return "SELECT_AT_ARG_SELECTED_EXPRESSION_UNRESOLVED"
+    if rank.identity == selected.identity:
+        return "SELECT_AT_ARG_ROLE_COLLISION"
+    selected_clause = normalized[
+        max(0, selected.start - 100) : min(clause_start, selected.end + 100)
+    ]
+    if re.search(r"\bchi phi\b[^,?]{0,80}\bva\s+chi phi\b", selected_clause):
+        return "SELECT_AT_ARG_SELECTED_COMPOSITE_UNRESOLVED"
+    return rank.expression, _apply_selected_output_unit(
+        selected.expression, annotations.requested_unit
+    )
+
+
+def _selected_dimension_compatible(source: Dimension, requested: Dimension) -> bool:
+    # A ratio-like result is necessarily derived unless the ontology explicitly
+    # types it as ratio/percent. An UNKNOWN catalog metric must not stand in for
+    # one operand of an unreviewed quotient merely because its runtime unit has
+    # not yet been resolved.
+    if requested in (Dimension.RATIO, Dimension.PERCENT, Dimension.PERCENT_POINT):
+        return source in (Dimension.RATIO, Dimension.PERCENT, Dimension.PERCENT_POINT)
+    return _unit_dimensions_compatible(source, requested)
+
+
+def _apply_selected_output_unit(expression: Expression, requested: UnitSpec) -> Expression:
+    if (
+        isinstance(expression, MetricRef)
+        and expression.expected_unit is not None
+        and expression.expected_unit.dimension == Dimension.UNKNOWN
+        and requested.is_known
+    ):
+        return MetricRef(
+            expression.metric_id,
+            expression.entities,
+            expression.periods,
+            expression.basis,
+            expression.statement_types,
+            requested,
+            expression.period_semantics,
+            expression.qualifiers,
+        )
+    return expression
+
+
+def _expression_mentions(
+    normalized_question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+    formula_mentions: tuple[FormulaMention, ...],
+) -> tuple[_ExpressionMention, ...]:
+    output: list[_ExpressionMention] = []
+    for formula_mention in formula_mentions:
+        formula = formula_mention.formula
+        output.append(
+            _ExpressionMention(
+                formula_mention.start,
+                formula_mention.end,
+                f"formula:{formula.formula_id}:{formula.variant_id}",
+                FormulaCall(
+                    formula.formula_id,
+                    formula.variant_id,
+                    _scope_expression(formula.expression, annotations),
+                    formula.same_entity,
+                    formula.same_period,
+                ),
+                formula.output_unit.dimension,
+            )
+        )
+    for metric_mention in metric_mentions:
+        if any(
+            metric_mention.start >= formula_mention.start
+            and metric_mention.end <= formula_mention.end
+            for formula_mention in formula_mentions
+        ):
+            continue
+        reference = _metric_ref(metric_mention.metric, annotations)
+        reference = MetricRef(
+            reference.metric_id,
+            reference.entities,
+            reference.periods,
+            reference.basis,
+            reference.statement_types,
+            reference.expected_unit,
+            reference.period_semantics,
+            _qualifier_tokens(
+                normalized_question, metric_mention.start, metric_mention.end
+            ),
+        )
+        output.append(
+            _ExpressionMention(
+                metric_mention.start,
+                metric_mention.end,
+                f"metric:{metric_mention.metric.metric_id}",
+                reference,
+                metric_mention.metric.unit.dimension,
+            )
+        )
+    return tuple(sorted(output, key=lambda value: (value.start, value.end)))
+
+
+_QUALIFIER_STOPWORDS = frozenset(
+    {
+        "bao",
+        "cao",
+        "cac",
+        "cho",
+        "co",
+        "cong",
+        "cua",
+        "do",
+        "dong",
+        "gia",
+        "la",
+        "lon",
+        "nam",
+        "nhat",
+        "nhieu",
+        "tai",
+        "tap",
+        "theo",
+        "thi",
+        "trong",
+        "ty",
+        "va",
+        "vao",
+        "voi",
+    }
+)
+
+
+def _qualifier_tokens(
+    normalized_question: str, mention_start: int, mention_end: int
+) -> tuple[str, ...]:
+    window = normalized_question[max(0, mention_start - 100) : mention_end + 140]
+    tokens = re.findall(r"[a-z][a-z0-9]+", window)
+    return tuple(
+        dict.fromkeys(
+            token
+            for token in tokens
+            if len(token) >= 3
+            and token not in _QUALIFIER_STOPWORDS
+            and not re.fullmatch(r"(?:19|20)\d{2}", token)
+        )
+    )
 
 
 _PERCENT_THRESHOLD = re.compile(

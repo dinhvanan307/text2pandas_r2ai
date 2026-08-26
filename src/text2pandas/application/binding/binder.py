@@ -67,6 +67,20 @@ class JointBinder:
         states.sort(key=_state_sort_key)
         winner = states[0]
         margin = winner.score - states[1].score if len(states) > 1 else None
+        tied = [state for state in states[1:] if state.score == winner.score]
+        if any(not _semantically_equivalent(winner, contender) for contender in tied):
+            return _abstain(
+                "AMBIGUOUS_BINDING",
+                trace=(
+                    {
+                        "expanded": expanded,
+                        "rejected": rejected,
+                        "tied_assignments": len(tied) + 1,
+                        "total_score": winner.score,
+                        "score_margin": 0.0,
+                    },
+                ),
+            )
         requests = plan.requests_by_id
         bound = {
             request_id: BoundOperand(requests[request_id], candidate)
@@ -97,9 +111,15 @@ def _constraints_hold(
         if constraint.kind == ConstraintKind.SAME_DOCUMENT:
             if len({candidate.document_id for candidate in selected}) != 1:
                 return False
+        elif constraint.kind == ConstraintKind.SAME_BASIS:
+            if len({candidate.basis for candidate in selected}) != 1:
+                return False
         elif constraint.kind == ConstraintKind.SAME_CURRENCY:
             currencies = {candidate.unit.currency or "__unknown__" for candidate in selected}
             if len(currencies) != 1:
+                return False
+        elif constraint.kind == ConstraintKind.SAME_DIMENSION:
+            if len({candidate.unit.dimension for candidate in selected}) != 1:
                 return False
         elif constraint.kind == ConstraintKind.DISTINCT_OBSERVATIONS and len(
             {candidate.observation_uid for candidate in selected}
@@ -119,6 +139,23 @@ def _compatible_request(expected: Dimension, actual: Dimension) -> bool:
 def _state_sort_key(state: _State) -> tuple[float, tuple[tuple[str, str], ...]]:
     stable = tuple(sorted((key, value.observation_uid) for key, value in state.assignments.items()))
     return -state.score, stable
+
+
+def _semantically_equivalent(left: _State, right: _State) -> bool:
+    if set(left.assignments) != set(right.assignments):
+        return False
+    for request_id, left_candidate in left.assignments.items():
+        right_candidate = right.assignments[request_id]
+        if (
+            left_candidate.value != right_candidate.value
+            or left_candidate.unit != right_candidate.unit
+            or left_candidate.basis != right_candidate.basis
+            or left_candidate.entity != right_candidate.entity
+            or left_candidate.period != right_candidate.period
+            or left_candidate.is_restated != right_candidate.is_restated
+        ):
+            return False
+    return True
 
 
 def _abstain(reason: str, *, trace: tuple[dict[str, object], ...] = ()) -> BindingResult:

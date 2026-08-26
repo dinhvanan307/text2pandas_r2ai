@@ -303,6 +303,18 @@ def load_candidate_cells(
     observation_columns = {
         str(row[1]) for row in connection.execute("PRAGMA table_info(observations)")
     }
+    document_columns = {
+        str(row[1]) for row in connection.execute("PRAGMA table_info(documents)")
+    }
+    has_document_basis = (
+        "document_uid" in table_columns
+        and "document_uid" in document_columns
+        and "basis" in document_columns
+    )
+    document_join = (
+        "JOIN documents d ON d.document_uid = t.document_uid" if has_document_basis else ""
+    )
+    basis_expression = "d.basis" if has_document_basis else "t.basis"
     document_expression = (
         "t.directory_doc_id" if "directory_doc_id" in table_columns else "'table:' || t.table_uid"
     )
@@ -315,7 +327,7 @@ def load_candidate_cells(
     rows = list(
         connection.execute(
             f"""
-            SELECT o.observation_uid, o.table_uid, o.ticker, t.basis, {statement_expression},
+            SELECT o.observation_uid, o.table_uid, o.ticker, {basis_expression}, {statement_expression},
                    o.row_path_text, o.metric_label_clean, o.col_path_text,
                    o.value_source_raw, o.value_decimal_text, o.unit_kind,
                    o.currency, o.scale_exponent, {scale_source_expression},
@@ -325,6 +337,7 @@ def load_candidate_cells(
             FROM observations o
             JOIN observation_readiness r USING(observation_uid)
             JOIN tables t USING(table_uid)
+            {document_join}
             JOIN table_cards tc USING(table_uid)
             WHERE o.table_uid IN ({placeholders})
               AND r.execution_ready = 1

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sqlite3
 from decimal import Decimal, InvalidOperation
 
@@ -50,7 +51,7 @@ class SqliteOperandRetriever:
                 clauses.append("o.period_end = ?")
             parameters.append(request.period)
         if request.basis != Basis.UNSPECIFIED:
-            clauses.append("t.basis = ?")
+            clauses.append("d.basis = ?")
             parameters.append(request.basis.value)
         if self.allowed_table_uids:
             placeholders = ",".join("?" for _ in self.allowed_table_uids)
@@ -59,7 +60,7 @@ class SqliteOperandRetriever:
         rows = self.connection.execute(
             f"""
             SELECT o.observation_uid, o.table_uid, t.directory_doc_id,
-                   o.ticker, t.basis, o.statement_type,
+                   o.ticker, d.basis, o.statement_type,
                    o.row_path_text, o.metric_label_clean, o.col_path_text,
                    o.period_end, o.period_role, o.value_decimal_text,
                    o.value_source_raw, o.unit_kind, o.currency, o.scale_exponent,
@@ -67,6 +68,7 @@ class SqliteOperandRetriever:
             FROM observations o
             JOIN observation_readiness r USING(observation_uid)
             JOIN tables t USING(table_uid)
+            JOIN documents d USING(document_uid)
             WHERE {" AND ".join(clauses)}
             ORDER BY o.observation_uid
             """,
@@ -163,6 +165,19 @@ class SqliteOperandRetriever:
         score += section_score
         if section_score:
             reasons.append("section")
+        qualifier_score = _qualifier_score(
+            request.qualifiers,
+            " ".join((str(row_path or ""), str(column_path or ""), str(section_text or ""))),
+        )
+        score += qualifier_score
+        if qualifier_score:
+            reasons.append("qualifier")
+        document_period_score = _document_period_score(
+            request.period, str(document_id), str(period_role or "")
+        )
+        score += document_period_score
+        if document_period_score:
+            reasons.append("document_period")
         if bool(is_restated):
             score -= 0.5
             reasons.append("restated_penalty")
@@ -252,6 +267,29 @@ def _section_score(aliases: tuple[str, ...], section: str) -> float:
         (len(tokens.intersection(alias.split())) / max(1, len(alias.split())) for alias in aliases),
         default=0.0,
     )
+
+
+def _qualifier_score(qualifiers: tuple[str, ...], context: str) -> float:
+    if not qualifiers:
+        return 0.0
+    context_tokens = set(normalize_phrase(context).split())
+    overlap = context_tokens.intersection(qualifiers)
+    return min(4.0, 0.5 * len(overlap))
+
+
+def _document_period_score(period: str | None, document_id: str, role: str) -> float:
+    if period is None or len(period) < 4:
+        return 0.0
+    requested_year = int(period[:4])
+    years = re.findall(r"(?:19|20)\d{2}", document_id)
+    if not years:
+        return 0.0
+    document_year = int(years[-1])
+    if document_year == requested_year:
+        return 2.0
+    if document_year == requested_year + 1 and role in {"prior", "opening"}:
+        return 0.5
+    return 0.0
 
 
 def _unit(kind: str, scale: object, currency: object) -> UnitSpec:
