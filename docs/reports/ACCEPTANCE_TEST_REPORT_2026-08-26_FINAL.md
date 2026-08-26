@@ -68,6 +68,11 @@ Acceptance installation uses `requirements.lock --require-hashes` followed by
 an editable `--no-deps` project install. Hosted CI and the materialized
 self-hosted lane use the same sequence.
 
+Frozen environment verification reports `lock_matches_installed=true`,
+`lock_has_hashes=true`, no missing pins and no untracked source paths. The
+machine-readable full-suite report is
+`artifacts/reports/production-release-locked-20260826/full-suite/test_report.json`.
+
 | Layer | Identity | Verified properties |
 |---|---|---|
 | Raw BTC | `ca033190f2e9e99f` | 1,973 reports, 1,012 questions, 100 tickers |
