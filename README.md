@@ -142,6 +142,8 @@ legacy A6 records/submissions, tái tạo chúng bằng `make materialize-h0`; c
 - `docs/REFACTOR_PLAN.md`: baseline, target architecture và migration gates.
 - `docs/REFACTOR_STATUS.md`: phần đã triển khai và compatibility debt còn lại.
 - `docs/GAP_CLOSURE_STATUS.md`: gap matrix định lượng và thứ tự fill tiếp theo.
+- `docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md`: test report đối chiếu đề bài,
+  full-corpus metrics, submission replay và production-readiness verdict.
 - `docs/adr/`: quyết định data layout, namespace và artifact retention.
 - `data/README.md`: ownership/lifecycle của từng data class.
 - `docs/competition/Text2Pandas.docx`: đề bài gốc.
