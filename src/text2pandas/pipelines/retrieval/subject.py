@@ -57,6 +57,7 @@ _SCREEN_RE = __import__("re").compile("|".join((
     r"(thuoc|doanh nghiep|cong ty) nganh",
     # câu hỏi chọn-một-trong-nhiều
     r"(cong ty|doanh nghiep|ma) nao\b", r"bao nhieu (doanh nghiep|cong ty)",
+    r"tong so (doanh nghiep|cong ty|don vi)",
     # "doanh nghiệp có X cao nhất" — `cong ty co` phải LOẠI "công ty cổ phần"
     r"doanh nghiep co\b", r"cong ty co (?!phan)",
 )))

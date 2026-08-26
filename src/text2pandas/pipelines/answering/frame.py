@@ -104,6 +104,7 @@ _OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     (COUNT_OP, re.compile(
         r"(c[óo]\s*bao\s*nhi[êe]u\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p|m[ãa]|đơn\s*v[ịi])"
         r"|s[ốo]\s*l[ưu][ợo]ng\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)"
+        r"|t[ổo]ng\s*s[ốo]\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p|đ[ơo]n\s*v[ịi])"
         r"|bao\s*nhi[êe]u\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)\s*(?:c[óo]|đ[ạa]t|th[ỏo]a)"
         r"|(?:c[óo]\s*)?bao\s*nhi[êe]u\s*n[ăa]m\b|s[ốo]\s*n[ăa]m\b)")),
     (GROWTH, re.compile(

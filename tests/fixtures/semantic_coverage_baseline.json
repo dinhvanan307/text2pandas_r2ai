@@ -1,12 +1,12 @@
 {
   "by_operation": {
     "AVG": 91,
-    "COUNT": 20,
+    "COUNT": 21,
     "DIVIDE": 61,
     "EXTREMUM": 240,
     "GROWTH": 34,
     "LOOKUP": 451,
-    "SUBTRACT": 112,
+    "SUBTRACT": 111,
     "SUM": 3
   },
   "by_reason": {
@@ -15,7 +15,7 @@
     "DIVIDE_REQUIRES_REVIEWED_FORMULA": 41,
     "ELIGIBLE_REVIEWED_FORMULA": 7,
     "ELIGIBLE_TYPED_COUNT": 3,
-    "ELIGIBLE_TYPED_ENTITY_COUNT": 5,
+    "ELIGIBLE_TYPED_ENTITY_COUNT": 7,
     "ELIGIBLE_TYPED_ENTITY_DIFFERENCE": 43,
     "ELIGIBLE_TYPED_OPERATION": 571,
     "EXTREMUM_DERIVED_RANKING_NOT_SUPPORTED": 4,
@@ -29,7 +29,7 @@
     "MULTI_ENTITY_NOT_SUPPORTED:expected=10": 3,
     "MULTI_ENTITY_NOT_SUPPORTED:expected=2": 63,
     "MULTI_ENTITY_NOT_SUPPORTED:expected=3": 72,
-    "MULTI_ENTITY_NOT_SUPPORTED:expected=4": 67,
+    "MULTI_ENTITY_NOT_SUPPORTED:expected=4": 65,
     "MULTI_ENTITY_NOT_SUPPORTED:expected=5": 21,
     "MULTI_ENTITY_NOT_SUPPORTED:expected=6": 13,
     "MULTI_ENTITY_NOT_SUPPORTED:expected=7": 9,
@@ -38,9 +38,9 @@
     "MULTI_ENTITY_NOT_SUPPORTED:resolved=3": 3,
     "SUBTRACT_NEEDS_TWO_PERIODS": 10
   },
-  "eligible": 629,
-  "eligible_percent": 62.1542,
-  "gaps": 383,
+  "eligible": 631,
+  "eligible_percent": 62.3518,
+  "gaps": 381,
   "questions_sha256": "59effd1ee7cf7214caee430b05b9305f5a71ed3fd57ba19eb1a6ff2f9c3ffa5d",
   "schema_version": 1,
   "scope": "semantic_route_only_no_retrieval_binding_or_accuracy",

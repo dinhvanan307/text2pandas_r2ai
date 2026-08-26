@@ -44,7 +44,7 @@ def test_entity_count_executes_money_threshold() -> None:
     cells = [_cell("AAA", 60), _cell("BBB", 10), _cell("CCC", 70)]
 
     result = answer_entity_count(
-        "Có bao nhiêu công ty AAA, BBB và CCC có thuế thu nhập doanh nghiệp "
+        "Tổng số công ty AAA, BBB và CCC có thuế thu nhập doanh nghiệp "
         "lớn hơn 50 tỷ đồng năm 2024?",
         cells,
         _frames(cells),
@@ -92,7 +92,7 @@ def test_entity_count_scales_reviewed_outstanding_shares() -> None:
 
     result = answer_entity_count(
         "Có bao nhiêu công ty AAA và BBB có số lượng cổ phiếu phổ thông đang "
-        "lưu hành lớn hơn 400 triệu cổ phiếu năm 2024?",
+        "lưu hành vượt 400 triệu cổ phiếu năm 2024?",
         cells,
         _frames(cells),
         entities=["AAA", "BBB"],

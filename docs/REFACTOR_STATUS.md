@@ -55,7 +55,7 @@ Updated: 2026-08-26
 ## Current gates
 
 - Offline: green.
-- Static semantic route: `629/1.012` eligible (`62,1542%`), `383` named gaps;
+- Static semantic route: `631/1.012` eligible (`62,3518%`), `381` named gaps;
   baseline được khóa trong offline suite.
 - Raw/A6/retrieval identity and lineage: green for the active local snapshots.
 - H0 materialized integration: green trên active local materialization (`22/22`).

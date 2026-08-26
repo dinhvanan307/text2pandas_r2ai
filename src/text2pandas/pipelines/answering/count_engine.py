@@ -31,7 +31,8 @@ _EXISTENCE = re.compile(r"t[ồo]n\s+t[ạa]i\s+kho[ảa]n\s+m[ụu]c")
 _NEGATIVE = re.compile(r"\b[âa]m\b")
 _POSITIVE = re.compile(r"\bd[ưu][ơo]ng\b")
 _THRESHOLD = re.compile(
-    r"(?P<direction>nhi[ềe]u|l[ớo]n|cao|[íi]t|nh[ỏo]|th[ấa]p)\s+h[ơo]n\s+"
+    r"(?P<direction>(?:nhi[ềe]u|l[ớo]n|cao|[íi]t|nh[ỏo]|th[ấa]p)\s+h[ơo]n"
+    r"|v[ưu][ợo]t)\s+"
     r"(?P<number>\d+(?:[.,]\d+)?)"
     r"(?P<unit>\s*(?:tr[ăa]m\s+t[ỷy]|ngh[ìi]n\s+t[ỷy]|t[ỷy]|tri[ệe]u|ngh[ìi]n)?"
     r"\s*(?:đ[ồo]ng|vnd|vnđ|c[ổo]\s*phi[ếe]u|c[ổo]\s*ph[ầa]n)?)"
@@ -109,7 +110,7 @@ def parse_positive_evidence_predicate(
     if match:
         threshold = float(match.group("number").replace(",", "."))
         direction = match.group("direction")
-        operator = GT if direction[0] in {"n", "l", "c"} else LT
+        operator = GT if direction[0] in {"n", "l", "c", "v"} else LT
         unit_text = match.group("unit").strip()
         threshold_unit = None
         if unit_text:

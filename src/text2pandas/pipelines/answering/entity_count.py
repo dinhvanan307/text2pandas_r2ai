@@ -20,6 +20,7 @@ from .units import compatible, query_factor
 _OUTSTANDING_SHARES = "outstanding_common_shares"
 _RELATED_SHORT_TERM_DEBT = "related_party_short_term_debt"
 _OPERATING_LEASE_WITHIN_YEAR = "operating_lease_within_one_year"
+_INTEREST_EXPENSE = "interest_expense"
 _COMPOUND_PREDICATE = re.compile(r"(đ[ồo]ng\s*th[ờo]i|v[ừu]a[^?]{0,180}v[ừu]a)")
 
 
@@ -187,6 +188,8 @@ def _match_metric(question: str) -> str | None:
         return _RELATED_SHORT_TERM_DEBT
     if "cam ket thue hoat dong den han trong 1 nam" in folded:
         return _OPERATING_LEASE_WITHIN_YEAR
+    if "chi phi lai vay" in folded:
+        return _INTEREST_EXPENSE
     return None
 
 
@@ -206,6 +209,8 @@ def _metric_cell_allowed(metric_id: str | None, cell: CandidateCell) -> bool:
         )
     if metric_id == _RELATED_SHORT_TERM_DEBT:
         return "no ngan han" in path and "lien quan" in path
+    if metric_id == _INTEREST_EXPENSE:
+        return "chi phi lai vay" in leaf and "von hoa" not in leaf
     return (
         metric_id == _OPERATING_LEASE_WITHIN_YEAR
         and "cam ket thue hoat dong" in path
