@@ -6,7 +6,11 @@ Test authority: [`../competition/Text2Pandas.docx`](../competition/Text2Pandas.d
 
 Authority SHA-256: `45a8afcf228d12fe90af0ef4d7d163032b0b0d8003af724d8449e58e862e3081`
 
-Frozen runtime source commit: `d604ddc500bc5471bfc103a6e25caa456aa61f9c`
+Runtime implementation freeze: `d604ddc500bc5471bfc103a6e25caa456aa61f9c`
+
+Frozen release-run repository commit:
+`f7df3d9533b6402975a08db4d0458d16ff0370de` (subsequent change is this
+report-only evidence update)
 
 Source tree at canonical and V3 test start: clean
 
@@ -156,7 +160,7 @@ held-out evidence set and protected-slice non-regression.
 
 ## Canonical full-corpus release candidate
 
-Run ID: `production-release-20260826`
+Run ID: `production-release-locked-20260826`
 
 | Metric | Result |
 |---|---:|
@@ -169,15 +173,25 @@ Run ID: `production-release-20260826`
 | Package validation | 0 errors / 0 warnings |
 | Clean replay | 559 executed / 559 matched / 0 errors |
 | Replay consistency | 100.00% of emitted answers |
+| Runtime | 712.34 s |
 
 Largest abstention families are multi-entity unsupported (195), unbound
 operands (46), select-at-arg requiring two metrics (33), value unit mismatch
 (29), unreviewed relational formula (27), cross-period metric drift (18) and
 entity-difference metric drift (13).
 
-The release artifact and its SHA-256 are recorded in the immutable
-`submission_manifest.json` under the run directory. The manifest records the
-frozen source commit, active snapshots, parameters, validation and replay.
+Release artifact:
+`artifacts/submissions/submission_production-release-locked-20260826.zip`
+(998,511 bytes), SHA-256
+`ec774aafdf4372bc72bcf0ae29b2491bb0ada5af93b123daa564f4ddddc79907`.
+The immutable `submission_manifest.json` records the frozen source commit,
+active snapshots, parameters, validation and replay.
+
+The frozen run and two developer-environment runs are byte-identical:
+`records.jsonl` SHA-256
+`632b9f74cd3e981512012e9700698f9ec2252e9713961fe7f850ea9f7e49004d`
+and ZIP SHA-256 `ec774…9907` match across all three. This explicitly checks
+dependency-version drift rather than inferring determinism from equal counts.
 
 ## Independent local Answer/Execution Accuracy
 
