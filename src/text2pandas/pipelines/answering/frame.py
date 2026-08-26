@@ -96,6 +96,7 @@ _DIFFERENCE_CUE = re.compile(
     r"(ch[êe]nh\s*l[ệe]ch|hi[ệe]u\s*s[ốo]|m[ứu]c\s*thay\s*đ[ổo]i"
     r"|thay\s*đ[ổo]i\s*(?:so\s*v[ớo]i|gi[ữu]a)|nhi[ềe]u\s*h[ơo]n|[íi]t\s*h[ơo]n"
     r"|b[ée]\s*h[ơo]n|cao\s*h[ơo]n|th[ấa]p\s*h[ơo]n|bi[ếe]n\s*đ[ộo]ng"
+    r"|(?:t[ăa]ng|gi[ảa]m)\s+bao\s+nhi[êe]u"
     r"|(?:k[ếe]t\s*qu[ảa]|l[ãa]i)\s+(?:thu[ầa]n|r[òo]ng)\s+(?:t[ừu]\s+)?ho[ạa]t\s*đ[ộo]ng\s+t[àa]i\s*ch[íi]nh)"
 )
 
@@ -123,7 +124,7 @@ _OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     (AVG, re.compile(r"(trung\s*b[ìi]nh|b[ìi]nh\s*qu[âa]n)")),
     (GROWTH, re.compile(
         r"(t[ăa]ng\s*tr[ưu][ởo]ng|t[ốo]c\s*đ[ộo]\s*t[ăa]ng"
-        r"|t[ăa]ng\s*(?:hay|hoặc)?\s*gi[ảa]m\s*bao\s*nhi[êe]u\s*(?:%|phần\s*trăm)"
+        r"|(?:t[ăa]ng(?:\s*(?:hay|hoặc)\s*gi[ảa]m)?|gi[ảa]m)\s+bao\s+nhi[êe]u\s*(?:%|phần\s*trăm)"
         r"|thay\s*đ[ổo]i\s*(?:bao\s*nhi[êe]u\s*)?(?:%|phần\s*trăm))")),
     (SUBTRACT, _DIFFERENCE_CUE),
     (DIVIDE, re.compile(
@@ -137,7 +138,7 @@ _OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     # or the verb form ("cộng lại").
     (SUM, re.compile(
         r"(c[ộo]ng\s*l[ạa]i|t[íi]ch\s*l[ũu]y"
-        r"|t[íi]nh\s+t[ổo]ng\s+[^?]{0,100}(?:trong|qua)\s+c[áa]c\s+n[ăa]m"
+        r"|t[íi]nh\s+t[ổo]ng\s+[^?]{0,100}(?:trong|qua|cho)\s+c[áa]c\s+n[ăa]m"
         r"|t[ổo]ng\s+[^?]{0,70}\bn[ăa]m\s+(?:19|20)\d{2}\s+v[àa]\s+n[ăa]m\s+(?:19|20)\d{2})"
     )),
 ]

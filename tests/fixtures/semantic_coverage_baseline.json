@@ -4,10 +4,10 @@
     "COUNT": 23,
     "DIVIDE": 57,
     "EXTREMUM": 238,
-    "GROWTH": 27,
-    "LOOKUP": 454,
-    "SUBTRACT": 112,
-    "SUM": 3
+    "GROWTH": 33,
+    "LOOKUP": 445,
+    "SUBTRACT": 114,
+    "SUM": 4
   },
   "by_reason": {
     "COUNT_EXISTENCE_REQUIRES_NEGATIVE_EVIDENCE": 1,

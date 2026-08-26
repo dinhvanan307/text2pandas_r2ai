@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from text2pandas.pipelines.answering.frame import classify_operation, parse_question
-from text2pandas.pipelines.answering.ir import LOOKUP, SUBTRACT
+from text2pandas.pipelines.answering.ir import GROWTH, LOOKUP, SUBTRACT, SUM
 from text2pandas.pipelines.answering.router import route
 from text2pandas.pipelines.answering.units import MONEY, Unit
 
@@ -18,6 +18,9 @@ from text2pandas.pipelines.answering.units import MONEY, Unit
         ("Chi phí năm 2025 bé hơn năm 2024 mấy tỷ đồng?", SUBTRACT),
         ("Tính biến động số dư giữa năm 2024 và 2023.", SUBTRACT),
         ("Kết quả thuần từ hoạt động tài chính năm 2024 là bao nhiêu?", SUBTRACT),
+        ("Chi phí năm 2023 tăng bao nhiêu phần trăm so với năm 2022?", GROWTH),
+        ("Tài sản từ năm 2018 đến năm 2023 tăng bao nhiêu triệu đồng?", SUBTRACT),
+        ("Tính tổng chi phí khấu hao cho các năm 2019, 2022 và 2024.", SUM),
     ],
 )
 def test_corpus_operation_regressions(question: str, expected: str) -> None:

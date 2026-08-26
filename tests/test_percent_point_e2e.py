@@ -86,6 +86,9 @@ def test_requested_unit_distinguishes_points_from_percent(q, expected):
     ("Doanh thu 2023 gấp bao nhiêu lần 2022?", DIVIDE),
     # growth still wins over difference
     ("Tăng trưởng doanh thu 2023 so với 2022 là bao nhiêu %?", GROWTH),
+    ("Chi phí năm 2023 tăng bao nhiêu phần trăm so với năm 2022?", GROWTH),
+    # without a ratio-like output, "tăng bao nhiêu" asks for a delta
+    ("Tài sản từ cuối năm 2018 đến cuối năm 2023 tăng bao nhiêu triệu đồng?", SUBTRACT),
 ])
 def test_operation_precedence(q, expected):
     assert classify_operation(q).op == expected
