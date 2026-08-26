@@ -33,6 +33,7 @@ from text2pandas.pipelines.answering import (
 )
 from text2pandas.pipelines.answering.adapters import requested_unit_of
 from text2pandas.pipelines.answering.count_engine import answer_count_periods
+from text2pandas.pipelines.answering.entity_average import answer_entity_average
 from text2pandas.pipelines.answering.entity_count import answer_entity_count
 from text2pandas.pipelines.answering.entity_difference import answer_entity_difference
 from text2pandas.pipelines.answering.formula_engine import answer_formula_question
@@ -462,6 +463,18 @@ def run_canonical_pipeline(
                                 requested_unit=requested_unit,
                                 selector=selector,
                                 mode=intent.mode,
+                                qid=qid,
+                            )
+                        if pipeline_result is None:
+                            pipeline_result = answer_entity_average(
+                                text,
+                                pool,
+                                frames,
+                                entities=intent.targets,
+                                years=intent.years,
+                                basis=intent.basis,
+                                requested_unit=requested_unit,
+                                selector=selector,
                                 qid=qid,
                             )
                         if pipeline_result is None:

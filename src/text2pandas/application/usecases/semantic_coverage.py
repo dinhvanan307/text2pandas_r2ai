@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 from text2pandas.pipelines.answering.adapters import requested_unit_of
 from text2pandas.pipelines.answering.count_engine import classify_count_predicate
+from text2pandas.pipelines.answering.entity_average import is_typed_entity_average
 from text2pandas.pipelines.answering.entity_count import classify_entity_count
 from text2pandas.pipelines.answering.entity_difference import is_typed_entity_difference
 from text2pandas.pipelines.answering.formula_engine import match_formula
@@ -168,6 +169,23 @@ def _classify(
             None,
             ELIGIBLE,
             "ELIGIBLE_TYPED_ENTITY_DIFFERENCE",
+        )
+    entity_average_gold_compatible = (
+        expected_entities is None
+        or set(intent.targets) == set(expected_entities)
+    )
+    if entity_average_gold_compatible and is_typed_entity_average(
+        question,
+        intent.targets,
+        intent.years,
+        requested_unit,
+    ):
+        return CoverageRecord(
+            qid,
+            operation.op,
+            None,
+            ELIGIBLE,
+            "ELIGIBLE_TYPED_ENTITY_AVERAGE",
         )
     if expected_entities is not None and len(expected_entities) != 1:
         return CoverageRecord(

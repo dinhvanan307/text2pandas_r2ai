@@ -7,8 +7,8 @@ Updated: 2026-08-26
 `make semantic-coverage` chạy deterministic trên 1.012 câu hỏi curated và dùng
 đúng router/formula registry của canonical runtime. Kết quả hiện tại:
 
-- Static route eligible: **635/1.012 (62,7470%)**.
-- Named semantic gaps: **377/1.012**.
+- Static route eligible: **639/1.012 (63,1423%)**.
+- Named semantic gaps: **373/1.012**.
 - Corpus SHA-256: `59effd1ee7cf7214caee430b05b9305f5a71ed3fd57ba19eb1a6ff2f9c3ffa5d`.
 
 Đây không phải accuracy. Retrieval recall, operand binding và giá trị answer chỉ
@@ -33,12 +33,13 @@ Updated: 2026-08-26
 | Two-entity difference | Typed absolute difference cho đúng 2 entity/1 kỳ/1 metric, distinct evidence, same-metric gate và per-operand unit conversion |
 | Share scale | `nghìn/triệu/tỷ cổ phiếu` là scaled `SHARES`, không còn bị đọc nhầm thành money |
 | Entity COUNT | Typed sign/threshold (`hơn`, `vượt`) predicate cho explicit entity set, one fact per entity, distinct evidence; `tổng số công ty` cue; compound multi-metric predicates fail-closed |
+| Entity average | Typed mean cho reviewed direct monetary/share metrics, one fact per entity, distinct evidence và per-operand unit conversion; percent/ratio, filtered cohort và unreviewed metric fail-closed |
 
 ## Open semantic gaps
 
 | Priority | Gap family | Questions | Fill strategy / exit gate |
 |---|---|---:|---|
-| P1 | Multi/global-entity aggregation/ranking | 272 | Typed entity axis beyond reviewed differences and one-metric entity COUNT; bind one fact per entity; prove no entity reuse; add aggregate/rank emitters and multi-entity gold slices |
+| P1 | Multi/global-entity aggregation/ranking | 268 | Typed entity axis beyond reviewed differences, one-metric entity COUNT và reviewed direct averages; bind one fact per entity; prove no entity reuse; add aggregate/rank emitters and multi-entity gold slices |
 | P1 | Unreviewed relational formulas | 41 | Curate formula + metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
 | P1 | Complex extrema | 43 | Derived ranking: 4; filtered extrema: 6; select-at-arg: 33. Add separate rank metric/result metric and predicate IR |
 | P2 | Operand/period arity unresolved | 8 | SUBTRACT: 7; GROWTH: 1. Remaining SUBTRACT cases are same-period derived finance metrics or unresolved two-operand semantics |
@@ -49,7 +50,7 @@ Updated: 2026-08-26
 
 | Priority | Gap | Exit gate |
 |---|---|---|
-| P1 | End-to-end score for the new canonical engine chưa được khóa trên gold | Report retrieval → bind → execute accuracy by slice; never infer accuracy from 62,7470% route coverage |
+| P1 | End-to-end score for the new canonical engine chưa được khóa trên gold | Report retrieval → bind → execute accuracy by slice; never infer accuracy from 63,1423% route coverage |
 | P2 | Retrieval snapshot đang copy đầy đủ A6 thay vì sidecar-only | Ordered top-K parity + manifest/storage migration test |
 | P3 | Compatibility shims và historical tools còn tồn tại | Downstream import inventory, deprecation window sign-off, then removal commit |
 

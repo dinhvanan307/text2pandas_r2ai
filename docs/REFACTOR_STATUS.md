@@ -39,6 +39,10 @@ Updated: 2026-08-26
   scaling (`nghìn/triệu/tỷ cổ phiếu`).
 - Typed entity COUNT cho one-metric sign/threshold predicate trên explicit
   entity set; compound multi-metric/scenario predicates tiếp tục fail-closed.
+- Typed entity average cho reviewed direct monetary/share metrics trên explicit
+  entity set; metric registry bắt buộc, distinct-cell evidence và per-operand
+  unit conversion. Percent/ratio, cohort filters và unreviewed metrics tiếp tục
+  fail-closed.
 - Static semantic coverage contract cho đủ 1.012 câu, có corpus digest, per-QID
   reason code, CLI/Make entry point và CI baseline. Scope được ghi rõ là route
   coverage, không đánh tráo với retrieval/binding/answer accuracy.
@@ -58,7 +62,7 @@ Updated: 2026-08-26
 ## Current gates
 
 - Offline: green.
-- Static semantic route: `635/1.012` eligible (`62,7470%`), `377` named gaps;
+- Static semantic route: `639/1.012` eligible (`63,1423%`), `373` named gaps;
   baseline được khóa trong offline suite.
 - Raw/A6/retrieval identity and lineage: green for the active local snapshots.
 - H0 materialized integration: green trên active local materialization (`22/22`).
