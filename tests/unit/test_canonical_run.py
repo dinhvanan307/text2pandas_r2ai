@@ -158,6 +158,45 @@ def test_a6_loader_inherits_unanimous_explicit_table_scale_for_date_only_column(
     assert closing.unit.scale_exponent == 3
 
 
+def test_a6_loader_prefers_row_local_per_share_unit_over_table_scale() -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(
+        """
+        CREATE TABLE tables (
+          table_uid TEXT PRIMARY KEY, basis TEXT, statement_type TEXT,
+          section_text TEXT, context_clean TEXT
+        );
+        CREATE TABLE table_cards (table_uid TEXT PRIMARY KEY, table_search_text TEXT);
+        CREATE TABLE observation_readiness (
+          observation_uid TEXT PRIMARY KEY, execution_ready INTEGER
+        );
+        CREATE TABLE observations (
+          observation_uid TEXT PRIMARY KEY, table_uid TEXT, ticker TEXT,
+          row_path_text TEXT, metric_label_clean TEXT, col_path_text TEXT,
+          value_source_raw TEXT, value_decimal_text TEXT, unit_kind TEXT,
+          currency TEXT, scale_exponent INTEGER, scale_source TEXT, period_end TEXT,
+          period_role TEXT, metric_code TEXT, is_restated INTEGER,
+          grid_row_idx INTEGER, grid_col_idx INTEGER
+        );
+        INSERT INTO tables VALUES (
+          't1', 'consolidated', 'income_statement', 'Kết quả kinh doanh', 'Đơn vị: Triệu đồng'
+        );
+        INSERT INTO table_cards VALUES ('t1', 'Kết quả kinh doanh | Đơn vị: Triệu đồng');
+        INSERT INTO observation_readiness VALUES ('eps', 1);
+        INSERT INTO observations VALUES
+          ('eps','t1','VIB','Lãi trên mỗi cổ phiếu (VND/cổ phiếu)',NULL,'Năm 2015',
+           '1.161','1161','money','VND',6,'table_context','2015-12-31','current',NULL,0,1,1);
+        """
+    )
+
+    cells, _frames = load_candidate_cells(connection, ["t1"])
+
+    assert len(cells) == 1
+    assert cells[0].value == 1161
+    assert cells[0].unit.dimension == MONEY
+    assert cells[0].unit.scale_exponent == 0
+
+
 def test_a6_loader_reuses_original_row_index_for_duplicate_observation() -> None:
     connection = sqlite3.connect(":memory:")
     connection.executescript(

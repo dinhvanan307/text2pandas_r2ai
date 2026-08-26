@@ -329,6 +329,13 @@ def load_candidate_cells(
             continue
 
         detected_dimension, detected_scale, _ = scan_unit(col_path or "")
+        # A row label may carry a more specific unit than the table header.
+        # Typical example: a statement is generally in "Triệu đồng" while
+        # the EPS row explicitly says "VND/cổ phiếu".  Row-local evidence
+        # must win, otherwise 1,161 VND/share becomes 1.161 billion VND/share.
+        row_dimension, row_scale, _ = scan_unit(
+            " ".join(part for part in (row_path, metric_label) if part)
+        )
         if (
             unit_kind == "money"
             and detected_dimension == LEXICON_MONEY
@@ -341,6 +348,12 @@ def load_candidate_cells(
             continue
         effective_scale = scale
         if (
+            unit_kind == "money"
+            and row_dimension == LEXICON_MONEY
+            and row_scale is not None
+        ):
+            effective_scale = row_scale
+        elif (
             unit_kind == "money"
             and scale_source != "column_path"
             and detected_dimension != LEXICON_MONEY
