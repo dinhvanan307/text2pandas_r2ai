@@ -56,8 +56,27 @@ def test_two_entity_same_metric_difference_executes_in_requested_unit() -> None:
 
     assert result is not None and result.ok
     assert result.answer == pytest.approx(3.0)
-    assert result.query.startswith("abs(")
+    assert not result.query.startswith("abs(")
     assert len(result.evidence) == 2
+
+
+def test_two_entity_difference_preserves_first_minus_second_direction() -> None:
+    cells = [_cell("AAA", 2_000), _cell("BBB", 5_000)]
+
+    result = answer_entity_difference(
+        "Chênh lệch doanh thu thuần của AAA so với BBB năm 2024 là bao nhiêu tỷ đồng?",
+        cells,
+        _frames(cells),
+        entities=["AAA", "BBB"],
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(MONEY, 9, "VND"),
+        selector=Selector(),
+        mode="compare",
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(-3.0)
 
 
 def test_two_entity_difference_abstains_on_metric_drift() -> None:

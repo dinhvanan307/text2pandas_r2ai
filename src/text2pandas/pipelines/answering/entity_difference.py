@@ -101,7 +101,12 @@ def answer_entity_difference(
     mode: str,
     qid: int | None = None,
 ) -> EntityDifferenceAnswer | None:
-    """Bind the same metric once per entity and return its absolute difference."""
+    """Bind the same metric once per entity and return first minus second.
+
+    Entity order is semantic: Vietnamese questions of the form ``A so với B``
+    ask for ``A - B``.  Taking ``abs`` silently discards the direction and
+    makes every case where A < B wrong while still looking plausible.
+    """
 
     if not is_typed_entity_difference(
         question,
@@ -166,12 +171,12 @@ def answer_entity_difference(
                 f"ENTITY_DIFFERENCE_UNIT_ABSTAIN:{conversion.reason}",
             )
         expressions.append(cell_expr(operand, conversion.factor))
-    query = f"abs({expressions[0]} - {expressions[1]})"
+    query = f"({expressions[0]} - {expressions[1]})"
     used_frames = {operand.cell.df_var: frames[operand.cell.df_var] for operand in operands}
     answer, error = execute(query, used_frames)
     if error or answer is None:
         return _fail(result, "EXECUTE", error or "ENTITY_DIFFERENCE_EXECUTION_FAILED")
-    if not math.isfinite(answer) or answer < 0:
+    if not math.isfinite(answer):
         return _fail(result, "VALIDATE", "ENTITY_DIFFERENCE_RESULT_INVALID")
 
     result.query = query
