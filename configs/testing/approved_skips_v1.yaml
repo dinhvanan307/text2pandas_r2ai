@@ -1,0 +1,37 @@
+schema_version: 1
+policy_id: historical-artifact-skips-v1
+adr: docs/adr/0010-retire-legacy-artifact-gates.md
+
+# Maximums, not targets. When a historical artifact is mounted, fewer skips
+# are acceptable. Any new skip, reason drift, or count increase fails CI.
+allowlist:
+  - node_prefix: "tests/test_answer_operation.py::"
+    reason_contains: answer_operation_precheck.jsonl
+    max_count: 21
+  - node_prefix: "tests/test_answer_operation.py::"
+    reason_contains: cần precheck
+    max_count: 6
+  - node_prefix: "tests/test_rc04_mot_nguon_so_duy_nhat.py::"
+    reason_contains: 37_RC2_BUILD_RUNBOOK.md
+    max_count: 1
+  - node_prefix: "tests/test_rc20_fail_closed.py::"
+    reason_contains: không có DB để chạy readiness
+    max_count: 2
+  - node_prefix: "tests/test_rc20_fail_closed.py::"
+    reason_contains: replay_report.json
+    max_count: 4
+  - node_prefix: "tests/test_rc2_023_corpus_freeze.py::"
+    reason_contains: corpus/manifest mốc
+    max_count: 1
+  - node_prefix: "tests/test_rc2_031_seq05_artifact_dependency.py::"
+    reason_contains: DB bản dựng RC1
+    max_count: 4
+  - node_prefix: "tests/test_rc2_execution_sequence.py::"
+    reason_contains: runbook 37
+    max_count: 1
+  - node_prefix: "tests/test_rc2_safety_traps.py::"
+    reason_contains: 37_RC2_BUILD_RUNBOOK.md
+    max_count: 1
+  - node_prefix: "tests/test_replay_fixture_contract.py::"
+    reason_contains: SNAPSHOT_DECLARATION.json
+    max_count: 1
