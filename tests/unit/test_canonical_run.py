@@ -72,6 +72,19 @@ def test_aggregate_question_never_binds_a_child_row() -> None:
     assert selected is total
 
 
+def test_cross_entity_sum_does_not_require_an_aggregate_row_per_entity() -> None:
+    selector = QuestionSelector(
+        "Tổng chi phí tài chính của ACB và VNM năm 2022",
+        frozenset(),
+        cross_entity_sum=True,
+    )
+    direct = _cell("Chi phí tài chính")
+
+    selected = selector.pick(OperandSlot("entity_value", period="2022"), [direct])
+
+    assert selected is direct
+
+
 def test_a6_loader_excludes_scale_conflicts() -> None:
     connection = sqlite3.connect(":memory:")
     connection.executescript(

@@ -36,6 +36,10 @@ from text2pandas.pipelines.answering.count_engine import answer_count_periods
 from text2pandas.pipelines.answering.entity_average import answer_entity_average
 from text2pandas.pipelines.answering.entity_count import answer_entity_count
 from text2pandas.pipelines.answering.entity_difference import answer_entity_difference
+from text2pandas.pipelines.answering.entity_sum import (
+    answer_entity_sum,
+    is_typed_entity_sum,
+)
 from text2pandas.pipelines.answering.formula_engine import answer_formula_question
 from text2pandas.pipelines.answering.ir import OperandSlot
 from text2pandas.pipelines.answering.units import MONEY, PERCENT, SHARES, UNKNOWN
@@ -95,9 +99,11 @@ class QuestionSelector(Selector):
         question: str,
         code_hints: frozenset[str],
         drop: tuple[str, ...] = (),
+        *,
+        cross_entity_sum: bool = False,
     ) -> None:
         normalized_question = tokenize(question)
-        self.aggregate_required = any(
+        self.aggregate_required = not cross_entity_sum and any(
             token in {"tong", "tổng"}
             and (index == 0 or normalized_question[index - 1] in {"co", "có", "tinh", "tính"})
             and normalized_question[index + 1 : index + 3] not in (["cong", "ty"], ["công", "ty"])
@@ -435,10 +441,17 @@ def run_canonical_pipeline(
                         if cell.csv_path in frames_by_path
                     }
                     requested_unit = requested_unit_of(text)
+                    entity_sum_route = is_typed_entity_sum(
+                        text,
+                        intent.targets,
+                        intent.years,
+                        requested_unit,
+                    )
                     selector = QuestionSelector(
                         text,
                         metric_codes_hint(text),
                         drop=drop_terms(intent.targets, aliases),
+                        cross_entity_sum=entity_sum_route,
                     )
                     if len(intent.targets) >= 2:
                         pipeline_result = answer_entity_count(
@@ -467,6 +480,18 @@ def run_canonical_pipeline(
                             )
                         if pipeline_result is None:
                             pipeline_result = answer_entity_average(
+                                text,
+                                pool,
+                                frames,
+                                entities=intent.targets,
+                                years=intent.years,
+                                basis=intent.basis,
+                                requested_unit=requested_unit,
+                                selector=selector,
+                                qid=qid,
+                            )
+                        if pipeline_result is None:
+                            pipeline_result = answer_entity_sum(
                                 text,
                                 pool,
                                 frames,

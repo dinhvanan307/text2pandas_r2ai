@@ -84,3 +84,20 @@ def test_direct_money_average_requires_gold_compatible_entity_set() -> None:
 
     assert compatible.records[0].reason == "ELIGIBLE_TYPED_ENTITY_AVERAGE"
     assert mismatch.records[0].reason == "MULTI_ENTITY_NOT_SUPPORTED:expected=3"
+
+
+def test_reviewed_entity_sum_requires_gold_compatible_entity_set() -> None:
+    aliases = {"AAA": [], "BBB": [], "CCC": []}
+    question = "Tổng chi phí tài chính của AAA và BBB năm 2024 là bao nhiêu tỷ đồng?"
+
+    compatible = analyze_semantic_coverage(
+        [{"id": 1, "question": question, "entities": ["BBB", "AAA"]}],
+        aliases,
+    )
+    mismatch = analyze_semantic_coverage(
+        [{"id": 1, "question": question, "entities": ["AAA", "BBB", "CCC"]}],
+        aliases,
+    )
+
+    assert compatible.records[0].reason == "ELIGIBLE_TYPED_ENTITY_SUM"
+    assert mismatch.records[0].reason == "MULTI_ENTITY_NOT_SUPPORTED:expected=3"
