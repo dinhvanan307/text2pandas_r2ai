@@ -198,6 +198,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         detail = "; ".join(f"{item.name}: {item.detail}" for item in failures)
         raise BuildSafetyError(f"active snapshot preflight failed: {detail}")
 
+    # Freeze provenance before executing the pipeline.  Reading HEAD only at
+    # the end of a long run can attribute in-memory code to a later commit.
+    source_identity = git_source_identity(ROOT)
     stage = PROJECT_PATHS.run_dir("answer", args.run_id)
     rep = run_canonical_pipeline(
         ACTIVE_SNAPSHOTS.a6_path / "silver.db",
@@ -228,7 +231,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             },
             rep,
             verification,
-            git_source_identity(ROOT),
+            source_identity,
             stage / "records.jsonl",
         ),
     )
