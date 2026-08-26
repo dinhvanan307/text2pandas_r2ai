@@ -2,6 +2,11 @@
 
 Updated: 2026-08-26
 
+> Semantic Query Engine v3 is now available in shadow mode. Its architecture,
+> full-corpus differential baselines and promotion blockers are recorded in
+> `docs/SEMANTIC_V3_MIGRATION_STATUS.md`.  V2 remains canonical until the
+> code-enforced V3 promotion policy passes.
+
 ## Measurement boundary
 
 `make semantic-coverage` chạy deterministic trên 1.012 câu hỏi curated và dùng
