@@ -4,8 +4,9 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
-from tools.evaluate_adjudicated_answers import evaluate
+from tools.evaluate_adjudicated_answers import _numeric_answer, evaluate
 
 
 def _jsonl(path: Path, rows: list[dict]) -> None:
@@ -35,7 +36,7 @@ def test_evaluator_separates_accuracy_coverage_and_replay(tmp_path: Path) -> Non
             {
                 "qid": 1,
                 "status": "OK",
-                "answer": 10.0,
+                "answer": "10.0",
                 "evidence": [{"variable": "df1", "csv_path": "data/t.csv"}],
                 "pandas_query": "float(df1[df1['value'] == 10.0]['value'].values[0])",
             },
@@ -64,3 +65,21 @@ def test_evaluator_separates_accuracy_coverage_and_replay(tmp_path: Path) -> Non
         "replay_consistency": 1.0,
         "replayed": 1,
     }
+    assert report["schema_version"] == "1.1"
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("60.236801990536904", 60.236801990536904),
+        (42, 42.0),
+        ("", None),
+        ("not-a-number", None),
+        ("NaN", None),
+        ("Infinity", None),
+        (True, None),
+        (None, None),
+    ],
+)
+def test_numeric_answer_contract(raw: object, expected: float | None) -> None:
+    assert _numeric_answer(raw) == expected

@@ -48,6 +48,27 @@ def _close(actual: float, expected: float, tolerance: float) -> bool:
     )
 
 
+def _numeric_answer(value: object) -> float | None:
+    """Decode the JSON numeric contract used by both canonical and V3 runs.
+
+    Semantic V3 preserves ``Decimal`` answers as JSON strings. Treating those
+    strings as abstentions silently understates accuracy, while accepting
+    arbitrary strings or non-finite values would weaken the submission
+    contract. This decoder therefore accepts only finite JSON numbers and
+    finite numeric strings.
+    """
+
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    if isinstance(value, str) and not value.strip():
+        return None
+    try:
+        decoded = float(value)
+    except ValueError:
+        return None
+    return decoded if math.isfinite(decoded) else None
+
+
 def evaluate(
     records_path: Path,
     gold_path: Path,
@@ -74,11 +95,7 @@ def evaluate(
         record = records[qid]
         expected = float(gold["normalized_answer_gold"])
         raw_answer = record.get("answer")
-        predicted = (
-            float(raw_answer)
-            if isinstance(raw_answer, (int, float)) and not isinstance(raw_answer, bool)
-            else None
-        )
+        predicted = _numeric_answer(raw_answer)
         answer_match = predicted is not None and _close(predicted, expected, tolerance)
         evidence = record.get("evidence") or []
         query = str(record.get("pandas_query") or "")
@@ -131,7 +148,7 @@ def evaluate(
     execution_correct = sum(case.execution_correct for case in cases)
     operations = sorted({case.operation for case in cases})
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "measurement_scope": "LOCAL_ADJUDICATED_GOLD_NOT_OFFICIAL",
         "tolerance": {"kind": "relative_with_absolute_floor", "value": tolerance},
         "inputs": {
