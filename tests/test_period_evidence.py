@@ -168,6 +168,35 @@ def test_quality_reports_two_period_measures(silver):
     assert any("suy diễn" in n for n in names)
 
 
+def test_quality_blocks_explicit_column_unit_scale_mismatch(silver):
+    """Không để retrieval nhận một observation sai 10^3/10^6/10^9 lần."""
+    silver.execute(
+        "UPDATE observations SET col_path_text=?, scale_exponent=0,"
+        " quality_flags_json='[]' WHERE observation_uid="
+        " (SELECT observation_uid FROM observations LIMIT 1)",
+        ("31/12/2024Triệu VNDPhải thu",),
+    )
+    report = run_quality(silver)
+
+    assert report["by_rule"]["Q-OBS-EXPLICIT-UNIT-SCALE-MISMATCH"] == 1
+    check = next(c for c in report["gates"]["G4 Semantics"]
+                 if "observation mang bậc khác" in c["name"])
+    assert check["pass"] is False and check["value"] == 1
+
+
+def test_quality_allows_traced_implausible_scale_rejection(silver):
+    """Reconciliation được phép bác lời khai, nhưng bắt buộc để lại reason."""
+    silver.execute(
+        "UPDATE observations SET col_path_text=?, scale_exponent=0,"
+        " quality_flags_json='[\"scale_rejected_implausible\"]'"
+        " WHERE observation_uid=(SELECT observation_uid FROM observations LIMIT 1)",
+        ("31/12/2024Triệu VNDPhải thu",),
+    )
+    report = run_quality(silver)
+
+    assert report["by_rule"].get("Q-OBS-EXPLICIT-UNIT-SCALE-MISMATCH", 0) == 0
+
+
 # ──────────── lỗi đo được từ diagnose_silver.py trên build 4941cb2a ────────────
 
 from text2pandas.pipelines.a6.models import ColumnRole  # noqa: E402

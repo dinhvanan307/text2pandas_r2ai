@@ -381,6 +381,7 @@ def cmd_publish(args) -> int:
     from text2pandas.pipelines.a6.period_resolver import PERIOD_VERSION
     from text2pandas.pipelines.a6.storage import integrity_check, publish_db
     from text2pandas.pipelines.a6.structure import STRUCTURE_VERSION
+    from text2pandas.pipelines.a6.unit_resolver import UNIT_VERSION
 
     man = read_manifest(_work("manifest.json"))
     qpath = _work("quality_report.json")
@@ -426,7 +427,8 @@ def cmd_publish(args) -> int:
         "schema": "1.0", "catalog": CATALOG_VERSION, "parser": PARSER_VERSION,
         "cleaning": CLEANING_VERSION, "structure": STRUCTURE_VERSION,
         "number": NUMBER_VERSION, "semantic": SEMANTIC_VERSION,
-        "period": PERIOD_VERSION, "quality": quality["quality_version"],
+        "period": PERIOD_VERSION, "unit": UNIT_VERSION,
+        "quality": quality["quality_version"],
     }
     sdb = _work("silver.sqlite")
     conn = sqlite3.connect(sdb)

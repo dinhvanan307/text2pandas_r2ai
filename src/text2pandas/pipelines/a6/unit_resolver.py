@@ -26,7 +26,7 @@ from text2pandas.pipelines.a6.models import EvidenceSource, UnitKind
 
 __all__ = ["UnitResolution", "resolve_unit", "reconcile_scale", "UNIT_VERSION"]
 
-UNIT_VERSION = "1.8"
+UNIT_VERSION = "1.9"
 
 # ── RC-04 · biên trái: KHÔNG phải chữ cái, thay vì `\b` ─────────────────────
 #
@@ -79,11 +79,11 @@ _SCALE_STRICT: tuple[tuple[re.Pattern[str], int], ...] = (
 # relaxed boundary is safe only on the column axis.  Applying it to prose or
 # row labels would turn narrative amounts into table-wide unit declarations.
 _SCALE_ATTACHED_COLUMN: tuple[tuple[re.Pattern[str], int], ...] = (
-    (re.compile(r"(?:nghìn|ngàn)\s*tỷ\s*(?:đồng|vnd|đ)\b", re.I), 12),
-    (re.compile(r"(?:tỷ|tỉ)\s*(?:đồng|vnd|đ)\b|billion\s*(?:vnd|dong)\b", re.I), 9),
-    (re.compile(r"triệu\s*(?:đồng|vnd|đ)\b|million\s*(?:vnd|dong)\b", re.I), 6),
+    (re.compile(r"(?:nghìn|ngàn)\s*tỷ\s*(?:đồng|vnd|đ)", re.I), 12),
+    (re.compile(r"(?:tỷ|tỉ)\s*(?:đồng|vnd|đ)|billion\s*(?:vnd|dong)", re.I), 9),
+    (re.compile(r"triệu\s*(?:đồng|vnd|đ)|million\s*(?:vnd|dong)", re.I), 6),
     (re.compile(
-        r"(?:nghìn|ngàn)\s*(?:đồng|vnd|đ)\b|thousand\s*(?:vnd|dong)\b",
+        r"(?:nghìn|ngàn)\s*(?:đồng|vnd|đ)|thousand\s*(?:vnd|dong)",
         re.I,
     ), 3),
 )
@@ -108,6 +108,16 @@ _CURRENCY_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"USD\b|US\$|\bđô\s*la\b", re.I), "USD"),
     (re.compile(r"EUR\b|€", re.I), "EUR"),
     (re.compile(r"JPY\b|\byên\b", re.I), "JPY"),
+)
+# Trên column axis, extractor còn có thể dính NHÃN KẾ TIẾP vào sau currency:
+# ``31/12/2024Triệu VNDPhải thu``.  Vì vậy chỉ nới biên phải tại đúng tầng
+# column, song song với `_SCALE_ATTACHED_COLUMN`; prose/row/table vẫn dùng bộ
+# strict để không biến một từ chứa chuỗi currency thành bằng chứng đơn vị.
+_CURRENCY_ATTACHED_COLUMN: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"VND|VNĐ|đồng|dong", re.I), "VND"),
+    (re.compile(r"USD|US\$|đô\s*la", re.I), "USD"),
+    (re.compile(r"EUR|€", re.I), "EUR"),
+    (re.compile(r"JPY|yên", re.I), "JPY"),
 )
 _KIND_PATTERNS: tuple[tuple[re.Pattern[str], UnitKind], ...] = (
     (re.compile(r"%|phần\s*trăm|tỷ\s*lệ\s*\(%\)", re.I), UnitKind.PERCENT),
@@ -190,8 +200,17 @@ def _find_scale(
     return None
 
 
-def _find_currency(text: str) -> str | None:
-    for pat, cur in _CURRENCY_PATTERNS:
+def _find_currency(
+    text: str,
+    *,
+    allow_attached_column_unit: bool = False,
+) -> str | None:
+    patterns = (
+        _CURRENCY_ATTACHED_COLUMN
+        if allow_attached_column_unit
+        else _CURRENCY_PATTERNS
+    )
+    for pat, cur in patterns:
         if pat.search(text):
             return cur
     return None
@@ -309,7 +328,12 @@ def resolve_unit(
                 pass
             else:
                 kind, kind_src = k, source
-        if currency is None and (c := _find_currency(text)):
+        if currency is None and (
+            c := _find_currency(
+                text,
+                allow_attached_column_unit=source is EvidenceSource.COLUMN_PATH,
+            )
+        ):
             currency, cur_src = c, source
         if allow_scale and scale is None and (
             sc := _find_scale(

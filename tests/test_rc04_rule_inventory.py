@@ -1,7 +1,7 @@
 """RC-04 + RC-09 · sổ đăng ký rule phải khớp MÃ theo cả hai chiều.
 
 Hợp đồng P3 liệt kê 14 rule — đó là 14 rule đã NỔ trên corpus RC1, tức một
-**mẫu**, không phải bộ luật. `quality.py` phát ra **26**. 12 rule kia nổ 0 lần
+**mẫu**, không phải bộ luật. `quality.py` phát ra **27**. 13 rule kia nổ 0 lần
 trên RC1; nếu một trong số đó nổ trên RC2 thì nó là rule không có defect,
 không có consequence, không ai kiểm.
 
@@ -97,9 +97,9 @@ def test_moi_rule_warning_phai_ghi_HE_QUA_downstream(inv):
     assert not missing, missing
 
 
-def test_co_cover_du_26_rule(inv, emitted):
-    assert len(emitted) == 26, f"số mã trong code đổi: {len(emitted)}"
-    assert len(inv["rules"]) == 26
+def test_co_cover_du_27_rule(inv, emitted):
+    assert len(emitted) == 27, f"số mã trong code đổi: {len(emitted)}"
+    assert len(inv["rules"]) == 27
 
 
 # ── liên thông với hợp đồng đã đóng băng ───────────────────────────────────

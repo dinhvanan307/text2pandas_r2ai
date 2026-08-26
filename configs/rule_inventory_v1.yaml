@@ -1,8 +1,8 @@
 # RC-04 · SỔ ĐĂNG KÝ RULE — khoá theo MÃ, không theo mẫu RC1.
 #
 # Hợp đồng P3 `active_rule_inventory` liệt kê **14** rule. Đó là 14 rule đã NỔ
-# trên corpus RC1 — một mẫu, không phải bộ luật. `quality.py` phát ra **26**.
-# 12 rule còn lại nổ 0 lần trên RC1 và vì thế không có mặt trong inventory; nếu
+# trên corpus RC1 — một mẫu, không phải bộ luật. `quality.py` phát ra **27**.
+# 13 rule còn lại nổ 0 lần trên RC1 và vì thế không có mặt trong inventory; nếu
 # một trong số đó nổ trên RC2, nó sẽ là **rule không có defect, không có
 # consequence, không ai kiểm** — đúng định nghĩa `unmapped_active_rule`.
 #
@@ -21,7 +21,7 @@ inventory_version: "1.0"
 source_of_truth: src/text2pandas/pipelines/a6/quality.py
 supersedes_scope: >
   Mở rộng `active_rule_inventory` của rc2_contracts_v1.yaml từ 14 rule đã nổ
-  trên RC1 lên toàn bộ 26 rule mà mã có thể phát ra.
+  trên RC1 lên toàn bộ 27 rule mà mã có thể phát ra.
 
 acceptance:
   - "mọi mã `Q-*` trong quality.py phải có mặt ở đây (RC-09 vế A)"
@@ -74,6 +74,15 @@ rules:
     consequence: blocking
     rc1_total: 0
     note: đo SAU khi áp scale — cùng lớp lỗi "đo sai đại lượng" với Q-OBS-TINY-MONEY
+  - id: Q-OBS-EXPLICIT-UNIT-SCALE-MISMATCH
+    severity: error
+    defect: D-07
+    consequence: build_failure
+    rc1_total: 0
+    note: >
+      Diagnostic unit-v1.8 đo được 5.780 observation có nhãn cột khai bậc
+      tường minh nhưng mang bậc khác. Candidate mới phải đưa cohort này về 0;
+      scale bị bác hợp lệ chỉ được miễn khi có scale_rejected_implausible.
   - id: Q-COL-INVALID-DATE
     severity: error
     defect: D-06

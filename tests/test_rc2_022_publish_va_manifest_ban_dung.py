@@ -44,6 +44,15 @@ def test_stage_publish_ton_tai_trong_cli():
     assert '"publish": cmd_publish' in src
 
 
+def test_publish_manifest_ghi_unit_component_version():
+    """Đổi unit resolver phải hiện trong provenance của artifact phát hành."""
+    src = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "cli.py").read_text(
+        encoding="utf-8")
+    block = src[src.index("def cmd_publish"):src.index("def _build_id_of_db")]
+    assert "from text2pandas.pipelines.a6.unit_resolver import UNIT_VERSION" in block
+    assert '"unit": UNIT_VERSION' in block
+
+
 # ── 2. hợp đồng thứ tự phải khai bước này ─────────────────────────────────
 
 def test_execution_sequence_co_buoc_publish():

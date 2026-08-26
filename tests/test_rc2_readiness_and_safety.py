@@ -526,6 +526,11 @@ def test_bien_trai_nhan_chu_so_nhung_tu_choi_chu_cai(text, want):
     ("Tổng cộngtriệu đồng", 6),
     ("Năm nayNghìn VND", 3),
     ("Tổng cộngTỷ đồng", 9),
+    # Extractor có thể dính cả hai phía của cụm đơn vị. Đây là cohort còn sót
+    # sau unit v1.8: 5.780 observation có explicit scale nhưng nhận scale khác.
+    ("31/12/2024Triệu VNDPhải thu/(Phải trả)", 6),
+    ("Ngàn VNDTổng cộng › Nguyên giá", 3),
+    ("Đơn vị tỉnh: Triệu đồngTổng cộng › Năm nay", 6),
 ])
 def test_nhan_don_vi_dinh_vao_nhan_cot_bang_chu(text, want):
     """Column extraction glues unit labels to words; the currency pair is exact."""
@@ -536,6 +541,7 @@ def test_nhan_don_vi_dinh_vao_nhan_cot_bang_chu(text, want):
 
     assert result.unit_kind is UnitKind.MONEY
     assert result.currency == "VND"
+    assert result.currency_source.value == "column_path"
     assert result.scale_exponent == want
     assert result.scale_source.value == "column_path"
 

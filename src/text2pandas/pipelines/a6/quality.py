@@ -19,7 +19,31 @@ from text2pandas.pipelines.a6.models import Severity, make_uid
 
 __all__ = ["run_quality", "QUALITY_VERSION"]
 
-QUALITY_VERSION = "1.7"
+QUALITY_VERSION = "1.8"
+
+# Chuẩn hoá vừa đủ cho SQL quality: SQLite `lower()` chỉ xử lý ASCII nên cần
+# đổi riêng chữ Đ. Bỏ khoảng trắng để cùng một invariant phủ cả ``Triệu VND``
+# và OCR-glued ``TriệuVND``. Đây là phép ĐO; resolver vẫn giữ nguyên evidence.
+_COL_UNIT_PATH = "LOWER(REPLACE(REPLACE(col_path_text,'Đ','đ'),' ',''))"
+_EXPLICIT_SCALE = (
+    "CASE"
+    f" WHEN {_COL_UNIT_PATH} LIKE '%nghìntỷđồng%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%nghìntỷvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%ngàntỷđồng%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%ngàntỷvnd%' THEN 12"
+    f" WHEN {_COL_UNIT_PATH} LIKE '%tỷđồng%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%tỷvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%tỉđồng%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%tỉvnd%' THEN 9"
+    f" WHEN {_COL_UNIT_PATH} LIKE '%triệuđồng%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%triệuvnd%' THEN 6"
+    f" WHEN {_COL_UNIT_PATH} LIKE '%nghìnđồng%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%nghìnvnd%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%ngànđồng%'"
+    f" OR {_COL_UNIT_PATH} LIKE '%ngànvnd%' THEN 3"
+    " END"
+)
+_HAS_EXPLICIT_SCALE = f"({_EXPLICIT_SCALE}) IS NOT NULL"
 
 # rule_id → (mức, mô tả, câu truy vấn tìm phạm vi vi phạm)
 _ISSUE_RULES: tuple[tuple[str, Severity, str, str], ...] = (
@@ -83,6 +107,12 @@ _ISSUE_RULES: tuple[tuple[str, Severity, str, str], ...] = (
      "bậc đơn vị bị bác vì áp vào ra độ lớn bất khả (lời khai ≠ chữ số)",
      "SELECT observation_uid FROM observations"
      " WHERE quality_flags_json LIKE '%scale_rejected_implausible%'"),
+    ("Q-OBS-EXPLICIT-UNIT-SCALE-MISMATCH", Severity.ERROR,
+     "nhãn cột khai bậc tiền tường minh nhưng observation mang bậc khác",
+     "SELECT observation_uid FROM observations WHERE value_kind='money'"
+     " AND quality_flags_json NOT LIKE '%scale_rejected_implausible%'"
+     f" AND {_HAS_EXPLICIT_SCALE}"
+     f" AND COALESCE(scale_exponent,-99) <> ({_EXPLICIT_SCALE})"),
     ("Q-COL-DEMOTED-REF", Severity.INFO,
      "cột giá trị bị hạ xuống tham chiếu vì toàn số 1–2 chữ số",
      "SELECT table_uid||':'||grid_col_idx FROM columns"
@@ -265,6 +295,10 @@ def run_quality(conn: sqlite3.Connection) -> dict:
          "threshold": "≥ 93% (trần đo được 95,21%)", "pass": pct_money_unit >= 93},
         {"name": "ô TIỀN có bậc đơn vị tường minh", "value": f"{pct_money_scale}%",
          "threshold": "≥ 60%", "pass": pct_money_scale >= 60},
+        {"name": "nhãn cột khai bậc nhưng observation mang bậc khác",
+         "value": by_rule.get("Q-OBS-EXPLICIT-UNIT-SCALE-MISMATCH", 0),
+         "threshold": "0",
+         "pass": by_rule.get("Q-OBS-EXPLICIT-UNIT-SCALE-MISMATCH", 0) == 0},
     ]
 
     # ── G5: thước đo TÍNH ĐÚNG, không phải độ phủ ──

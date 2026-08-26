@@ -276,6 +276,11 @@ def _gate_c2(con, quality: dict) -> Gate:
                 " AND unit_kind='money'"), n_money, 93.0,
         "unit_coverage_money_cells",
         thr_text="≥ 93% (trần đo được 95,21%)"))
+    g.metrics.append(_count(
+        int(((quality or {}).get("by_rule") or {}).get(
+            "Q-OBS-EXPLICIT-UNIT-SCALE-MISMATCH", 0)),
+        0, "explicit_column_unit_scale_mismatch",
+        evidence="quality.by_rule.Q-OBS-EXPLICIT-UNIT-SCALE-MISMATCH"))
     # Accuracy — khác COVERAGE. Doc 12 §7 C2: "không dùng coverage thay accuracy".
     for n in ("numeric_parse_exact_accuracy", "sign_accuracy",
               "unit_scale_accuracy", "period_resolution_accuracy"):
