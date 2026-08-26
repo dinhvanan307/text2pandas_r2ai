@@ -13,6 +13,7 @@ from text2pandas.domain.semantic import Basis, PeriodSemantics, QuestionAST, Uni
 
 class ConstraintKind(StrEnum):
     SAME_DOCUMENT = "same_document"
+    SAME_PERIOD = "same_period"
     SAME_BASIS = "same_basis"
     SAME_CURRENCY = "same_currency"
     SAME_DIMENSION = "same_dimension"

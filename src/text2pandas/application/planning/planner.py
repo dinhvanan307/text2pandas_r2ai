@@ -43,7 +43,7 @@ class _RequestAccumulator:
 
 def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> ExecutionPlan:
     requests: dict[tuple[object, ...], _RequestAccumulator] = {}
-    formula_scopes: list[tuple[str, set[tuple[object, ...]]]] = []
+    formula_scopes: list[tuple[str, bool, set[tuple[object, ...]]]] = []
     _collect(ast.expression, "$.expression", requests, formula_scopes)
     if not requests:
         raise PlanningError("semantic expression contains no metric operands")
@@ -89,7 +89,7 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
                 BindingConstraint(ConstraintKind.SAME_DIMENSION, unique, reason),
             )
         )
-    for formula_id, keys in formula_scopes:
+    for formula_id, same_period, keys in formula_scopes:
         by_scope: dict[tuple[str | None, str | None], list[str]] = defaultdict(list)
         for key in keys:
             request = materialized[key]
@@ -106,6 +106,10 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
                     BindingConstraint(ConstraintKind.DISTINCT_OBSERVATIONS, unique, reason),
                 )
             )
+            if same_period:
+                constraints.append(
+                    BindingConstraint(ConstraintKind.SAME_PERIOD, unique, reason)
+                )
     return ExecutionPlan(
         ast=ast,
         requests=tuple(sorted(materialized.values(), key=lambda value: value.request_id)),
@@ -118,7 +122,7 @@ def _collect(
     expression: Expression,
     path: str,
     requests: dict[tuple[object, ...], _RequestAccumulator],
-    formula_scopes: list[tuple[str, set[tuple[object, ...]]]],
+    formula_scopes: list[tuple[str, bool, set[tuple[object, ...]]]],
 ) -> set[tuple[object, ...]]:
     if isinstance(expression, MetricRef):
         entities: tuple[str | None, ...] = expression.entities or (None,)
@@ -150,7 +154,7 @@ def _collect(
         return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
     if isinstance(expression, FormulaCall):
         keys = _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
-        formula_scopes.append((expression.formula_id, keys))
+        formula_scopes.append((expression.formula_id, expression.same_period, keys))
         return keys
     if isinstance(expression, Aggregate):
         return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
@@ -171,7 +175,7 @@ def _collect_predicate(
     predicate: Predicate,
     path: str,
     requests: dict[tuple[object, ...], _RequestAccumulator],
-    formula_scopes: list[tuple[str, set[tuple[object, ...]]]],
+    formula_scopes: list[tuple[str, bool, set[tuple[object, ...]]]],
 ) -> set[tuple[object, ...]]:
     if isinstance(predicate, Comparison):
         return _collect(predicate.left, f"{path}.left", requests, formula_scopes) | _collect(

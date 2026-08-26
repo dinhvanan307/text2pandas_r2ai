@@ -11,7 +11,7 @@ from text2pandas.application.parsing import (
 )
 from text2pandas.application.planning import ConstraintKind, compile_execution_plan
 from text2pandas.application.retrieval import CandidateBatch, ObservationCandidate
-from text2pandas.domain.semantic import Basis, Dimension, UnitSpec
+from text2pandas.domain.semantic import Aggregate, Basis, Dimension, FormulaCall, UnitSpec
 from text2pandas.infrastructure.ontology import load_ontology
 
 
@@ -48,6 +48,7 @@ def _candidate(
     *,
     currency: str = "VND",
     basis: Basis = Basis.CONSOLIDATED,
+    period: str | None = "2024-12-31",
 ):
     return ObservationCandidate(
         observation_uid=uid,
@@ -59,7 +60,7 @@ def _candidate(
         metric_id=request.metric_id,
         row_path=request.metric_id,
         column_path="2024",
-        period=request.period,
+        period=period,
         period_role="current",
         value=Decimal(100),
         value_raw="100",
@@ -81,6 +82,13 @@ def test_planner_expands_formula_per_entity_and_scopes_coherence() -> None:
     ]
     assert len(same_document) == 2
     assert all(len(constraint.request_ids) == 2 for constraint in same_document)
+    same_period = [
+        constraint
+        for constraint in plan.constraints
+        if constraint.kind == ConstraintKind.SAME_PERIOD
+    ]
+    assert len(same_period) == 2
+    assert all(len(constraint.request_ids) == 2 for constraint in same_period)
     assert any(
         constraint.kind == ConstraintKind.SAME_BASIS for constraint in plan.constraints
     )
@@ -88,6 +96,21 @@ def test_planner_expands_formula_per_entity_and_scopes_coherence() -> None:
         constraint.kind == ConstraintKind.SAME_DIMENSION for constraint in plan.constraints
     )
     assert len(plan.fingerprint) == 64
+
+
+def test_planner_honors_formula_that_explicitly_allows_cross_period_operands() -> None:
+    plan = _formula_plan()
+    assert isinstance(plan.ast.expression, Aggregate)
+    assert isinstance(plan.ast.expression.expression, FormulaCall)
+    relaxed_formula = replace(plan.ast.expression.expression, same_period=False)
+    relaxed_ast = replace(
+        plan.ast,
+        expression=replace(plan.ast.expression, expression=relaxed_formula),
+    )
+
+    relaxed = compile_execution_plan(relaxed_ast, load_ontology())
+
+    assert not any(constraint.kind == ConstraintKind.SAME_PERIOD for constraint in relaxed.constraints)
 
 
 def test_joint_binder_finds_coherent_assignment_greedy_selection_misses() -> None:
@@ -132,6 +155,88 @@ def test_joint_binder_finds_coherent_assignment_greedy_selection_misses() -> Non
     selected = {value.candidate.document_id for value in result.bound_plan.operands.values()}
     assert selected == {"doc-shared"}
     assert result.bound_plan.total_score == 16.0
+
+
+def test_joint_binder_enforces_reviewed_formula_same_period() -> None:
+    plan = _formula_plan()
+    entity = plan.requests[0].entity
+    scoped_requests = tuple(request for request in plan.requests if request.entity == entity)
+    scoped_ids = {request.request_id for request in scoped_requests}
+    scoped_plan = replace(
+        plan,
+        requests=scoped_requests,
+        constraints=tuple(
+            constraint
+            for constraint in plan.constraints
+            if set(constraint.request_ids).issubset(scoped_ids)
+        ),
+    )
+    left, right = scoped_requests
+    batches = {
+        left.request_id: CandidateBatch(
+            left.request_id,
+            (
+                _candidate(
+                    left,
+                    "left-wrong-period",
+                    "doc-shared",
+                    10.0,
+                    period="2024-06-30",
+                ),
+                _candidate(left, "left-closing", "doc-shared", 9.0),
+            ),
+            {},
+        ),
+        right.request_id: CandidateBatch(
+            right.request_id,
+            (_candidate(right, "right-closing", "doc-shared", 10.0),),
+            {},
+        ),
+    }
+
+    result = JointBinder().bind(scoped_plan, batches)
+
+    assert result.ok
+    selected = {
+        operand.candidate.observation_uid
+        for operand in result.bound_plan.operands.values()
+    }
+    assert selected == {"left-closing", "right-closing"}
+    assert result.bound_plan.total_score == 19.0
+
+
+def test_joint_binder_rejects_unknown_period_for_same_period_formula() -> None:
+    plan = _formula_plan()
+    entity = plan.requests[0].entity
+    scoped_requests = tuple(request for request in plan.requests if request.entity == entity)
+    scoped_ids = {request.request_id for request in scoped_requests}
+    scoped_plan = replace(
+        plan,
+        requests=scoped_requests,
+        constraints=tuple(
+            constraint
+            for constraint in plan.constraints
+            if set(constraint.request_ids).issubset(scoped_ids)
+        ),
+    )
+    left, right = scoped_requests
+    batches = {
+        left.request_id: CandidateBatch(
+            left.request_id,
+            (_candidate(left, "left-unknown", "doc-shared", 10.0, period=None),),
+            {},
+        ),
+        right.request_id: CandidateBatch(
+            right.request_id,
+            (_candidate(right, "right-unknown", "doc-shared", 10.0, period=None),),
+            {},
+        ),
+    }
+
+    result = JointBinder().bind(scoped_plan, batches)
+
+    assert not result.ok
+    assert result.reason == "NO_COHERENT_ASSIGNMENT"
 
 
 def test_joint_binder_fails_closed_when_any_operand_has_no_candidates() -> None:

@@ -111,6 +111,10 @@ def _constraints_hold(
         if constraint.kind == ConstraintKind.SAME_DOCUMENT:
             if len({candidate.document_id for candidate in selected}) != 1:
                 return False
+        elif constraint.kind == ConstraintKind.SAME_PERIOD:
+            periods = {candidate.period for candidate in selected}
+            if None in periods or len(periods) != 1:
+                return False
         elif constraint.kind == ConstraintKind.SAME_BASIS:
             if len({candidate.basis for candidate in selected}) != 1:
                 return False
