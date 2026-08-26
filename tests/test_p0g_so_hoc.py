@@ -282,7 +282,7 @@ def test_query_sinh_ra_chay_lai_dung_bang_answer():
 
         def __getitem__(self, k):
             if isinstance(k, list):
-                return DF([x for x, giu in zip(self.o, k) if giu])
+                return DF([x for x, giu in zip(self.o, k, strict=True) if giu])
             if k == "row_path":
                 return [x.row_path for x in self.o]
             if k == "col_label":
@@ -297,7 +297,7 @@ def test_query_sinh_ra_chay_lai_dung_bang_answer():
             return Cot2(x == other for x in self)   # phải trả Cot2 để `&` dùng được
 
         def __and__(self, other):
-            return Cot2(a and b for a, b in zip(self, other))
+            return Cot2(a and b for a, b in zip(self, other, strict=True))
 
         __hash__ = None
 

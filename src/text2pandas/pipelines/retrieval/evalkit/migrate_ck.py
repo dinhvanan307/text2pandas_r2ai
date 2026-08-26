@@ -141,7 +141,7 @@ def main(argv: list[str]) -> int:
         if len(v) > 1:
             print(f"\n✗ tag `{tag}` có {len(v)} tệp cùng đủ điều kiện — DỪNG, "
                   "không đoán tệp nào là đúng:")
-            for f, _, sc, _, n in v:
+            for f, _, _sc, _, n in v:
                 print(f"    {f.name}  ({n} câu)")
             return 2
         f, _, sha_cu, sha_moi, n = v[0]

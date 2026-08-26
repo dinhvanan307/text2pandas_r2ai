@@ -131,7 +131,7 @@ def test_cross_period_operation_rejects_metric_drift():
     cells = [money_cell("Doanh thu thuần", 100, 0, "2022"),
              money_cell("Chi phí lãi vay", 200, 1, "2023")]
     ops = [BoundOperand(VALUE, slot, cell, cell.native_quantity())
-           for slot, cell in zip(slots, cells)]
+           for slot, cell in zip(slots, cells, strict=True)]
 
     result = check_operand_policies(ir, ops)
 
@@ -144,7 +144,7 @@ def test_signed_extremum_abstains_until_sign_semantics_are_declared():
     cells = [money_cell("Giá vốn hàng bán", -100, 0, "2022"),
              money_cell("Giá vốn hàng bán", -200, 1, "2023")]
     ops = [BoundOperand(VALUE, slot, cell, cell.native_quantity())
-           for slot, cell in zip(slots, cells)]
+           for slot, cell in zip(slots, cells, strict=True)]
 
     result = check_operand_policies(ir, ops)
 

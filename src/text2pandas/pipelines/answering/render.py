@@ -147,7 +147,7 @@ def render(ir: OperationIR, operands: list[BoundOperand]) -> RenderResult:
         # Stable first-operand tie break. Every branch remains an expression and
         # references the same evidence values, so replay proves the ranking.
         body = f"float({int(periods[-1][:4])})"
-        for value, period in reversed(list(zip(values[:-1], periods[:-1]))):
+        for value, period in reversed(list(zip(values[:-1], periods[:-1], strict=True))):
             body = f"float({int(period[:4])} if {value} == {ranked} else {body})"
         return RenderResult("OK", body, per_operand_factor=factors, output_factor=1.0)
 

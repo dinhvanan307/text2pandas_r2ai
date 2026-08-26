@@ -169,7 +169,7 @@ def cmd_collect(cfg: EvalConfig, loop: bool, limit: int | None) -> int:
         return collect(ROOT, cfg, limit=limit)
     # Tự lặp: mỗi vòng tự dừng ở `budget_s`, vòng sau tiếp tục. Dùng khi chạy
     # trực tiếp trên máy không bị cắt tiến trình.
-    for i in range(200):
+    for _ in range(200):
         rc = collect(ROOT, cfg, limit=limit)
         if rc != 0:
             return rc

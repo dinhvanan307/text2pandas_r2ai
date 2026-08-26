@@ -28,6 +28,7 @@ and any of the three being unknown makes the result ``ABSTAIN``.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, replace
 from typing import Optional
 
@@ -175,7 +176,7 @@ def convert(quantity: Quantity, target: Unit) -> ConversionResult:
         out = float(v) * res.factor
     except (TypeError, ValueError):
         return _abstain(Reason.NON_FINITE_VALUE)
-    if out != out or out in (float("inf"), float("-inf")):
+    if not math.isfinite(out):
         return _abstain(Reason.NON_FINITE_VALUE)
     return ConversionResult(ConversionStatus.OK, factor=res.factor,
                             quantity=Quantity(out, target, quantity.provenance))

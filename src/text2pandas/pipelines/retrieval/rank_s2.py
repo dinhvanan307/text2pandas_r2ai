@@ -280,7 +280,7 @@ def rank(conn: sqlite3.Connection, cands: list[Candidate], match: str | None,
 
     bm = nf([raw.get(u, 0.0) for u in uids])
     out = []
-    for u, b in zip(uids, bm):
+    for u, b in zip(uids, bm, strict=True):
         c = by_uid[u]
         per = bool(period_ends and c.periods
                    and any(p in c.periods for p in period_ends))

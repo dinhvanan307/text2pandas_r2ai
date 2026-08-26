@@ -207,7 +207,7 @@ class SourceValidation:
         return {k: getattr(self, k) for k in self.__slots__}
 
 
-_ZW = "​‌‍⁠﻿­"
+_ZW = "\u200b\u200c\u200d\u2060\ufeff\u00ad"
 _PAGE_PREFIX = "===== PAGE "
 
 

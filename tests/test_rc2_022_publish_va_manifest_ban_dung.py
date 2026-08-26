@@ -139,7 +139,6 @@ def test_release_khong_duoc_de_build_id_unknown_di_qua():
     assert 'src_manifest.get("build_id", "unknown")' in rel
     cl = (ROOT / "src" / "text2pandas" / "pipelines" / "a6" / "cli.py").read_text(encoding="utf-8")
     i_guard = cl.index("_is_build_manifest(manifest")
-    i_call = cl.index("rep = build_release(", i_guard - 4000 if i_guard > 4000 else 0)
     assert i_guard < cl.index("build_release(src_silver=db"), \
         "chốt chặn phải đứng TRƯỚC lời gọi build_release"
 

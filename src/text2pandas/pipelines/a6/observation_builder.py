@@ -359,17 +359,23 @@ def build_silver_tables(
                 col = col_by_idx.get(cell.grid_col_idx)
                 row = row_by_idx.get(cell.grid_row_idx)
 
-                def _drop(reason: str, detail: str | None = None) -> None:
+                def _drop(
+                    reason: str,
+                    detail: str | None = None,
+                    *,
+                    _cell=cell,
+                    _table_uid=tbl_uid,
+                ) -> None:
                     """Ghi LÝ DO một ô có chữ số không thành observation.
 
                     Chỉ ghi ô CÓ CHỮ SỐ: ô chữ thuần không bao giờ là ứng viên
                     số liệu nên ghi lại chỉ làm phình bảng audit.
                     """
-                    if _HAS_DIGIT.search(cell.text_clean or ""):
+                    if _HAS_DIGIT.search(_cell.text_clean or ""):
                         buf_drop.append((
-                            cell.source_cell_uid, tbl_uid, cell.grid_row_idx,
-                            cell.grid_col_idx, reason, detail,
-                            (cell.text_clean or "")[:120]))
+                            _cell.source_cell_uid, _table_uid, _cell.grid_row_idx,
+                            _cell.grid_col_idx, reason, detail,
+                            (_cell.text_clean or "")[:120]))
 
                 if col is None or row is None:
                     _drop("no_structure")

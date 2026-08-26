@@ -38,8 +38,8 @@ paths-check: ## In repository/data/artifact roots và kiểm active snapshot con
 	@test -f configs/datasets/active_snapshot.yaml
 	@$(PY) -c 'from text2pandas.infrastructure.paths import ProjectPaths; p=ProjectPaths.discover(); print("repo_root="+str(p.repo_root)); print("data_root="+str(p.data_root)); print("artifact_root="+str(p.artifact_root)); print("active_snapshot="+str(p.active_snapshot_config))'
 
-lint: ## Static gate cho syntax/import/undefined names
-	@$(PY) -m ruff check --select E9,F63,F7,F82 src tests
+lint: ## Correctness-oriented static gate (syntax, names, closure and finite-value traps)
+	@$(PY) -m ruff check --select E9,F63,F7,F82,B,PLR0124,PLE2515,F841 src tests
 
 typecheck: ## Strict mypy cho production architecture (domain/application/infrastructure/interface)
 	@$(PY) -m mypy src/text2pandas/domain src/text2pandas/application \

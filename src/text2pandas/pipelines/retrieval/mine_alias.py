@@ -39,7 +39,7 @@ _KHUNG = {
     "gia", "tong", "chenh", "so", "ty", "he", "loi", "doanh", "ket", "du",
     "hang", "khoan", "no", "von", "chi", "thu", "tien", "luu", "bao", "cong",
     "neu", "khi", "moi", "hay", "xin", "cau", "hoi", "den", "tu", "va", "cac",
-    "kinh", "quy", "dau", "cuoi", "muc", "phan", "tram", "trieu", "nghin",
+    "kinh", "quy", "dau", "muc", "phan", "tram", "trieu", "nghin",
     "dong", "lan", "bao nhieu", "la", "cua", "co", "nhom", "giai", "doan",
     "cp", "ctcp", "tmcp", "tnhh", "cfo", "var", "ebit", "ebitda", "roa", "roe",
 }

@@ -549,7 +549,7 @@ def _build_cards(conn, log: _Log) -> int:
 
     out = []
     for (tuid, doc_id, loc, ticker, year, stype, section, ctx,
-         nr, nc, pstatus, qflags) in rows:
+         nr, nc, _pstatus, qflags) in rows:
         rt = (agg_row.get(tuid) or "")[:_MAX_TERMS]
         ct = (agg_col.get(tuid) or "")[:_MAX_TERMS]
         codes = agg_code.get(tuid) or ""
@@ -636,9 +636,9 @@ def _export_frames(db: Path, out: Path, log: _Log) -> dict[str, dict]:
     try:
         import pyarrow as pa
         import pyarrow.parquet as pq
-    except ImportError:  # pragma: no cover
+    except ImportError as error:  # pragma: no cover
         raise SystemExit(
-            "Thiếu pyarrow. Cài: pip install pyarrow --break-system-packages")
+            "Thiếu pyarrow. Cài: pip install pyarrow --break-system-packages") from error
 
     csv_dir, pq_dir = out / "dataframe" / "csv", out / "dataframe" / "parquet"
     csv_dir.mkdir(parents=True, exist_ok=True)
