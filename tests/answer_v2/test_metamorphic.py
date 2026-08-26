@@ -53,7 +53,7 @@ def _render(fid, vals):
 BASE = {"total_liabilities": 300.0, "equity": 150.0, "total_assets": 500.0,
         "current_assets": 200.0, "current_liabilities": 100.0, "inventory": 50.0,
         "gross_profit": 40.0, "net_revenue": 200.0, "profit_after_tax": 20.0,
-        "selling_expense": 10.0, "admin_expense": 5.0}
+        "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0}
 
 
 @ca("MM1 · nhân MỌI lá tiền ×1000 ⇒ mọi formula wave 1 BẤT BIẾN")
@@ -83,11 +83,17 @@ def _():
         assert b >= a - 1e-12, f"{fid}: {b} < {a}"
 
 
-@ca("MM4 · sga_intensity: đảo DẤU chi phí không đổi kết quả (sign_policy abs)")
+@ca("MM4 · expense intensities: đảo DẤU chi phí không đổi kết quả")
 def _():
-    a = _render("sga_intensity", BASE)
-    b = _render("sga_intensity", {**BASE, "selling_expense": -BASE["selling_expense"]})
-    assert abs(a - b) < 1e-9
+    for fid, metric in (
+        ("sga_intensity", "selling_expense"),
+        ("admin_expense_intensity", "admin_expense"),
+        ("selling_expense_intensity", "selling_expense"),
+        ("cogs_intensity", "cogs"),
+    ):
+        a = _render(fid, BASE)
+        b = _render(fid, {**BASE, metric: -BASE[metric]})
+        assert abs(a - b) < 1e-9, fid
 
 
 @ca("MM5 · quick_ratio ≤ current_ratio khi tồn kho ≥ 0")

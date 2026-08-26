@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Formula reference tests — 8 formula × 8 ca = 64. Gate G1 đòi 100%.
+"""Formula reference tests — 11 formula × 8 ca = 88. Gate G1 đòi 100%.
 
 Tám ca cho MỖI formula (doc 145 §9):
     3 normal · zero denominator · negative denominator · missing operand ·
@@ -31,15 +31,15 @@ NORMAL = [
     {"total_liabilities": 300.0, "equity": 150.0, "total_assets": 500.0,
      "current_assets": 200.0, "current_liabilities": 100.0, "inventory": 50.0,
      "gross_profit": 40.0, "net_revenue": 200.0, "profit_after_tax": 20.0,
-     "selling_expense": 10.0, "admin_expense": 5.0},
+     "selling_expense": 10.0, "admin_expense": 5.0, "cogs": 120.0},
     {"total_liabilities": 900.0, "equity": 300.0, "total_assets": 1200.0,
      "current_assets": 600.0, "current_liabilities": 400.0, "inventory": 100.0,
      "gross_profit": 150.0, "net_revenue": 1000.0, "profit_after_tax": -50.0,
-     "selling_expense": -30.0, "admin_expense": 20.0},
+     "selling_expense": -30.0, "admin_expense": 20.0, "cogs": -700.0},
     {"total_liabilities": 1.0, "equity": 4.0, "total_assets": 5.0,
      "current_assets": 3.0, "current_liabilities": 3.0, "inventory": 0.0,
      "gross_profit": 0.0, "net_revenue": 7.0, "profit_after_tax": 7.0,
-     "selling_expense": 1.0, "admin_expense": 1.0},
+     "selling_expense": 1.0, "admin_expense": 1.0, "cogs": 0.0},
 ]
 
 MONG_DOI = {
@@ -52,6 +52,11 @@ MONG_DOI = {
     "inventory_to_assets": lambda v: v["inventory"] / v["total_assets"] * 100.0,
     "sga_intensity": lambda v: (abs(v["selling_expense"]) + abs(v["admin_expense"]))
                                / v["net_revenue"] * 100.0,
+    "admin_expense_intensity": lambda v: abs(v["admin_expense"])
+                                         / v["net_revenue"] * 100.0,
+    "selling_expense_intensity": lambda v: abs(v["selling_expense"])
+                                           / v["net_revenue"] * 100.0,
+    "cogs_intensity": lambda v: abs(v["cogs"]) / v["net_revenue"] * 100.0,
 }
 
 # Lá nằm ở MẪU SỐ của từng formula — dùng cho ca zero/negative denominator.
@@ -60,6 +65,8 @@ MAU = {
     "current_ratio": "current_liabilities", "quick_ratio": "current_liabilities",
     "gross_margin": "net_revenue", "net_margin": "net_revenue",
     "inventory_to_assets": "total_assets", "sga_intensity": "net_revenue",
+    "admin_expense_intensity": "net_revenue",
+    "selling_expense_intensity": "net_revenue", "cogs_intensity": "net_revenue",
 }
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))

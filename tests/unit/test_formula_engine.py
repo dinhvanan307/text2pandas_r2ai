@@ -58,7 +58,7 @@ def _frames(cells: list[CandidateCell]) -> dict[str, pd.DataFrame]:
 def test_registry_only_loads_reviewed_formulas() -> None:
     formulas, metrics = load_registry()
 
-    assert len(formulas) == 8
+    assert len(formulas) == 11
     assert "quick_ratio" in formulas
     assert "roe" not in formulas
     assert set(formulas["quick_ratio"].leaves) <= set(metrics)
@@ -114,6 +114,49 @@ def test_quick_ratio_and_net_margin_support_nested_expression_nodes() -> None:
 
     assert quick is not None and quick.answer == pytest.approx(1.5)
     assert margin is not None and margin.answer == pytest.approx(20.0)
+
+
+@pytest.mark.parametrize(
+    ("question", "expense_label", "expected_formula"),
+    [
+        (
+            "Tỷ lệ chi phí quản lý doanh nghiệp trên doanh thu thuần là bao nhiêu %?",
+            "Chi phí quản lý doanh nghiệp",
+            "admin_expense_intensity",
+        ),
+        (
+            "Tỷ lệ chi phí bán hàng trên doanh thu thuần là bao nhiêu %?",
+            "Chi phí bán hàng",
+            "selling_expense_intensity",
+        ),
+        (
+            "Tỷ lệ giá vốn hàng bán trên doanh thu thuần là bao nhiêu %?",
+            "Giá vốn hàng bán",
+            "cogs_intensity",
+        ),
+    ],
+)
+def test_reviewed_expense_intensities_execute_with_absolute_numerator(
+    question: str,
+    expense_label: str,
+    expected_formula: str,
+) -> None:
+    cells = [_cell(expense_label, -25, 0), _cell("Doanh thu thuần", 100, 1)]
+
+    result = answer_formula_question(
+        question,
+        cells,
+        _frames(cells),
+        entity="HPG",
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(PERCENT),
+    )
+
+    assert result is not None and result.ok
+    assert result.formula_id == expected_formula
+    assert result.answer == pytest.approx(25.0)
+    assert "abs(" in result.query
 
 
 def test_formula_engine_fails_closed_on_scope_period_and_forbidden_child_metric() -> None:

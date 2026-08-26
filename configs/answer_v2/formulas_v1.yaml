@@ -1,6 +1,6 @@
 # formula_registry wave 1 — AG1_R2_FORMULA
 #
-# 8 formula SAFE. ROE/ROA/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
+# 11 formula SAFE. ROE/ROA/interest_coverage/CAGR/working_capital KHÔNG có ở đây:
 # chúng thuộc nhóm NEEDS DOMAIN CONFIRMATION (biến thể cuối kỳ vs bình quân,
 # EBIT vs LNTT+lãi vay) — đưa vào deterministic registry khi chưa phân xử sẽ tạo
 # sai số CÓ HỆ THỐNG trên toàn bộ lớp câu, tệ hơn là không trả lời.
@@ -162,6 +162,63 @@ formulas:
           right:
             node: Abs
             child: {node: FactRef, metric_id: admin_expense}
+        den: {node: FactRef, metric_id: net_revenue}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: admin_expense_intensity
+    variant_id: default
+    aliases: ["ty le chi phi quan ly doanh nghiep tren doanh thu thuan"]
+    leaves: [admin_expense, net_revenue]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num:
+          node: Abs
+          child: {node: FactRef, metric_id: admin_expense}
+        den: {node: FactRef, metric_id: net_revenue}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: selling_expense_intensity
+    variant_id: default
+    aliases: ["ty le chi phi ban hang tren doanh thu thuan"]
+    leaves: [selling_expense, net_revenue]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num:
+          node: Abs
+          child: {node: FactRef, metric_id: selling_expense}
+        den: {node: FactRef, metric_id: net_revenue}
+      right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
+
+  - formula_id: cogs_intensity
+    variant_id: default
+    aliases: ["ty le gia von hang ban tren doanh thu thuan"]
+    leaves: [cogs, net_revenue]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Multiply
+      left:
+        node: Divide
+        num:
+          node: Abs
+          child: {node: FactRef, metric_id: cogs}
         den: {node: FactRef, metric_id: net_revenue}
       right: {node: Literal, value: 100.0, kind: scalar, source: formula_constant}
 
