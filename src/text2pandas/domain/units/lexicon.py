@@ -108,8 +108,18 @@ _PERCENT_POINT = re.compile(r"đi[ểe]m\s*(?:ph[ầa]n\s*tr[ăa]m" + _RB + r"|%
 _PERCENT = re.compile(r"(%|phần\s*trăm" + _RB + r")")
 _RATIO = re.compile(r"(?:l[ầa]n|h[ệe]\s*s[ốo]|t[ỷy]\s*l[ệe]|t[ỷy]\s*tr[ọo]ng|t[ỷy]\s*su[ấa]t)" + _RB)
 _SHARES = re.compile(r"(?:c[ổo]\s*phi[ếe]u|shares?)" + _RB)
+_SHARE_SCALE = [
+    (re.compile(r"t[ỷy]\s+(?:c[ổo]\s*phi[ếe]u|shares?)" + _RB), 9),
+    (re.compile(r"tri[ệe]u\s+(?:c[ổo]\s*phi[ếe]u|shares?)" + _RB), 6),
+    (re.compile(r"ngh[ìi]n\s+(?:c[ổo]\s*phi[ếe]u|shares?)" + _RB), 3),
+]
 _COUNT = re.compile(r"(?:s[ốo]\s*l[ưu][ợo]ng|s[ốo]\s*ng[ưu][ờo]i|nh[âa]n\s*vi[êe]n)" + _RB)
 _QUESTION_SHARES = re.compile(r"(?:c[ổo]\s*phi[ếe]u|c[ổo]\s*ph[ầa]n)" + _RB)
+_QUESTION_SHARE_SCALE = [
+    (re.compile(r"t[ỷy]\s+(?:c[ổo]\s*phi[ếe]u|c[ổo]\s*ph[ầa]n)" + _RB), 9),
+    (re.compile(r"tri[ệe]u\s+(?:c[ổo]\s*phi[ếe]u|c[ổo]\s*ph[ầa]n)" + _RB), 6),
+    (re.compile(r"ngh[ìi]n\s+(?:c[ổo]\s*phi[ếe]u|c[ổo]\s*ph[ầa]n)" + _RB), 3),
+]
 _QUESTION_COUNT = re.compile(
     r"(?:n[ăa]m|c[ôo]ng\s*ty|doanh\s*nghi[ệe]p|m[ãa]|đ[ơo]n\s*v[ịi])" + _RB
 )
@@ -121,8 +131,9 @@ _SHARE_COUNT_SUBJECT = re.compile(
 def scan_unit(text: str):
     """Return ``(dimension, scale_exponent|None, matched_token|None)``.
 
-    ``scale_exponent`` is only meaningful for MONEY (power of ten over VND).
-    Precedence: PERCENT > MONEY > SHARES > RATIO > COUNT > UNKNOWN.
+    ``scale_exponent`` is meaningful for MONEY (power of ten over VND) and
+    SHARES (power of ten over one share).
+    Precedence: PERCENT > scaled SHARES > MONEY > SHARES > RATIO > COUNT > UNKNOWN.
 
     MONEY outranks SHARES on purpose: a column headed
     "Cổ phiếu phổ thông tính theo mệnh giá Triệu đồng" carries *money*, the
@@ -137,6 +148,10 @@ def scan_unit(text: str):
     m = _PERCENT.search(t)
     if m:
         return PERCENT, None, m.group(0)
+    for pat, exp in _SHARE_SCALE:
+        m = pat.search(t)
+        if m:
+            return SHARES, exp, m.group(0)
     for pat, exp in _MONEY_SCALE:
         m = pat.search(t)
         if m:
@@ -146,7 +161,7 @@ def scan_unit(text: str):
         return MONEY, 9, m.group(0)
     m = _SHARES.search(t)
     if m:
-        return SHARES, None, m.group(0)
+        return SHARES, 0, m.group(0)
     m = _RATIO.search(t)
     if m:
         return RATIO, None, m.group(0)
@@ -183,18 +198,26 @@ def scan_question_unit(question: str):
         m = pat.search(t)
         if not m:
             continue
-        dim, exp, tok = scan_unit(m.group("tail"))
+        tail = m.group("tail")
+        scaled_share = next(
+            ((exp, match.group(0)) for share_pattern, exp in _QUESTION_SHARE_SCALE
+             if (match := share_pattern.search(tail))),
+            None,
+        )
+        if scaled_share:
+            return SHARES, scaled_share[0], scaled_share[1]
+        dim, exp, tok = scan_unit(tail)
         if dim != UNKNOWN:
             return dim, exp, tok
         share = _QUESTION_SHARES.search(m.group("tail"))
         if share:
-            return SHARES, None, share.group(0)
+            return SHARES, 0, share.group(0)
         count = _QUESTION_COUNT.search(m.group("tail"))
         if count:
             return COUNT, None, count.group(0)
     share_subject = _SHARE_COUNT_SUBJECT.search(t)
     if share_subject:
-        return SHARES, None, share_subject.group(0)
+        return SHARES, 0, share_subject.group(0)
     m = _PERCENT_POINT.search(t)
     if m:
         return PERCENT_POINT, None, m.group(0)

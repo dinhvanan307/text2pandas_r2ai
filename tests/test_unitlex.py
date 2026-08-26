@@ -58,7 +58,7 @@ def test_parse_raw_rejects(raw, status):
     ("Trăm tỷ đồng", MONEY, 11),
     ("%", PERCENT, None),
     ("Tỷ lệ phần trăm", PERCENT, None),
-    ("Cổ phiếu phổ thông", SHARES, None),
+    ("Cổ phiếu phổ thông", SHARES, 0),
     ("Số lượng", COUNT, None),
     ("Hệ số", RATIO, None),
 ])
@@ -113,7 +113,8 @@ def test_von_dieu_le_question_is_money_million():
     ("Doanh thu thuần năm 2023 là bao nhiêu tỷ đồng?", MONEY, 9),
     ("Lợi nhuận sau thuế năm 2022 là bao nhiêu triệu đồng?", MONEY, 6),
     ("Tỷ lệ nợ xấu cuối năm 2023 là bao nhiêu %?", PERCENT, None),
-    ("Số lượng cổ phiếu đang lưu hành là bao nhiêu cổ phiếu?", SHARES, None),
+    ("Số lượng cổ phiếu đang lưu hành là bao nhiêu cổ phiếu?", SHARES, 0),
+    ("Số lượng cổ phiếu đang lưu hành là bao nhiêu triệu cổ phiếu?", SHARES, 6),
 ])
 def test_scan_question_unit(q, dim, exp):
     d, e, _ = scan_question_unit(q)
@@ -125,8 +126,8 @@ def test_scan_question_unit(q, dim, exp):
     ("Doanh thu là mấy trăm tỷ đồng?", MONEY, 11),
     ("Tính biến động số dư (triệu đồng).", MONEY, 6),
     ("Tính kết quả theo đơn vị nghìn tỷ đồng.", MONEY, 12),
-    ("Số lượng cổ phiếu đang lưu hành cuối năm là bao nhiêu?", SHARES, None),
-    ("Tổng số lượng cổ phần là bao nhiêu cổ phần?", SHARES, None),
+    ("Số lượng cổ phiếu đang lưu hành cuối năm là bao nhiêu?", SHARES, 0),
+    ("Tổng số lượng cổ phần là bao nhiêu cổ phần?", SHARES, 0),
     ("Có bao nhiêu năm ghi nhận lợi nhuận dương?", COUNT, None),
 ])
 def test_scan_question_unit_corpus_phrasings(q, dim, exp):

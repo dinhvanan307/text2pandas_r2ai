@@ -31,6 +31,9 @@ Updated: 2026-08-26
 - Entity resolver giữ full legal-name evidence khi short brand bị nested trong
   tên counterparty, nhận diện `hiệu số` là comparison; coverage không còn đánh
   tráo 11 câu multi-entity và 1 select-at-arg thành alias mismatch.
+- Typed absolute difference cho đúng 2 entity, 1 kỳ và 1 metric với distinct
+  evidence, same-metric policy, reviewed cross-label aliases và share-count
+  scaling (`nghìn/triệu/tỷ cổ phiếu`).
 - Static semantic coverage contract cho đủ 1.012 câu, có corpus digest, per-QID
   reason code, CLI/Make entry point và CI baseline. Scope được ghi rõ là route
   coverage, không đánh tráo với retrieval/binding/answer accuracy.
@@ -50,7 +53,7 @@ Updated: 2026-08-26
 ## Current gates
 
 - Offline: green.
-- Static semantic route: `581/1.012` eligible (`57,4111%`), `431` named gaps;
+- Static semantic route: `624/1.012` eligible (`61,6601%`), `388` named gaps;
   baseline được khóa trong offline suite.
 - Raw/A6/retrieval identity and lineage: green for the active local snapshots.
 - H0 materialized integration: green trên active local materialization (`22/22`).

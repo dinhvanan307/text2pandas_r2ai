@@ -46,7 +46,7 @@ UNKNOWN = "UNKNOWN"
 DIMENSIONS = (MONEY, PERCENT, PERCENT_POINT, RATIO, COUNT, SHARES, UNKNOWN)
 
 #: dimensions whose magnitude is expressed as a power of ten over a base unit
-SCALED_DIMENSIONS = frozenset({MONEY})
+SCALED_DIMENSIONS = frozenset({MONEY, SHARES})
 
 #: (source, target) pairs a conversion is allowed to cross.
 #: PERCENT<->RATIO is the single deliberate cross-dimension pair: a growth rate

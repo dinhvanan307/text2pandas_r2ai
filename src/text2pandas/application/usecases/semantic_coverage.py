@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 from text2pandas.pipelines.answering.adapters import requested_unit_of
 from text2pandas.pipelines.answering.count_engine import classify_count_predicate
+from text2pandas.pipelines.answering.entity_difference import is_typed_entity_difference
 from text2pandas.pipelines.answering.formula_engine import match_formula
 from text2pandas.pipelines.answering.frame import classify_operation, parse_question
 from text2pandas.pipelines.answering.ir import DIVIDE, LOOKUP
@@ -126,6 +127,29 @@ def _classify(
     operation = classify_operation(question)
     formula = match_formula(question)
     formula_id = formula.formula_id if formula else None
+    requested_unit = requested_unit_of(question)
+    entity_gold_compatible = (
+        expected_entities is None
+        or len(expected_entities) == 1
+        or (
+            len(expected_entities) == 2
+            and set(intent.targets) == set(expected_entities)
+        )
+    )
+    if entity_gold_compatible and is_typed_entity_difference(
+        question,
+        intent.targets,
+        intent.years,
+        requested_unit,
+        mode=intent.mode,
+    ):
+        return CoverageRecord(
+            qid,
+            operation.op,
+            None,
+            ELIGIBLE,
+            "ELIGIBLE_TYPED_ENTITY_DIFFERENCE",
+        )
     if expected_entities is not None and len(expected_entities) != 1:
         return CoverageRecord(
             qid,
@@ -168,7 +192,6 @@ def _classify(
             f"ANSWER_REQUIRES_SINGLE_ENTITY:found={len(intent.targets)}",
         )
 
-    requested_unit = requested_unit_of(question)
     count_predicate, count_reason = classify_count_predicate(question)
     if count_predicate is not None:
         return CoverageRecord(

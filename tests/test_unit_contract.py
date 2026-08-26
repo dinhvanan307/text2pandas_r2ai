@@ -48,11 +48,19 @@ def test_currency_mismatch_abstains():
     assert not r.ok and r.reason == Reason.CURRENCY_MISMATCH
 
 
-# ------------------------------------------------------ non-scaled dimensions
-@pytest.mark.parametrize("dim", [PERCENT, RATIO, COUNT, SHARES])
+# --------------------------------------------- non-scaled/scaled dimensions
+@pytest.mark.parametrize("dim", [PERCENT, RATIO, COUNT])
 def test_identity_dimensions(dim):
     r = conversion_factor(Unit(dim), Unit(dim))
     assert r.ok and r.factor == 1.0
+
+
+def test_share_quantities_require_and_convert_declared_scale():
+    converted = conversion_factor(Unit(SHARES, 0), Unit(SHARES, 6))
+    missing = conversion_factor(Unit(SHARES), Unit(SHARES, 6))
+
+    assert converted.ok and converted.factor == pytest.approx(1e-6)
+    assert missing.reason == Reason.MISSING_SOURCE_SCALE
 
 
 def test_percent_ratio_is_the_only_declared_cross_pair():
