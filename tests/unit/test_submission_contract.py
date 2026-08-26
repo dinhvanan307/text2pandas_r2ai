@@ -74,6 +74,31 @@ def test_submission_zip_is_deterministic_and_strictly_valid(tmp_path: Path) -> N
     }
 
 
+def test_validator_accepts_canonical_document_without_basis_suffix(tmp_path: Path) -> None:
+    doc = "FTS_financial_statements_2024"
+    corpus = tmp_path / "corpus"
+    target = corpus / "FTS" / "2024" / doc
+    target.mkdir(parents=True)
+    (target / f"{doc}_extracted.txt").write_text(
+        "page header\n<table>\n<tr><td>Doanh thu</td></tr>\n</table>\n",
+        encoding="utf-8",
+    )
+    result = _result()
+    result.relevant_docs = [doc]
+    result.relevant_tables = [f"{doc}|2"]
+    output = tmp_path / "no-basis"
+    (output / "data").mkdir(parents=True)
+    (output / "data" / "table.csv").write_text(
+        "row_path,col_label,value\nDoanh thu,2023 VND,5.0\n",
+        encoding="utf-8",
+    )
+    archive = build_submission([result], {1: QUESTION}, output, SubmissionConfig())
+
+    report = validate_zip(archive, {1: QUESTION}, corpus_root=corpus)
+
+    assert report.ok, report.errors
+
+
 def test_validator_rejects_contract_and_grounding_defects(tmp_path: Path) -> None:
     record = {
         "id": 2,

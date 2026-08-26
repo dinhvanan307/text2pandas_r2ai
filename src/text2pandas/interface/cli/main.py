@@ -308,10 +308,14 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_package(args: argparse.Namespace) -> int:
-    """Gộp records.jsonl đã lưu thành ZIP, kiểm tra và chạy lại."""
+    """Re-package one immutable canonical run, then validate and replay it."""
     import json
 
     from text2pandas.application.usecases.answer import AnswerResult
+    from text2pandas.application.usecases.run_manifest import (
+        submission_manifest,
+        write_manifest,
+    )
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
@@ -319,10 +323,13 @@ def cmd_package(args: argparse.Namespace) -> int:
         validate_zip,
     )
 
-    stage = SCRATCH / "stage"
+    stage = PROJECT_PATHS.run_dir("answer", args.run_id)
     records_path = stage / "records.jsonl"
     if not records_path.exists():
-        print("LỖI: chưa có records.jsonl — chạy `run` trước", file=sys.stderr)
+        print(
+            f"LỖI: run {args.run_id!r} không có records.jsonl — chạy `run` trước",
+            file=sys.stderr,
+        )
         return 2
 
     seen: dict[int, AnswerResult] = {}
@@ -330,11 +337,14 @@ def cmd_package(args: argparse.Namespace) -> int:
         if not line.strip():
             continue
         r = json.loads(line)
+        evidence = r.get("evidence") or []
         seen[r["qid"]] = AnswerResult(
             qid=r["qid"], answer=r["answer"], relevant_docs=r["relevant_docs"],
-            relevant_tables=r["relevant_tables"], evidence=r["evidence"],
+            relevant_tables=r["relevant_tables"], evidence=evidence,
             pandas_query=r["pandas_query"], confidence=r["confidence"],
-            csv_name=r["csv_name"], has_csv=r["has_csv"], notes=r["notes"],
+            csv_name=(Path(evidence[0]["csv_path"]).name if evidence else ""),
+            has_csv=bool(evidence),
+            notes=([r["reason"]] if r.get("reason") else []),
         )
     results = [seen[k] for k in sorted(seen)]
 
@@ -345,15 +355,15 @@ def cmd_package(args: argparse.Namespace) -> int:
             questions[r["id"]] = r["question"]
 
     cfg = SubmissionConfig(doc_id_variant=args.doc_id, locator_base=args.locator_base)
-    out = SCRATCH / f"submission_{cfg.doc_id_variant}_{cfg.locator_base}"
-    if out.exists():
-        import shutil as _sh
-        _sh.rmtree(out)
-    out.mkdir(parents=True)
+    out = stage / f"package-{cfg.doc_id_variant}-{cfg.locator_base}"
+    try:
+        out.mkdir(parents=True)
+    except FileExistsError as error:
+        raise BuildSafetyError(f"immutable package stage already exists: {out}") from error
     (out / "data").mkdir()
-    import shutil as _sh2
-    for f in (stage / "data").iterdir():
-        _sh2.copy2(f, out / "data" / f.name)
+    for source in (stage / "data").iterdir():
+        if source.is_file() and source.suffix.lower() == ".csv":
+            shutil.copy2(source, out / "data" / source.name)
 
     zip_path = build_submission(results, questions, out, cfg)
     val = validate_zip(zip_path, questions, corpus_root=CORPUS)
@@ -366,11 +376,33 @@ def cmd_package(args: argparse.Namespace) -> int:
     print(f"  replay    : chạy được {stat['executed']:,} · khớp {stat['matched']:,} · lỗi {stat['error']:,} · không evidence {stat['no_evidence']:,}")
     if stat["executed"]:
         print(f"  bất biến answer == eval(query): {100*stat['matched']/stat['executed']:.2f}%")
-    SUBMIT_DIR.mkdir(parents=True, exist_ok=True)
-    _publish(zip_path, SUBMIT_DIR / zip_path.name)
-    published = SUBMIT_DIR / zip_path.name
-    print(f"  ZIP       : {published.relative_to(ROOT)}  ({zip_path.stat().st_size/1e6:.2f} MB)")
-    return 0 if val.ok else 1
+    package_ok = val.ok and stat["error"] == 0 and stat["matched"] == stat["executed"]
+    published = None
+    if package_ok:
+        published = SUBMIT_DIR / f"submission_{args.run_id}.zip"
+        publish_new_file(zip_path, published)
+        print(
+            f"  ZIP       : {published.relative_to(ROOT)}  "
+            f"({zip_path.stat().st_size/1e6:.2f} MB)"
+        )
+    else:
+        print("  CHẶN PUBLISH: submission chưa qua validator/replay", file=sys.stderr)
+
+    manifest_path = stage / f"submission_manifest_{cfg.doc_id_variant}_{cfg.locator_base}.json"
+    write_manifest(
+        manifest_path,
+        submission_manifest(
+            PROJECT_PATHS,
+            args.run_id,
+            stage / "manifest.json",
+            zip_path,
+            published,
+            val,
+            stat,
+        ),
+    )
+    print(f"  manifest  : {manifest_path.relative_to(ROOT)}")
+    return 0 if package_ok else 1
 
 
 
@@ -494,6 +526,7 @@ def main(argv: list[str] | None = None) -> int:
     rn.add_argument("--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped")
     rn.add_argument("--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1)
     pk = sub.add_parser("package", help="Gộp bản ghi đã lưu -> ZIP + kiểm tra + replay")
+    pk.add_argument("--run-id", required=True)
     pk.add_argument("--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped")
     pk.add_argument("--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1)
     pc = sub.add_parser("parse-check", help="Parse thử bảng, thống kê chất lượng")

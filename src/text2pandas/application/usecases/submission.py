@@ -330,7 +330,13 @@ def _validate_document(
     canonical = doc_id.removesuffix("_extracted")
     if canonical in cache:
         return cache[canonical]
-    match = re.match(r"^(?P<ticker>[^_]+)_financial_statements_(?P<year>\d{4})_", canonical)
+    # Basis is genuinely absent from a small, valid corpus slice (for
+    # example FTS/HND and VPB in some years).  Accept both the common
+    # ``..._<year>_<basis>`` form and the canonical ``..._<year>`` form.
+    match = re.match(
+        r"^(?P<ticker>[^_]+)_financial_statements_(?P<year>\d{4})(?:_|$)",
+        canonical,
+    )
     if not match:
         report.errors.append(f"C20 {tag}: document id sai định dạng: {doc_id!r}")
         cache[canonical] = None
