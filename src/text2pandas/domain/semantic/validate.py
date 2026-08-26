@@ -13,6 +13,7 @@ from .ast import (
     Exists,
     Expression,
     Filter,
+    FormulaCall,
     Literal,
     LogicalPredicate,
     MetricRef,
@@ -81,6 +82,11 @@ def _validate_expression(expression: Expression, path: str, issues: list[Semanti
     if isinstance(expression, Unary):
         _validate_expression(expression.expression, f"{path}.expression", issues)
         return
+    if isinstance(expression, FormulaCall):
+        if not expression.formula_id.strip():
+            issues.append(_issue(path, "EMPTY_FORMULA_ID", "formula_id must not be empty"))
+        _validate_expression(expression.expression, f"{path}.expression", issues)
+        return
     if isinstance(expression, Aggregate):
         if len(expression.members) < 2:
             issues.append(_issue(path, "AGGREGATE_ARITY", "aggregate requires at least two members"))
@@ -141,6 +147,8 @@ def _references_axis(expression: Expression, axis: Axis) -> bool:
     if isinstance(expression, Arithmetic):
         return _references_axis(expression.left, axis) or _references_axis(expression.right, axis)
     if isinstance(expression, Unary):
+        return _references_axis(expression.expression, axis)
+    if isinstance(expression, FormulaCall):
         return _references_axis(expression.expression, axis)
     if isinstance(expression, Aggregate):
         return expression.axis == axis or _references_axis(expression.expression, axis)

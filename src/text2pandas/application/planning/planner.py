@@ -1,0 +1,154 @@
+"""Expand semantic metric references into independently retrievable operands."""
+
+from __future__ import annotations
+
+import hashlib
+from collections import defaultdict
+from dataclasses import dataclass, field
+from itertools import product
+
+from text2pandas.domain.metrics import MetricOntology
+from text2pandas.domain.semantic import (
+    Aggregate,
+    Arithmetic,
+    Filter,
+    FormulaCall,
+    Literal,
+    MetricRef,
+    QuestionAST,
+    Rank,
+    SelectAtArg,
+    Unary,
+)
+from text2pandas.domain.semantic.ast import Expression
+
+from .contracts import BindingConstraint, ConstraintKind, ExecutionPlan, OperandRequest
+
+
+class PlanningError(ValueError):
+    pass
+
+
+@dataclass(slots=True)
+class _RequestAccumulator:
+    metric_id: str
+    entity: str | None
+    period: str | None
+    ref: MetricRef
+    consumers: list[str] = field(default_factory=list)
+
+
+def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> ExecutionPlan:
+    requests: dict[tuple[object, ...], _RequestAccumulator] = {}
+    formula_scopes: list[tuple[str, set[tuple[object, ...]]]] = []
+    _collect(ast.expression, "$.expression", requests, formula_scopes)
+    if not requests:
+        raise PlanningError("semantic expression contains no metric operands")
+
+    materialized: dict[tuple[object, ...], OperandRequest] = {}
+    for key, item in sorted(requests.items(), key=lambda value: repr(value[0])):
+        metric = ontology.metrics.get(item.metric_id)
+        if metric is None:
+            raise PlanningError(f"unknown ontology metric: {item.metric_id}")
+        request_id = _request_id(key)
+        materialized[key] = OperandRequest(
+            request_id=request_id,
+            metric_id=item.metric_id,
+            entity=item.entity,
+            period=item.period,
+            basis=item.ref.basis,
+            preferred_basis=metric.preferred_basis,
+            statement_types=item.ref.statement_types or metric.statement_types,
+            expected_unit=item.ref.expected_unit or metric.unit,
+            period_semantics=(
+                item.ref.period_semantics
+                if item.ref.period_semantics.value != "unknown"
+                else metric.period_semantics
+            ),
+            qualifiers=item.ref.qualifiers,
+            consumers=tuple(sorted(item.consumers)),
+        )
+
+    constraints: list[BindingConstraint] = []
+    for formula_id, keys in formula_scopes:
+        by_scope: dict[tuple[str | None, str | None], list[str]] = defaultdict(list)
+        for key in keys:
+            request = materialized[key]
+            by_scope[(request.entity, request.period)].append(request.request_id)
+        for scope, request_ids in sorted(by_scope.items(), key=lambda value: repr(value[0])):
+            unique = tuple(sorted(set(request_ids)))
+            if len(unique) < 2:
+                continue
+            reason = f"reviewed_formula:{formula_id}:scope={scope[0]}:{scope[1]}"
+            constraints.extend(
+                (
+                    BindingConstraint(ConstraintKind.SAME_DOCUMENT, unique, reason),
+                    BindingConstraint(ConstraintKind.SAME_CURRENCY, unique, reason),
+                    BindingConstraint(ConstraintKind.DISTINCT_OBSERVATIONS, unique, reason),
+                )
+            )
+    return ExecutionPlan(
+        ast=ast,
+        requests=tuple(sorted(materialized.values(), key=lambda value: value.request_id)),
+        constraints=tuple(constraints),
+        ontology_fingerprint=ontology.fingerprint,
+    )
+
+
+def _collect(
+    expression: Expression,
+    path: str,
+    requests: dict[tuple[object, ...], _RequestAccumulator],
+    formula_scopes: list[tuple[str, set[tuple[object, ...]]]],
+) -> set[tuple[object, ...]]:
+    if isinstance(expression, MetricRef):
+        entities: tuple[str | None, ...] = expression.entities or (None,)
+        periods: tuple[str | None, ...] = expression.periods or (None,)
+        keys: set[tuple[object, ...]] = set()
+        for entity, period in product(entities, periods):
+            key = (
+                expression.metric_id,
+                entity,
+                period,
+                expression.basis.value,
+                expression.statement_types,
+                expression.qualifiers,
+            )
+            item = requests.setdefault(
+                key,
+                _RequestAccumulator(expression.metric_id, entity, period, expression),
+            )
+            item.consumers.append(path)
+            keys.add(key)
+        return keys
+    if isinstance(expression, Literal):
+        return set()
+    if isinstance(expression, Arithmetic):
+        return _collect(expression.left, f"{path}.left", requests, formula_scopes) | _collect(
+            expression.right, f"{path}.right", requests, formula_scopes
+        )
+    if isinstance(expression, Unary):
+        return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
+    if isinstance(expression, FormulaCall):
+        keys = _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
+        formula_scopes.append((expression.formula_id, keys))
+        return keys
+    if isinstance(expression, Aggregate):
+        return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
+    if isinstance(expression, Filter):
+        # Predicate operands will be added when the predicate compiler is
+        # promoted; current parser fails closed before emitting Filter.
+        return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
+    if isinstance(expression, Rank):
+        return _collect(expression.by, f"{path}.by", requests, formula_scopes)
+    if isinstance(expression, SelectAtArg):
+        return _collect(expression.rank, f"{path}.rank", requests, formula_scopes) | _collect(
+            expression.expression, f"{path}.expression", requests, formula_scopes
+        )
+    raise TypeError(f"unsupported expression: {type(expression).__name__}")
+
+
+def _request_id(key: tuple[object, ...]) -> str:
+    digest = hashlib.sha256(repr(key).encode("utf-8")).hexdigest()[:20]
+    return f"operand:{digest}"
+

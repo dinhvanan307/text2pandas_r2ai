@@ -17,6 +17,7 @@ from text2pandas.domain.semantic import (
     ArithmeticOperator,
     Axis,
     Dimension,
+    FormulaCall,
     Literal,
     MetricRef,
     OutputSpec,
@@ -135,7 +136,13 @@ class SemanticParser:
         mentions: tuple[MetricMention, ...],
     ) -> Expression | None:
         if formula is not None:
-            return _scope_expression(formula.expression, annotations)
+            return FormulaCall(
+                formula.formula_id,
+                formula.variant_id,
+                _scope_expression(formula.expression, annotations),
+                formula.same_entity,
+                formula.same_period,
+            )
         if not mentions:
             return None
         return _metric_ref(mentions[-1].metric, annotations)
@@ -148,7 +155,7 @@ class SemanticParser:
     ) -> tuple[Expression, ResultKind] | str:
         operation = annotations.operation
         if operation in (OperationKind.LOOKUP, OperationKind.DIVIDE):
-            if operation == OperationKind.DIVIDE and not isinstance(base, Arithmetic):
+            if operation == OperationKind.DIVIDE and not isinstance(base, FormulaCall):
                 return "UNREVIEWED_RELATIONAL_FORMULA"
             return base, ResultKind.SCALAR
 
@@ -268,6 +275,14 @@ def _scope_expression(expression: Expression, annotations: QuestionAnnotations) 
         )
     if isinstance(expression, Unary):
         return Unary(expression.operator, _scope_expression(expression.expression, annotations))
+    if isinstance(expression, FormulaCall):
+        return FormulaCall(
+            expression.formula_id,
+            expression.variant_id,
+            _scope_expression(expression.expression, annotations),
+            expression.same_entity,
+            expression.same_period,
+        )
     raise TypeError(f"formula template contains unsupported node: {type(expression).__name__}")
 
 

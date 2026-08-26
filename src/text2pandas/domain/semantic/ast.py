@@ -57,6 +57,15 @@ class Unary:
 
 
 @dataclass(frozen=True, slots=True)
+class FormulaCall:
+    formula_id: str
+    variant_id: str
+    expression: Expression
+    same_entity: bool = True
+    same_period: bool = True
+
+
+@dataclass(frozen=True, slots=True)
 class Aggregate:
     function: AggregateFunction
     axis: Axis
@@ -107,7 +116,15 @@ class SelectAtArg:
 
 
 Expression: TypeAlias = (
-    MetricRef | Literal | Arithmetic | Unary | Aggregate | Filter | Rank | SelectAtArg
+    MetricRef
+    | Literal
+    | Arithmetic
+    | Unary
+    | FormulaCall
+    | Aggregate
+    | Filter
+    | Rank
+    | SelectAtArg
 )
 Predicate: TypeAlias = Comparison | Exists | LogicalPredicate
 
@@ -173,6 +190,15 @@ def expression_to_dict(expression: Expression) -> dict[str, Any]:
             "type": "unary",
             "operator": expression.operator.value,
             "expression": expression_to_dict(expression.expression),
+        }
+    if isinstance(expression, FormulaCall):
+        return {
+            "type": "formula_call",
+            "formula_id": expression.formula_id,
+            "variant_id": expression.variant_id,
+            "expression": expression_to_dict(expression.expression),
+            "same_entity": expression.same_entity,
+            "same_period": expression.same_period,
         }
     if isinstance(expression, Aggregate):
         return {
@@ -259,6 +285,14 @@ def expression_from_dict(raw: Mapping[str, Any]) -> Expression:
         return Unary(
             UnaryOperator(str(raw["operator"])),
             expression_from_dict(_mapping(raw["expression"])),
+        )
+    if kind == "formula_call":
+        return FormulaCall(
+            str(raw["formula_id"]),
+            str(raw.get("variant_id", "default")),
+            expression_from_dict(_mapping(raw["expression"])),
+            bool(raw.get("same_entity", True)),
+            bool(raw.get("same_period", True)),
         )
     if kind == "aggregate":
         return Aggregate(

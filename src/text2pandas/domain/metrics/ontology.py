@@ -17,6 +17,7 @@ from text2pandas.domain.semantic import (
     Arithmetic,
     Basis,
     Filter,
+    FormulaCall,
     MetricRef,
     Rank,
     SelectAtArg,
@@ -209,6 +210,8 @@ def expression_metric_ids(expression: Expression) -> frozenset[str]:
     if isinstance(expression, Arithmetic):
         return expression_metric_ids(expression.left) | expression_metric_ids(expression.right)
     if isinstance(expression, Unary):
+        return expression_metric_ids(expression.expression)
+    if isinstance(expression, FormulaCall):
         return expression_metric_ids(expression.expression)
     if isinstance(expression, Aggregate):
         return expression_metric_ids(expression.expression)

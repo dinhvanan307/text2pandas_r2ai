@@ -15,6 +15,7 @@ from text2pandas.domain.semantic import (
     Axis,
     Basis,
     Dimension,
+    FormulaCall,
     MetricRef,
     RankDirection,
     SelectAtArg,
@@ -84,7 +85,8 @@ def test_formula_can_be_aggregated_across_entity_axis() -> None:
     assert result.ok
     assert isinstance(result.ast.expression, Aggregate)
     assert result.ast.expression.axis == Axis.ENTITY
-    assert isinstance(result.ast.expression.expression, Arithmetic)
+    assert isinstance(result.ast.expression.expression, FormulaCall)
+    assert isinstance(result.ast.expression.expression.expression, Arithmetic)
 
 
 def test_select_at_arg_keeps_rank_and_return_metrics_separate() -> None:
