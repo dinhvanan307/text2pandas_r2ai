@@ -8,12 +8,12 @@ The project uses a strangler migration. Canonical V2 remains the submission engi
 
 | Runtime | Current state | Latest full-corpus result |
 |---|---|---:|
-| Canonical V2 | Validated submission candidate | 511 answers and 501 fail-closed abstentions |
-| Semantic V3 | Shadow only; promotion blocked | 285 answers and 727 fail-closed abstentions |
+| Canonical V2 | Validated submission candidate | 559 answers and 453 fail-closed abstentions |
+| Semantic V3 | Shadow only; promotion blocked | 298 answers and 714 fail-closed abstentions |
 
-The latest acceptance run validated all 1,012 output records and replayed 511 of 511 emitted Pandas queries. Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held answer gold is unavailable.
+The latest acceptance run validated all 1,012 output records and replayed 559 of 559 emitted Pandas queries. On the independently adjudicated local slice, all 14 emitted answers are correct and replayable out of 31 evaluable questions (45.16% local Answer/Execution Accuracy; 100% replay consistency among emitted answers). Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held gold is unavailable.
 
-Read the [full acceptance report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md) before making a production-readiness claim.
+Read the [final acceptance report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26_FINAL.md) before making a production-readiness claim.
 
 ## System architecture
 
@@ -170,7 +170,7 @@ make test-integration
 git diff --check
 ```
 
-Strict mypy on the Semantic V3 transitive import graph still exposes legacy V2 typing debt. The acceptance report records 43 errors in nine legacy files.
+Strict mypy is enforced on all 77 production architecture modules under `domain`, `application`, `infrastructure`, and `interface`; the current gate reports zero errors. Historical V2 pipeline modules remain outside this typed boundary and are governed as migration debt.
 
 ## Evaluate retrieval and ranking
 
@@ -261,7 +261,8 @@ The non-negotiable rules are:
 - [Refactor status](docs/REFACTOR_STATUS.md)
 - [Gap closure status](docs/GAP_CLOSURE_STATUS.md)
 - [Semantic V3 migration status](docs/SEMANTIC_V3_MIGRATION_STATUS.md)
-- [Acceptance test report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md)
+- [Final acceptance test report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26_FINAL.md)
+- [Historical acceptance test report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md)
 - [Architecture decisions](docs/adr/)
 - [Competition source](docs/competition/README.md)
 
@@ -270,11 +271,11 @@ The non-negotiable rules are:
 The project is structurally valid and replayable, but several measured gaps remain:
 
 - official Answer Accuracy and Execution Accuracy are unavailable without organiser gold
-- canonical executable coverage is 50.49%
+- canonical executable coverage is 55.24%
 - multi-entity execution and operand binding cause most V2 abstentions
 - the current V2 reranker is an identity stage without measured uplift
 - Semantic V3 lacks enough adjudicated semantic and evidence gold for promotion
-- legacy V2 modules retain strict typing debt
-- 42 legacy tests require acceptance artifacts not present in the current workspace
+- full-repository legacy V2 modules remain outside the zero-error production mypy gate
+- 42 approved historical-artifact tests skip under the exact allowlist in `configs/testing/approved_skips_v1.yaml`; unapproved skips fail CI
 
 Use the acceptance report as the numeric baseline. Update that report or create a dated successor after behavior, gold, or active snapshots change.

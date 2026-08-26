@@ -8,8 +8,8 @@ Updated: 2026-08-26
 
 `make semantic-coverage` chạy deterministic trên 1.012 câu hỏi curated và dùng đúng router/formula registry của canonical runtime. Kết quả hiện tại:
 
-- Static route eligible: **659/1.012 (65,1186%)**.
-- Named semantic gaps: **353/1.012**.
+- Static route eligible: **662/1.012 (65,415%)**.
+- Named semantic gaps: **350/1.012**.
 - Corpus SHA-256: `59effd1ee7cf7214caee430b05b9305f5a71ed3fd57ba19eb1a6ff2f9c3ffa5d`.
 
 Đây không phải accuracy. Retrieval recall, operand binding và giá trị answer chỉ được kết luận bằng materialized evaluation/replay.
@@ -22,7 +22,7 @@ Updated: 2026-08-26
 | Lineage | Raw/A6/retrieval identities và portable run/submission manifests |
 | Submission | Exact schema, raw-corpus grounding, AST sandbox, replay, deterministic ZIP, fail-closed publish |
 | Extrema | Typed `MAX/MIN/ARGMAX/ARGMIN`, period result kind và policy guards |
-| Reviewed formulas | 24 công thức, gồm expense/COGS intensity, explicit ending-assets return, debt/equity ratios, fixed-asset and receivable shares, interest/borrowings, CFO/PBT và financial-income/financial-expense; per-metric statement/period binding, per-leaf unit conversion, same-report/same-currency coherence |
+| Reviewed formulas | 27 công thức trên 28 metric đã review, gồm expense/COGS intensity, explicit ending-assets return, debt/equity ratios, fixed-asset and receivable shares, interest/borrowings, CFO/PBT và financial-income/financial-expense; per-metric statement/period/context binding, per-leaf unit conversion, same-report/same-currency coherence |
 | Formula binding hardening | Ưu tiên closing balance thay movement column, statement-type contract, section relevance, unanimous explicit table-scale inheritance và stable row index khi observation trùng |
 | A6 H0 | 34 provenance records, 22 materialized gates, two clean deterministic rebuilds |
 | Coverage governance | Per-QID status/reason, corpus digest, CLI/Make command và CI baseline |
@@ -42,7 +42,7 @@ Updated: 2026-08-26
 | Priority | Gap family | Questions | Fill strategy / exit gate |
 |---|---|---:|---|
 | P1 | Multi/global-entity aggregation/ranking | 263 | Typed entity axis beyond reviewed differences, COUNT, averages và reviewed direct sums; bind one fact per entity; prove no entity reuse; add rank emitters and multi-entity gold slices |
-| P1 | Unreviewed relational formulas | 28 | Curate formula + metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
+| P1 | Unreviewed relational formulas | 23 | Curate formula + metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
 | P1 | Complex extrema | 43 | Derived ranking: 4; filtered extrema: 6; select-at-arg: 33. Add separate rank metric/result metric and predicate IR |
 | P2 | Operand/period arity unresolved | 8 | SUBTRACT: 7; GROWTH: 1. Remaining SUBTRACT cases are same-period derived finance metrics or unresolved two-operand semantics |
 | P2 | Formula composition mismatch | 11 | Support formula inside aggregate/extremum/subtract only after nested typed IR and complete evidence are implemented |
@@ -52,20 +52,20 @@ Updated: 2026-08-26
 
 | Priority | Gap | Evidence | Exit gate |
 |---|---|---|---|
-| P0 | Official Answer Accuracy và Execution Accuracy chưa đo được | Không có organiser-held answer gold; canonical V2 abstain 501/1.012 câu | Xây dựng independent adjudicated answer/evidence gold hoặc chạy official scorer; report accuracy theo slice và confidence interval |
-| P0 | Canonical executable coverage mới đạt 50,49% | V2 phát 511/1.012 answers | Đóng các semantic gaps P1, bind/execute trên gold và giữ fail-closed cho route chưa đủ evidence |
-| P1 | Semantic V3 chưa đủ điều kiện promotion | V3 shadow phát 285 answers, abstain 727 và có 126 value disagreements với V2 | Adjudicate tối thiểu 300 semantic gold và 300 evidence gold; tất cả metric trong promotion policy phải measured và pass |
+| P0 | Official Answer Accuracy và Execution Accuracy chưa đo được | Không có organiser-held answer gold. Local adjudicated slice: 14/31 correct + executable, 14/14 replay | Mở rộng independent answer/evidence gold hoặc chạy official scorer; luôn report riêng local/official scope |
+| P0 | Canonical executable coverage mới đạt 55,24% | V2 phát 559/1.012 answers và fail-closed 453 câu | Đóng các semantic gaps P1, bind/execute trên gold và giữ fail-closed cho route chưa đủ evidence |
+| P1 | Semantic V3 chưa đủ điều kiện promotion | V3 shadow phát 298 answers, abstain 714 và có 137 value disagreements với V2 | Adjudicate tối thiểu 300 semantic gold và 300 evidence gold; tất cả metric trong promotion policy phải measured và pass |
 | P1 | Rerank S3 chỉ là identity/truncation | S2 MRR 0,5506; S3 MRR 0,5459 trên 95 manual-gold cases | Tạo held-out rerank gold, benchmark lexical/cross-encoder/open-weight candidates và chỉ promote khi uplift có ý nghĩa thống kê |
 | P1 | Retrieval gold chưa đủ đại diện | 95/1.012 câu có trusted table gold; 917 câu `NOT_MEASURED` | Mở rộng stratified evidence gold cho screen, multi-entity, bank, derived-metric và hard-negative slices |
-| P1 | Strict typing chưa đạt gate | Mypy strict báo 43 errors trong 9 legacy V2 files thuộc transitive graph của V3 | Type các adapter dependencies hoặc cô lập V2 sau typed ports; đưa strict mypy vào CI với zero-error gate |
-| P1 | CI chưa tái hiện frozen acceptance path | Workflow hiện cài editable từ version ranges và chỉ chạy critical Ruff + offline tests | Thêm locked install, full Ruff, strict mypy, docs/link checks, materialized acceptance lane và lưu JUnit/test report artifacts |
-| P2 | 42 legacy acceptance tests đang skip vì thiếu artifacts | Frozen suite: 1.967 collected, 1.925 passed, 42 skipped | Materialize + checksum required artifacts hoặc retire suite lỗi thời bằng ADR đã duyệt; acceptance gate không còn skip ngoài allowlist |
-| P2 | Root và subtree documentation còn drift | `HANDOFF.md`, `PACKAGE_README.md` và một số layer README chứa trạng thái cũ hoặc link không tồn tại | Chuyển trạng thái lịch sử vào archive, sửa link, thêm automated relative-link check và owner cho mỗi operational document |
-| P2 | Project governance và package metadata chưa đầy đủ | Thiếu license, contribution/security policy, CODEOWNERS, dependency automation; `pyproject.toml` thiếu ownership/URL/classifier metadata | Chốt distribution policy, bổ sung governance files, package metadata và dependency update workflow |
+| CLOSED | Production strict typing | `make typecheck`: zero errors trên 77 module `domain/application/infrastructure/interface` | Gate nằm trong `make ci`; legacy pipeline debt không được đưa ngược vào production boundary |
+| CLOSED | CI acceptance path | Locked `--require-hashes` install, correctness Ruff, strict mypy, 43-file docs-link check và self-hosted materialized lane | Duy trì `.github/workflows/ci.yml` và `materialized-acceptance.yml` |
+| CLOSED | Skip governance | 42 historical-artifact skips được ADR 0010 phê duyệt theo path/reason/max-count; 0 unapproved skip | Mọi skip mới hoặc reason/count drift làm pytest session fail |
+| CLOSED | Documentation link integrity | 44 tracked Markdown files, 0 broken relative links | `make docs-check` nằm trong CI |
+| P2 | Project governance còn hai quyết định owner-only | Đã có `CONTRIBUTING.md`, `SECURITY.md`, author/classifiers và Dependabot; chưa có license/CODEOWNERS/verified project URLs | Owner chốt distribution license và GitHub team/user chính xác trước khi thêm, không suy đoán |
 | P2 | Retrieval snapshot đang copy đầy đủ A6 thay vì sidecar-only | Snapshot storage còn nhân bản processed corpus | Ordered top-K parity + manifest/storage migration test trước khi chuyển sang sidecar-only |
 | P3 | Compatibility shims và historical tools còn tồn tại | Legacy import paths vẫn được giữ cho downstream consumers | Downstream import inventory, deprecation window sign-off, sau đó xóa trong commit riêng |
 
-Chi tiết test evidence và release recommendation nằm trong [`reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md`](reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md).
+Chi tiết test evidence và release recommendation nằm trong [`reports/ACCEPTANCE_TEST_REPORT_2026-08-26_FINAL.md`](reports/ACCEPTANCE_TEST_REPORT_2026-08-26_FINAL.md).
 
 ## Governance rule
 

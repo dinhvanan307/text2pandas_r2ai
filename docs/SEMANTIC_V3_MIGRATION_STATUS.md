@@ -25,27 +25,29 @@ second production implementation.
 
 ## Full-corpus shadow baselines
 
-Both runs used all 1,012 questions, active A6 build `b3e9684004679ffb`, operand
-top-K 20 and canonical V2 run `production-final-v2-20260826`.
+All runs used all 1,012 questions, active A6 build `b3e9684004679ffb` and
+operand top-K 20. The final audited shadow compares against canonical run
+`production-final-v3-20260826`.
 
-| Metric | Reviewed-only ontology | + reported lookup catalog |
-|---|---:|---:|
-| V3 OK | 162 | 285 |
-| V3 abstain | 850 | 727 |
-| Metric unresolved | 589 | 198 |
-| Reported metric blocked for derived operation | 0 | 263 |
-| Typed/pandas replay mismatch | 0 | 0 |
-| Both V2/V3 OK and equal | 62 | 103 |
-| Both OK but value differs | 56 | 126 |
-| V3-only OK | 44 | 56 |
-| Runtime | 86.415 s | 87.483 s |
+| Metric | Reviewed-only baseline | Reported-catalog baseline | Final audited shadow |
+|---|---:|---:|---:|
+| V3 OK | 162 | 285 | 298 |
+| V3 abstain | 850 | 727 | 714 |
+| Metric unresolved | 589 | 198 | 198 |
+| Reported metric blocked for derived operation | 0 | 263 | 249 |
+| Typed/pandas replay mismatch | 0 | 0 | 0 |
+| Both V2/V3 OK and equal | 62 | 103 | 121 |
+| Both OK but value differs | 56 | 126 | 137 |
+| V3-only OK | 44 | 56 | 40 |
+| Runtime | 86.415 s | 87.483 s | 89.685 s |
 
 Artifacts:
 
 - `artifacts/runs/semantic-v3/semantic-v3-baseline-20260826/manifest.json`
 - `artifacts/runs/semantic-v3/semantic-v3-reported-catalog-20260826/manifest.json`
+- `artifacts/runs/semantic-v3/semantic-v3-final-20260826/manifest.json`
 
-These are coverage and differential measurements, not accuracy. The 126 value
+These are coverage and differential measurements, not accuracy. The 137 current value
 differences cannot be promoted or labelled as improvements until adjudicated
 against independent evidence/answer gold.
 
@@ -69,7 +71,7 @@ as zero, pass or not-applicable.
 
 ## Remaining migration waves
 
-1. Adjudicate a stratified V3 Gold set, beginning with the 126 V2/V3 value
+1. Adjudicate a stratified V3 Gold set, beginning with the 137 V2/V3 value
    differences and all `V3_ONLY_OK` cases.
 2. Promote reported metrics to reviewed canonical metrics by family; derived
    operations remain blocked until promotion.
