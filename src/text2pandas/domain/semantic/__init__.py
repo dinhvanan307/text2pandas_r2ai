@@ -1,0 +1,67 @@
+"""Domain contracts for Semantic Query Engine v3.
+
+This package is deliberately free of corpus I/O and third-party dependencies.
+All outer layers communicate through the immutable values exported here.
+"""
+
+from .ast import (
+    Aggregate,
+    Arithmetic,
+    Comparison,
+    Exists,
+    Filter,
+    Literal,
+    LogicalPredicate,
+    MetricRef,
+    QuestionAST,
+    Rank,
+    SelectAtArg,
+    expression_from_dict,
+    expression_to_dict,
+)
+from .types import (
+    AggregateFunction,
+    ArithmeticOperator,
+    Axis,
+    Basis,
+    ComparisonOperator,
+    Dimension,
+    LogicalOperator,
+    OutputSpec,
+    PeriodSemantics,
+    RankDirection,
+    ResultKind,
+    UnitSpec,
+)
+from .validate import SemanticIssue, validate_question_ast
+
+__all__ = [
+    "Aggregate",
+    "AggregateFunction",
+    "Arithmetic",
+    "ArithmeticOperator",
+    "Axis",
+    "Basis",
+    "Comparison",
+    "ComparisonOperator",
+    "Dimension",
+    "Exists",
+    "Filter",
+    "Literal",
+    "LogicalOperator",
+    "LogicalPredicate",
+    "MetricRef",
+    "OutputSpec",
+    "PeriodSemantics",
+    "QuestionAST",
+    "Rank",
+    "RankDirection",
+    "ResultKind",
+    "SelectAtArg",
+    "SemanticIssue",
+    "UnitSpec",
+    "expression_from_dict",
+    "expression_to_dict",
+    "validate_question_ast",
+]
+
