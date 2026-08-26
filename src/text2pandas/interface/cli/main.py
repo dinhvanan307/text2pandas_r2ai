@@ -190,7 +190,9 @@ def cmd_run(args: argparse.Namespace) -> int:
     from text2pandas.infrastructure.snapshots import verify_active_snapshots
     from text2pandas.infrastructure.source_identity import git_source_identity
 
-    if (args.limit or args.offset) and not args.no_package:
+    if args.question_id and (args.limit or args.offset):
+        raise BuildSafetyError("--question-id cannot be combined with --limit/--offset")
+    if (args.limit or args.offset or args.question_id) and not args.no_package:
         raise BuildSafetyError("partial run requires --no-package")
     verification = verify_active_snapshots(PROJECT_PATHS, scope="all")
     failures = [item for item in verification.items if not item.ok]
@@ -207,6 +209,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         ACTIVE_SNAPSHOTS.retrieval_path / "retrieval.db",
         QUESTIONS,
         stage,
+        question_ids=(frozenset(args.question_id) if args.question_id else None),
         offset=args.offset,
         limit=args.limit,
         max_tables=args.n_tables,
@@ -223,6 +226,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             {
                 "offset": args.offset,
                 "limit": args.limit,
+                "question_ids": sorted(args.question_id),
                 "max_tables": args.n_tables,
                 "answer_pool_tables": args.answer_pool_tables,
                 "package_requested": not args.no_package,
@@ -681,6 +685,13 @@ def main(argv: list[str] | None = None) -> int:
     rn.add_argument("--run-id", required=True)
     rn.add_argument("--limit", type=int, default=0)
     rn.add_argument("--offset", type=int, default=0)
+    rn.add_argument(
+        "--question-id",
+        type=int,
+        action="append",
+        default=[],
+        help="Run one source question ID; repeat for an explicit evaluation slice",
+    )
     rn.add_argument("--n-tables", dest="n_tables", type=int, default=20)
     rn.add_argument("--answer-pool-tables", type=int, default=50)
     rn.add_argument("--no-package", action="store_true")

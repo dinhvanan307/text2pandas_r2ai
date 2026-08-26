@@ -3,13 +3,30 @@ from __future__ import annotations
 import sqlite3
 from dataclasses import replace
 
+import pytest
+
 from text2pandas.application.usecases.canonical_run import (
     QuestionSelector,
     load_candidate_cells,
+    run_canonical_pipeline,
 )
 from text2pandas.pipelines.answering import CandidateCell, Unit
 from text2pandas.pipelines.answering.ir import OperandSlot
 from text2pandas.pipelines.answering.units import MONEY
+
+
+def test_canonical_runner_rejects_unknown_explicit_question_ids(tmp_path) -> None:
+    questions = tmp_path / "questions.jsonl"
+    questions.write_text('{"id": 1, "question": "Q"}\n', encoding="utf-8")
+
+    with pytest.raises(ValueError, match=r"unknown question IDs: \[2\]"):
+        run_canonical_pipeline(
+            tmp_path / "missing-a6.db",
+            tmp_path / "missing-retrieval.db",
+            questions,
+            tmp_path / "run",
+            question_ids=frozenset({2}),
+        )
 
 
 def _cell(row: str, *, section: str = "", context: str = "", rank: int = 0) -> CandidateCell:

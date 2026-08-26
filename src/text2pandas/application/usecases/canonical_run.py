@@ -487,6 +487,7 @@ def run_canonical_pipeline(
     questions_path: Path,
     output_dir: Path,
     *,
+    question_ids: frozenset[int] | None = None,
     offset: int = 0,
     limit: int = 0,
     max_tables: int = 10,
@@ -510,6 +511,14 @@ def run_canonical_pipeline(
         for line in questions_path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+    if question_ids is not None:
+        source_ids = {int(question["id"]) for question in questions}
+        unknown_ids = sorted(question_ids - source_ids)
+        if unknown_ids:
+            raise ValueError(f"unknown question IDs: {unknown_ids}")
+        questions = [
+            question for question in questions if int(question["id"]) in question_ids
+        ]
     questions = questions[offset:]
     if limit:
         questions = questions[:limit]
