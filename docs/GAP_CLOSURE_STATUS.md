@@ -2,22 +2,17 @@
 
 Updated: 2026-08-26
 
-> Semantic Query Engine v3 is now available in shadow mode. Its architecture,
-> full-corpus differential baselines and promotion blockers are recorded in
-> `docs/SEMANTIC_V3_MIGRATION_STATUS.md`.  V2 remains canonical until the
-> code-enforced V3 promotion policy passes.
+> Semantic Query Engine v3 is available in shadow mode. Its architecture, full-corpus differential baselines and promotion blockers are recorded in `docs/SEMANTIC_V3_MIGRATION_STATUS.md`. V2 remains canonical until the code-enforced V3 promotion policy passes.
 
 ## Measurement boundary
 
-`make semantic-coverage` chạy deterministic trên 1.012 câu hỏi curated và dùng
-đúng router/formula registry của canonical runtime. Kết quả hiện tại:
+`make semantic-coverage` chạy deterministic trên 1.012 câu hỏi curated và dùng đúng router/formula registry của canonical runtime. Kết quả hiện tại:
 
 - Static route eligible: **659/1.012 (65,1186%)**.
 - Named semantic gaps: **353/1.012**.
 - Corpus SHA-256: `59effd1ee7cf7214caee430b05b9305f5a71ed3fd57ba19eb1a6ff2f9c3ffa5d`.
 
-Đây không phải accuracy. Retrieval recall, operand binding và giá trị answer chỉ
-được kết luận bằng materialized evaluation/replay.
+Đây không phải accuracy. Retrieval recall, operand binding và giá trị answer chỉ được kết luận bằng materialized evaluation/replay.
 
 ## Closed gaps
 
@@ -53,16 +48,25 @@ Updated: 2026-08-26
 | P2 | Formula composition mismatch | 11 | Support formula inside aggregate/extremum/subtract only after nested typed IR and complete evidence are implemented |
 | P2 | Single-entity conditional COUNT | 2 | Complex predicate: 1; existence/absence requiring negative-evidence completeness: 1. Two additional typed routes remain retrieval-dependent at runtime |
 
-## Non-semantic engineering debt
+## Repository maturity gaps
 
-| Priority | Gap | Exit gate |
-|---|---|---|
-| P1 | End-to-end score for the new canonical engine chưa được khóa trên gold | Report retrieval → bind → execute accuracy by slice; never infer accuracy from 64,9209% route coverage |
-| P2 | Retrieval snapshot đang copy đầy đủ A6 thay vì sidecar-only | Ordered top-K parity + manifest/storage migration test |
-| P3 | Compatibility shims và historical tools còn tồn tại | Downstream import inventory, deprecation window sign-off, then removal commit |
+| Priority | Gap | Evidence | Exit gate |
+|---|---|---|---|
+| P0 | Official Answer Accuracy và Execution Accuracy chưa đo được | Không có organiser-held answer gold; canonical V2 abstain 501/1.012 câu | Xây dựng independent adjudicated answer/evidence gold hoặc chạy official scorer; report accuracy theo slice và confidence interval |
+| P0 | Canonical executable coverage mới đạt 50,49% | V2 phát 511/1.012 answers | Đóng các semantic gaps P1, bind/execute trên gold và giữ fail-closed cho route chưa đủ evidence |
+| P1 | Semantic V3 chưa đủ điều kiện promotion | V3 shadow phát 285 answers, abstain 727 và có 126 value disagreements với V2 | Adjudicate tối thiểu 300 semantic gold và 300 evidence gold; tất cả metric trong promotion policy phải measured và pass |
+| P1 | Rerank S3 chỉ là identity/truncation | S2 MRR 0,5506; S3 MRR 0,5459 trên 95 manual-gold cases | Tạo held-out rerank gold, benchmark lexical/cross-encoder/open-weight candidates và chỉ promote khi uplift có ý nghĩa thống kê |
+| P1 | Retrieval gold chưa đủ đại diện | 95/1.012 câu có trusted table gold; 917 câu `NOT_MEASURED` | Mở rộng stratified evidence gold cho screen, multi-entity, bank, derived-metric và hard-negative slices |
+| P1 | Strict typing chưa đạt gate | Mypy strict báo 43 errors trong 9 legacy V2 files thuộc transitive graph của V3 | Type các adapter dependencies hoặc cô lập V2 sau typed ports; đưa strict mypy vào CI với zero-error gate |
+| P1 | CI chưa tái hiện frozen acceptance path | Workflow hiện cài editable từ version ranges và chỉ chạy critical Ruff + offline tests | Thêm locked install, full Ruff, strict mypy, docs/link checks, materialized acceptance lane và lưu JUnit/test report artifacts |
+| P2 | 42 legacy acceptance tests đang skip vì thiếu artifacts | Frozen suite: 1.967 collected, 1.925 passed, 42 skipped | Materialize + checksum required artifacts hoặc retire suite lỗi thời bằng ADR đã duyệt; acceptance gate không còn skip ngoài allowlist |
+| P2 | Root và subtree documentation còn drift | `HANDOFF.md`, `PACKAGE_README.md` và một số layer README chứa trạng thái cũ hoặc link không tồn tại | Chuyển trạng thái lịch sử vào archive, sửa link, thêm automated relative-link check và owner cho mỗi operational document |
+| P2 | Project governance và package metadata chưa đầy đủ | Thiếu license, contribution/security policy, CODEOWNERS, dependency automation; `pyproject.toml` thiếu ownership/URL/classifier metadata | Chốt distribution policy, bổ sung governance files, package metadata và dependency update workflow |
+| P2 | Retrieval snapshot đang copy đầy đủ A6 thay vì sidecar-only | Snapshot storage còn nhân bản processed corpus | Ordered top-K parity + manifest/storage migration test trước khi chuyển sang sidecar-only |
+| P3 | Compatibility shims và historical tools còn tồn tại | Legacy import paths vẫn được giữ cho downstream consumers | Downstream import inventory, deprecation window sign-off, sau đó xóa trong commit riêng |
+
+Chi tiết test evidence và release recommendation nằm trong [`reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md`](reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md).
 
 ## Governance rule
 
-Mọi thay đổi router/formula phải cập nhật có chủ đích
-`tests/fixtures/semantic_coverage_baseline.json`. CI failure do baseline drift là
-review gate, không được sửa snapshot chỉ để làm test xanh.
+Mọi thay đổi router/formula phải cập nhật có chủ đích `tests/fixtures/semantic_coverage_baseline.json`. CI failure do baseline drift là review gate, không được sửa snapshot chỉ để làm test xanh.

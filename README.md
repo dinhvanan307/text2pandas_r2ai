@@ -1,149 +1,277 @@
 # Text2Pandas
 
-Pipeline trả lời câu hỏi tiếng Việt trên báo cáo tài chính bằng retrieval,
-Pandas execution và evidence có thể kiểm chứng. Repository này dùng một data
-lineage rõ ràng, không trộn dữ liệu nguồn với output sinh ra:
+Text2Pandas converts Vietnamese financial questions into grounded Pandas queries over listed-company financial reports. The repository contains the data pipeline, retrieval system, semantic parser, typed execution engine, evidence packaging, and production validation gates.
+
+## Project status
+
+The project uses a strangler migration. Canonical V2 remains the submission engine while Semantic V3 runs in shadow mode.
+
+| Runtime | Current state | Latest full-corpus result |
+|---|---|---:|
+| Canonical V2 | Validated submission candidate | 511 answers and 501 fail-closed abstentions |
+| Semantic V3 | Shadow only; promotion blocked | 285 answers and 727 fail-closed abstentions |
+
+The latest acceptance run validated all 1,012 output records and replayed 511 of 511 emitted Pandas queries. Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held answer gold is unavailable.
+
+Read the [full acceptance report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md) before making a production-readiness claim.
+
+## System architecture
+
+The runtime preserves a traceable path from source reports to the submitted answer:
+
+```text
+Vietnamese question
+        |
+        v
+semantic parsing -> operand planning -> retrieval -> joint binding
+        |                                              |
+        +---------------- typed execution <------------+
+                               |
+                               v
+                    Pandas compilation and replay
+                               |
+                               v
+                    evidence and submission ZIP
+```
+
+The data lineage remains independent from runtime code:
 
 ```text
 data/raw/btc
-    │  BTC source: 1.973 báo cáo, 1.012 câu hỏi, 100 mã cổ phiếu
-    ▼
-data/processed/a6/<build_id>
-    │  normalized tables, observations, metadata
-    ▼
-data/indexes/retrieval/<a6_build_id>/<index_id>
-    │  index chỉ hợp lệ với đúng A6 build
-    ▼
-answering → validation → artifacts/submissions
+    -> data/processed/a6/build_id
+    -> data/indexes/retrieval/a6_build_id/index_id
+    -> artifacts/runs/answer/run_id
+    -> artifacts/submissions/submission_run_id.zip
 ```
 
-## Quick start
+Each layer records the identity of its source. The runtime never selects an implicit `latest` directory.
 
-Yêu cầu Python 3.11+.
+## Repository capabilities
+
+- Parse Vietnamese entities, periods, bases, units, operations, and financial formulas
+- Normalize source tables into A6 documents, tables, observations, and table cards
+- Retrieve tables with lexical and structural signals
+- Plan independent operands and bind them under global coherence constraints
+- Execute typed decimal expressions with unit validation
+- Compile restricted Pandas queries and replay them in a clean environment
+- Derive documents, table locators, and CSV evidence from selected observations
+- Validate the exact JSON and ZIP submission contract
+- Compare Semantic V3 with canonical V2 without promoting unmeasured behavior
+
+## Prerequisites
+
+Use Python 3.11 or newer. A full A6 rebuild requires at least 40 GB of free disk space. Offline development tests do not require materialized raw, A6, or retrieval payloads.
+
+The repository stores large runtime payloads outside Git. Materialized integration tests require the active paths declared in `configs/datasets/active_snapshot.yaml`.
+
+## Install a reproducible environment
+
+Use the hash-locked environment for acceptance and release work:
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
-
-make paths-check
-text2pandas verify all
-make test-offline
+python -m pip install --require-hashes -r requirements.lock
+python -m pip install --no-deps -e .
+make dp-env-check
 ```
 
-`test-offline` là CI gate, không yêu cầu materialized dataset. `test-integration`
-chạy các gate cần raw/A6/retrieval/submission artifacts và fail rõ đường dẫn còn
-thiếu; không chuyển prerequisite thiếu thành false-green skip.
+The environment check must report `lock_matches_installed=True`, `lock_has_hashes=True`, and no untracked source paths.
 
-## Active snapshots
+For local feature development, install the project and development extras:
 
-Source of truth là `configs/datasets/active_snapshot.yaml`:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+```
 
-| Layer | Identity hiện tại | Canonical location |
+This development path is not a frozen acceptance environment.
+
+## Verify the active data lineage
+
+The active snapshot config is the only source of runtime data identities:
+
+| Layer | Active identity | Canonical path |
 |---|---|---|
 | Raw BTC | `ca033190f2e9e99f` | `data/raw/btc/` |
 | A6 processed | `b3e9684004679ffb` | `data/processed/a6/b3e9684004679ffb/` |
-| Retrieval | `286973b134a189ee` | `data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/` |
+| Retrieval index | `286973b134a189ee` | `data/indexes/retrieval/b3e9684004679ffb/286973b134a189ee/` |
 
-Kiểm từng layer:
-
-```bash
-text2pandas verify raw
-text2pandas verify a6
-text2pandas verify retrieval
-```
-
-Verifier kiểm config, manifest, count, A6 `build_meta`, kích thước retrieval DB và
-các SQLite index bắt buộc. Kiểm integrity raw sâu hơn bằng:
+Run all lineage checks:
 
 ```bash
+make paths-check
+make snapshots-verify
 python tools/data_acquisition/download_vifinqa.py --verify-only --skip-github
 ```
 
-Payload lớn không nằm trong Git. Git chỉ giữ code, config, documentation, curated
-fixture nhỏ, manifest và provenance. Có thể mount data/artifact ở volume khác qua
-`T2P_DATA_ROOT` và `T2P_ARTIFACT_ROOT`.
+The active dataset contains 1,973 financial reports, 1,012 questions, and 100 tickers. The active A6 build contains 146,246 table cards.
+
+You can mount data and generated artifacts outside the repository:
+
+```bash
+export T2P_DATA_ROOT=/srv/text2pandas/data
+export T2P_ARTIFACT_ROOT=/srv/text2pandas/artifacts
+```
+
+## Run the canonical engine
+
+Every run ID is immutable. Use a new ID for every attempt.
+
+Run a ten-question smoke test without packaging:
+
+```bash
+text2pandas run \
+  --run-id local_smoke_001 \
+  --offset 0 \
+  --limit 10 \
+  --no-package
+```
+
+Run all questions and build a submission candidate:
+
+```bash
+text2pandas run --run-id submission_candidate_001
+```
+
+The command publishes a ZIP only when strict validation and clean replay pass. Failed stages remain under `artifacts/runs/answer/` for investigation.
+
+## Run Semantic V3 in shadow mode
+
+V3 writes an immutable differential run and never changes the canonical output:
+
+```bash
+text2pandas shadow-v3 \
+  --run-id semantic_v3_shadow_001 \
+  --operand-k 20 \
+  --legacy-run-id submission_candidate_001
+```
+
+The manifest records the ontology fingerprint, differential taxonomy, replay status, and promotion decision. `configs/semantic/promotion_policy_v3.yaml` blocks promotion when required metrics are absent.
+
+## Test the project
+
+Use the gate that matches the changed scope:
+
+| Gate | Command | Purpose |
+|---|---|---|
+| Critical static checks | `make lint` | Syntax, import, and undefined-name failures |
+| Offline CI | `make ci` | Static checks plus unit, contract, and regression tests |
+| Materialized integration | `make test-integration` | Raw, A6, retrieval, H0, submission, and replay contracts |
+| Semantic route coverage | `make semantic-coverage` | Classify all 1,012 questions; not an accuracy metric |
+| Machine-readable full suite | `make dp-test REPORT_DIR=artifacts/reports/local_test_001` | JSON, text, and JUnit reports |
+
+Run offline and integration suites separately when you need explicit counts:
+
+```bash
+make test-offline
+make test-integration
+git diff --check
+```
+
+Strict mypy on the Semantic V3 transitive import graph still exposes legacy V2 typing debt. The acceptance report records 43 errors in nine legacy files.
+
+## Evaluate retrieval and ranking
+
+Retrieval evaluation separates candidate generation, ranking, and reranking. It reports `NOT_MEASURED` for questions without trusted gold.
+
+Collect and report a versioned manual-gold checkpoint:
+
+```bash
+python -m text2pandas.pipelines.retrieval.evalkit.cli collect \
+  --tag local_manual_001 \
+  --gold-source manual \
+  --loop
+
+python -m text2pandas.pipelines.retrieval.evalkit.cli report \
+  --tag local_manual_001 \
+  --gold-source manual
+```
+
+Do not compare checkpoints with different config fingerprints or evaluation schemas.
+
+## Submission contract
+
+A publishable package contains one JSON file at the root and referenced CSV files under `data/`:
+
+```text
+submission.zip
+|-- submission.json
+`-- data/
+    |-- table_001.csv
+    `-- table_002.csv
+```
+
+Every record contains these fields:
+
+- `id`
+- `question`
+- `answer`
+- `relevant_docs`
+- `relevant_tables`
+- `evidence`
+- `pandas_query`
+
+The validator rejects missing questions, unsafe paths, invalid locators, orphan CSV files, unsafe queries, duplicate evidence variables, and mismatched source question text. Replay rejects any emitted answer that differs from its Pandas result.
 
 ## Project layout
 
-```text
-configs/       active snapshots, pipeline config, policies
-src/text2pandas/
-  domain/      pure domain rules and value objects
-  application/ use cases
-  pipelines/   a6, retrieval, answering
-  infrastructure/ filesystem, SQLite, parsing, indexing
-  interface/   unified CLI
-tests/         unit, contract, regression, materialized integration
-data/          raw, processed A6, retrieval indexes, curated inputs
-artifacts/     generated runs, reports, submissions, handoffs
-experiments/   ablation and re-audit; never imported by production
-provenance/    committed identities, seals and baseline checksums
-ops/           Docker and environment evidence
-vendor/        locally materialized upstream reference code
-tools/         migration, audit and legacy thin commands
-docs/          competition source, ADRs and refactor records
-```
+| Path | Responsibility |
+|---|---|
+| `src/text2pandas/domain/` | Pure semantic types, value objects, and business rules |
+| `src/text2pandas/application/` | Use cases, ports, parser, planner, binder, compiler, and executor |
+| `src/text2pandas/infrastructure/` | SQLite, file system, retrieval, ontology, parsing, and sandbox adapters |
+| `src/text2pandas/interface/` | Unified CLI and optional API boundary |
+| `src/text2pandas/pipelines/` | Canonical legacy V2 pipelines during migration |
+| `configs/` | Active identities, policies, registries, formulas, and ontology |
+| `data/` | Raw, processed, indexed, and curated data classes |
+| `tests/` | Unit, contract, regression, and materialized integration tests |
+| `artifacts/` | Generated runs, reports, packages, and submissions |
+| `experiments/` | Ablations and re-audits; never imported by production |
+| `provenance/` | Tracked checksums, identities, and audit seals |
+| `docs/` | Competition source, ADRs, migration state, and test reports |
 
-Public runtime namespace là `text2pandas`. `data_pipeline`, `retrieval` và
-`text2pandas.answer_pipeline` hiện chỉ là compatibility shims trong một migration
-window; code mới không được import các namespace này.
+`data_pipeline`, `retrieval`, and `text2pandas.answer_pipeline` are compatibility namespaces. New production code must import from `text2pandas` instead.
 
-## Commands
+## Engineering constraints
 
-```bash
-text2pandas --help
-make help
-make lint
-make test-offline
-make test-integration
-make materialize-h0
-make semantic-coverage
-make snapshots-verify
-```
+Read [`AGENTS.md`](AGENTS.md) before changing code, configuration, data, or evaluation behavior.
 
-Canonical answering run bắt buộc có immutable `run-id` và tự ghi manifest
-lineage vào `artifacts/runs/answer/<run-id>/manifest.json`:
+The non-negotiable rules are:
 
-```bash
-text2pandas run --run-id local-smoke-001 --offset 0 --limit 10 --no-package
-text2pandas run --run-id submission-candidate-001
-```
+- Keep `data/raw/btc/` immutable
+- Resolve active data from `configs/datasets/active_snapshot.yaml`
+- Keep production imports out of `tools/`, `experiments/`, and compatibility shims
+- Keep packaged values grounded in the competition corpus
+- Preserve exact evidence and Pandas replay
+- Report missing gold as `NOT_MEASURED`
+- Keep V3 in shadow mode until promotion policy passes
+- Do not add a closed model, remote inference dependency, or production network call
+- Do not commit large generated databases, caches, run directories, or ZIP files
 
-Full run chỉ publish ZIP sang `artifacts/submissions/` khi strict validator và
-replay cùng pass; output fail vẫn nằm trong run stage kèm
-`submission_manifest.json` để điều tra.
+## Documentation map
 
-`make semantic-coverage` phân loại deterministic toàn bộ 1.012 câu theo typed
-route và reason code. Chỉ số này không bao gồm retrieval/binding/accuracy; baseline
-được khóa bằng offline test để semantic gaps không thay đổi im lặng.
+- [Agent operating contract](AGENTS.md)
+- [Data ownership and lifecycle](data/README.md)
+- [Refactor plan](docs/REFACTOR_PLAN.md)
+- [Refactor status](docs/REFACTOR_STATUS.md)
+- [Gap closure status](docs/GAP_CLOSURE_STATUS.md)
+- [Semantic V3 migration status](docs/SEMANTIC_V3_MIGRATION_STATUS.md)
+- [Acceptance test report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md)
+- [Architecture decisions](docs/adr/)
+- [Competition source](docs/competition/README.md)
 
-Các target `dp-*` trong `Makefile` là delivery contract hiện hữu của A6 build,
-measurement, deterministic rebuild và release packaging; chúng được giữ nguyên
-để không đổi behavior trong folder refactor.
+## Known readiness gaps
 
-## Engineering rules
+The project is structurally valid and replayable, but several measured gaps remain:
 
-- Đọc `CLAUDE.md` trước khi thay đổi model/data/rules của cuộc thi.
-- Raw BTC là immutable input; không ghi output vào `data/raw/btc`.
-- A6 là processed snapshot có `build_id`; không chọn ngầm thư mục `latest`.
-- Retrieval manifest phải trỏ đúng active A6 build.
-- Production không import từ `tools/` hoặc `experiments/`.
-- Generated DB, Parquet, ZIP và run output không commit vào Git.
-- `submission.answer` phải bằng kết quả chạy thật của `pandas_query` trên evidence
-  đóng trong chính ZIP.
+- official Answer Accuracy and Execution Accuracy are unavailable without organiser gold
+- canonical executable coverage is 50.49%
+- multi-entity execution and operand binding cause most V2 abstentions
+- the current V2 reranker is an identity stage without measured uplift
+- Semantic V3 lacks enough adjudicated semantic and evidence gold for promotion
+- legacy V2 modules retain strict typing debt
+- 42 legacy tests require acceptance artifacts not present in the current workspace
 
-Các H0 integration artifacts nhỏ không phải source input. Khi đã materialize
-legacy A6 records/submissions, tái tạo chúng bằng `make materialize-h0`; chỉ dùng
-`FORCE=1` khi chủ động refresh cùng output.
-
-## Documentation
-
-- `docs/REFACTOR_PLAN.md`: baseline, target architecture và migration gates.
-- `docs/REFACTOR_STATUS.md`: phần đã triển khai và compatibility debt còn lại.
-- `docs/GAP_CLOSURE_STATUS.md`: gap matrix định lượng và thứ tự fill tiếp theo.
-- `docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md`: test report đối chiếu đề bài,
-  full-corpus metrics, submission replay và production-readiness verdict.
-- `docs/adr/`: quyết định data layout, namespace và artifact retention.
-- `data/README.md`: ownership/lifecycle của từng data class.
-- `docs/competition/Text2Pandas.docx`: đề bài gốc.
+Use the acceptance report as the numeric baseline. Update that report or create a dated successor after behavior, gold, or active snapshots change.
