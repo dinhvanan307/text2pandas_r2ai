@@ -1,6 +1,6 @@
 # Competition requirements traceability
 
-Status date: 2026-08-26
+Status date: 2026-08-27
 
 Authoritative source: [`competition/Text2Pandas.docx`](competition/Text2Pandas.docx)
 
@@ -14,9 +14,9 @@ only to the stated evidence boundary; it never implies hidden-gold accuracy.
 
 | ID | Requirement and source | Engineering contract | Acceptance evidence | Status |
 |---|---|---|---|---|
-| RQ-F01 | Retrieve the correct company, reporting period and relevant table (pp. 2-3) | Entity and period constraints are applied before ranking; every returned locator resolves to a real raw report table | Snapshot verification, retrieval evalkit, package locator validation | **PARTIAL**: 95 trusted local cases; macro F2@10 `0.3845` |
-| RQ-F02 | Understand Vietnamese financial questions, including comparisons, multiple companies/years and derived metrics (p. 3) | Versioned semantic ontology; typed composable AST; no QID-specific production rules | Parser/AST tests, semantic coverage, V3 differential run | **PARTIAL**: V2 emits 559/1,012; V3 is shadow-only |
-| RQ-F03 | Generate runnable Pandas code with correct logic, schema, period and unit (p. 3) | Restricted query grammar; typed unit conversion; clean replay must reproduce the packaged answer | Submission validator and isolated replay | **PARTIAL**: 559/559 emitted V2 queries replay; 453 questions abstain |
+| RQ-F01 | Retrieve the correct company, reporting period and relevant table (pp. 2-3) | Entity and period constraints are applied before ranking; every returned locator resolves to a real raw report table | Snapshot verification, retrieval evalkit, package locator validation | **PARTIAL**: candidate hit 95/95 and top-10 hit 86/95 on trusted manual gold; 917 questions are `NOT_MEASURED` |
+| RQ-F02 | Understand Vietnamese financial questions, including comparisons, multiple companies/years and derived metrics (p. 3) | Versioned semantic ontology; typed composable AST; no QID-specific production rules | Parser/AST tests, semantic coverage, V3 differential run | **PARTIAL**: V2 emits 566/1,012; V3 emits 206/1,012 in shadow mode |
+| RQ-F03 | Generate runnable Pandas code with correct logic, schema, period and unit (p. 3) | Restricted query grammar; typed unit conversion; clean replay must reproduce the packaged answer | Submission validator and isolated replay | **PARTIAL**: 566/566 emitted V2 queries replay; 446 questions abstain |
 | RQ-F04 | Support multi-company, multi-year and derived calculations (p. 3) | Entity and period are AST axes; every operand is independently retrieved and jointly bound | Multi-entity/formula regression tests and gold-slice accuracy | **OPEN**: complex aggregation, filter/rank and select-at-arg remain incomplete |
 | RQ-F05 | Return transparent source citations down to the input table (p. 3) | `relevant_docs`, `relevant_tables` and `evidence` are derived only from bound observations | Strict package validation against raw/A6 lineage | **PASS for emitted answers** |
 | RQ-F06 | Avoid hallucinated values and nonexistent sources (p. 3) | Fail closed on unresolved semantics/binding; reject non-finite values, unknown locators and unreferenced evidence | Policy tests, package validation, typed/Pandas equality | **PASS for safety; PARTIAL for coverage** |
@@ -47,7 +47,7 @@ only to the stated evidence boundary; it never implies hidden-gold accuracy.
 | RQ-S01 | One JSON at ZIP root, all data under root `data/` (pp. 6-7) | Reject extra root JSON, nested/unsafe paths, missing and orphan CSVs | ZIP contract tests and validator | **PASS** |
 | RQ-S02 | Each record contains `id`, `question`, numeric `answer`, `relevant_docs`, `relevant_tables`, `evidence`, `pandas_query` (pp. 6-7) | Exact required schema, unique IDs and finite answers | Schema validation | **PASS** |
 | RQ-S03 | Evidence contains `variable` and `csv_path`; paths start with `data/` (p. 7) | Unique Python identifiers; every referenced CSV exists and is replay-bound | Evidence and replay validation | **PASS** |
-| RQ-S04 | Pandas code runs using packaged CSV evidence (pp. 6-7) | Execute in a restricted clean namespace and compare result with `answer` | Clean replay report | **PASS for 559 emitted queries; coverage remains PARTIAL** |
+| RQ-S04 | Pandas code runs using packaged CSV evidence (pp. 6-7) | Execute in a restricted clean namespace and compare result with `answer` | Clean replay report | **PASS for 566 emitted queries; coverage remains PARTIAL** |
 
 ## Closure gates
 

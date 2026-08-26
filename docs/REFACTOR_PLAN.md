@@ -1,5 +1,7 @@
 # Text2Pandas — Kế hoạch refactor cấu trúc repository
 
+> Historical plan. The migration is complete. Use [`REFACTOR_STATUS.md`](REFACTOR_STATUS.md), [`../README.md`](../README.md), and `configs/datasets/active_snapshot.yaml` for the current architecture and snapshot identities.
+
 ## 1. Kết luận kiến trúc
 
 Repository phải phản ánh đúng data lineage của bài toán:
@@ -12,11 +14,11 @@ BTC raw snapshot
           │
           ▼
       A6 processed dataset
-      build_id = b3e9684004679ffb
+      build_id = c6887fb633374fad
           │
           ▼
       Retrieval index
-      index/config fingerprint = 286973b134a189ee
+      index/config fingerprint = 872ccb0dda9a2bb6
           │
           ▼
       Answering → validation → submission.zip

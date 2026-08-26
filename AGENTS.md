@@ -17,7 +17,7 @@ Load only the context required for the task:
 - **Active data identities**: `configs/datasets/active_snapshot.yaml`
 - **Architecture decisions**: the relevant file under `docs/adr/`
 - **Current migration state**: `docs/SEMANTIC_V3_MIGRATION_STATUS.md`
-- **Measured readiness**: `docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26_FINAL.md`
+- **Measured readiness**: `docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-27.md`
 - **Data ownership**: `data/README.md`, `artifacts/README.md`, and `provenance/README.md`
 
 Do not treat historical handoff files as current architecture. Verify every claim against active config, manifests, code, and tests.
@@ -157,7 +157,7 @@ make dp-env-check
 make dp-test REPORT_DIR=artifacts/reports/acceptance_local_001
 ```
 
-Run strict mypy on every changed typed package. `make typecheck` is the zero-error gate for the 77 production architecture modules. Full-repository mypy still contains documented historical V2 pipeline debt outside that boundary; do not move new production behavior there or conceal errors with cache.
+Run strict mypy on every changed typed package. `make typecheck` is the zero-error gate for the production architecture modules. Full-repository mypy still contains documented historical V2 pipeline debt outside that boundary; do not move new production behavior there or conceal errors with cache.
 
 ## Evaluation discipline
 

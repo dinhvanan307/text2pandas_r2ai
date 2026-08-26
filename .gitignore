@@ -62,7 +62,7 @@ env/
 *.whl
 
 # Run and packaging scratch
-reports/
+/reports/
 wheelhouse*/
 _tmp*/
 tmp/

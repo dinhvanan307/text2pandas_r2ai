@@ -1,6 +1,6 @@
 # Folder refactor status
 
-Updated: 2026-08-26
+Updated: 2026-08-27
 
 ## Completed
 
@@ -66,10 +66,10 @@ Updated: 2026-08-26
 ## Current gates
 
 - Offline: green.
-- Static semantic route: `659/1.012` eligible (`65,1186%`), `353` named gaps;
+- Static semantic route: `669/1.012` eligible (`66,1067%`), `343` named gaps;
   baseline được khóa trong offline suite.
 - Raw/A6/retrieval identity and lineage: green for the active local snapshots.
-- H0 materialized integration: green trên active local materialization (`22/22`).
+- Materialized integration: green trên active local materialization (`25/25`).
   Adjudication ledger được dẫn xuất từ 34 record có provenance
   `A6_DEFECT_FIXED`; determinism report được tạo từ hai clean package builds bằng
   `make materialize-h0`.
