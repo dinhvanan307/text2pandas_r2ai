@@ -56,6 +56,10 @@ _FILTERED_ENTITY_SELECTION = re.compile(
 _EXPLICIT_PERIOD_DOMAIN = re.compile(
     r"\b(?:trong|qua|cho|tai)\s+cac\s+nam\b"
 )
+_EXPLICIT_FILTERED_ENTITY_TOTAL = re.compile(
+    r"\btong\s+[^,?]{1,80}\s+cua\s+"
+    r"(?:cac\s+cong\s+ty|cac\s+doanh\s+nghiep|nhom)\b"
+)
 
 
 def _aggregate_override(
@@ -74,9 +78,11 @@ def _aggregate_override(
     being flattened into an unconditional sum.
     """
 
+    normalized = normalize_phrase(question)
+    if entity_count >= 2 and _EXPLICIT_FILTERED_ENTITY_TOTAL.search(normalized):
+        return OperationKind.SUM, "aggregate_domain:filtered_multi_entity_total"
     if operation != OperationKind.LOOKUP:
         return operation, None
-    normalized = normalize_phrase(question)
     if not _TOTAL_PREFIX.search(normalized) or _LEGAL_ENTITY_PREFIX.search(normalized):
         return operation, None
     if _FILTERED_ENTITY_SELECTION.search(normalized):

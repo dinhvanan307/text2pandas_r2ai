@@ -18,6 +18,7 @@ from .ast import (
     LogicalPredicate,
     MetricRef,
     Predicate,
+    QuantifiedPredicate,
     QuestionAST,
     Rank,
     SelectAtArg,
@@ -137,6 +138,9 @@ def _validate_predicate(predicate: Predicate, path: str, issues: list[SemanticIs
             issues.append(_issue(path, "LOGICAL_ARITY", "logical predicate requires two clauses"))
         for index, value in enumerate(predicate.predicates):
             _validate_predicate(value, f"{path}.predicates[{index}]", issues)
+        return
+    if isinstance(predicate, QuantifiedPredicate):
+        _validate_predicate(predicate.predicate, f"{path}.predicate", issues)
         return
     raise TypeError(f"unsupported predicate: {type(predicate).__name__}")
 

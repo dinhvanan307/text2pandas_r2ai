@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from statistics import median
 from types import MappingProxyType
 
 from text2pandas.application.binding import BoundExecutionPlan
@@ -11,6 +12,7 @@ from text2pandas.domain.semantic import (
     AggregateFunction,
     Arithmetic,
     ArithmeticOperator,
+    Axis,
     Comparison,
     ComparisonOperator,
     Exists,
@@ -20,6 +22,8 @@ from text2pandas.domain.semantic import (
     LogicalOperator,
     LogicalPredicate,
     MetricRef,
+    PredicateQuantifier,
+    QuantifiedPredicate,
     Rank,
     SelectAtArg,
     Unary,
@@ -137,7 +141,7 @@ class TypedExecutor:
             selected = {
                 scope: value
                 for scope, value in filtered_values.values.items()
-                if decisions.get(scope, False)
+                if _decision_for_scope(decisions, scope, expression.axis)
             }
             return _series(selected)
         raise ExecutionError(f"UNSUPPORTED_EXPRESSION:{type(expression).__name__}")
@@ -170,6 +174,13 @@ class TypedExecutor:
                 )
                 for scope in scopes
             }
+        if isinstance(predicate, QuantifiedPredicate):
+            child = self._predicate(predicate.predicate, f"{path}.predicate", bound)
+            grouped: dict[Scope, list[bool]] = {}
+            for scope, decision in child.items():
+                grouped.setdefault(scope.without(predicate.axis), []).append(decision)
+            reducer = all if predicate.quantifier == PredicateQuantifier.ALL else any
+            return {scope: reducer(values) for scope, values in grouped.items()}
         raise ExecutionError(f"UNSUPPORTED_PREDICATE:{type(predicate).__name__}")
 
 
@@ -217,9 +228,12 @@ def _aggregate(function: AggregateFunction, series: SeriesValue) -> SeriesValue:
         if function == AggregateFunction.AVERAGE:
             total /= len(comparable_values)
         return _series({Scope(): QuantityValue(total, comparable_values[0].unit)})
+    if function == AggregateFunction.MEDIAN:
+        median_value = median(value.value for value in comparable_values)
+        return _series({Scope(): QuantityValue(median_value, comparable_values[0].unit)})
     chooser = max if function == AggregateFunction.MAXIMUM else min
-    selected = chooser(comparable_values, key=lambda value: value.value)
-    return _series({Scope(): selected})
+    extreme_value = chooser(comparable_values, key=lambda value: value.value)
+    return _series({Scope(): extreme_value})
 
 
 def _rank(expression: Rank, series: SeriesValue) -> MemberValue:
@@ -251,6 +265,13 @@ def _numeric(value: SeriesValue | MemberValue) -> SeriesValue:
     if isinstance(value, MemberValue):
         raise ExecutionError("NUMERIC_VALUE_REQUIRED")
     return value
+
+
+def _decision_for_scope(decisions: dict[Scope, bool], scope: Scope, axis: Axis) -> bool:
+    if scope in decisions:
+        return decisions[scope]
+    projected = Scope(scope.entity, None) if axis == Axis.ENTITY else Scope(None, scope.period)
+    return decisions.get(projected, False)
 
 
 def _series(values: dict[Scope, QuantityValue]) -> SeriesValue:

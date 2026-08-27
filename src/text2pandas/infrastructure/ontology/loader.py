@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -49,9 +50,15 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
     reported_file, reported_digest = _verified_source(
         sources, "reported_metrics", manifest_file
     )
+    extension_file, extension_digest = _verified_source(
+        sources, "extensions", manifest_file
+    )
     metric_document = _document(metric_file)
     formula_document = _document(formula_file)
     reported_document = _document(reported_file)
+    extension_document = _document(extension_file)
+    if int(extension_document.get("schema_version", 0)) != 1:
+        raise OntologySourceError("semantic ontology extension schema_version must equal 1")
 
     metrics: dict[str, MetricDefinition] = {}
     for raw_value in metric_document.get("metrics", []):
@@ -60,6 +67,17 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
         if metric.metric_id in metrics:
             raise OntologySourceError(f"duplicate metric_id: {metric.metric_id}")
         metrics[metric.metric_id] = metric
+
+    for metric_id, aliases in _dict(
+        extension_document.get("metric_aliases", {}), "metric_aliases"
+    ).items():
+        if metric_id not in metrics:
+            raise OntologySourceError(f"extension aliases unknown metric: {metric_id}")
+        metric = metrics[metric_id]
+        metrics[metric_id] = replace(
+            metric,
+            aliases=tuple(dict.fromkeys((*metric.aliases, *_normalized_tuple(aliases)))),
+        )
 
     owned_aliases = {alias for metric in metrics.values() for alias in metric.aliases}
     for raw_value in reported_document.get("metrics", []):
@@ -89,6 +107,23 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
             raise OntologySourceError(f"duplicate formula_id: {formula.formula_id}")
         formulas[formula.formula_id] = formula
 
+    for formula_id, aliases in _dict(
+        extension_document.get("formula_aliases", {}), "formula_aliases"
+    ).items():
+        if formula_id not in formulas:
+            raise OntologySourceError(f"extension aliases unknown formula: {formula_id}")
+        formula = formulas[formula_id]
+        formulas[formula_id] = replace(
+            formula,
+            aliases=tuple(dict.fromkeys((*formula.aliases, *_normalized_tuple(aliases)))),
+        )
+    for raw_value in extension_document.get("formulas", []):
+        raw = _dict(raw_value, "extension formula")
+        formula = _formula_definition(raw)
+        if formula.formula_id in formulas:
+            raise OntologySourceError(f"duplicate extension formula_id: {formula.formula_id}")
+        formulas[formula.formula_id] = formula
+
     return MetricOntology(
         ontology_id=str(manifest["ontology_id"]),
         schema_version=3,
@@ -98,6 +133,7 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
             "metrics": metric_digest,
             "formulas": formula_digest,
             "reported_metrics": reported_digest,
+            "extensions": extension_digest,
         },
     )
 

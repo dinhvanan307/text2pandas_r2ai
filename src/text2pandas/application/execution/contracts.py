@@ -17,6 +17,9 @@ class Scope:
     def member(self, axis: Axis) -> str | None:
         return self.entity if axis == Axis.ENTITY else self.period
 
+    def without(self, axis: Axis) -> Scope:
+        return Scope(None, self.period) if axis == Axis.ENTITY else Scope(self.entity, None)
+
 
 @dataclass(frozen=True, slots=True)
 class QuantityValue:

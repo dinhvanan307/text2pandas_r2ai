@@ -22,6 +22,8 @@ from text2pandas.domain.semantic import (
     LogicalOperator,
     LogicalPredicate,
     MetricRef,
+    PredicateQuantifier,
+    QuantifiedPredicate,
     Rank,
     RankDirection,
     SelectAtArg,
@@ -180,7 +182,7 @@ def _render(
     if isinstance(expression, Filter):
         decisions = _render_predicate(expression.predicate, f"{path}.predicate", bound, variables)
         filtered = _numeric(_render(expression.expression, f"{path}.expression", bound, variables))
-        aligned = _align_decisions(decisions, filtered)
+        aligned = _align_decisions(decisions, filtered, expression.axis)
         return _RenderedSeries(
             {
                 scope: _RenderedQuantity(value.expression, value.unit, _and(value.guard, decision))
@@ -257,6 +259,10 @@ def _render_aggregate(function: AggregateFunction, series: _RenderedSeries) -> _
         if function == AggregateFunction.AVERAGE:
             counts = [f"(1 if {value.guard} else 0)" if value.guard else "1" for value in base]
             body = f"({body} / ({' + '.join(counts)}))"
+    elif function == AggregateFunction.MEDIAN:
+        if any(value.guard for value in base):
+            raise CompilationError("MEDIAN_GUARDED_SERIES_UNSUPPORTED")
+        body = _median_expression([value.expression for value in base])
     else:
         name = "max" if function == AggregateFunction.MAXIMUM else "min"
         sentinel = "float('-inf')" if function == AggregateFunction.MAXIMUM else "float('inf')"
@@ -432,17 +438,35 @@ def _render_predicate(
             scope: "(" + operator.join(child.get(scope, "False") for child in children) + ")"
             for scope in scopes
         }
+    if isinstance(predicate, QuantifiedPredicate):
+        child = _render_predicate(predicate.predicate, f"{path}.predicate", bound, variables)
+        grouped: dict[Scope, list[str]] = {}
+        for scope, decision in child.items():
+            grouped.setdefault(scope.without(predicate.axis), []).append(decision)
+        operator = " and " if predicate.quantifier == PredicateQuantifier.ALL else " or "
+        return {
+            scope: "(" + operator.join(f"({value})" for value in values) + ")"
+            for scope, values in grouped.items()
+        }
     raise CompilationError(f"UNSUPPORTED_PREDICATE:{type(predicate).__name__}")
 
 
 def _align_decisions(
-    decisions: dict[Scope, str], values: _RenderedSeries
+    decisions: dict[Scope, str], values: _RenderedSeries, axis: Axis
 ) -> list[tuple[Scope, _RenderedQuantity, str]]:
     if set(decisions) == set(values.values):
         return [(scope, values.values[scope], decisions[scope]) for scope in sorted(decisions)]
     scalar = Scope()
     if set(decisions) == {scalar}:
         return [(scope, value, decisions[scalar]) for scope, value in sorted(values.values.items())]
+    aligned: list[tuple[Scope, _RenderedQuantity, str]] = []
+    for scope, value in sorted(values.values.items()):
+        projected = Scope(scope.entity, None) if axis == Axis.ENTITY else Scope(None, scope.period)
+        if projected not in decisions:
+            break
+        aligned.append((scope, value, decisions[projected]))
+    else:
+        return aligned
     raise CompilationError(
         f"FILTER_SCOPE_MISMATCH:{sorted(decisions)}:{sorted(values.values)}"
     )
@@ -507,3 +531,35 @@ def _evidence(bound: BoundExecutionPlan, variables: dict[str, str]) -> tuple[Pan
 
 def _number(value: Decimal) -> str:
     return format(value, "f")
+
+
+def _median_expression(values: list[str]) -> str:
+    """Render a median using only comparisons and scalar conditionals."""
+
+    if not values:
+        raise CompilationError("MEDIAN_EMPTY")
+    if len(values) == 1:
+        return values[0]
+    if len(values) == 2:
+        return f"(({values[0]} + {values[1]}) / 2)"
+    if len(values) in (3, 4):
+        total = " + ".join(values)
+        trimmed = f"(({total}) - min({', '.join(values)}) - max({', '.join(values)}))"
+        return trimmed if len(values) == 3 else f"({trimmed} / 2)"
+
+    def kth(index: int) -> str:
+        body = values[-1]
+        for candidate in reversed(values[:-1]):
+            less = " + ".join(f"(1 if {other} < {candidate} else 0)" for other in values)
+            less_equal = " + ".join(
+                f"(1 if {other} <= {candidate} else 0)" for other in values
+            )
+            condition = f"(({less}) <= {index} and ({less_equal}) > {index})"
+            body = f"({candidate} if {condition} else {body})"
+        return body
+
+    upper = kth(len(values) // 2)
+    if len(values) % 2:
+        return upper
+    lower = kth(len(values) // 2 - 1)
+    return f"(({lower} + {upper}) / 2)"

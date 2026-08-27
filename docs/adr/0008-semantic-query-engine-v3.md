@@ -68,3 +68,9 @@ difference must have a taxonomy reason before V3 promotion.
 - Existing answer, semantic and execution labels remain diagnostic-only until
   independent adjudication is verifiable. Missing eligible labels block V3;
   they are never backfilled from V2 predictions.
+- Cohort semantics use typed `Filter`, `QuantifiedPredicate` (`ALL`/`ANY`) and
+  group aggregates such as `MEDIAN`; filtering, ranking and select-at-arg stay
+  compositional and replay through the same bound operands.
+- V3-only reviewed aliases/formulas live in
+  `configs/semantic/extensions_v3.yaml`. The V2 registries remain byte-identical
+  throughout shadow migration.

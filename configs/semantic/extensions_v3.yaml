@@ -1,0 +1,43 @@
+schema_version: 1
+extension_id: semantic-v3-cohort-formulas
+
+# V3-only aliases keep the immutable canonical V2 registries byte-identical.
+metric_aliases:
+  net_revenue: ["tong doanh thu thuan"]
+
+formula_aliases:
+  current_ratio: ["ty le tai san ngan han tren no ngan han"]
+  quick_ratio:
+    - "ty le phan chenh lech giua tai san ngan han va hang ton kho tren no ngan han"
+
+formulas:
+  - formula_id: inventory_to_current_liabilities
+    variant_id: default
+    aliases: ["ty le hang ton kho tren no ngan han", "hang ton kho tren no ngan han"]
+    leaves: [inventory, current_liabilities]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: inventory}
+      den: {node: FactRef, metric_id: current_liabilities}
+
+  - formula_id: cfo_to_current_liabilities
+    variant_id: default
+    aliases:
+      - "ty le luu chuyen tien thuan tu hoat dong kinh doanh tren no ngan han"
+      - "luu chuyen tien thuan tu hoat dong kinh doanh tren no ngan han"
+      - "ty le dong tien hoat dong tren no ngan han"
+    leaves: [cash_flow_from_operations, current_liabilities]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: cash_flow_from_operations}
+      den: {node: FactRef, metric_id: current_liabilities}

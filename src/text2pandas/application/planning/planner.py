@@ -18,6 +18,7 @@ from text2pandas.domain.semantic import (
     Literal,
     LogicalPredicate,
     MetricRef,
+    QuantifiedPredicate,
     QuestionAST,
     Rank,
     SelectAtArg,
@@ -190,6 +191,10 @@ def _collect_predicate(
                 child, f"{path}.predicates[{index}]", requests, formula_scopes
             )
         return keys
+    if isinstance(predicate, QuantifiedPredicate):
+        return _collect_predicate(
+            predicate.predicate, f"{path}.predicate", requests, formula_scopes
+        )
     raise TypeError(f"unsupported predicate: {type(predicate).__name__}")
 
 

@@ -19,6 +19,7 @@ from .types import (
     LogicalOperator,
     OutputSpec,
     PeriodSemantics,
+    PredicateQuantifier,
     RankDirection,
     UnaryOperator,
     UnitSpec,
@@ -93,6 +94,15 @@ class LogicalPredicate:
 
 
 @dataclass(frozen=True, slots=True)
+class QuantifiedPredicate:
+    """Reduce predicate decisions over one axis while preserving the other."""
+
+    axis: Axis
+    quantifier: PredicateQuantifier
+    predicate: Predicate
+
+
+@dataclass(frozen=True, slots=True)
 class Filter:
     axis: Axis
     members: tuple[str, ...]
@@ -126,7 +136,7 @@ Expression: TypeAlias = (
     | Rank
     | SelectAtArg
 )
-Predicate: TypeAlias = Comparison | Exists | LogicalPredicate
+Predicate: TypeAlias = Comparison | Exists | LogicalPredicate | QuantifiedPredicate
 
 
 @dataclass(frozen=True, slots=True)
@@ -254,6 +264,13 @@ def predicate_to_dict(predicate: Predicate) -> dict[str, Any]:
             "operator": predicate.operator.value,
             "predicates": [predicate_to_dict(value) for value in predicate.predicates],
         }
+    if isinstance(predicate, QuantifiedPredicate):
+        return {
+            "type": "quantified",
+            "axis": predicate.axis.value,
+            "quantifier": predicate.quantifier.value,
+            "predicate": predicate_to_dict(predicate.predicate),
+        }
     raise TypeError(f"unsupported predicate: {type(predicate).__name__}")
 
 
@@ -338,6 +355,12 @@ def predicate_from_dict(raw: Mapping[str, Any]) -> Predicate:
         return LogicalPredicate(
             LogicalOperator(str(raw["operator"])),
             tuple(predicate_from_dict(_mapping(value)) for value in raw.get("predicates", ())),
+        )
+    if kind == "quantified":
+        return QuantifiedPredicate(
+            Axis(str(raw["axis"])),
+            PredicateQuantifier(str(raw["quantifier"])),
+            predicate_from_dict(_mapping(raw["predicate"])),
         )
     raise ValueError(f"unknown predicate type: {kind!r}")
 

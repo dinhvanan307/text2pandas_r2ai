@@ -196,12 +196,16 @@ class SemanticParser:
         # Validate the requested scope before ontology promotion policy.  A
         # derived operation with one missing side is a structural parse error,
         # irrespective of whether the surviving metric is reviewed.
-        if operation in (OperationKind.SUM, OperationKind.AVERAGE, OperationKind.COUNT):
-            if axis is None or len(members) < 2:
-                return "AGGREGATE_AXIS_UNRESOLVED"
-        if operation in (OperationKind.SUBTRACT, OperationKind.GROWTH):
-            if _binary_scopes(annotations) is None:
-                return "BINARY_OPERANDS_UNRESOLVED"
+        if (
+            operation in (OperationKind.SUM, OperationKind.AVERAGE, OperationKind.COUNT)
+            and (axis is None or len(members) < 2)
+        ):
+            return "AGGREGATE_AXIS_UNRESOLVED"
+        if (
+            operation in (OperationKind.SUBTRACT, OperationKind.GROWTH)
+            and _binary_scopes(annotations) is None
+        ):
+            return "BINARY_OPERANDS_UNRESOLVED"
         if (
             not isinstance(base, FormulaCall)
             and any(mention.metric.review_status != "reviewed" for mention in mentions)
@@ -222,6 +226,26 @@ class SemanticParser:
             }[operation]
             if function == AggregateFunction.COUNT:
                 return "COUNT_PREDICATE_REQUIRED"
+            if axis == Axis.ENTITY:
+                filtered_roles = _filtered_aggregate_roles(
+                    question,
+                    annotations,
+                    mentions,
+                    formula_mentions,
+                )
+                if isinstance(filtered_roles, str):
+                    return filtered_roles
+                if filtered_roles is not None:
+                    cohort_predicate, cohort_value = filtered_roles
+                    return (
+                        Aggregate(
+                            function,
+                            axis,
+                            Filter(axis, members, cohort_predicate, cohort_value),
+                            members,
+                        ),
+                        ResultKind.SCALAR,
+                    )
             return Aggregate(function, axis, base, members), ResultKind.SCALAR
 
         if operation in (OperationKind.SUBTRACT, OperationKind.GROWTH):
@@ -250,8 +274,8 @@ class SemanticParser:
             if annotations.return_mode == ReturnMode.FILTERED_VALUE:
                 if formula is None:
                     return "FILTER_PREDICATE_REQUIRED"
-                predicate = _threshold_predicate(question, formula, annotations)
-                if predicate is None:
+                threshold_predicate = _threshold_predicate(question, formula, annotations)
+                if threshold_predicate is None:
                     return "FILTER_PREDICATE_REQUIRED"
                 if not mentions:
                     return "FILTER_VALUE_METRIC_UNRESOLVED"
@@ -261,13 +285,15 @@ class SemanticParser:
                 ):
                     return "FILTER_VALUE_UNIT_MISMATCH"
                 selected = _metric_ref(selected_metric, annotations)
-                filtered = Filter(axis, members, predicate, selected)
+                filtered_expression = Filter(
+                    axis, members, threshold_predicate, selected
+                )
                 function = (
                     AggregateFunction.MAXIMUM
                     if direction == RankDirection.DESCENDING
                     else AggregateFunction.MINIMUM
                 )
-                return Aggregate(function, axis, filtered, members), ResultKind.SCALAR
+                return Aggregate(function, axis, filtered_expression, members), ResultKind.SCALAR
             if annotations.return_mode == ReturnMode.SELECT_AT_ARG:
                 roles = _select_at_arg_roles(
                     question,
@@ -629,6 +655,114 @@ _PERCENT_THRESHOLD = re.compile(
     r"\b(?P<operator>lon hon|vuot|cao hon|tren|it nhat|khong duoi|nho hon|thap hon|duoi)\s*"
     r"(?P<value>\d+(?:[.,]\d+)?)\s*%"
 )
+
+_COHORT_THRESHOLD = re.compile(
+    r"\b(?:(?P<from>tu)\s+)?"
+    r"(?P<operator>lon hon|vuot|cao hon|tren|it nhat|khong duoi|"
+    r"nho hon|thap hon|duoi)?\s*"
+    r"(?P<value>\d+(?:[.,]\d+)?)\s*(?P<unit>%|lan)?"
+    r"(?:\s*tro len)?\b"
+)
+
+
+def _filtered_aggregate_roles(
+    question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+    formula_mentions: tuple[FormulaMention, ...],
+) -> tuple[Comparison, Expression] | str | None:
+    """Compile an explicit numeric cohort predicate for SUM/AVERAGE.
+
+    This route is intentionally closed: the predicate must contain a reviewed
+    expression immediately before an explicit numeric threshold, and exactly
+    one different output-compatible expression must remain. Ambiguous clauses
+    abstain instead of falling back to the aggregate base metric.
+    """
+
+    normalized = normalize_phrase(question)
+    if not re.search(r"\b(?:cac cong ty|cac doanh nghiep|trong so|trong nhom)\b", normalized):
+        return None
+    candidates = _expression_mentions(
+        normalized, annotations, metric_mentions, formula_mentions
+    )
+    if len(candidates) < 2:
+        return None
+    threshold_matches = [
+        match
+        for match in _COHORT_THRESHOLD.finditer(normalized)
+        if match.group("operator") or match.group("from") or "tro len" in match.group(0)
+    ]
+    if not threshold_matches:
+        return None
+    threshold = threshold_matches[0]
+    preceding = [value for value in candidates if value.end <= threshold.start()]
+    if not preceding:
+        return "FILTER_PREDICATE_EXPRESSION_UNRESOLVED"
+    predicate_expression = max(preceding, key=lambda value: (value.end, value.end - value.start))
+    if threshold.start() - predicate_expression.end > 80:
+        return "FILTER_PREDICATE_EXPRESSION_UNRESOLVED"
+
+    operator_token = threshold.group("operator") or ""
+    operator = {
+        "lon hon": ComparisonOperator.GT,
+        "vuot": ComparisonOperator.GT,
+        "cao hon": ComparisonOperator.GT,
+        "tren": ComparisonOperator.GT,
+        "it nhat": ComparisonOperator.GE,
+        "khong duoi": ComparisonOperator.GE,
+        "nho hon": ComparisonOperator.LT,
+        "thap hon": ComparisonOperator.LT,
+        "duoi": ComparisonOperator.LT,
+        "": ComparisonOperator.GE,
+    }[operator_token]
+    value = float(threshold.group("value").replace(",", "."))
+    explicit_unit = threshold.group("unit")
+    literal_dimension = (
+        Dimension.PERCENT
+        if explicit_unit == "%"
+        else Dimension.RATIO
+        if explicit_unit == "lan"
+        else predicate_expression.dimension
+    )
+    if not _unit_dimensions_compatible(predicate_expression.dimension, literal_dimension):
+        return "FILTER_PREDICATE_UNIT_MISMATCH"
+    predicate = Comparison(
+        operator,
+        predicate_expression.expression,
+        Literal(value, UnitSpec(literal_dimension)),
+    )
+
+    selected = [
+        candidate
+        for candidate in candidates
+        if candidate.identity != predicate_expression.identity
+        and _selected_dimension_compatible(
+            candidate.dimension, annotations.requested_unit.dimension
+        )
+    ]
+    by_identity = {candidate.identity: candidate for candidate in selected}
+    if not by_identity:
+        return "FILTER_SELECTED_EXPRESSION_UNRESOLVED"
+    if len(by_identity) > 1:
+        return "FILTER_SELECTED_EXPRESSION_AMBIGUOUS"
+    chosen = next(iter(by_identity.values()))
+    return predicate, _apply_selected_output_unit(
+        _without_qualifiers(chosen.expression), annotations.requested_unit
+    )
+
+
+def _without_qualifiers(expression: Expression) -> Expression:
+    if not isinstance(expression, MetricRef) or not expression.qualifiers:
+        return expression
+    return MetricRef(
+        expression.metric_id,
+        expression.entities,
+        expression.periods,
+        expression.basis,
+        expression.statement_types,
+        expression.expected_unit,
+        expression.period_semantics,
+    )
 
 
 def _threshold_predicate(

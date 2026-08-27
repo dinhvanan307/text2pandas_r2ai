@@ -11,7 +11,7 @@ def test_reviewed_sources_load_as_one_validated_ontology() -> None:
     assert ontology.schema_version == 3
     assert sum(metric.review_status == "reviewed" for metric in ontology.metrics.values()) == 28
     assert sum(metric.review_status == "reported" for metric in ontology.metrics.values()) > 300
-    assert len(ontology.formulas) == 27
+    assert len(ontology.formulas) == 29
     assert ontology.validate() == ()
     assert len(ontology.fingerprint) == 64
 
@@ -44,3 +44,21 @@ def test_longest_specific_alias_wins_for_metric_and_formula() -> None:
 
     assert metric is not None and metric.metric_id == "tangible_fixed_assets"
     assert formula is not None and formula.formula_id == "tangible_fixed_assets_to_assets"
+
+
+def test_filtered_cohort_formulas_are_reviewed_in_the_shared_ontology() -> None:
+    ontology = load_ontology()
+
+    inventory_ratio = ontology.match_formula(
+        normalize_phrase("Tỷ lệ hàng tồn kho trên nợ ngắn hạn")
+    )
+    cash_flow_ratio = ontology.match_formula(
+        normalize_phrase(
+            "Tỷ lệ lưu chuyển tiền thuần từ hoạt động kinh doanh trên nợ ngắn hạn"
+        )
+    )
+
+    assert inventory_ratio is not None
+    assert inventory_ratio.formula_id == "inventory_to_current_liabilities"
+    assert cash_flow_ratio is not None
+    assert cash_flow_ratio.formula_id == "cfo_to_current_liabilities"

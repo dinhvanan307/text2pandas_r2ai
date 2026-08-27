@@ -65,6 +65,7 @@ class AggregateFunction(StrEnum):
     COUNT = "count"
     MINIMUM = "minimum"
     MAXIMUM = "maximum"
+    MEDIAN = "median"
 
 
 class RankDirection(StrEnum):
@@ -84,6 +85,11 @@ class ComparisonOperator(StrEnum):
 class LogicalOperator(StrEnum):
     AND = "and"
     OR = "or"
+
+
+class PredicateQuantifier(StrEnum):
+    ALL = "all"
+    ANY = "any"
 
 
 @dataclass(frozen=True, slots=True)

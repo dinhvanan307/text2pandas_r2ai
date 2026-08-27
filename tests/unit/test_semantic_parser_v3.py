@@ -10,6 +10,7 @@ from text2pandas.application.parsing import (
 )
 from text2pandas.domain.semantic import (
     Aggregate,
+    AggregateFunction,
     Arithmetic,
     ArithmeticOperator,
     Axis,
@@ -421,3 +422,57 @@ def test_select_at_arg_rejects_unresolved_composite_selected_expense() -> None:
 
     assert not result.ok
     assert result.reason == "SELECT_AT_ARG_SELECTED_COMPOSITE_UNRESOLVED"
+
+
+def test_filtered_multi_entity_sum_compiles_predicate_and_selected_metric_separately() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {
+                "AAA": "CTCP Nhựa An Phát Xanh",
+                "DCM": "CTCP Phân bón Dầu khí Cà Mau",
+                "DPM": "Tổng CTCP Phân bón và Hóa chất Dầu khí",
+                "GVR": "Tập đoàn Công nghiệp Cao su Việt Nam",
+            }
+        ),
+    )
+
+    result = parser.parse(
+        "Năm 2016, trong bốn mã cổ phiếu AAA, DCM, DPM và GVR, tổng doanh thu "
+        "thuần của các công ty có tỷ lệ lợi nhuận sau thuế trên doanh thu thuần "
+        "lớn hơn 10% là bao nhiêu nghìn tỷ đồng?"
+    )
+
+    assert result.ok
+    aggregate = result.ast.expression
+    assert isinstance(aggregate, Aggregate)
+    assert aggregate.function == AggregateFunction.SUM
+    assert isinstance(aggregate.expression, Filter)
+    assert aggregate.expression.predicate.left.formula_id == "net_margin"
+    assert aggregate.expression.predicate.operator.value == "gt"
+    assert aggregate.expression.expression.metric_id == "net_revenue"
+    assert aggregate.expression.expression.qualifiers == ()
+
+
+def test_filtered_multi_entity_average_supports_distinct_reviewed_formulas() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {"AAA": "AAA", "DCM": "DCM", "GVR": "GVR", "PRT": "PRT"}
+        ),
+    )
+
+    result = parser.parse(
+        "Năm 2017, trong bốn mã cổ phiếu AAA, DCM, GVR và PRT, với các công ty "
+        "có tỷ lệ tài sản ngắn hạn trên nợ ngắn hạn từ 1 lần trở lên, bình quân "
+        "tỷ lệ hàng tồn kho trên nợ ngắn hạn là bao nhiêu lần?"
+    )
+
+    assert result.ok
+    aggregate = result.ast.expression
+    assert isinstance(aggregate, Aggregate)
+    assert aggregate.function == AggregateFunction.AVERAGE
+    assert isinstance(aggregate.expression, Filter)
+    assert aggregate.expression.predicate.left.formula_id == "current_ratio"
+    assert aggregate.expression.predicate.operator.value == "ge"
+    assert aggregate.expression.expression.formula_id == "inventory_to_current_liabilities"
