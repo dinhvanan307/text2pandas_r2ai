@@ -9,13 +9,14 @@ The project uses a strangler migration. Canonical V2 remains the submission engi
 | Runtime | Current state | Latest full-corpus result |
 |---|---|---:|
 | Canonical V2 | Validated submission candidate | 561 answers and 451 fail-closed abstentions |
-| Semantic V3 | Shadow only; promotion blocked | 272 answers and 740 fail-closed abstentions |
+| Semantic V3 | Shadow only; promotion blocked | 271 answers and 741 fail-closed abstentions |
 
 The latest acceptance run validated all 1,012 output records and replayed 561 of 561 emitted Pandas queries. Thirteen previously emitted answers are now fail-closed because their operands mixed consolidated and separate statements. On the independently adjudicated local slice, 14 of 31 answers are correct and executable (45.16% local Answer and Execution Accuracy; 100% replay consistency among emitted answers). Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held gold is unavailable.
 
-V3 r6 adds typed quantified predicates for filtered cohorts, median,
+V3 r7 adds typed quantified predicates for filtered cohorts, median,
 multi-entity aggregation and select-at-arg planning. Exact metric/basis binding
-fixes reduced ambiguous binding from 169 to 109 while keeping the existing
+fixes reduced ambiguous binding from 169 to 109. A hard counterparty evidence
+constraint intentionally removed one unsafe r6 answer while keeping the existing
 diagnostic answer slice unchanged at 6 correct and 3 incorrect among nine
 emitted answers. These are coverage diagnostics, not production accuracy.
 

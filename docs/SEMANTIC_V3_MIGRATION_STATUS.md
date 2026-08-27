@@ -29,25 +29,25 @@ The current run uses all 1,012 questions, A6 build `c6887fb633374fad`, operand t
 
 | Metric | Result |
 |---|---:|
-| V3 OK | 272 |
-| V3 abstain | 740 |
+| V3 OK | 271 |
+| V3 abstain | 741 |
 | Metric unresolved | 198 |
 | Ambiguous binding | 109 |
 | Reported metric blocked for derived operation | 141 |
 | Typed/Pandas replay mismatch | 0 |
 | Both V2/V3 OK and equal | 157 |
 | Both OK but value differs | 67 |
-| V3-only OK | 48 |
+| V3-only OK | 47 |
 | V2-only OK | 337 |
-| Runtime | 69.79 s |
+| Runtime | 75.80 s |
 
-Artifact: `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r6-20260827/manifest.json`.
+Artifact: `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r7-20260827/manifest.json`.
 
 These are coverage and differential measurements, not accuracy. The 67 value
-differences and 48 V3-only answers require independent adjudication before
+differences and 47 V3-only answers require independent adjudication before
 promotion. On the existing diagnostic answer slice, r6 has 6 matches and 3
 mismatches among nine emitted answers, unchanged from r3. External execution
-accuracy remains `NOT_MEASURED`; all 272 returned answers passed internal
+accuracy remains `NOT_MEASURED`; all 271 returned answers passed internal
 typed/Pandas equality.
 
 ## Promotion state
@@ -73,7 +73,7 @@ as zero, pass or not-applicable.
 ## Remaining migration waves
 
 1. Adjudicate at least 300 independent answer, semantic and evidence records,
-   beginning with the 67 V2/V3 value differences and 48 `V3_ONLY_OK` cases.
+   beginning with the 67 V2/V3 value differences and 47 `V3_ONLY_OK` cases.
 2. Promote reported metrics to reviewed canonical metrics by family; derived
    operations remain blocked until promotion.
 3. Extend the closed predicate grammar beyond the currently reviewed explicit

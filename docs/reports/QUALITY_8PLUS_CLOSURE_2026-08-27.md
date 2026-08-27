@@ -21,20 +21,20 @@ Canonical V2 remains production/submission runtime. V3 remains shadow-only.
 | Parser | Closed explicit threshold-cohort grammar; V3-only ontology extensions checksum-bound to V2 | No QID-specific branch and no generic numerator/denominator guessing |
 | Binding | Exact reviewed metric specificity, bounded exact-leaf ranking bonus and consolidated soft prior for unmarked basis | V3 ambiguity 169 to 109; explicit basis remains hard |
 | Counterparty binding | Explicit `từ Công ty X của <subject>` becomes a hard context phrase, not a soft token bonus | Q503 no longer substitutes May Hòa Thọ/Vinatex/Nam Định for Coats Phong Phú |
-| Abstention | V3 r6 emits 272/1,012 versus 207/1,012 at r3 | +65 emitted answers; existing nine-answer diagnostic slice stays 6 match / 3 mismatch |
+| Abstention | V3 r7 emits 271/1,012 versus 207/1,012 at r3 | +64 safe answers; existing nine-answer diagnostic slice stays 6 match / 3 mismatch |
 | Reranker | Real deterministic learned S3 with immutable feature order and checksum-bound model/training manifest | Model SHA `e60a8acea32989a2be37a89cd9cbfbb92b0b4f338ea2be9a299944075e6cebfd` |
 | Held-out protocol | 120 QIDs excluded from all legacy gold, selected before training using deterministic hash, question-only blind packet | Packet SHA `cd1753b777ff7dce1778f22d274fd83c89f481642aded2fa4a30802e49f292d6` |
 | Promotion | One policy requires parser, retrieval, binding, answer, reranker held-out and submission replay on a single sealed release | Missing metrics are blocking `NOT_MEASURED`, never pass/default zero |
 
-## Full-corpus Semantic V3 r6
+## Full-corpus Semantic V3 r7
 
-Run: `semantic-v3-a6-v1.10-r6-20260827`
+Run: `semantic-v3-a6-v1.10-r7-20260827` from clean commit `ae160762bdae41ef90dedce9d4d0ff92d0c2b630`.
 
 | Metric | Result |
 |---|---:|
 | Questions | 1,012 |
-| OK | 272 |
-| Fail-closed abstention | 740 |
+| OK | 271 |
+| Fail-closed abstention | 741 |
 | Metric unresolved | 198 |
 | Reported metric blocked for derived use | 141 |
 | Ambiguous binding | 109 |
@@ -43,7 +43,7 @@ Run: `semantic-v3-a6-v1.10-r6-20260827`
 | Typed/Pandas mismatch | 0 |
 | Both V2/V3 OK, equal | 157 |
 | Both OK, value differs | 67 |
-| V3 only OK | 48 |
+| V3 only OK | 47 |
 | V2 only OK | 337 |
 
 This is a coverage/differential result. It is not answer accuracy.
@@ -60,19 +60,20 @@ so it is development evidence only. A deterministic 76/19 split produced:
 | Hit@10 | 0.8421 | 0.9474 | +0.1053 |
 
 The candidate is not promoted. `evaluate_reranker_heldout.py` currently returns
-`BLOCKED_AWAITING_INDEPENDENT_LABELS`. After dual annotation and independent
+`BLOCKED` with reason `independent held-out labels are absent`. After dual annotation and independent
 adjudication, the one-shot evaluator requires at least 100 records, non-negative
 paired F2 delta, CI95 lower bound at least zero, and protected `single`/`compare`
 slice delta no worse than -0.01.
 
 ## Test report
 
-The final command matrix and exact counts are recorded below after the release
-verification run. No test result substitutes for missing independent labels.
+The final command matrix and exact counts are recorded below. No test result
+substitutes for missing independent labels.
 
 | Gate | Result |
 |---|---|
-| Offline CI | PASS: Ruff; mypy 81 files; 47 Markdown files; 2,038 tests passed, 42 approved skips, 25 integration deselected |
+| Machine-readable full suite | PASS: 2,105 collected; 2,063 passed; 42 approved skips; 0 failed/error/xfailed/xpassed |
+| Offline CI | PASS: Ruff; mypy 81 files; 48 Markdown files; 2,038 tests passed, 42 approved skips, 25 integration deselected |
 | Materialized integration | PASS: 25 tests, 2,080 deselected; one existing Python `SyntaxWarning` |
 | Active snapshot verification | PASS: raw 1,973 reports/1,012 questions/100 tickers; A6 146,246 cards; retrieval DB 4,239,663,104 bytes |
 | Held-out selection integrity | PASS: 120 records, packet checksum stable |
