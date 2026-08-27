@@ -28,6 +28,7 @@ class SemanticV3Result:
     query: str | None = None
     relevant_tables: tuple[str, ...] = ()
     relevant_documents: tuple[str, ...] = ()
+    evidence: tuple[Mapping[str, object], ...] = ()
     ast: Mapping[str, object] | None = None
     plan_fingerprint: str | None = None
     ontology_fingerprint: str | None = None
@@ -50,6 +51,7 @@ class SemanticV3Result:
             "pandas_query": self.query,
             "relevant_tables": list(self.relevant_tables),
             "relevant_documents": list(self.relevant_documents),
+            "evidence": [dict(item) for item in self.evidence],
             "ast": dict(self.ast) if self.ast else None,
             "plan_fingerprint": self.plan_fingerprint,
             "ontology_fingerprint": self.ontology_fingerprint,
@@ -167,6 +169,15 @@ class SemanticV3Engine:
         trace.append({"stage": "PANDAS_REPLAY", "status": "MATCH", "value": replayed})
         tables = tuple(evidence.table_uid for evidence in compiled.program.evidence)
         documents = tuple(dict.fromkeys(evidence.document_id for evidence in compiled.program.evidence))
+        evidence = tuple(
+            {
+                "variable": item.variable,
+                "table_uid": item.table_uid,
+                "document_id": item.document_id,
+                "observation_uids": list(item.observation_uids),
+            }
+            for item in compiled.program.evidence
+        )
         return SemanticV3Result(
             qid=qid,
             status="OK",
@@ -174,6 +185,7 @@ class SemanticV3Engine:
             query=compiled.program.query,
             relevant_tables=tables,
             relevant_documents=documents,
+            evidence=evidence,
             ast=parsed.ast.to_dict(),
             plan_fingerprint=plan.fingerprint,
             ontology_fingerprint=plan.ontology_fingerprint,

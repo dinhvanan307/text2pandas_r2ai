@@ -58,6 +58,13 @@ def test_engine_runs_parse_to_replay_and_derives_exact_evidence() -> None:
     assert result.ok and result.answer == Decimal(20)
     assert result.relevant_tables == ("table:income",)
     assert result.relevant_documents == ("VCB-2024",)
+    assert result.evidence == (
+        {
+            "variable": "df1",
+            "table_uid": "table:income",
+            "document_id": "VCB-2024",
+            "observation_uids": ["obs:net_revenue", "obs:profit_after_tax"],
+        },
+    )
     assert result.plan_fingerprint and result.ontology_fingerprint
     assert classify_differential({"status": "OK", "answer": 20.0}, result) == "BOTH_OK_MATCH"
-
