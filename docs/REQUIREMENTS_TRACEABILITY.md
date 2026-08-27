@@ -15,7 +15,7 @@ only to the stated evidence boundary; it never implies hidden-gold accuracy.
 | ID | Requirement and source | Engineering contract | Acceptance evidence | Status |
 |---|---|---|---|---|
 | RQ-F01 | Retrieve the correct company, reporting period and relevant table (pp. 2-3) | Entity and period constraints are applied before ranking; every returned locator resolves to a real raw report table | Snapshot verification, retrieval evalkit, package locator validation | **PARTIAL**: candidate hit 95/95 and top-10 hit 86/95 on trusted manual gold; 917 questions are `NOT_MEASURED` |
-| RQ-F02 | Understand Vietnamese financial questions, including comparisons, multiple companies/years and derived metrics (p. 3) | Versioned semantic ontology; typed composable AST; no QID-specific production rules | Parser/AST tests, semantic coverage, V3 differential run | **PARTIAL**: V2 emits 561/1,012; V3 r7 emits 271/1,012 in shadow mode |
+| RQ-F02 | Understand Vietnamese financial questions, including comparisons, multiple companies/years and derived metrics (p. 3) | Versioned semantic ontology; typed composable AST; no QID-specific production rules | Parser/AST tests, semantic coverage, V3 differential run | **PARTIAL**: V2 emits 561/1,012; V3 r17 emits 269/1,012 in shadow mode |
 | RQ-F03 | Generate runnable Pandas code with correct logic, schema, period and unit (p. 3) | Restricted query grammar; typed unit conversion; clean replay must reproduce the packaged answer | Submission validator and isolated replay | **PARTIAL**: 561/561 emitted V2 queries replay; 451 questions abstain |
 | RQ-F04 | Support multi-company, multi-year and derived calculations (p. 3) | Entity and period are AST axes; every operand is independently retrieved and jointly bound | Multi-entity/formula regression tests and gold-slice accuracy | **PARTIAL**: quantified predicates, filtered cohorts, median and select-at-arg IR execute end-to-end for reviewed closed patterns; broad binding accuracy is not independently measured |
 | RQ-F05 | Return transparent source citations down to the input table (p. 3) | `relevant_docs`, `relevant_tables` and `evidence` are derived only from bound observations | Strict package validation against raw/A6 lineage | **PASS for emitted answers** |
@@ -36,8 +36,8 @@ only to the stated evidence boundary; it never implies hidden-gold accuracy.
 | ID | Requirement and source | Engineering contract | Acceptance evidence | Status |
 |---|---|---|---|---|
 | RQ-E01 | Report macro retrieval Precision, Recall and F2 where `F2=5PR/(4P+R)` (p. 6) | Versioned eval config; macro metrics only over trusted gold; missing labels are `NOT_MEASURED` | Evalkit report | **PARTIAL**: measured on 95/1,012 local cases |
-| RQ-E02 | Report Answer Accuracy within organiser tolerance (p. 6) | Score only against independent answer gold using declared tolerance | Official scorer or independent adjudicated gold | **NOT_MEASURED officially**; local adjudicated slice is 14/31 (45.16%) |
-| RQ-E03 | Report Execution Accuracy as executable-and-correct over all questions (p. 6) | Separate syntax/replay success from answer correctness; denominator is all test questions | Replay plus independent/official answer gold | **NOT_MEASURED officially**; local adjudicated slice is 14/31 (45.16%), with 14/14 emitted replay |
+| RQ-E02 | Report Answer Accuracy within organiser tolerance (p. 6) | Score only against independent answer gold using declared tolerance | Official scorer or independent adjudicated gold | **NOT_MEASURED officially**; local diagnostic slice: V2 14/31, V3 r17 6/31 and 6/6 emitted precision |
+| RQ-E03 | Report Execution Accuracy as executable-and-correct over all questions (p. 6) | Separate syntax/replay success from answer correctness; denominator is all test questions | Replay plus independent/official answer gold | **NOT_MEASURED officially**; V2 local diagnostic 14/31; V3 r17 local diagnostic 6/31; packaged V3 replay 269/269 |
 | RQ-E04 | Evaluate all test questions (pp. 6-7) | Exactly one output record per source question ID and exact question text | Strict submission validator | **PASS**: 1,012/1,012 records |
 
 ## Submission requirements
@@ -47,7 +47,7 @@ only to the stated evidence boundary; it never implies hidden-gold accuracy.
 | RQ-S01 | One JSON at ZIP root, all data under root `data/` (pp. 6-7) | Reject extra root JSON, nested/unsafe paths, missing and orphan CSVs | ZIP contract tests and validator | **PASS** |
 | RQ-S02 | Each record contains `id`, `question`, numeric `answer`, `relevant_docs`, `relevant_tables`, `evidence`, `pandas_query` (pp. 6-7) | Exact required schema, unique IDs and finite answers | Schema validation | **PASS** |
 | RQ-S03 | Evidence contains `variable` and `csv_path`; paths start with `data/` (p. 7) | Unique Python identifiers; every referenced CSV exists and is replay-bound | Evidence and replay validation | **PASS** |
-| RQ-S04 | Pandas code runs using packaged CSV evidence (pp. 6-7) | Execute in a restricted clean namespace and compare result with `answer` | Clean replay report | **PASS for 561 emitted queries; coverage remains PARTIAL** |
+| RQ-S04 | Pandas code runs using packaged CSV evidence (pp. 6-7) | Execute in a restricted clean namespace and compare result with `answer` | Clean replay report | **PASS for emitted queries**: V2 561/561; V3 r17 269/269; coverage remains PARTIAL |
 
 ## Closure gates
 

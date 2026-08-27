@@ -29,26 +29,31 @@ The current run uses all 1,012 questions, A6 build `c6887fb633374fad`, operand t
 
 | Metric | Result |
 |---|---:|
-| V3 OK | 271 |
-| V3 abstain | 741 |
+| V3 OK | 269 |
+| V3 abstain | 743 |
 | Metric unresolved | 198 |
-| Ambiguous binding | 109 |
-| Reported metric blocked for derived operation | 141 |
+| Ambiguous binding | 108 |
+| Reported metric blocked for derived operation | 149 |
 | Typed/Pandas replay mismatch | 0 |
 | Both V2/V3 OK and equal | 157 |
-| Both OK but value differs | 67 |
-| V3-only OK | 47 |
-| V2-only OK | 337 |
-| Runtime | 75.80 s |
+| Both OK but value differs | 66 |
+| V3-only OK | 46 |
+| V2-only OK | 338 |
+| Runtime | 64.17 s |
 
-Artifact: `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r7-20260827/manifest.json`.
+Artifact: `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r17-20260827/manifest.json`.
 
-These are coverage and differential measurements, not accuracy. The 67 value
-differences and 47 V3-only answers require independent adjudication before
-promotion. On the existing diagnostic answer slice, r6 has 6 matches and 3
-mismatches among nine emitted answers, unchanged from r3. External execution
-accuracy remains `NOT_MEASURED`; all 271 returned answers passed internal
-typed/Pandas equality.
+These are coverage and differential measurements, not accuracy. The 66 value
+differences and 46 V3-only answers require independent adjudication before
+promotion. On the existing 31-record diagnostic slice, r17 has 6 correct among
+6 emitted answers and fail-closes on 25. It no longer emits the three known
+wrong answers present before the formula/rank safety audit. External execution
+accuracy remains `NOT_MEASURED`; all 269 returned answers pass typed/Pandas and
+clean packaged replay.
+
+The r17 submission candidate contains exactly 1,012 records, validates with zero
+errors/warnings, and replays 269/269 emitted queries. Its package SHA-256 is
+`dfe1544388e12fe7753ee2e4e0d45a6ac01a90c3b40bd0ac26b59a68b6959f10`.
 
 ## Promotion state
 
@@ -70,15 +75,17 @@ The policy in `configs/semantic/promotion_policy_v3.yaml` requires:
 Missing metrics are `NOT_MEASURED` and block promotion.  They are never treated
 as zero, pass or not-applicable.
 
-## Remaining migration waves
+## Remaining promotion work
 
-1. Adjudicate at least 300 independent answer, semantic and evidence records,
-   beginning with the 67 V2/V3 value differences and 47 `V3_ONLY_OK` cases.
+1. Complete the prepared prediction-blind 300-record packet with two independent
+   annotators and a distinct adjudicator, then seal the common answer, semantic
+   and ordered-evidence release.
 2. Promote reported metrics to reviewed canonical metrics by family; derived
    operations remain blocked until promotion.
 3. Extend the closed predicate grammar beyond the currently reviewed explicit
    numeric-threshold cohort routes; do not add generic formula guessing.
 4. Complete independent dual annotation for the already sealed 120-QID
    reranker held-out packet, then run the one-shot paired A/B evaluator.
-5. Run V3 submission packaging/replay in shadow, pass the promotion policy,
-   then switch the canonical composition root and remove compatibility engines.
+5. Recompute parser, retrieval, binding and answer metrics on that one sealed
+   release. Promote only if every policy threshold passes; package/replay is
+   already implemented and passing.

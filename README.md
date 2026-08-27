@@ -9,16 +9,23 @@ The project uses a strangler migration. Canonical V2 remains the submission engi
 | Runtime | Current state | Latest full-corpus result |
 |---|---|---:|
 | Canonical V2 | Validated submission candidate | 561 answers and 451 fail-closed abstentions |
-| Semantic V3 | Shadow only; promotion blocked | 271 answers and 741 fail-closed abstentions |
+| Semantic V3 | Shadow only; promotion blocked | 269 answers and 743 fail-closed abstentions |
 
-The latest acceptance run validated all 1,012 output records and replayed 561 of 561 emitted Pandas queries. Thirteen previously emitted answers are now fail-closed because their operands mixed consolidated and separate statements. On the independently adjudicated local slice, 14 of 31 answers are correct and executable (45.16% local Answer and Execution Accuracy; 100% replay consistency among emitted answers). Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held gold is unavailable.
+The latest canonical V2 acceptance run validated all 1,012 output records and
+replayed 561 of 561 emitted Pandas queries. On the 31-record local diagnostic
+answer slice, V2 has 14 correct and executable answers (45.16%). Semantic V3
+r17 packages all 1,012 records and replays 269 of 269 emitted queries with zero
+validation error or mismatch. V3 is correct on 6 of 31 diagnostic records and
+on all 6 records it emits in that slice; the other 25 fail closed. These local
+labels are development evidence, not independent promotion gold. Official
+Answer Accuracy and Execution Accuracy remain `NOT_MEASURED`.
 
-V3 r7 adds typed quantified predicates for filtered cohorts, median,
-multi-entity aggregation and select-at-arg planning. Exact metric/basis binding
-fixes reduced ambiguous binding from 169 to 109. A hard counterparty evidence
-constraint intentionally removed one unsafe r6 answer while keeping the existing
-diagnostic answer slice unchanged at 6 correct and 3 incorrect among nine
-emitted answers. These are coverage diagnostics, not production accuracy.
+V3 r17 implements typed count/filter predicates, filtered cohorts, median,
+multi-entity aggregation, select-at-arg planning and hard counterparty context.
+Exact metric/basis binding reduced ambiguous binding from 169 to 108. Two
+under-specified relational formulas and two unsafe rank formulas are quarantined;
+this removed all three known wrong emissions from the diagnostic slice, improving
+its emitted precision from 6/9 to 6/6 while preserving fail-closed behavior.
 
 Read the [8+ quality closure report](docs/reports/QUALITY_8PLUS_CLOSURE_2026-08-27.md)
 before making a production-readiness claim.
@@ -157,9 +164,19 @@ text2pandas shadow-v3 \
   --run-id semantic_v3_shadow_001 \
   --operand-k 20 \
   --legacy-run-id submission_candidate_001
+
+text2pandas package-v3 \
+  --run-id semantic_v3_shadow_001 \
+  --doc-id stripped \
+  --locator-base 1
 ```
 
-The manifest records the ontology fingerprint, differential taxonomy, replay status, and promotion decision. `configs/semantic/promotion_policy_v3.yaml` blocks promotion when required metrics are absent.
+The first command materializes checksum-bound minimal evidence CSVs. The second
+maps A6 table UIDs to competition locators, validates the 1,012-record ZIP, and
+replays every emitted query. The manifest records the ontology fingerprint,
+differential taxonomy, evidence checksums, replay status, and promotion decision.
+`configs/semantic/promotion_policy_v3.yaml` blocks promotion when any required
+metric is absent or below threshold.
 
 ## Test the project
 
@@ -181,7 +198,7 @@ make test-integration
 git diff --check
 ```
 
-Strict mypy is enforced on all production architecture modules under `domain`, `application`, `infrastructure`, and `interface`; the current gate checks 78 source files with zero errors. Historical V2 pipeline modules remain outside this typed boundary and are governed as migration debt.
+Strict mypy is enforced on all production architecture modules under `domain`, `application`, `infrastructure`, and `interface`; the current gate checks 83 source files with zero errors. Historical V2 pipeline modules remain outside this typed boundary and are governed as migration debt.
 
 ## Evaluate retrieval and ranking
 
@@ -214,6 +231,31 @@ python tools/retrieval/evaluate_reranker_heldout.py
 
 The final command returns `BLOCKED` until 120 held-out questions have a sealed,
 dual-annotated evidence-gold release. Legacy-dev uplift cannot promote the model.
+
+## Build independent promotion gold
+
+The repository can prepare and seal gold, but it cannot manufacture reviewer
+independence. Create a prediction-blind 300-question packet:
+
+```bash
+python tools/evaluation/prepare_independent_gold.py \
+  --protocol configs/evaluation/independent_gold_protocol_v1.yaml \
+  --output artifacts/runs/evaluation/independent-gold-v1-packet
+```
+
+Two independent annotators complete `annotator_a.jsonl` and
+`annotator_b.jsonl`; a distinct adjudicator completes `adjudication.jsonl` after
+reviewing the source evidence. Seal only after all attestations are present:
+
+```bash
+python tools/evaluation/seal_independent_gold.py \
+  --packet artifacts/runs/evaluation/independent-gold-v1-packet \
+  --output data/curated/evaluation/independent-gold-v1 \
+  --release-id independent-gold-v1
+```
+
+Sealing rejects incomplete labels, duplicate reviewer identities, unreviewed
+disagreements, missing evidence attestations, and leaked model-output fields.
 
 ## Submission contract
 
@@ -299,9 +341,9 @@ The project is structurally valid and replayable, but several measured gaps rema
 
 - official Answer Accuracy and Execution Accuracy are unavailable without organiser gold
 - canonical executable coverage is 55.43%; mixed-basis arithmetic is intentionally rejected
-- multi-entity execution and operand binding cause most V2 abstentions
+- V3 executable coverage is 26.58%; metric review, binding and composite parser routes dominate its 743 safe abstentions
 - S3 linear reranker improves the contaminated legacy-dev slice but remains unpromoted pending sealed held-out labels
-- Semantic V3 lacks enough adjudicated semantic and evidence gold for promotion
+- the 300-record independent-gold packet is ready, but requires two external independent annotators and a distinct adjudicator
 - full-repository legacy V2 modules remain outside the zero-error production mypy gate
 - 42 approved historical-artifact tests skip under the exact allowlist in `configs/testing/approved_skips_v1.yaml`; unapproved skips fail CI
 - A6 Structure Gold gates `SG`, `C2`, and `C3` remain blocked until two independent reviewers produce the required adjudicated set
