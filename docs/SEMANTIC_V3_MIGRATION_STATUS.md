@@ -25,7 +25,7 @@ second production implementation.
 
 ## Current full-corpus shadow baseline
 
-The current run uses all 1,012 questions, A6 build `c6887fb633374fad`, operand top-K 20, and canonical run `production-a6-v1.10-v2-r3-20260827`.
+The current run uses all 1,012 questions, A6 build `c6887fb633374fad`, operand top-K 20, and canonical run `production-a6-v1.10-v2-r5-20260827`.
 
 | Metric | Result |
 |---|---:|
@@ -35,15 +35,15 @@ The current run uses all 1,012 questions, A6 build `c6887fb633374fad`, operand t
 | Ambiguous binding | 169 |
 | Reported metric blocked for derived operation | 143 |
 | Typed/Pandas replay mismatch | 0 |
-| Both V2/V3 OK and equal | 104 |
-| Both OK but value differs | 73 |
-| V3-only OK | 30 |
-| V2-only OK | 397 |
-| Runtime | 62.39 s |
+| Both V2/V3 OK and equal | 120 |
+| Both OK but value differs | 55 |
+| V3-only OK | 32 |
+| V2-only OK | 386 |
+| Runtime | 63.22 s |
 
-Artifact: `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r2-20260827/manifest.json`.
+Artifact: `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r3-20260827/manifest.json`.
 
-These are coverage and differential measurements, not accuracy. The 73 value differences and 30 V3-only answers require independent adjudication before promotion. Local answer gold measures 6/31 V3 answers as correct. External execution accuracy remains `NOT_MEASURED` because the shadow record format does not materialize submission evidence, although all 207 returned answers passed the internal typed/Pandas equality check.
+These are coverage and differential measurements, not accuracy. The 55 value differences and 32 V3-only answers require independent adjudication before promotion. Local answer gold measures 6/31 V3 answers as correct. External execution accuracy remains `NOT_MEASURED` because the shadow record format does not materialize submission evidence, although all 207 returned answers passed the internal typed/Pandas equality check.
 
 ## Promotion state
 
@@ -65,8 +65,8 @@ as zero, pass or not-applicable.
 
 ## Remaining migration waves
 
-1. Adjudicate a stratified V3 Gold set, beginning with the 73 V2/V3 value
-   differences and all 30 `V3_ONLY_OK` cases.
+1. Adjudicate a stratified V3 Gold set, beginning with the 55 V2/V3 value
+   differences and all 32 `V3_ONLY_OK` cases.
 2. Promote reported metrics to reviewed canonical metrics by family; derived
    operations remain blocked until promotion.
 3. Add predicate compilation for filtered COUNT/extrema and complete nested

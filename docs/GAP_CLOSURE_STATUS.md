@@ -53,8 +53,8 @@ Updated: 2026-08-27
 | Priority | Gap | Evidence | Exit gate |
 |---|---|---|---|
 | P0 | Official Answer Accuracy và Execution Accuracy chưa đo được | Không có organiser-held answer gold. Local adjudicated slice: 14/31 correct + executable, 14/14 replay | Mở rộng independent answer/evidence gold hoặc chạy official scorer; luôn report riêng local/official scope |
-| P0 | Canonical executable coverage mới đạt 56,72% | V2 phát 574/1.012 answers và fail-closed 438 câu | Đóng các semantic gaps P1, bind/execute trên gold và giữ fail-closed cho route chưa đủ evidence |
-| P1 | Semantic V3 chưa đủ điều kiện promotion | V3 shadow phát 207 answers, abstain 805, có 73 value disagreements và 30 V3-only answers | Adjudicate tối thiểu 300 semantic gold và 300 evidence gold; tất cả metric trong promotion policy phải measured và pass |
+| P0 | Canonical executable coverage mới đạt 55,43% | V2 phát 561/1.012 answers và fail-closed 451 câu; 18 câu bị chặn bởi cross-basis policy | Đóng các semantic gaps P1, bind/execute trên gold và giữ fail-closed cho route chưa đủ evidence |
+| P1 | Semantic V3 chưa đủ điều kiện promotion | V3 shadow phát 207 answers, abstain 805, có 55 value disagreements và 32 V3-only answers | Adjudicate tối thiểu 300 semantic gold và 300 evidence gold; tất cả metric trong promotion policy phải measured và pass |
 | P1 | Rerank S3 chỉ là identity/truncation | MRR@10 của S2 và S3 cùng bằng 0,5450; uplift `+0,0000` trên 95 manual-gold cases. S2 full-list MRR 0,5497 chỉ là diagnostic top-50 | Tạo held-out rerank gold, benchmark deterministic/open-weight candidates và chỉ promote khi uplift có ý nghĩa thống kê |
 | P1 | Retrieval gold chưa đủ đại diện | 95/1.012 câu có trusted table gold; 917 câu `NOT_MEASURED` | Mở rộng stratified evidence gold cho screen, multi-entity, bank, derived-metric và hard-negative slices |
 | CLOSED | Production strict typing | `make typecheck`: zero errors trên 78 source files thuộc `domain/application/infrastructure/interface` | Gate nằm trong `make ci`; legacy pipeline debt không được đưa ngược vào production boundary |

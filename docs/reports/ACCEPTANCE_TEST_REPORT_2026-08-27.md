@@ -8,7 +8,7 @@ The repository is operational on one traceable raw to A6 to retrieval to answer 
 
 | Area | Status | Evidence |
 |---|---|---|
-| Repository and CI | PASS | 2,007 offline tests, 25 materialized tests, Ruff, strict mypy, docs links |
+| Repository and CI | PASS | 2,019 offline tests, 25 materialized tests, Ruff, strict mypy, docs links |
 | Raw snapshot | PASS | 1,973 reports, 1,012 questions, 100 tickers |
 | A6 deterministic rebuild | PASS | Two independent 6,775,554,048-byte databases have the same SHA-256 |
 | A6 no-loss and readiness | PASS | C1 10/10; 2,634,120 observations reconcile 1:1 with readiness |
@@ -17,7 +17,7 @@ The repository is operational on one traceable raw to A6 to retrieval to answer 
 | Retrieval top-10 ranking | PARTIAL | Top-10 hit 86/95; 9 rank misses |
 | Reranking | OPEN | S3 is an identity/truncation stage with no measured uplift |
 | Parser route coverage | PARTIAL | 684/1,012 routes eligible; 328 named semantic gaps |
-| Canonical V2 package | VALIDATED | 1,012 records; 574 answers; 574/574 replay; zero validator errors |
+| Canonical V2 package | VALIDATED | 1,012 records; 561 answers; 561/561 replay; zero validator errors |
 | Local V2 answer and execution accuracy | PARTIAL | 14/31, or 45.16%, on local adjudicated gold |
 | Official answer and execution accuracy | NOT_MEASURED | Organiser-held gold and scorer are unavailable |
 | Semantic V3 | BLOCKED | Shadow only; all required promotion metrics are not measured |
@@ -33,10 +33,10 @@ Every runtime layer resolves from `configs/datasets/active_snapshot.yaml`.
 | Raw | dataset `vifinqa-btc-2026`; snapshot `ca033190f2e9e99f` | `data/raw/btc/manifest.json` |
 | A6 | build `c6887fb633374fad` | `data/processed/a6/c6887fb633374fad/manifest.json` |
 | Retrieval | index `872ccb0dda9a2bb6` | `data/indexes/retrieval/c6887fb633374fad/872ccb0dda9a2bb6/manifest.json` |
-| Canonical run | `production-a6-v1.10-v2-r3-20260827` | `artifacts/runs/answer/production-a6-v1.10-v2-r3-20260827/manifest.json` |
-| V3 shadow run | `semantic-v3-a6-v1.10-r2-20260827` | `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r2-20260827/manifest.json` |
+| Canonical run | `production-a6-v1.10-v2-r5-20260827` | `artifacts/runs/answer/production-a6-v1.10-v2-r5-20260827/manifest.json` |
+| V3 shadow run | `semantic-v3-a6-v1.10-r3-20260827` | `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r3-20260827/manifest.json` |
 
-The canonical and shadow runs used source commit `c3ff084ef55c566c74758792f1810cc24f46ec15` with `git_dirty=false`.
+The canonical and shadow runs used source commit `a21eff4c8959aa23c4ff64e6e933ec8ed86ef0df` with `git_dirty=false`.
 
 ## A6 acceptance
 
@@ -133,38 +133,38 @@ The largest route-level gap is multi-entity semantics. The current classifier re
 
 ## Canonical V2 acceptance
 
-The canonical run completed all 1,012 questions in 685.86s.
+The canonical run completed all 1,012 questions in 675.98s.
 
 | Metric | Result |
 |---|---:|
 | Questions | 1,012 |
 | Entity/year/retrieval coverage | 1,011/1,012 |
-| Emitted answers | 574, or 56.72% |
-| Fail-closed abstentions | 438, or 43.28% |
+| Emitted answers | 561, or 55.43% |
+| Fail-closed abstentions | 451, or 44.57% |
 | Validator errors | 0 |
 | Validator warnings | 0 |
-| Clean replay executed | 574 |
-| Clean replay matched | 574 |
+| Clean replay executed | 561 |
+| Clean replay matched | 561 |
 | Clean replay errors | 0 |
 
-The published submission ZIP is `artifacts/submissions/submission_production-a6-v1.10-v2-r3-20260827.zip`, with SHA-256 `8d56dc96766e3311a2672969d9cf723eb00d06509afe19712aae92b88b1fccc1`.
+The published submission ZIP is `artifacts/submissions/submission_production-a6-v1.10-v2-r5-20260827.zip`, with SHA-256 `0f5cf37427fa034ae9f425ddca71aaf1a97c34f2189c5a2fcd784f6837693e8c`.
 
-The largest abstention families are multi-entity operation unsupported (180), unbound operands (40), select-at-arg requiring two metrics (32), value unit dimension mismatch (31), unreviewed divide formulas (27), and formula outer extrema (19). These abstentions preserve safety but prevent full functional coverage. Directional entity subtraction now preserves mention order and explicitly reverses `kém/thấp/bé hơn`; the prior lexical-order behavior was invalidated rather than normalized with `abs`.
+The largest abstention families are multi-entity operation unsupported (180), unbound operands (40), select-at-arg requiring two metrics (32), value unit dimension mismatch (31), unreviewed divide formulas (27), formula outer extrema (19), and cross-basis arithmetic (18). These abstentions preserve safety but prevent full functional coverage. Directional entity subtraction preserves semantic order for direct and fronted-reference comparisons, and applies `abs` only when the question explicitly asks for an absolute difference. Unqualified questions use consolidated statements as a soft prior while retaining standalone-only fallback; every multi-operand answer must still prove one coherent accounting basis.
 
 The local adjudicated answer set contains 40 records, of which 31 are evaluable. V2 emits 14 correct and executable answers on this denominator. Local Answer Accuracy and Execution Accuracy are both 14/31, or 45.16%. Replay consistency among those 14 emitted answers is 100%. This slice is not the organiser test gold.
 
 ## Semantic V3 shadow acceptance
 
-V3 processed all 1,012 questions in 62.39s and returned 207 answers. Every returned answer passed internal typed/Pandas equality. The shadow run does not produce a publishable submission package.
+V3 processed all 1,012 questions in 63.22s and returned 207 answers. Every returned answer passed internal typed/Pandas equality. The shadow run does not produce a publishable submission package.
 
 | Metric | Result |
 |---|---:|
 | V3 OK | 207 |
 | V3 abstain | 805 |
-| Both V2/V3 OK and equal | 104 |
-| Both OK with value difference | 73 |
-| V3-only OK | 30 |
-| V2-only OK | 397 |
+| Both V2/V3 OK and equal | 120 |
+| Both OK with value difference | 55 |
+| V3-only OK | 32 |
+| V2-only OK | 386 |
 | Typed/Pandas mismatch | 0 |
 
 The top V3 blockers are unresolved metrics (198), ambiguous binding (169), and reported metrics requiring review before derived operations (143). Local answer gold measures 6/31 correct answers. External execution accuracy remains `NOT_MEASURED` because V3 shadow records do not materialize the evidence contract consumed by the external evaluator.
@@ -177,14 +177,14 @@ The locked Python environment is `/private/tmp/text2pandas-acceptance-venv.eC3Dq
 
 | Command | Result |
 |---|---|
-| `make ci` | PASS: Ruff; strict mypy on 78 files; 46 Markdown files and zero broken links; 2,007 passed, 42 approved skips, 25 integration tests deselected |
-| `make test-integration` | PASS: 25 passed, 2,049 deselected |
-| `make dp-test REPORT_DIR=artifacts/reports/production-final-r3-20260827` | PASS: 2,074 collected; 2,032 passed; 42 approved skips; zero failures, errors, xfails, or xpasses |
+| `make ci` | PASS: Ruff; strict mypy on 78 files; 47 Markdown files and zero broken links; 2,019 passed, 42 approved skips, 25 integration tests deselected |
+| `make test-integration` | PASS: 25 passed, 2,061 deselected |
+| `make dp-test REPORT_DIR=artifacts/reports/business-review-final-20260827` | PASS: 2,086 collected; 2,044 passed; 42 approved skips; zero failures or errors |
 | `make semantic-coverage` | PASS: 1,012 classified; 684 eligible; 328 gaps |
 | `make snapshots-verify` | PASS: every raw, A6, retrieval identity, schema, count, size, and index check |
 | Evalkit manual-gold full corpus | PASS: 1,012 checkpoint rows under one config and snapshot fingerprint |
 
-One integration replay of the immutable historical `submission_C1R_LOCAL.zip` emits a Python `SyntaxWarning` for q766 because that legacy query embeds LaTeX `\(` without repr escaping. The active V2 submission compiles all 574 queries with zero syntax warnings. The warning is historical fixture debt, not active output behavior.
+One integration replay of the immutable historical `submission_C1R_LOCAL.zip` emits a Python `SyntaxWarning` for q766 because that legacy query embeds LaTeX `\(` without repr escaping. The active V2 submission compiles all 561 queries with zero syntax warnings. The warning is historical fixture debt, not active output behavior.
 
 ## Requirements closure and remaining work
 
@@ -204,8 +204,8 @@ The following work remains before a full production-ready claim:
 - Final A6 release: `artifacts/releases/a6-c6887fb633374fad-final-20260826/`
 - Deterministic packages: `artifacts/packages/a6-c6887fb633374fad-20260826/`
 - Retrieval metrics: `artifacts/runs/retrieval/evalkit/metrics_a6-v1.10-manual-evalkit9-20260827_9c5a36f7f0f09fee.json`
-- Canonical run: `artifacts/runs/answer/production-a6-v1.10-v2-r3-20260827/`
-- Canonical local evaluation: `artifacts/reports/answer/adjudicated-production-a6-v1.10-v2-r3-20260827.json`
-- V3 shadow run: `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r2-20260827/`
-- V3 local evaluation: `artifacts/reports/semantic-v3/adjudicated-semantic-v3-a6-v1.10-r2-20260827.json`
-- Machine-readable full test report: `artifacts/reports/production-final-r3-20260827/test_report.json`
+- Canonical run: `artifacts/runs/answer/production-a6-v1.10-v2-r5-20260827/`
+- Canonical local evaluation: `artifacts/reports/answer/adjudicated-production-a6-v1.10-v2-r5-20260827.json`
+- V3 shadow run: `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r3-20260827/`
+- V3 local evaluation: `artifacts/reports/semantic-v3/adjudicated-semantic-v3-a6-v1.10-r3-20260827.json`
+- Machine-readable full test report: `artifacts/reports/business-review-final-20260827/test_report.json`

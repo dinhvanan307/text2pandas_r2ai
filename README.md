@@ -8,10 +8,10 @@ The project uses a strangler migration. Canonical V2 remains the submission engi
 
 | Runtime | Current state | Latest full-corpus result |
 |---|---|---:|
-| Canonical V2 | Validated submission candidate | 574 answers and 438 fail-closed abstentions |
+| Canonical V2 | Validated submission candidate | 561 answers and 451 fail-closed abstentions |
 | Semantic V3 | Shadow only; promotion blocked | 207 answers and 805 fail-closed abstentions |
 
-The latest acceptance run validated all 1,012 output records and replayed 574 of 574 emitted Pandas queries. On the independently adjudicated local slice, 14 of 31 answers are correct and executable (45.16% local Answer and Execution Accuracy; 100% replay consistency among emitted answers). Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held gold is unavailable.
+The latest acceptance run validated all 1,012 output records and replayed 561 of 561 emitted Pandas queries. Thirteen previously emitted answers are now fail-closed because their operands mixed consolidated and separate statements. On the independently adjudicated local slice, 14 of 31 answers are correct and executable (45.16% local Answer and Execution Accuracy; 100% replay consistency among emitted answers). Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held gold is unavailable.
 
 Read the [current acceptance report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-27.md) before making a production-readiness claim.
 
@@ -53,6 +53,8 @@ Each layer records the identity of its source. The runtime never selects an impl
 - Retrieve tables with lexical and structural signals
 - Plan independent operands and bind them under global coherence constraints
 - Execute typed decimal expressions with unit validation
+- Preserve source-order, fronted-reference, and explicit absolute-difference semantics
+- Enforce one coherent accounting basis across every multi-operand computation
 - Compile restricted Pandas queries and replay them in a clean environment
 - Derive documents, table locators, and CSV evidence from selected observations
 - Validate the exact JSON and ZIP submission contract
@@ -272,7 +274,7 @@ The non-negotiable rules are:
 The project is structurally valid and replayable, but several measured gaps remain:
 
 - official Answer Accuracy and Execution Accuracy are unavailable without organiser gold
-- canonical executable coverage is 56.72%
+- canonical executable coverage is 55.43%; mixed-basis arithmetic is intentionally rejected
 - multi-entity execution and operand binding cause most V2 abstentions
 - the current V2 reranker is an identity stage without measured uplift
 - Semantic V3 lacks enough adjudicated semantic and evidence gold for promotion
