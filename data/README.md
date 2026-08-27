@@ -15,3 +15,16 @@ chọn trong `configs/datasets/active_snapshot.yaml`, không chọn ngầm theo 
 `latest` hoặc thời gian sửa file.
 
 Chỉ `README.md`, `manifest.json` và checksum nhỏ được phép vào Git.
+
+## Gold governance
+
+`configs/evaluation/gold_registry_v1.yaml` là registry cho các bộ answer,
+semantic-parser và evidence/binding gold. Hai số không được đánh đồng:
+
+- `usable_records`: dùng để diagnosis nội bộ;
+- `promotion_eligible_records`: chỉ được tính khi independence đã `VERIFIED`
+  và artifact đã sealed.
+
+Label sinh bởi model, template chưa gán nhãn hoặc blind recheck chưa chứng minh
+độc lập có thể tồn tại để phân tích, nhưng phải có
+`promotion_eligible_records: 0` và không được đưa vào V3 promotion gate.

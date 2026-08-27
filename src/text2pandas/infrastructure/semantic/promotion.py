@@ -21,12 +21,15 @@ def load_promotion_policy(path: str | Path = _DEFAULT) -> PromotionPolicy:
     return PromotionPolicy(
         policy_id=str(raw["policy_id"]),
         required_full_questions=int(raw["required_full_questions"]),
+        minimum_answer_gold_records=int(raw["minimum_answer_gold_records"]),
         minimum_semantic_gold_records=int(raw["minimum_semantic_gold_records"]),
         minimum_evidence_gold_records=int(raw["minimum_evidence_gold_records"]),
         minimum_parser_ast_exact=float(raw["minimum_parser_ast_exact"]),
         minimum_candidate_recall=float(raw["minimum_candidate_recall"]),
         minimum_binding_exact=float(raw["minimum_binding_exact"]),
         minimum_answer_accuracy=float(raw["minimum_answer_accuracy"]),
+        minimum_submission_replay_records=int(raw["minimum_submission_replay_records"]),
         maximum_replay_mismatches=int(raw["maximum_replay_mismatches"]),
         maximum_submission_errors=int(raw["maximum_submission_errors"]),
+        require_sealed_evaluation_release=bool(raw["require_sealed_evaluation_release"]),
     )

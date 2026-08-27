@@ -50,6 +50,12 @@ difference must have a taxonomy reason before V3 promotion.
 - Binding is a global assignment.  Greedy selection is not a V3 contract.
 - Every successful scalar is replayable and grounded in all bound operands.
 - Rerankers are promoted only on an untouched held-out gold split.
+- Parser, binding, answer and submission replay measurements must reference one
+  sealed evaluation release; independently generated metric files may not be
+  combined into a passing promotion decision.
+- A tracked label file is not promotion gold merely because it is called
+  `gold`. Its checksum, record count, independence, adjudication and sealing
+  status are governed by `configs/evaluation/gold_registry_v1.yaml`.
 
 ## Consequences
 
@@ -59,4 +65,6 @@ difference must have a taxonomy reason before V3 promotion.
 - Metric and formula registries must be unified behind one validated ontology.
 - Retrieval checkpoints and run manifests must record the semantic schema,
   ontology and ranker fingerprints.
-
+- Existing answer, semantic and execution labels remain diagnostic-only until
+  independent adjudication is verifiable. Missing eligible labels block V3;
+  they are never backfilled from V2 predictions.

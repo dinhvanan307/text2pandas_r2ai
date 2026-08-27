@@ -9,25 +9,32 @@ from dataclasses import dataclass
 class PromotionPolicy:
     policy_id: str
     required_full_questions: int
+    minimum_answer_gold_records: int
     minimum_semantic_gold_records: int
     minimum_evidence_gold_records: int
     minimum_parser_ast_exact: float
     minimum_candidate_recall: float
     minimum_binding_exact: float
     minimum_answer_accuracy: float
+    minimum_submission_replay_records: int
     maximum_replay_mismatches: int
     maximum_submission_errors: int
+    require_sealed_evaluation_release: bool
 
 
 @dataclass(frozen=True, slots=True)
 class PromotionMetrics:
     questions: int
+    evaluation_release_id: str | None = None
+    evaluation_release_sealed: bool | None = None
+    answer_gold_records: int | None = None
     semantic_gold_records: int | None = None
     evidence_gold_records: int | None = None
     parser_ast_exact: float | None = None
     candidate_recall: float | None = None
     binding_exact: float | None = None
     answer_accuracy: float | None = None
+    submission_replay_records: int | None = None
     replay_mismatches: int | None = None
     submission_errors: int | None = None
 
@@ -58,6 +65,19 @@ def evaluate_promotion(
         blockers.append(
             f"QUESTION_COVERAGE:{metrics.questions}:{policy.required_full_questions}"
         )
+    if policy.require_sealed_evaluation_release:
+        if metrics.evaluation_release_sealed is None:
+            blockers.append("NOT_MEASURED:EVALUATION_RELEASE_SEALED")
+        elif not metrics.evaluation_release_sealed:
+            blockers.append("UNSEALED:EVALUATION_RELEASE")
+        if not metrics.evaluation_release_id:
+            blockers.append("NOT_MEASURED:EVALUATION_RELEASE_ID")
+    _minimum(
+        blockers,
+        "ANSWER_GOLD_RECORDS",
+        metrics.answer_gold_records,
+        policy.minimum_answer_gold_records,
+    )
     _minimum(
         blockers,
         "SEMANTIC_GOLD_RECORDS",
@@ -93,6 +113,12 @@ def evaluate_promotion(
         "ANSWER_ACCURACY",
         metrics.answer_accuracy,
         policy.minimum_answer_accuracy,
+    )
+    _minimum(
+        blockers,
+        "SUBMISSION_REPLAY_RECORDS",
+        metrics.submission_replay_records,
+        policy.minimum_submission_replay_records,
     )
     _maximum(
         blockers,

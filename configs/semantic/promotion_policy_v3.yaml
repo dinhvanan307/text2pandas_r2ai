@@ -2,16 +2,22 @@ schema_version: 3
 policy_id: semantic-v3-production
 
 required_full_questions: 1012
+minimum_answer_gold_records: 300
 minimum_semantic_gold_records: 300
 minimum_evidence_gold_records: 300
 minimum_parser_ast_exact: 0.95
 minimum_candidate_recall: 0.99
 minimum_binding_exact: 0.90
 minimum_answer_accuracy: 0.80
+minimum_submission_replay_records: 1012
 maximum_replay_mismatches: 0
 maximum_submission_errors: 0
+
+# Every reported metric must come from the same sealed evaluation release.
+# A boolean declaration is intentionally required so independently produced
+# metrics cannot accidentally be combined into a synthetic passing report.
+require_sealed_evaluation_release: true
 
 # A metric omitted from a run is NOT_MEASURED and blocks promotion.  It is
 # never interpreted as zero, pass, or “not applicable”.
 missing_metric_policy: block
-

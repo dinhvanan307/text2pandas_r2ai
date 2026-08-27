@@ -1,0 +1,43 @@
+schema_version: 1
+registry_id: independent-gold-registry-v1
+
+# This registry is deliberately conservative. `usable_records` describes rows
+# that can support local diagnosis. `promotion_eligible_records` is zero until
+# independence and adjudication can be verified from tracked provenance.
+assets:
+  answer:
+    path: data/curated/dev-legacy/answer_gold/answer_gold_wave1_final.jsonl
+    sha256: e14248e8480afe783444eba70e824ad23184c78c4dee962a1f663d358f2ca3e2
+    records: 40
+    usable_records: 31
+    promotion_eligible_records: 0
+    independence: PARTIAL
+    sealed: true
+    blocker: >-
+      Labels are source-grounded, but the tracked recheck records only 8/40
+      and documents same-model correlated-error risk; full independent human
+      adjudication is not machine-verifiable.
+  semantic_parser:
+    path: data/curated/gold/semantic_gold.jsonl
+    sha256: 2d637d2961aaca5247be30c7ef8f7822062c436c485df999e0b9d01da4317425
+    records: 40
+    usable_records: 6
+    promotion_eligible_records: 0
+    independence: NONE
+    sealed: true
+    blocker: >-
+      The artifact explicitly declares two independent model passes and NOT a
+      human blinded recheck. It may diagnose parser fields but is not gold for
+      production promotion.
+  evidence_binding:
+    path: data/curated/dev-legacy/execution_gold/dev60_labels.jsonl
+    sha256: f6963bfd43b5ffdf5fb92be161b6ca697ea1bf76ff78b4df4e838a831cf5eb1d
+    records: 20
+    usable_records: 0
+    promotion_eligible_records: 0
+    independence: NONE
+    sealed: true
+    blocker: >-
+      The tracked rows are blank labeling templates: no OK status and no
+      ordered evidence operands. Independent evidence/binding gold is missing.
+
