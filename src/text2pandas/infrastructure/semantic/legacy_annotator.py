@@ -48,13 +48,15 @@ _DIMENSION = {
 }
 
 
-_TOTAL_PREFIX = re.compile(r"^tong\b")
+_EXPLICIT_TOTAL = re.compile(
+    r"(?:^|[,:.]\s*|\bnam\s+(?:19|20)\d{2},\s*)(?:tinh\s+)?tong\s+"
+)
 _LEGAL_ENTITY_PREFIX = re.compile(r"^tong\s+cong\s+ty\b")
 _FILTERED_ENTITY_SELECTION = re.compile(
     r"\bcua\s+(?:cong\s+ty|doanh\s+nghiep)\s+co\b|\btrong\s+so\b"
 )
 _EXPLICIT_PERIOD_DOMAIN = re.compile(
-    r"\b(?:trong|qua|cho|tai)\s+cac\s+nam\b"
+    r"\b(?:trong|qua|cho|tai)\s+cac\s+nam\b|\btrong\s+giai\s+doan\b"
 )
 _EXPLICIT_FILTERED_ENTITY_TOTAL = re.compile(
     r"\btong\s+[^,?]{1,80}\s+cua\s+"
@@ -83,7 +85,7 @@ def _aggregate_override(
         return OperationKind.SUM, "aggregate_domain:filtered_multi_entity_total"
     if operation != OperationKind.LOOKUP:
         return operation, None
-    if not _TOTAL_PREFIX.search(normalized) or _LEGAL_ENTITY_PREFIX.search(normalized):
+    if not _EXPLICIT_TOTAL.search(normalized) or _LEGAL_ENTITY_PREFIX.search(normalized):
         return operation, None
     if _FILTERED_ENTITY_SELECTION.search(normalized):
         return operation, None

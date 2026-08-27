@@ -15,9 +15,11 @@ from text2pandas.domain.semantic import (
     ArithmeticOperator,
     Axis,
     Basis,
+    Comparison,
     Dimension,
     Filter,
     FormulaCall,
+    Literal,
     MetricRef,
     RankDirection,
     SelectAtArg,
@@ -250,6 +252,83 @@ def test_total_over_named_companies_keeps_complete_entity_domain() -> None:
     assert isinstance(result.ast.expression, Aggregate)
     assert result.ast.expression.axis == Axis.ENTITY
     assert result.ast.expression.members == ("AAA", "DCM", "HPG", "MSR")
+
+
+def test_total_after_leading_period_compiles_multi_entity_sum() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {
+                "MPC": "CTCP Tập đoàn Thủy sản Minh Phú",
+                "SAB": "Sabeco",
+                "HAG": "Hoàng Anh Gia Lai",
+            }
+        ),
+    )
+
+    result = parser.parse(
+        "Năm 2016, tổng chi phí tài chính của MPC công ty mẹ, SAB công ty mẹ "
+        "và HAG công ty mẹ là bao nhiêu tỷ đồng?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+    assert result.ast.expression.axis == Axis.ENTITY
+    assert result.ast.expression.members == ("HAG", "MPC", "SAB")
+
+
+def test_explicit_numeric_predicate_compiles_typed_entity_count() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {
+                "DNH": "CTCP Thủy điện Đa Nhim - Hàm Thuận - Đa Mi",
+                "GEG": "CTCP Điện Gia Lai",
+                "HDG": "CTCP Tập đoàn Hà Đô",
+            }
+        ),
+    )
+
+    result = parser.parse(
+        "Có bao nhiêu trong số CTCP Tập đoàn Hà Đô, CTCP Điện Gia Lai và "
+        "CTCP Thủy điện Đa Nhim - Hàm Thuận - Đa Mi có dòng tiền thuần từ "
+        "hoạt động kinh doanh lớn hơn 1 nghìn tỷ đồng trong năm 2025?"
+    )
+
+    assert result.ok
+    assert result.ast.output.unit.dimension == Dimension.COUNT
+    assert isinstance(result.ast.expression, Aggregate)
+    assert result.ast.expression.function == AggregateFunction.COUNT
+    assert isinstance(result.ast.expression.expression, Filter)
+    assert isinstance(result.ast.expression.expression.predicate, Comparison)
+    literal = result.ast.expression.expression.predicate.right
+    assert isinstance(literal, Literal)
+    assert literal.unit.dimension == Dimension.MONEY
+    assert literal.unit.scale_exponent == 12
+
+
+def test_direct_binary_metric_preserves_explicit_counterparty_selector() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"VGC": "Tổng Công ty Viglacera - CTCP"}),
+    )
+
+    result = parser.parse(
+        "Thay đổi số dư vay ngắn hạn từ Ngân hàng TMCP Quốc tế của Tổng Công "
+        "ty Viglacera - CTCP từ cuối năm 2023 đến cuối năm 2024 là bao nhiêu "
+        "triệu đồng?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Arithmetic)
+    assert isinstance(result.ast.expression.left, MetricRef)
+    assert isinstance(result.ast.expression.right, MetricRef)
+    assert result.ast.expression.left.required_context_phrases == (
+        "ngan hang tmcp quoc te",
+    )
+    assert result.ast.expression.right.required_context_phrases == (
+        "ngan hang tmcp quoc te",
+    )
 
 
 def test_total_over_explicit_period_domain_compiles_period_sum() -> None:

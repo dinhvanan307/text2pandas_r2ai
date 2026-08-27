@@ -36,6 +36,7 @@ from text2pandas.domain.semantic import (
     validate_question_ast,
 )
 from text2pandas.domain.semantic.ast import Expression
+from text2pandas.domain.units.lexicon import scan_unit
 
 from .contracts import (
     OperationKind,
@@ -123,7 +124,9 @@ class SemanticParser:
         if annotations.operation == OperationKind.UNSUPPORTED:
             return _abstain("OPERATION_UNSUPPORTED")
 
-        base = self._base_expression(annotations, formula, mentions)
+        base = self._base_expression(
+            normalize_phrase(question), annotations, formula, mentions
+        )
         if base is None:
             return _abstain("METRIC_UNRESOLVED")
         expression_result = self._compose(
@@ -162,6 +165,7 @@ class SemanticParser:
 
     def _base_expression(
         self,
+        normalized_question: str,
         annotations: QuestionAnnotations,
         formula: FormulaDefinition | None,
         mentions: tuple[MetricMention, ...],
@@ -176,7 +180,21 @@ class SemanticParser:
             )
         if not mentions:
             return None
-        return _metric_ref(mentions[-1].metric, annotations)
+        mention = mentions[-1]
+        reference = _metric_ref(mention.metric, annotations)
+        return MetricRef(
+            reference.metric_id,
+            reference.entities,
+            reference.periods,
+            reference.basis,
+            reference.statement_types,
+            reference.expected_unit,
+            reference.period_semantics,
+            reference.qualifiers,
+            _required_context_phrases(
+                normalized_question, mention.start, mention.end
+            ),
+        )
 
     def _compose(
         self,
@@ -225,7 +243,24 @@ class SemanticParser:
                 OperationKind.COUNT: AggregateFunction.COUNT,
             }[operation]
             if function == AggregateFunction.COUNT:
-                return "COUNT_PREDICATE_REQUIRED"
+                count_role = _count_predicate_role(
+                    question,
+                    annotations,
+                    mentions,
+                    formula_mentions,
+                )
+                if isinstance(count_role, str):
+                    return count_role
+                predicate, projection = count_role
+                return (
+                    Aggregate(
+                        function,
+                        axis,
+                        Filter(axis, members, predicate, projection),
+                        members,
+                    ),
+                    ResultKind.SCALAR,
+                )
             if axis == Axis.ENTITY:
                 filtered_roles = _filtered_aggregate_roles(
                     question,
@@ -326,6 +361,8 @@ class SemanticParser:
         mentions: tuple[MetricMention, ...],
         result_kind: ResultKind,
     ) -> UnitSpec:
+        if annotations.operation == OperationKind.COUNT:
+            return UnitSpec(Dimension.COUNT)
         if result_kind == ResultKind.ENTITY:
             return UnitSpec(Dimension.ENTITY)
         if result_kind == ResultKind.PERIOD:
@@ -388,8 +425,17 @@ def _metric_ref(metric: MetricDefinition, annotations: QuestionAnnotations) -> M
 
 def _scope_expression(expression: Expression, annotations: QuestionAnnotations) -> Expression:
     if isinstance(expression, MetricRef):
-        metric = expression.metric_id
-        return _metric_ref_from_id(metric, annotations)
+        return MetricRef(
+            expression.metric_id,
+            entities=annotations.entities,
+            periods=annotations.periods,
+            basis=annotations.basis,
+            statement_types=expression.statement_types,
+            expected_unit=expression.expected_unit,
+            period_semantics=expression.period_semantics,
+            qualifiers=expression.qualifiers,
+            required_context_phrases=expression.required_context_phrases,
+        )
     if isinstance(expression, Literal):
         return expression
     if isinstance(expression, Arithmetic):
@@ -656,8 +702,9 @@ def _qualifier_tokens(
 
 
 _COUNTERPARTY_RELATION = re.compile(
-    r"\btu cong ty\s+(?P<name>[a-z0-9 ]{3,100}?)\s+"
-    r"cua\s+(?:tap doan|tong cong ty|cong ty)\b"
+    r"\b(?:tu|cho)\s+(?:cong ty\s+)?(?P<name>"
+    r"(?:ctcp|tnhh|ngan hang|cong ty)\s+[a-z0-9 -]{2,100}?)\s+"
+    r"cua\s+(?:tap doan|tong cong ty|cong ty|ctcp|ngan hang)\b"
 )
 
 
@@ -687,6 +734,81 @@ _COHORT_THRESHOLD = re.compile(
     r"(?P<value>\d+(?:[.,]\d+)?)\s*(?P<unit>%|lan)?"
     r"(?:\s*tro len)?\b"
 )
+
+
+def _count_predicate_role(
+    question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+    formula_mentions: tuple[FormulaMention, ...],
+) -> tuple[Comparison, Expression] | str:
+    """Compile an explicit numeric predicate for a finite-domain count.
+
+    COUNT is accepted only when the question provides a comparison operator,
+    numeric threshold and a single nearest reviewed expression. This keeps the
+    route closed: implicit notions such as "healthy" or "material" abstain.
+    """
+
+    normalized = normalize_phrase(question)
+    candidates = _expression_mentions(
+        normalized, annotations, metric_mentions, formula_mentions
+    )
+    threshold_matches = [
+        match
+        for match in _COHORT_THRESHOLD.finditer(normalized)
+        if match.group("operator") or match.group("from") or "tro len" in match.group(0)
+    ]
+    if len(threshold_matches) != 1:
+        return "COUNT_PREDICATE_REQUIRED"
+    threshold = threshold_matches[0]
+    preceding = [value for value in candidates if value.end <= threshold.start()]
+    if not preceding:
+        return "COUNT_PREDICATE_EXPRESSION_UNRESOLVED"
+    nearest_end = max(value.end for value in preceding)
+    nearest = [value for value in preceding if value.end == nearest_end]
+    identities = {value.identity for value in nearest}
+    if len(identities) != 1:
+        return "COUNT_PREDICATE_EXPRESSION_AMBIGUOUS"
+    expression = max(nearest, key=lambda value: value.end - value.start)
+    if threshold.start() - expression.end > 80:
+        return "COUNT_PREDICATE_EXPRESSION_UNRESOLVED"
+
+    operator = {
+        "lon hon": ComparisonOperator.GT,
+        "vuot": ComparisonOperator.GT,
+        "cao hon": ComparisonOperator.GT,
+        "tren": ComparisonOperator.GT,
+        "it nhat": ComparisonOperator.GE,
+        "khong duoi": ComparisonOperator.GE,
+        "nho hon": ComparisonOperator.LT,
+        "thap hon": ComparisonOperator.LT,
+        "duoi": ComparisonOperator.LT,
+        "": ComparisonOperator.GE,
+    }[threshold.group("operator") or ""]
+    value = float(threshold.group("value").replace(",", "."))
+    unit_dimension, unit_scale, _ = scan_unit(
+        normalized[threshold.start() : threshold.end() + 40]
+    )
+    literal_dimension = {
+        "MONEY": Dimension.MONEY,
+        "PERCENT": Dimension.PERCENT,
+        "PERCENT_POINT": Dimension.PERCENT_POINT,
+        "RATIO": Dimension.RATIO,
+        "COUNT": Dimension.COUNT,
+        "SHARES": Dimension.SHARES,
+        "UNKNOWN": expression.dimension,
+    }[unit_dimension]
+    literal_unit = UnitSpec(literal_dimension, unit_scale)
+    if not _unit_dimensions_compatible(expression.dimension, literal_unit.dimension):
+        return "COUNT_PREDICATE_UNIT_MISMATCH"
+    return (
+        Comparison(
+            operator,
+            expression.expression,
+            Literal(value, literal_unit),
+        ),
+        expression.expression,
+    )
 
 
 def _filtered_aggregate_roles(

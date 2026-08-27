@@ -95,6 +95,7 @@ _CONSOLIDATED = re.compile(r"(h[ợo]p\s*nh[ấa]t|consolidated)")
 _DIFFERENCE_CUE = re.compile(
     r"(ch[êe]nh\s*l[ệe]ch|hi[ệe]u\s*(?:s[ốo]|gi[ữu]a)|tr[ừu]\s+đi"
     r"|m[ứu]c\s*thay\s*đ[ổo]i"
+    r"|^thay\s*đ[ổo]i\s+[^?]{1,160}(?:bao\s+nhi[êe]u|l[àa]\s+bao\s+nhi[êe]u)"
     r"|thay\s*đ[ổo]i\s*(?:so\s*v[ớo]i|gi[ữu]a)|nhi[ềe]u\s*h[ơo]n|[íi]t\s*h[ơo]n"
     r"|(?:l[ớo]n|k[ée]m|b[ée]|cao|th[ấa]p)\s+h[ơo]n\s+[^?]{0,100}(?:bao\s+nhi[êe]u|m[ấa]y)"
     r"|b[ée]\s*h[ơo]n|cao\s*h[ơo]n|th[ấa]p\s*h[ơo]n|bi[ếe]n\s*đ[ộo]ng"
@@ -124,18 +125,21 @@ _OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     # "top-5 ... lớn nhất", so it must precede EXTREMUM.
     (COUNT_OP, re.compile(
         r"(c[óo]\s*bao\s*nhi[êe]u\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p|m[ãa]|đơn\s*v[ịi])"
+        r"|c[óo]\s*bao\s*nhi[êe]u\s+trong\s+s[ốo]\b"
         r"|s[ốo]\s*l[ưu][ợo]ng\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)"
         r"|t[ổo]ng\s*s[ốo]\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p|đ[ơo]n\s*v[ịi])"
         r"|bao\s*nhi[êe]u\s*(?:c[ôo]ng\s*ty|doanh\s*nghi[ệe]p)\s*(?:c[óo]|đ[ạa]t|th[ỏo]a)"
         r"|(?:c[óo]\s*)?bao\s*nhi[êe]u\s*n[ăa]m\b|s[ốo]\s*n[ăa]m\b)")),
     (EXTREMUM, re.compile(
         r"(cao\s*nh[ấa]t|th[ấa]p\s*nh[ấa]t|l[ớo]n\s*nh[ấa]t|nh[ỏo]\s*nh[ấa]t"
-        r"|đ[ứu]ng\s*đ[ầa]u|x[ếe]p\s*h[ạa]ng)")),
+        r"|t[ốo]i\s*đa|t[ốo]i\s*thi[ểe]u|đ[ứu]ng\s*đ[ầa]u|x[ếe]p\s*h[ạa]ng)")),
     # In "tốc độ tăng trưởng ... bình quân", growth is the quantity being
     # averaged. AVG is the root operation and must own the route.
     (AVG, re.compile(r"(trung\s*b[ìi]nh|b[ìi]nh\s*qu[âa]n)")),
     (GROWTH, re.compile(
         r"(t[ăa]ng\s*tr[ưu][ởo]ng|t[ốo]c\s*đ[ộo]\s*t[ăa]ng"
+        r"|t[ỷy]\s*l[ệe]\s*t[ăa]ng\s*%"
+        r"|t[ăa]ng\s+so\s+v[ớo]i[^?]{0,100}(?:bao\s+nhi[êe]u\s*)?(?:%|phần\s*trăm)"
         r"|(?:t[ăa]ng(?:\s*(?:hay|hoặc)\s*gi[ảa]m)?|gi[ảa]m)\s+bao\s+nhi[êe]u\s*(?:%|phần\s*trăm)"
         r"|thay\s*đ[ổo]i\s*(?:bao\s*nhi[êe]u\s*)?(?:%|phần\s*trăm))")),
     (SUBTRACT, _DIFFERENCE_CUE),
