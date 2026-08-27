@@ -23,6 +23,8 @@ from text2pandas.domain.semantic import (
     Filter,
     FormulaCall,
     Literal,
+    LogicalOperator,
+    LogicalPredicate,
     MetricRef,
     OutputSpec,
     QuestionAST,
@@ -35,7 +37,7 @@ from text2pandas.domain.semantic import (
     UnitSpec,
     validate_question_ast,
 )
-from text2pandas.domain.semantic.ast import Expression
+from text2pandas.domain.semantic.ast import Expression, Predicate
 from text2pandas.domain.units.lexicon import scan_unit
 
 from .contracts import (
@@ -533,6 +535,10 @@ def _select_at_arg_roles(
     if not ranked:
         return "SELECT_AT_ARG_RANK_EXPRESSION_UNRESOLVED"
     rank = max(ranked, key=lambda value: (value.end, value.end - value.start))
+    rank_clause = normalized[clause_start : extreme.start()]
+    rank_surface = normalized[rank.start : rank.end]
+    if re.search(r"\btren\b", rank_clause) and not re.search(r"\btren\b", rank_surface):
+        return "SELECT_AT_ARG_RANK_FORMULA_UNRESOLVED"
 
     requested = annotations.requested_unit.dimension
     prefix = [
@@ -741,7 +747,7 @@ def _count_predicate_role(
     annotations: QuestionAnnotations,
     metric_mentions: tuple[MetricMention, ...],
     formula_mentions: tuple[FormulaMention, ...],
-) -> tuple[Comparison, Expression] | str:
+) -> tuple[Predicate, Expression] | str:
     """Compile an explicit numeric predicate for a finite-domain count.
 
     COUNT is accepted only when the question provides a comparison operator,
@@ -758,6 +764,10 @@ def _count_predicate_role(
         for match in _COHORT_THRESHOLD.finditer(normalized)
         if match.group("operator") or match.group("from") or "tro len" in match.group(0)
     ]
+    if not threshold_matches:
+        sign_role = _count_sign_predicate_role(normalized, candidates)
+        if sign_role is not None:
+            return sign_role
     if len(threshold_matches) != 1:
         return "COUNT_PREDICATE_REQUIRED"
     threshold = threshold_matches[0]
@@ -809,6 +819,44 @@ def _count_predicate_role(
         ),
         expression.expression,
     )
+
+
+def _count_sign_predicate_role(
+    normalized_question: str,
+    candidates: tuple[_ExpressionMention, ...],
+) -> tuple[Predicate, Expression] | None:
+    """Compile explicit simultaneous positive/negative predicates.
+
+    The construction is deliberately narrow: every expression must be
+    followed by exactly one sign word in its own clause and the question must
+    say ``đồng thời``. Implicit polarity and inferred conjunction are rejected.
+    """
+
+    if "dong thoi" not in normalized_question or len(candidates) < 2:
+        return None
+    predicates: list[Comparison] = []
+    used: list[_ExpressionMention] = []
+    ordered = sorted(candidates, key=lambda value: (value.start, value.end))
+    for index, candidate in enumerate(ordered):
+        clause_end = ordered[index + 1].start if index + 1 < len(ordered) else len(
+            normalized_question
+        )
+        clause = normalized_question[candidate.end : min(clause_end, candidate.end + 80)]
+        signs = re.findall(r"\b(am|duong)\b", clause)
+        if len(signs) != 1:
+            continue
+        operator = ComparisonOperator.LT if signs[0] == "am" else ComparisonOperator.GT
+        predicates.append(
+            Comparison(
+                operator,
+                candidate.expression,
+                Literal(0, UnitSpec(candidate.dimension)),
+            )
+        )
+        used.append(candidate)
+    if len(predicates) < 2 or len({value.identity for value in used}) != len(used):
+        return None
+    return LogicalPredicate(LogicalOperator.AND, tuple(predicates)), used[0].expression
 
 
 def _filtered_aggregate_roles(

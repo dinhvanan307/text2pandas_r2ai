@@ -9,7 +9,33 @@ formula_aliases:
   quick_ratio:
     - "ty le phan chenh lech giua tai san ngan han va hang ton kho tren no ngan han"
 
+# Quarantine is V3-only and evidence-driven. These formulas remain byte-stable
+# in the canonical V2 registry for replay, but are excluded from V3 because the
+# adjudicated error funnel proved that their current operand contracts can bind
+# a parent total/detail or incompatible unit scale and emit a wrong answer.
+quarantined_formulas:
+  short_term_other_receivables_share: >-
+    Requires a typed subject/counterparty scope for short- and long-term detail
+    rows; same entity/period is insufficient.
+  interest_expense_to_short_term_borrowings: >-
+    Requires an aggregate-balance operand policy; exact leaf matching can select
+    one borrowing facility instead of total short-term borrowings.
+
 formulas:
+  - formula_id: working_capital
+    variant_id: current_assets_minus_current_liabilities
+    aliases: ["von luu dong rong", "von luu dong"]
+    leaves: [current_assets, current_liabilities]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: money, unit: vnd}
+    zero_policy: unresolved
+    expression:
+      node: Subtract
+      left: {node: FactRef, metric_id: current_assets}
+      right: {node: FactRef, metric_id: current_liabilities}
+
   - formula_id: inventory_to_current_liabilities
     variant_id: default
     aliases: ["ty le hang ton kho tren no ngan han", "hang ton kho tren no ngan han"]

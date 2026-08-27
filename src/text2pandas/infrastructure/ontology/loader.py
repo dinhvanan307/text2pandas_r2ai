@@ -114,6 +114,17 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
             raise OntologySourceError(f"duplicate formula_id: {formula.formula_id}")
         formulas[formula.formula_id] = formula
 
+    quarantined = _dict(
+        extension_document.get("quarantined_formulas", {}),
+        "quarantined_formulas",
+    )
+    for formula_id, reason in quarantined.items():
+        if formula_id not in formulas:
+            raise OntologySourceError(f"quarantine references unknown formula: {formula_id}")
+        if not str(reason).strip():
+            raise OntologySourceError(f"quarantine requires a reason: {formula_id}")
+        del formulas[formula_id]
+
     for formula_id, aliases in _dict(
         extension_document.get("formula_aliases", {}), "formula_aliases"
     ).items():
@@ -182,7 +193,18 @@ def _metric_definition(raw: dict[str, Any]) -> MetricDefinition:
 def _formula_definition(raw: dict[str, Any]) -> FormulaDefinition:
     output = _dict(raw.get("output"), f"formula {raw.get('formula_id')} output")
     output_kind = str(output.get("kind", "ratio"))
-    output_unit = UnitSpec(Dimension.PERCENT if output_kind == "percentage" else Dimension.RATIO)
+    output_dimension = {
+        "percentage": Dimension.PERCENT,
+        "ratio": Dimension.RATIO,
+        "money": Dimension.MONEY,
+        "count": Dimension.COUNT,
+        "shares": Dimension.SHARES,
+    }.get(output_kind)
+    if output_dimension is None:
+        raise OntologySourceError(
+            f"formula {raw.get('formula_id')} has unsupported output kind: {output_kind}"
+        )
+    output_unit = UnitSpec(output_dimension)
     expression = _formula_expression(_dict(raw.get("expression"), "formula expression"))
     if output_kind == "percentage":
         expression = _strip_legacy_percentage_multiplier(expression)

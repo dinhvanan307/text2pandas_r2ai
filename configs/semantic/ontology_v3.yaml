@@ -18,7 +18,7 @@ sources:
     sha256: 264d538e83f933c503d40d7ce35325f9b056fe033aeddee83e93abe3832ca9f8
   extensions:
     path: configs/semantic/extensions_v3.yaml
-    sha256: b7bc53c87305a1db2a68242f0697dc63ae6e57bb5465d3a88cb5f2b675bc4e33
+    sha256: 87a20f3858dc73b534b72747b0bd38a258474c7a78a2529497d5e3a579ad2369
 
 policies:
   metric_match: longest_normalized_prefix

@@ -11,9 +11,16 @@ def test_reviewed_sources_load_as_one_validated_ontology() -> None:
     assert ontology.schema_version == 3
     assert sum(metric.review_status == "reviewed" for metric in ontology.metrics.values()) == 28
     assert sum(metric.review_status == "reported" for metric in ontology.metrics.values()) > 300
-    assert len(ontology.formulas) == 29
+    assert len(ontology.formulas) == 28
     assert ontology.validate() == ()
     assert len(ontology.fingerprint) == 64
+
+
+def test_error_funnel_formulas_are_quarantined_until_operand_contracts_exist() -> None:
+    ontology = load_ontology()
+
+    assert "short_term_other_receivables_share" not in ontology.formulas
+    assert "interest_expense_to_short_term_borrowings" not in ontology.formulas
 
 
 def test_reported_catalog_is_versioned_but_not_promoted_to_reviewed_semantics() -> None:
@@ -63,3 +70,12 @@ def test_filtered_cohort_formulas_are_reviewed_in_the_shared_ontology() -> None:
     assert inventory_ratio.formula_id == "inventory_to_current_liabilities"
     assert cash_flow_ratio is not None
     assert cash_flow_ratio.formula_id == "cfo_to_current_liabilities"
+
+
+def test_typed_money_formula_can_leave_domain_confirmation_queue() -> None:
+    ontology = load_ontology()
+    working_capital = ontology.match_formula(normalize_phrase("Vốn lưu động ròng"))
+
+    assert working_capital is not None
+    assert working_capital.formula_id == "working_capital"
+    assert working_capital.output_unit.dimension.value == "money"

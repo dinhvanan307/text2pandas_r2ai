@@ -20,6 +20,7 @@ from text2pandas.domain.semantic import (
     Filter,
     FormulaCall,
     Literal,
+    LogicalPredicate,
     MetricRef,
     RankDirection,
     SelectAtArg,
@@ -307,6 +308,29 @@ def test_explicit_numeric_predicate_compiles_typed_entity_count() -> None:
     assert literal.unit.scale_exponent == 12
 
 
+def test_explicit_simultaneous_sign_predicates_compile_typed_count() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {"HPX": "HPX", "NVL": "NVL", "SCR": "SCR", "VIC": "VIC", "VRE": "VRE"}
+        ),
+    )
+
+    result = parser.parse(
+        "Năm 2024, có bao nhiêu doanh nghiệp trong nhóm mã cổ phiếu HPX, NVL, "
+        "SCR, VIC và VRE đồng thời ghi nhận vốn lưu động ròng âm và lưu chuyển "
+        "tiền thuần từ hoạt động kinh doanh dương?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+    assert result.ast.expression.function == AggregateFunction.COUNT
+    filtered = result.ast.expression.expression
+    assert isinstance(filtered, Filter)
+    assert isinstance(filtered.predicate, LogicalPredicate)
+    assert len(filtered.predicate.predicates) == 2
+
+
 def test_direct_binary_metric_preserves_explicit_counterparty_selector() -> None:
     parser = SemanticParser(
         load_ontology(),
@@ -550,6 +574,23 @@ def test_select_at_arg_preserves_explicit_nested_counterparty_selector() -> None
     assert result.ast.expression.expression.required_context_phrases == (
         "tnhh coats phong phu",
     )
+
+
+def test_select_at_arg_does_not_rank_one_operand_of_unreviewed_ratio() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"BSR": "BSR", "PLX": "PLX", "PVT": "PVT"}),
+    )
+
+    result = parser.parse(
+        "Năm 2017, trong ba mã BSR, PLX và PVT, doanh nghiệp có tỷ lệ lưu chuyển "
+        "tiền thuần từ hoạt động kinh doanh trên lợi nhuận thuần từ hoạt động "
+        "kinh doanh thấp nhất có tỷ lệ lợi nhuận sau thuế trên doanh thu thuần "
+        "là bao nhiêu %?"
+    )
+
+    assert not result.ok
+    assert result.reason == "SELECT_AT_ARG_RANK_FORMULA_UNRESOLVED"
 
 
 def test_filtered_multi_entity_average_supports_distinct_reviewed_formulas() -> None:
