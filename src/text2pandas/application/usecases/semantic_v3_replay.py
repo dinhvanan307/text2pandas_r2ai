@@ -23,7 +23,10 @@ def replay_semantic_v3_records(
     emitted = matched = abstentions = 0
     seen: set[int] = set()
     for record in records:
-        qid = int(record.get("qid", 0))
+        qid_value = record.get("qid", 0)
+        if isinstance(qid_value, bool) or not isinstance(qid_value, (int, str)):
+            raise TypeError("qid must be an integer")
+        qid = int(qid_value)
         if qid <= 0 or qid in seen:
             raise ValueError(f"invalid or duplicate qid: {qid}")
         seen.add(qid)
@@ -91,4 +94,3 @@ def _finite_number(value: object) -> float | None:
     except ValueError:
         return None
     return result if math.isfinite(result) else None
-

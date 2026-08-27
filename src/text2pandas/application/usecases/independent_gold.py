@@ -39,7 +39,7 @@ def select_blinded_questions(
     rows: list[dict[str, object]] = []
     seen: set[int] = set()
     for item in questions:
-        qid = int(item.get("id", item.get("qid", 0)))
+        qid = _as_int(item.get("id", item.get("qid", 0)), "source qid")
         question = str(item.get("question", "")).strip()
         if qid <= 0 or not question:
             raise ValueError("every source question requires a positive id and text")
@@ -57,7 +57,12 @@ def select_blinded_questions(
         )
     if count <= 0 or count > len(rows):
         raise ValueError(f"selection count must be within 1..{len(rows)}")
-    rows.sort(key=lambda row: (str(row["selection_digest"]), int(row["qid"])))
+    rows.sort(
+        key=lambda row: (
+            str(row["selection_digest"]),
+            _as_int(row["qid"], "selected qid"),
+        )
+    )
     return tuple(rows[:count])
 
 
@@ -69,7 +74,7 @@ def annotation_templates(
     return tuple(
         {
             "schema_version": 1,
-            "qid": int(row["qid"]),
+            "qid": _as_int(row["qid"], "selected qid"),
             "question": str(row["question"]),
             "question_sha256": str(row["question_sha256"]),
             "annotator_slot": annotator_slot,
@@ -81,7 +86,9 @@ def annotation_templates(
             "evidence_binding": None,
             "notes": None,
         }
-        for row in sorted(selected, key=lambda value: int(value["qid"]))
+        for row in sorted(
+            selected, key=lambda value: _as_int(value["qid"], "selected qid")
+        )
     )
 
 
@@ -91,7 +98,7 @@ def adjudication_templates(
     return tuple(
         {
             "schema_version": 1,
-            "qid": int(row["qid"]),
+            "qid": _as_int(row["qid"], "selected qid"),
             "question_sha256": str(row["question_sha256"]),
             "adjudicator_id": None,
             "independent_of_model_development": None,
@@ -102,7 +109,9 @@ def adjudication_templates(
             "evidence_binding": None,
             "notes": None,
         }
-        for row in sorted(selected, key=lambda value: int(value["qid"]))
+        for row in sorted(
+            selected, key=lambda value: _as_int(value["qid"], "selected qid")
+        )
     )
 
 
@@ -146,7 +155,10 @@ def validate_and_merge_release(
         disagreement_fields = tuple(
             field for field in GOLD_FIELDS if row_a.get(field) != row_b.get(field)
         )
-        reviewed = {str(value) for value in row_c.get("reviewed_disagreement_fields", [])}
+        raw_reviewed = row_c.get("reviewed_disagreement_fields", [])
+        if not isinstance(raw_reviewed, Sequence) or isinstance(raw_reviewed, (str, bytes)):
+            raise TypeError(f"reviewed disagreement fields must be a list: {qid}")
+        reviewed = {str(value) for value in raw_reviewed}
         if not set(disagreement_fields) <= reviewed:
             raise ValueError(f"unreviewed disagreement fields: {qid}:{disagreement_fields}")
         for field in GOLD_FIELDS:
@@ -182,7 +194,7 @@ def _index_rows(
 ) -> dict[int, Mapping[str, object]]:
     output: dict[int, Mapping[str, object]] = {}
     for row in rows:
-        qid = int(row.get("qid", 0))
+        qid = _as_int(row.get("qid", 0), "annotation qid")
         if qid in output:
             raise ValueError(f"duplicate annotation qid: {qid}")
         if slot is not None and row.get("annotator_slot") != slot:
@@ -198,6 +210,16 @@ def _required_identity(row: Mapping[str, object], field: str, label: str) -> str
     if not value:
         raise ValueError(f"missing reviewer identity: {label}")
     return value
+
+
+def _as_int(value: object, label: str) -> int:
+    if isinstance(value, bool):
+        raise TypeError(f"{label} must be an integer")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value)
+    raise TypeError(f"{label} must be an integer")
 
 
 def _reject_model_fields(value: object, label: str) -> None:
