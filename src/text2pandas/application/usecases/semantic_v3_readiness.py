@@ -16,6 +16,10 @@ class PromotionPolicy:
     minimum_candidate_recall: float
     minimum_binding_exact: float
     minimum_answer_accuracy: float
+    minimum_reranker_heldout_records: int
+    minimum_reranker_f2_delta: float
+    minimum_reranker_f2_delta_ci95_low: float
+    minimum_reranker_protected_slice_delta: float
     minimum_submission_replay_records: int
     maximum_replay_mismatches: int
     maximum_submission_errors: int
@@ -34,6 +38,10 @@ class PromotionMetrics:
     candidate_recall: float | None = None
     binding_exact: float | None = None
     answer_accuracy: float | None = None
+    reranker_heldout_records: int | None = None
+    reranker_f2_delta: float | None = None
+    reranker_f2_delta_ci95_low: float | None = None
+    reranker_protected_slice_delta: float | None = None
     submission_replay_records: int | None = None
     replay_mismatches: int | None = None
     submission_errors: int | None = None
@@ -113,6 +121,30 @@ def evaluate_promotion(
         "ANSWER_ACCURACY",
         metrics.answer_accuracy,
         policy.minimum_answer_accuracy,
+    )
+    _minimum(
+        blockers,
+        "RERANKER_HELDOUT_RECORDS",
+        metrics.reranker_heldout_records,
+        policy.minimum_reranker_heldout_records,
+    )
+    _minimum(
+        blockers,
+        "RERANKER_F2_DELTA",
+        metrics.reranker_f2_delta,
+        policy.minimum_reranker_f2_delta,
+    )
+    _minimum(
+        blockers,
+        "RERANKER_F2_DELTA_CI95_LOW",
+        metrics.reranker_f2_delta_ci95_low,
+        policy.minimum_reranker_f2_delta_ci95_low,
+    )
+    _minimum(
+        blockers,
+        "RERANKER_PROTECTED_SLICE_DELTA",
+        metrics.reranker_protected_slice_delta,
+        policy.minimum_reranker_protected_slice_delta,
     )
     _minimum(
         blockers,

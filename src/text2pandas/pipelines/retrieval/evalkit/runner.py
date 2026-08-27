@@ -65,6 +65,8 @@ __all__ = [
 #                         ranking behavior is unchanged.
 #   evalkit-8 → evalkit-9   preserve source mention order for directional
 #                         multi-entity comparisons (ADR 0011).
+#   evalkit-9 → evalkit-10  add a versioned learned S3 reranker; identity remains
+#                         the default and model bytes are checksum-bound.
 #
 # VÌ SAO PHẢI BUMP, KHÔNG PHẢI CHỈ SỬA CODE
 # -----------------------------------------
@@ -76,7 +78,7 @@ __all__ = [
 # Kỷ luật con người không giữ được bất biến này (đã hỏng một lần rồi), nên
 # `tests/test_p0_unify.py::test_behavior_fingerprint` băm AST của các module
 # quyết định hành vi S2 và đỏ lên nếu chúng đổi mà hằng số này không đổi.
-SCHEMA_VERSION = "evalkit-9"
+SCHEMA_VERSION = "evalkit-10"
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,6 +90,9 @@ class EvalConfig:
     brands: bool | str = True   # True/"full" | "a6" | False — xem alias_store
     top_k_rank: int = 50
     top_k_rerank: int = 10
+    reranker: str = "identity"          # identity | linear
+    reranker_model_path: str | None = None
+    reranker_model_sha256: str | None = None
     year_slack: int = 1
     gold_source: str = "proxy_v2"       # proxy_v2 | manual | manual_then_proxy
     gold_manual_path: str = "data/curated/dev-legacy/gold_v2.jsonl"
@@ -159,6 +164,31 @@ class EvalConfig:
     def checkpoint_name(self) -> str:
         """Legacy config-only name; production callers use ``checkpoint_path``."""
         return f"ek_{self.tag}_{self.sha}.jsonl"
+
+
+def _build_reranker(root: Path, cfg: EvalConfig):
+    if cfg.reranker == "identity":
+        if cfg.reranker_model_path or cfg.reranker_model_sha256:
+            raise ValueError("identity reranker must not carry a model path or SHA")
+        return IdentityReranker(top_k=cfg.top_k_rerank)
+    if cfg.reranker != "linear":
+        raise ValueError(f"unsupported reranker: {cfg.reranker!r}")
+    if not cfg.reranker_model_path or not cfg.reranker_model_sha256:
+        raise ValueError("linear reranker requires model path and SHA-256")
+    from text2pandas.pipelines.retrieval.rerank_s3 import (
+        LinearFeatureReranker,
+        LinearRerankerModel,
+    )
+    model_path = root / cfg.reranker_model_path
+    actual = hashlib.sha256(model_path.read_bytes()).hexdigest()
+    if actual != cfg.reranker_model_sha256:
+        raise ValueError(
+            f"reranker model checksum mismatch: expected {cfg.reranker_model_sha256}, "
+            f"got {actual}"
+        )
+    return LinearFeatureReranker(
+        LinearRerankerModel.load(model_path), top_k=cfg.top_k_rerank
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -355,7 +385,7 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
                               stop_mode=cfg.stop_mode,
                               primary_boost=cfg.primary_boost,
                               primary_modes=cfg.primary_modes)
-    s3 = IdentityReranker(top_k=cfg.top_k_rerank)
+    s3 = _build_reranker(root, cfg)
 
     fh = ck.open("a", encoding="utf-8")
     t0 = time.time()
@@ -423,6 +453,7 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
             # ── theo TẦNG, tách bạch ──────────────────────────────────────
             "s1_n": o1.n, "s1_clauses": o1.trace.get("active_clauses"),
             "s2_n": len(o2.ranked), "s3_n": len(o3.ranked),
+            "s3_stage": o3.stage, "s3_trace": o3.trace,
             "gold_source": gold.source, "gold_how": gold.how,
             "gold_phrase": gold.phrase, "n_gold": len(gold.tables),
             "gold_ok": gold.ok, "gold_strict": gold.strict,

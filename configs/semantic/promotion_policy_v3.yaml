@@ -9,6 +9,10 @@ minimum_parser_ast_exact: 0.95
 minimum_candidate_recall: 0.99
 minimum_binding_exact: 0.90
 minimum_answer_accuracy: 0.80
+minimum_reranker_heldout_records: 100
+minimum_reranker_f2_delta: 0.0
+minimum_reranker_f2_delta_ci95_low: 0.0
+minimum_reranker_protected_slice_delta: -0.01
 minimum_submission_replay_records: 1012
 maximum_replay_mismatches: 0
 maximum_submission_errors: 0

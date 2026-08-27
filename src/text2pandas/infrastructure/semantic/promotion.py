@@ -28,6 +28,14 @@ def load_promotion_policy(path: str | Path = _DEFAULT) -> PromotionPolicy:
         minimum_candidate_recall=float(raw["minimum_candidate_recall"]),
         minimum_binding_exact=float(raw["minimum_binding_exact"]),
         minimum_answer_accuracy=float(raw["minimum_answer_accuracy"]),
+        minimum_reranker_heldout_records=int(raw["minimum_reranker_heldout_records"]),
+        minimum_reranker_f2_delta=float(raw["minimum_reranker_f2_delta"]),
+        minimum_reranker_f2_delta_ci95_low=float(
+            raw["minimum_reranker_f2_delta_ci95_low"]
+        ),
+        minimum_reranker_protected_slice_delta=float(
+            raw["minimum_reranker_protected_slice_delta"]
+        ),
         minimum_submission_replay_records=int(raw["minimum_submission_replay_records"]),
         maximum_replay_mismatches=int(raw["maximum_replay_mismatches"]),
         maximum_submission_errors=int(raw["maximum_submission_errors"]),

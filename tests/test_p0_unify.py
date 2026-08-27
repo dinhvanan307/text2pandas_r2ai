@@ -209,6 +209,7 @@ _MODULE_HANH_VI = (
     "src/text2pandas/pipelines/retrieval/question_intent.py",
     "src/text2pandas/pipelines/retrieval/subject.py",
     "src/text2pandas/pipelines/retrieval/evalkit/stages.py",
+    "src/text2pandas/pipelines/retrieval/rerank_s3.py",
 )
 
 # fingerprint ↔ SCHEMA_VERSION. Đổi code hành vi ⇒ đổi CẢ HAI.
@@ -242,6 +243,7 @@ _FINGERPRINT = {
     "evalkit-7": "28c7ebe62fec347a",
     "evalkit-8": "28c7ebe62fec347a",
     "evalkit-9": "42ce338e3c3c58e8",
+    "evalkit-10": "d3f96ffac7d45f59",
 }
 
 _FIELD = {ast.Constant: "value", ast.Name: "id", ast.Attribute: "attr",

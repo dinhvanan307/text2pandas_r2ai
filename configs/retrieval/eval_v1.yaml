@@ -14,6 +14,9 @@ defaults:
   brands: true              # nạp thêm lớp tên thương mại curated
   top_k_rank: 50            # S2 cắt ở đây
   top_k_rerank: 10          # S3 cắt ở đây — khớp `retrieval_k` của BTC
+  reranker: identity         # identity | linear; linear bắt buộc model + SHA
+  reranker_model_path: null
+  reranker_model_sha256: null
   year_slack: 1             # doc_year BETWEEN min(y) AND max(y)+slack
   gold_source: proxy_v2     # proxy_v2 | manual | manual_then_proxy
   gold_raw_limit: 400       # trần quét cụm ĐÃ thu hẹp mã+kỳ; chạm trần ⇒ không tin
@@ -124,6 +127,15 @@ profiles:
   manual:
     gold_source: manual
     ks: [1, 2, 3, 5, 10]
+  # Candidate S3 trained only on legacy development gold. It is intentionally
+  # not a production default; promotion remains blocked until heldout_v1 is
+  # independently labeled and the preregistered A/B gates pass.
+  manual_linear_v1:
+    gold_source: manual
+    ks: [1, 2, 3, 5, 10]
+    reranker: linear
+    reranker_model_path: configs/retrieval/models/linear_reranker_v1.json
+    reranker_model_sha256: e60a8acea32989a2be37a89cd9cbfbb92b0b4f338ea2be9a299944075e6cebfd
   manual_mixed:
     gold_source: manual_then_proxy
 

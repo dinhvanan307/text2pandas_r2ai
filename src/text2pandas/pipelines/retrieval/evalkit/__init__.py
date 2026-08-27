@@ -20,4 +20,4 @@ __all__ = ["SCHEMA_VERSION"]
 
 # Public package marker; keep synchronized with ``evalkit.runner`` so external
 # checkpoint tooling cannot stamp the historical v1 value by importing here.
-SCHEMA_VERSION = "evalkit-9"
+SCHEMA_VERSION = "evalkit-10"

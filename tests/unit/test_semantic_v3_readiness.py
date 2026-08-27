@@ -15,6 +15,7 @@ def test_missing_gold_and_accuracy_can_never_be_interpreted_as_pass() -> None:
     assert "NOT_MEASURED:PARSER_AST_EXACT" in decision.blockers
     assert "NOT_MEASURED:BINDING_EXACT" in decision.blockers
     assert "NOT_MEASURED:ANSWER_ACCURACY" in decision.blockers
+    assert "NOT_MEASURED:RERANKER_F2_DELTA" in decision.blockers
     assert "NOT_MEASURED:EVALUATION_RELEASE_SEALED" in decision.blockers
     assert "NOT_MEASURED:SUBMISSION_REPLAY_RECORDS" in decision.blockers
 
@@ -33,6 +34,10 @@ def test_every_measured_gate_must_pass_for_promotion() -> None:
             candidate_recall=0.99,
             binding_exact=0.90,
             answer_accuracy=0.80,
+            reranker_heldout_records=120,
+            reranker_f2_delta=0.01,
+            reranker_f2_delta_ci95_low=0.0,
+            reranker_protected_slice_delta=-0.01,
             submission_replay_records=1012,
             replay_mismatches=0,
             submission_errors=0,
@@ -56,6 +61,10 @@ def test_unsealed_or_mixed_evaluation_release_blocks_promotion() -> None:
         candidate_recall=1.0,
         binding_exact=0.99,
         answer_accuracy=0.90,
+        reranker_heldout_records=120,
+        reranker_f2_delta=0.01,
+        reranker_f2_delta_ci95_low=0.0,
+        reranker_protected_slice_delta=0.0,
         submission_replay_records=1012,
         replay_mismatches=0,
         submission_errors=0,

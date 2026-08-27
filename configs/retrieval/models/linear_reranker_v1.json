@@ -1,0 +1,35 @@
+{
+  "features": [
+    "s2_score",
+    "bm25",
+    "rank_prior",
+    "period_hit",
+    "unit_hit",
+    "stmt_hit",
+    "basis_hit",
+    "clean_ratio",
+    "primary_statement",
+    "note_statement",
+    "cash_flow_statement",
+    "screen_primary",
+    "related_primary"
+  ],
+  "model_id": "linear-reranker-v1",
+  "schema": "linear-reranker-v1",
+  "training_manifest_sha256": "acda7aacf9f1fc7c4710f9cda2f6863cb1f538de2be9cb641e5e0c68deac5138",
+  "weights": {
+    "basis_hit": 0.433664932896,
+    "bm25": 0.33326093893,
+    "cash_flow_statement": -0.149914244897,
+    "clean_ratio": -0.053101405803,
+    "note_statement": -0.352033634381,
+    "period_hit": -0.0821603122,
+    "primary_statement": 0.589419987716,
+    "rank_prior": 0.478867732848,
+    "related_primary": 0.019085472136,
+    "s2_score": 1.965491722407,
+    "screen_primary": 0.474246984047,
+    "stmt_hit": 0.0,
+    "unit_hit": -0.059551255265
+  }
+}
