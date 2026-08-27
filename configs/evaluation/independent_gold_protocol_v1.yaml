@@ -1,0 +1,29 @@
+schema_version: 1
+protocol_id: independent-gold-v1
+
+question_source:
+  path: data/raw/btc/questions/questions.jsonl
+  sha256: 64a428d90a8c5ad5d36a397d2de3b6e3aa4e4c1224dcdcb118fe3a4fca056ff0
+  records: 1012
+
+selection:
+  method: sha256_hash_order
+  seed: text2pandas-independent-gold-v1
+  records: 300
+
+review:
+  minimum_independent_annotators: 2
+  require_distinct_adjudicator: true
+  require_source_evidence_review: true
+  blind_model_outputs: true
+  required_assets:
+    - answer
+    - semantic_parser
+    - evidence_binding
+
+release:
+  immutable: true
+  checksum_algorithm: sha256
+  allowed_statuses:
+    - SEALED
+
