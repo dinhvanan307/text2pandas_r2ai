@@ -454,6 +454,25 @@ def test_filtered_multi_entity_sum_compiles_predicate_and_selected_metric_separa
     assert aggregate.expression.expression.qualifiers == ()
 
 
+def test_select_at_arg_preserves_explicit_nested_counterparty_selector() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"VGT": "Tập đoàn Dệt May Việt Nam"}),
+    )
+
+    result = parser.parse(
+        "Trong các năm 2015 và 2017, giá trị mua hàng hóa và dịch vụ từ Công ty "
+        "TNHH Coats Phong Phú của Tập đoàn Dệt May Việt Nam trong năm có vốn "
+        "chủ sở hữu cuối năm cao nhất là bao nhiêu tỷ đồng?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, SelectAtArg)
+    assert result.ast.expression.expression.required_context_phrases == (
+        "tnhh coats phong phu",
+    )
+
+
 def test_filtered_multi_entity_average_supports_distinct_reviewed_formulas() -> None:
     parser = SemanticParser(
         load_ontology(),

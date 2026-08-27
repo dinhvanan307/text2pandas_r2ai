@@ -145,6 +145,15 @@ class SqliteOperandRetriever:
             value = Decimal(str(decimal_text))
         except InvalidOperation:
             return "unit"
+        context = " ".join(
+            (str(row_path or ""), str(column_path or ""), str(section_text or ""))
+        )
+        normalized_context = normalize_phrase(context)
+        if any(
+            not _contains_phrase(normalized_context, phrase)
+            for phrase in request.required_context_phrases
+        ):
+            return "metric"
         direct, alias_length = match
         # Exact leaves get a bounded tie-break, not a dominating bonus. Notes
         # may contain an exact label for a different concept while the correct
@@ -177,7 +186,7 @@ class SqliteOperandRetriever:
             reasons.append("section")
         qualifier_score = _qualifier_score(
             request.qualifiers,
-            " ".join((str(row_path or ""), str(column_path or ""), str(section_text or ""))),
+            context,
         )
         score += qualifier_score
         if qualifier_score:
@@ -252,6 +261,11 @@ def _metric_match(
 
 def _prefix(value: str, prefix: str) -> bool:
     return value == prefix or value.startswith(prefix + " ")
+
+
+def _contains_phrase(context: str, phrase: str) -> bool:
+    normalized_phrase = normalize_phrase(phrase)
+    return bool(normalized_phrase) and f" {normalized_phrase} " in f" {context} "
 
 
 def _period_role_score(semantics: PeriodSemantics, role: str, column: str) -> float:

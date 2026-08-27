@@ -36,6 +36,9 @@ class MetricRef:
     expected_unit: UnitSpec | None = None
     period_semantics: PeriodSemantics = PeriodSemantics.UNKNOWN
     qualifiers: tuple[str, ...] = ()
+    # Closed grammatical selectors such as "từ Công ty TNHH X của Tập đoàn Y".
+    # Every phrase is a hard evidence requirement, unlike soft qualifiers.
+    required_context_phrases: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -185,6 +188,7 @@ def expression_to_dict(expression: Expression) -> dict[str, Any]:
             "expected_unit": expression.expected_unit.to_dict() if expression.expected_unit else None,
             "period_semantics": expression.period_semantics.value,
             "qualifiers": list(expression.qualifiers),
+            "required_context_phrases": list(expression.required_context_phrases),
         }
     if isinstance(expression, Literal):
         return {"type": "literal", "value": expression.value, "unit": expression.unit.to_dict()}
@@ -289,6 +293,9 @@ def expression_from_dict(raw: Mapping[str, Any]) -> Expression:
                 str(raw.get("period_semantics", PeriodSemantics.UNKNOWN.value))
             ),
             qualifiers=tuple(str(value) for value in raw.get("qualifiers", ())),
+            required_context_phrases=tuple(
+                str(value) for value in raw.get("required_context_phrases", ())
+            ),
         )
     if kind == "literal":
         return Literal(float(raw["value"]), UnitSpec.from_dict(_mapping(raw["unit"])))

@@ -71,6 +71,7 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
             ),
             qualifiers=item.ref.qualifiers,
             consumers=tuple(sorted(item.consumers)),
+            required_context_phrases=item.ref.required_context_phrases,
         )
 
     constraints: list[BindingConstraint] = []
@@ -137,6 +138,7 @@ def _collect(
                 expression.basis.value,
                 expression.statement_types,
                 expression.qualifiers,
+                expression.required_context_phrases,
             )
             item = requests.setdefault(
                 key,

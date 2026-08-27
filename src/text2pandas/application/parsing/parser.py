@@ -545,6 +545,7 @@ def _apply_selected_output_unit(expression: Expression, requested: UnitSpec) -> 
             requested,
             expression.period_semantics,
             expression.qualifiers,
+            expression.required_context_phrases,
         )
     return expression
 
@@ -590,6 +591,9 @@ def _expression_mentions(
             reference.expected_unit,
             reference.period_semantics,
             _qualifier_tokens(
+                normalized_question, metric_mention.start, metric_mention.end
+            ),
+            _required_context_phrases(
                 normalized_question, metric_mention.start, metric_mention.end
             ),
         )
@@ -649,6 +653,26 @@ def _qualifier_tokens(
             and not re.fullmatch(r"(?:19|20)\d{2}", token)
         )
     )
+
+
+_COUNTERPARTY_RELATION = re.compile(
+    r"\btu cong ty\s+(?P<name>[a-z0-9 ]{3,100}?)\s+"
+    r"cua\s+(?:tap doan|tong cong ty|cong ty)\b"
+)
+
+
+def _required_context_phrases(
+    normalized_question: str, mention_start: int, mention_end: int
+) -> tuple[str, ...]:
+    """Extract an explicit nested-counterparty selector, never an inferred name."""
+    phrases = []
+    for match in _COUNTERPARTY_RELATION.finditer(normalized_question):
+        if mention_end > match.start() or match.start() - mention_end > 80:
+            continue
+        phrase = " ".join(match.group("name").split())
+        if len(phrase.split()) >= 2:
+            phrases.append(phrase)
+    return tuple(dict.fromkeys(phrases))
 
 
 _PERCENT_THRESHOLD = re.compile(
@@ -775,6 +799,8 @@ def _without_qualifiers(expression: Expression) -> Expression:
         expression.statement_types,
         expression.expected_unit,
         expression.period_semantics,
+        (),
+        expression.required_context_phrases,
     )
 
 

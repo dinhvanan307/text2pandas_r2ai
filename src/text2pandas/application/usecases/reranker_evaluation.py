@@ -26,7 +26,7 @@ def _f2(row: RerankOutcome, candidate: bool) -> float:
 def evaluate_reranker_ab(
     rows: list[RerankOutcome], *, bootstrap_samples: int = 10_000,
     seed: int = 20260827,
-) -> dict:
+) -> dict[str, object]:
     if not rows:
         raise ValueError("held-out evaluation needs at least one outcome")
     deltas = [_f2(row, True) - _f2(row, False) for row in rows]
@@ -39,7 +39,7 @@ def evaluate_reranker_ab(
     lo = boots[int(0.025 * (len(boots) - 1))]
     hi = boots[int(0.975 * (len(boots) - 1))]
 
-    def aggregate(candidate: bool, sample: list[RerankOutcome]) -> dict:
+    def aggregate(candidate: bool, sample: list[RerankOutcome]) -> dict[str, float | int]:
         fs = [_f2(row, candidate) for row in sample]
         hits = [row.candidate_hits if candidate else row.baseline_hits for row in sample]
         mrr = [(1.0 / min(pos)) if pos else 0.0 for pos in hits]

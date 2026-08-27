@@ -182,3 +182,37 @@ def test_exact_leaf_bonus_does_not_override_stronger_period_context() -> None:
 
     assert batch.candidates[0].observation_uid == "current-prefix"
     assert batch.candidates[1].observation_uid == "prior-exact"
+
+
+def test_required_counterparty_phrase_is_a_hard_evidence_constraint() -> None:
+    connection = _database()
+    connection.executescript(
+        """
+        INSERT INTO observations VALUES
+          ('wrong-party', 't1', 'VCB', 'balance_sheet', 'TỔNG CỘNG TÀI SẢN',
+           'Tổng tài sản', 'Công ty TNHH Khác', '2024-12-31', 'closing',
+           '1200', '1200', 'money', 'VND', 6, 0, 30, 2),
+          ('right-party', 't1', 'VCB', 'balance_sheet', 'TỔNG CỘNG TÀI SẢN',
+           'Tổng tài sản', 'Công ty TNHH Coats Phong Phú', '2024-12-31', 'closing',
+           '1100', '1100', 'money', 'VND', 6, 0, 31, 2);
+        INSERT INTO observation_readiness VALUES ('wrong-party', 1), ('right-party', 1);
+        """
+    )
+    request = OperandRequest(
+        request_id="operand:counterparty",
+        metric_id="total_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=("coats", "phong", "phu"),
+        consumers=("$.expression",),
+        required_context_phrases=("tnhh coats phong phu",),
+    )
+
+    batch = SqliteOperandRetriever(connection, load_ontology()).retrieve(request)
+
+    assert [candidate.observation_uid for candidate in batch.candidates] == ["right-party"]

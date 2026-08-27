@@ -60,7 +60,7 @@ def test_real_a6_select_at_arg_uses_coherent_basis_and_replays() -> None:
         connection.close()
 
 
-def test_real_a6_ambiguous_select_at_arg_fails_closed() -> None:
+def test_real_a6_select_at_arg_does_not_substitute_a_different_counterparty() -> None:
     question = next(
         str(record["question"])
         for line in QUESTIONS.read_text(encoding="utf-8").splitlines()
@@ -83,6 +83,5 @@ def test_real_a6_ambiguous_select_at_arg_fails_closed() -> None:
         connection.close()
 
     assert not result.ok
-    assert result.stage_failed == "BIND"
-    assert result.reason == "AMBIGUOUS_BINDING"
-
+    assert result.stage_failed in {"RETRIEVE_OPERANDS", "BIND"}
+    assert result.reason is not None

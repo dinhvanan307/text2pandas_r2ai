@@ -33,6 +33,7 @@ class OperandRequest:
     period_semantics: PeriodSemantics
     qualifiers: tuple[str, ...]
     consumers: tuple[str, ...]
+    required_context_phrases: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -46,6 +47,7 @@ class OperandRequest:
             "expected_unit": self.expected_unit.to_dict(),
             "period_semantics": self.period_semantics.value,
             "qualifiers": list(self.qualifiers),
+            "required_context_phrases": list(self.required_context_phrases),
             "consumers": list(self.consumers),
         }
 
