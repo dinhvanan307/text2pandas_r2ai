@@ -100,6 +100,26 @@ def test_explicit_absolute_entity_difference_returns_non_negative_gap() -> None:
     assert result.trace[0]["absolute_difference"] is True
 
 
+def test_entity_difference_abstains_on_mixed_accounting_basis() -> None:
+    cells = [_cell("AAA", 5_000), replace(_cell("BBB", 2_000), basis="separate")]
+
+    result = answer_entity_difference(
+        "Chênh lệch doanh thu giữa AAA và BBB năm 2024 là bao nhiêu tỷ đồng?",
+        cells,
+        _frames(cells),
+        entities=["AAA", "BBB"],
+        years=[2024],
+        basis=None,
+        requested_unit=Unit(MONEY, 9, "VND"),
+        selector=Selector(),
+        mode="compare",
+    )
+
+    assert result is not None and not result.ok
+    assert result.stage_failed == "POLICY"
+    assert result.reason == "CROSS_BASIS_OPERANDS"
+
+
 def test_less_than_entity_difference_reverses_semantic_operands() -> None:
     cells = [_cell("AAA", 2_000), _cell("BBB", 5_000)]
 

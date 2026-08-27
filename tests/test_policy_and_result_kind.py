@@ -5,6 +5,7 @@ All three were listed as open in doc 172 §4.3 and confirmed open by review 173
 that fails loudly if the guard is ever removed.
 """
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,7 +23,7 @@ from text2pandas.pipelines.answering.ir import (  # noqa: E402
     VALUE, LOOKUP,
 )
 from text2pandas.pipelines.answering.policy import (  # noqa: E402
-    CROSS_PERIOD_METRIC_DRIFT, GROWTH_BASE_NEGATIVE, GROWTH_BASE_ZERO,
+    CROSS_BASIS_OPERANDS, CROSS_PERIOD_METRIC_DRIFT, GROWTH_BASE_NEGATIVE, GROWTH_BASE_ZERO,
     MISSING_OPERAND_VALUE, SIGNED_EXTREMUM_AMBIGUOUS, ZERO_DENOMINATOR,
     check_operand_policies,
 )
@@ -136,6 +137,23 @@ def test_cross_period_operation_rejects_metric_drift():
     result = check_operand_policies(ir, ops)
 
     assert not result.ok and result.reason == CROSS_PERIOD_METRIC_DRIFT
+
+
+def test_multi_operand_operation_rejects_mixed_accounting_basis():
+    slots = (OperandSlot(VALUE, period="2022"), OperandSlot(VALUE, period="2023"))
+    ir = OperationIR(MAXIMUM, slots, Unit(MONEY, 0))
+    cells = [
+        replace(money_cell("Doanh thu thuần", 100, 0, "2022"), basis="separate"),
+        replace(money_cell("Doanh thu thuần", 200, 1, "2023"), basis="consolidated"),
+    ]
+    ops = [
+        BoundOperand(VALUE, slot, cell, cell.native_quantity())
+        for slot, cell in zip(slots, cells, strict=True)
+    ]
+
+    result = check_operand_policies(ir, ops)
+
+    assert not result.ok and result.reason == CROSS_BASIS_OPERANDS
 
 
 def test_signed_extremum_abstains_until_sign_semantics_are_declared():

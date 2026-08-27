@@ -12,6 +12,7 @@ from .binding import BoundOperand, CandidateCell, Selector
 from .formula_engine import match_formula
 from .ir import OperandSlot
 from .pipeline import execute
+from .policy import same_basis
 from .render import cell_expr
 from .units import MONEY, Unit, compatible, query_factor
 
@@ -125,11 +126,14 @@ def answer_entity_sum(
                     "row_path": operand.cell.row_path,
                     "csv_path": operand.cell.csv_path,
                     "period": operand.cell.period,
+                    "basis": operand.cell.basis,
                 }
                 for operand in operands
             },
         }
     )
+    if not same_basis(operands):
+        return _fail(result, "POLICY", "CROSS_BASIS_OPERANDS")
 
     expressions: list[str] = []
     for operand in operands:

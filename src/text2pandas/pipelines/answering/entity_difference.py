@@ -13,7 +13,7 @@ from .formula_engine import match_formula
 from .frame import SUBTRACT, classify_operation
 from .ir import OperandSlot
 from .pipeline import execute
-from .policy import same_metric
+from .policy import same_basis, same_metric
 from .render import cell_expr
 from .units import COUNT, UNKNOWN, Unit, compatible, query_factor
 
@@ -155,11 +155,14 @@ def answer_entity_difference(
                     "row_path": operand.cell.row_path,
                     "csv_path": operand.cell.csv_path,
                     "period": operand.cell.period,
+                    "basis": operand.cell.basis,
                 }
                 for operand in operands
             },
         }
     )
+    if not same_basis(operands):
+        return _fail(result, "POLICY", "CROSS_BASIS_OPERANDS")
     if metric_id is None and not same_metric(operands):
         return _fail(result, "POLICY", "ENTITY_DIFFERENCE_METRIC_DRIFT")
 

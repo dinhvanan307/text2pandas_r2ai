@@ -38,6 +38,7 @@ GROWTH_BASE_ZERO = "GROWTH_BASE_ZERO"
 GROWTH_BASE_NEGATIVE = "GROWTH_BASE_NEGATIVE"
 MISSING_OPERAND_VALUE = "MISSING_OPERAND_VALUE"
 CROSS_PERIOD_METRIC_DRIFT = "CROSS_PERIOD_METRIC_DRIFT"
+CROSS_BASIS_OPERANDS = "CROSS_BASIS_OPERANDS"
 SIGNED_EXTREMUM_AMBIGUOUS = "SIGNED_EXTREMUM_AMBIGUOUS"
 
 _SAME_METRIC_OPERATIONS = {
@@ -96,6 +97,17 @@ def same_metric(operands: Sequence[BoundOperand]) -> bool:
     return True
 
 
+def same_basis(operands: Sequence[BoundOperand]) -> bool:
+    """Whether every operand comes from one accounting scope.
+
+    ``None`` is a real unresolved scope, not a wildcard.  A group of legacy
+    documents whose scope is uniformly unknown is coherent; mixing an unknown,
+    separate or consolidated fact with another scope is not provably valid.
+    """
+
+    return len({operand.cell.basis for operand in operands}) <= 1
+
+
 def check_operand_policies(ir: OperationIR,
                            operands: Sequence[BoundOperand],
                            allow_negative_growth_base: bool = False) -> PolicyResult:
@@ -103,6 +115,9 @@ def check_operand_policies(ir: OperationIR,
     for o in operands:
         if o.quantity.value is None:
             return _abstain(f"{MISSING_OPERAND_VALUE}:{o.role}")
+
+    if len(operands) > 1 and not same_basis(operands):
+        return _abstain(CROSS_BASIS_OPERANDS)
 
     periods = {operand.slot.period for operand in operands if operand.slot.period}
     if ir.op in _SAME_METRIC_OPERATIONS and len(periods) > 1 and not same_metric(operands):
