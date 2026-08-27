@@ -100,6 +100,36 @@ def test_selector_treats_written_31_december_as_closing_cue() -> None:
     assert selected is current
 
 
+def test_selector_uses_consolidated_as_soft_basis_prior() -> None:
+    selector = QuestionSelector(
+        "Chi phí xây dựng cơ bản dở dang cuối năm 2022 là bao nhiêu?",
+        frozenset(),
+        preferred_basis="consolidated",
+    )
+    separate = _cell("Chi phí xây dựng cơ bản dở dang")
+    consolidated = replace(separate, basis="consolidated")
+
+    selected = selector.pick(
+        OperandSlot("value", period="2022"),
+        [separate, consolidated],
+    )
+
+    assert selected is consolidated
+
+
+def test_selector_soft_basis_prior_keeps_standalone_only_fallback() -> None:
+    selector = QuestionSelector(
+        "Chi phí xây dựng cơ bản dở dang cuối năm 2022 là bao nhiêu?",
+        frozenset(),
+        preferred_basis="consolidated",
+    )
+    separate = _cell("Chi phí xây dựng cơ bản dở dang")
+
+    selected = selector.pick(OperandSlot("value", period="2022"), [separate])
+
+    assert selected is separate
+
+
 def test_selector_does_not_reward_keyword_stuffing_in_ancestors() -> None:
     selector = QuestionSelector(
         "Chi phí dịch vụ mua ngoài năm 2023 là bao nhiêu?",

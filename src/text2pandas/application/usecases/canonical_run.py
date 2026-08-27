@@ -123,6 +123,7 @@ class QuestionSelector(Selector):
         drop: tuple[str, ...] = (),
         *,
         cross_entity_sum: bool = False,
+        preferred_basis: str | None = None,
     ) -> None:
         normalized_question = tokenize(question)
         self.aggregate_required = not cross_entity_sum and any(
@@ -138,6 +139,7 @@ class QuestionSelector(Selector):
         ]
         self.question_tokens = set(self.question_sequence)
         self.code_hints = code_hints
+        self.preferred_basis = preferred_basis
         self.requested_period_role: str | None
         role_text = question.casefold()
         if re.search(
@@ -241,6 +243,11 @@ class QuestionSelector(Selector):
             float(leaf_run),
             leaf_coverage,
             -float(cell.row_path.count("›")),
+            # Scope is a soft prior: it only breaks ties after the candidate
+            # has matched the same leaf metric at the same structural depth.
+            # This preserves standalone-only fallback while preventing minor
+            # context wording from defeating BTC's consolidated default.
+            1.0 if cell.basis == self.preferred_basis else 0.0,
             semantic_coverage,
             semantic_score,
             lexical,
@@ -595,6 +602,7 @@ def run_canonical_pipeline(
                         metric_codes_hint(text),
                         drop=drop_terms(intent.targets, aliases),
                         cross_entity_sum=entity_sum_route,
+                        preferred_basis=intent.basis,
                     )
                     if len(intent.targets) >= 2:
                         pipeline_result = answer_entity_count(
