@@ -143,3 +143,42 @@ def test_exact_metric_leaf_outranks_prefixed_subcomponents() -> None:
     assert batch.candidates[0].observation_uid == "profit-exact"
     assert batch.candidates[0].score_reasons[0] == "metric:exact"
     assert batch.candidates[1].score_reasons[0] == "metric:prefix"
+
+
+def test_exact_leaf_bonus_does_not_override_stronger_period_context() -> None:
+    connection = _database()
+    connection.executescript(
+        """
+        INSERT INTO documents VALUES ('d2', 'VCB-2025', 'consolidated');
+        INSERT INTO tables VALUES
+          ('t2', 'd2', 'VCB-2025', 'consolidated', 'Thuyết minh');
+        INSERT INTO observations VALUES
+          ('current-prefix', 't1', 'VCB', 'income_statement',
+           'Lợi nhuận sau thuế đã thực hiện',
+           'Lợi nhuận sau thuế đã thực hiện',
+           'Năm nay', '2024-12-31', 'current',
+           '100', '100', 'money', 'VND', 6, 0, 20, 2),
+          ('prior-exact', 't2', 'VCB', 'income_statement', 'Lợi nhuận sau thuế',
+           'Lợi nhuận sau thuế', 'Năm trước', '2024-12-31', 'prior',
+           '40', '40', 'money', 'VND', 6, 0, 21, 2);
+        INSERT INTO observation_readiness VALUES ('current-prefix', 1), ('prior-exact', 1);
+        """
+    )
+    request = OperandRequest(
+        request_id="operand:period-context",
+        metric_id="profit_after_tax",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("income_statement",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.FLOW,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    batch = SqliteOperandRetriever(connection, load_ontology()).retrieve(request)
+
+    assert batch.candidates[0].observation_uid == "current-prefix"
+    assert batch.candidates[1].observation_uid == "prior-exact"

@@ -146,7 +146,11 @@ class SqliteOperandRetriever:
         except InvalidOperation:
             return "unit"
         direct, alias_length = match
-        score = float(10 * direct + alias_length / 100.0)
+        # Exact leaves get a bounded tie-break, not a dominating bonus. Notes
+        # may contain an exact label for a different concept while the correct
+        # consolidated operand is a qualified prefix under a stronger section.
+        metric_score = {3: 22.0, 2: 20.0, 1: 10.0}[direct]
+        score = metric_score + alias_length / 100.0
         reasons = [
             {
                 3: "metric:exact",
