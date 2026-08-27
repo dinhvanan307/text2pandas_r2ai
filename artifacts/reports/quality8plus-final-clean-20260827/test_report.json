@@ -1,0 +1,39 @@
+{
+ "command": "/private/tmp/text2pandas-acceptance-venv.eC3DqF/venv/bin/python -m pytest tests/ -q --tb=short -rs --junit-xml=artifacts/reports/quality8plus-final-clean-20260827/junit.xml",
+ "exit_code": 0,
+ "duration_seconds": 25.79,
+ "collected": 2105,
+ "passed": 2063,
+ "failed": 0,
+ "skipped": 42,
+ "xfailed": 0,
+ "xpassed": 0,
+ "error": 0,
+ "collection_errors": 0,
+ "junit_xml": "artifacts/reports/quality8plus-final-clean-20260827/junit.xml",
+ "required_suites": [
+  "header_boundary",
+  "physical_uid",
+  "tiny_money",
+  "readiness_policy",
+  "fts_accent",
+  "non_tabular",
+  "mojibake",
+  "manifest_counts",
+  "legacy_consumer_schema",
+  "release_blocking"
+ ],
+ "missing_required_suites": [],
+ "dependency_related_skips": [],
+ "environment": {
+  "os": "Darwin 25.5.0 (arm64)",
+  "python": "3.13.13",
+  "python_executable": "/private/tmp/text2pandas-acceptance-venv.eC3DqF/venv/bin/python",
+  "sqlite": "3.51.2"
+ },
+ "source_commit": "3fcc85c38e2d7b6a95c827db74be12d036aed2c3",
+ "source_tree_dirty": false,
+ "source_hash": "0719b86ff68679a3",
+ "config_hash": "d4ff2b5cbc589d6c",
+ "verdict": "PASS"
+}

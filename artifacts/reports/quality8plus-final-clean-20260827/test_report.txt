@@ -1,0 +1,53 @@
+........................................................................ [  3%]
+........................................................................ [  6%]
+........................................................................ [ 10%]
+........................................................................ [ 13%]
+........................................................................ [ 17%]
+........................................................................ [ 20%]
+........................................................................ [ 23%]
+.sssssssssssssssssssssssssss............................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 34%]
+........................................................................ [ 37%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+....................................................................s... [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 58%]
+......ss.ssss........................................................... [ 61%]
+...............................s..........ssss.......................... [ 64%]
+........................................................................ [ 68%]
+...............................................s........................ [ 71%]
+..............................................................s......... [ 75%]
+...................................................s.................... [ 78%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 92%]
+........................................................................ [ 95%]
+........................................................................ [ 99%]
+.................                                                        [100%]
+=============================== warnings summary ===============================
+tests/integration/test_h0_gates.py::test_g3_replay_toan_bo_query_chay_va_khop_answer
+  <string>:1: SyntaxWarning: invalid escape sequence '\('
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [21] tests/test_answer_operation.py:325: cần answer_operation_precheck.jsonl trong bundle
+SKIPPED [1] tests/test_answer_operation.py:341: cần precheck
+SKIPPED [1] tests/test_answer_operation.py:349: cần precheck
+SKIPPED [1] tests/test_answer_operation.py:362: cần precheck
+SKIPPED [1] tests/test_answer_operation.py:376: cần precheck
+SKIPPED [1] tests/test_answer_operation.py:390: cần precheck
+SKIPPED [1] tests/test_answer_operation.py:400: cần precheck
+SKIPPED [1] tests/test_rc04_mot_nguon_so_duy_nhat.py:53: MISSING ARTIFACT: to_read/37_RC2_BUILD_RUNBOOK.md
+SKIPPED [1] tests/test_rc20_fail_closed.py:116: MISSING ARTIFACT: không có DB để chạy readiness
+SKIPPED [1] tests/test_rc20_fail_closed.py:131: MISSING ARTIFACT: không có DB để chạy readiness
+SKIPPED [4] tests/test_rc20_fail_closed.py:157: MISSING ARTIFACT: replay_report.json
+SKIPPED [1] tests/test_rc2_023_corpus_freeze.py:130: MISSING ARTIFACT: corpus/manifest mốc không có trong cây này
+SKIPPED [4] tests/test_rc2_031_seq05_artifact_dependency.py:162: MISSING ARTIFACT: DB bản dựng RC1 không có trong cây này
+SKIPPED [1] tests/test_rc2_execution_sequence.py:111: MISSING ARTIFACT: runbook 37
+SKIPPED [1] tests/test_rc2_safety_traps.py:108: MISSING ARTIFACT: 37_RC2_BUILD_RUNBOOK.md không có trong source package (nó nằm ở to_read/, ngoài phạm vi gói)
+SKIPPED [1] tests/test_replay_fixture_contract.py:133: MISSING ARTIFACT: SNAPSHOT_DECLARATION.json không có trong cây này
+2063 passed, 42 skipped, 1 warning in 25.46s
