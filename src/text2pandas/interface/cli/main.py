@@ -410,6 +410,112 @@ def cmd_package(args: argparse.Namespace) -> int:
     return 0 if package_ok else 1
 
 
+def cmd_package_v3(args: argparse.Namespace) -> int:
+    """Package a Semantic V3 shadow run under the official submission contract."""
+    from text2pandas.application.usecases.answer import AnswerResult
+    from text2pandas.application.usecases.submission import (
+        SubmissionConfig,
+        build_submission,
+        replay_zip,
+        validate_zip,
+    )
+    from text2pandas.infrastructure.checksums import sha256_file
+
+    stage = PROJECT_PATHS.run_dir("semantic-v3", args.run_id)
+    records_path = stage / "records.jsonl"
+    if not records_path.is_file():
+        raise BuildSafetyError(f"missing Semantic V3 records: {records_path}")
+    table_cards = ACTIVE_SNAPSHOTS.a6_path / "dataframe/csv/table_cards.csv"
+    with table_cards.open(encoding="utf-8", newline="") as handle:
+        locators = {
+            str(row["table_uid"]): str(row["evidence_ref"]).replace("|line:", "|")
+            for row in csv.DictReader(handle)
+        }
+    results: list[AnswerResult] = []
+    for line in records_path.read_text(encoding="utf-8").splitlines():
+        if not line:
+            continue
+        record = json.loads(line)
+        evidence = [
+            {
+                "variable": str(item["variable"]),
+                "csv_path": f"data/{Path(str(item['csv_path'])).name}",
+            }
+            for item in record.get("evidence") or []
+        ]
+        table_uids = [str(value) for value in record.get("relevant_tables") or []]
+        try:
+            tables = [locators[value] for value in table_uids]
+        except KeyError as error:
+            raise BuildSafetyError(f"A6 table locator missing: {error.args[0]}") from error
+        documents = list(dict.fromkeys(value.rsplit("|", 1)[0] for value in tables))
+        answer = record.get("answer")
+        results.append(
+            AnswerResult(
+                qid=int(record["qid"]),
+                answer=None if answer is None else float(answer),
+                relevant_docs=documents,
+                relevant_tables=tables,
+                evidence=evidence,
+                pandas_query=str(record.get("pandas_query") or ""),
+                confidence=float(record.get("binding_score") or 0.0),
+                csv_name=Path(evidence[0]["csv_path"]).name if evidence else "",
+                has_csv=bool(evidence),
+                notes=[str(record["reason"])] if record.get("reason") else [],
+            )
+        )
+    questions = {
+        int(row["id"]): str(row["question"])
+        for row in (
+            json.loads(line)
+            for line in QUESTIONS.read_text(encoding="utf-8").splitlines()
+            if line
+        )
+    }
+    cfg = SubmissionConfig(doc_id_variant=args.doc_id, locator_base=args.locator_base)
+    output = stage / f"package-{cfg.doc_id_variant}-{cfg.locator_base}"
+    try:
+        output.mkdir(parents=True)
+    except FileExistsError as error:
+        raise BuildSafetyError(f"immutable V3 package already exists: {output}") from error
+    (output / "data").mkdir()
+    for source in sorted((stage / "data").glob("*.csv")):
+        shutil.copy2(source, output / "data" / source.name)
+    zip_path = build_submission(results, questions, output, cfg)
+    validation = validate_zip(zip_path, questions, corpus_root=CORPUS)
+    replay = replay_zip(zip_path, SCRATCH / f"replay-{args.run_id}")
+    replay_mismatches = replay["executed"] - replay["matched"]
+    report = {
+        "schema_version": 1,
+        "kind": "text2pandas.semantic_v3_submission_validation",
+        "run_id": args.run_id,
+        "zip": {"path": str(zip_path.relative_to(ROOT)), "sha256": sha256_file(zip_path)},
+        "validation": {
+            "records": validation.n_records,
+            "errors": validation.errors,
+            "warnings": validation.warnings,
+        },
+        "replay": replay,
+        "replay_mismatches": replay_mismatches,
+    }
+    report_path = stage / f"package-{cfg.doc_id_variant}-{cfg.locator_base}.report.json"
+    report_path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print("\n╔═══════════ SEMANTIC V3 SUBMISSION ═══════════╗")
+    print(f"  records          : {validation.n_records:,} / {len(questions):,}")
+    print(f"  validation errors: {len(validation.errors):,}")
+    print(
+        f"  replay           : {replay['executed']:,} executed · "
+        f"{replay['matched']:,} matched · {replay['error']:,} errors · "
+        f"{replay_mismatches:,} mismatches"
+    )
+    print(f"  zip              : {zip_path}")
+    print(f"  report           : {report_path}")
+    return 0 if not validation.errors and not replay["error"] and not replay_mismatches else 1
+
+
 
 def cmd_silver(args: argparse.Namespace) -> int:
     """Bronze -> Silver: đặc trưng bảng + ô định dạng dài."""
@@ -764,12 +870,23 @@ def main(argv: list[str] | None = None) -> int:
     shadow.add_argument("--offset", type=int, default=0)
     shadow.add_argument("--operand-k", type=int, default=20)
     shadow.add_argument("--legacy-run-id")
+    package_v3 = sub.add_parser(
+        "package-v3", help="Đóng gói, validate và replay một Semantic V3 shadow run"
+    )
+    package_v3.add_argument("--run-id", required=True)
+    package_v3.add_argument(
+        "--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped"
+    )
+    package_v3.add_argument(
+        "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
+    )
 
     args = p.parse_args(argv)
     handlers = {"catalog": cmd_catalog, "parse-check": cmd_parse_check,
                 "index": cmd_index, "run": cmd_run, "package": cmd_package,
                 "silver": cmd_silver, "cards": cmd_cards, "verify": cmd_verify,
-                "coverage": cmd_coverage, "shadow-v3": cmd_shadow_v3}
+                "coverage": cmd_coverage, "shadow-v3": cmd_shadow_v3,
+                "package-v3": cmd_package_v3}
     try:
         return handlers[args.cmd](args)
     except BuildSafetyError as error:
