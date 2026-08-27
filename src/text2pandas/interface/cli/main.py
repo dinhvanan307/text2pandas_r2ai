@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import shutil
@@ -563,14 +564,6 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     ontology = load_ontology()
     aliases = load_aliases("a6")
     parser = SemanticParser(ontology, LegacyVietnameseAnnotator(aliases))
-    evidence_index_path = ACTIVE_SNAPSHOTS.a6_path / "dataframe/csv/by_table/index.json"
-    evidence_rows = json.loads(evidence_index_path.read_text(encoding="utf-8"))
-    evidence_paths = {
-        str(item["table_uid"]): str(
-            (ACTIVE_SNAPSHOTS.a6_path / str(item["csv_long"])).relative_to(ROOT)
-        )
-        for item in evidence_rows
-    }
     connection = sqlite3.connect(
         f"file:{(ACTIVE_SNAPSHOTS.a6_path / 'silver.db').resolve()}?mode=ro&immutable=1",
         uri=True,
@@ -584,6 +577,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     reasons: Counter[str] = Counter()
     differentials: Counter[str] = Counter()
     started = time.time()
+    evidence_values: dict[str, dict[str, object]] = {}
     try:
         with records_path.open("x", encoding="utf-8") as handle:
             for index, item in enumerate(questions, 1):
@@ -601,15 +595,39 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                 }
                 for evidence in record["evidence"]:
                     table_uid = str(evidence["table_uid"])
-                    try:
-                        evidence["csv_path"] = evidence_paths[table_uid]
-                    except KeyError as error:
+                    uids = [str(value) for value in evidence["observation_uids"]]
+                    placeholders = ",".join("?" for _ in uids)
+                    rows = connection.execute(
+                        f"SELECT observation_uid, value_decimal_text FROM observations "
+                        f"WHERE observation_uid IN ({placeholders})",
+                        uids,
+                    ).fetchall()
+                    if len(rows) != len(set(uids)):
                         raise BuildSafetyError(
-                            f"A6 evidence index missing table_uid: {table_uid}"
-                        ) from error
+                            f"A6 evidence observations missing: {table_uid}:{uids}"
+                        )
+                    values = evidence_values.setdefault(table_uid, {})
+                    for observation_uid, value in rows:
+                        previous = values.setdefault(str(observation_uid), value)
+                        if previous != value:
+                            raise BuildSafetyError(
+                                f"A6 evidence value drift: {observation_uid}"
+                            )
+                    evidence["csv_path"] = str(
+                        (stage / "data" / f"{table_uid}.csv").relative_to(ROOT)
+                    )
                 handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
                 if args.verbose and index % 25 == 0:
                     print(f"  ... {index:,} câu · {statuses['OK']:,} V3 OK", flush=True)
+        evidence_dir = stage / "data"
+        evidence_dir.mkdir()
+        for table_uid, values in sorted(evidence_values.items()):
+            with (evidence_dir / f"{table_uid}.csv").open(
+                "x", encoding="utf-8", newline=""
+            ) as evidence_handle:
+                writer = csv.writer(evidence_handle)
+                writer.writerow(("observation_uid", "value"))
+                writer.writerows(sorted(values.items()))
     finally:
         connection.close()
     seconds = round(time.time() - started, 3)
@@ -659,11 +677,14 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                     "sha256": sha256_file(records_path),
                     "records": len(questions),
                 },
-                "evidence_index": {
-                    "path": str(evidence_index_path.relative_to(ROOT)),
-                    "sha256": sha256_file(evidence_index_path),
-                    "tables": len(evidence_paths),
-                },
+                "evidence_csvs": [
+                    {
+                        "path": str(path.relative_to(ROOT)),
+                        "sha256": sha256_file(path),
+                        "table_uid": path.stem,
+                    }
+                    for path in sorted((stage / "data").glob("*.csv"))
+                ],
             },
         },
     )
