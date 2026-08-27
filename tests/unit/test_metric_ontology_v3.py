@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from text2pandas.domain.metrics import expression_metric_ids
-from text2pandas.domain.semantic import Arithmetic, ArithmeticOperator
+from text2pandas.domain.semantic import Arithmetic, ArithmeticOperator, Basis
 from text2pandas.infrastructure.ontology import load_ontology, normalize_phrase
 
 
@@ -23,6 +23,7 @@ def test_reported_catalog_is_versioned_but_not_promoted_to_reviewed_semantics() 
     assert metric is not None
     assert metric.review_status == "reported"
     assert metric.legal_aggregations == ("lookup",)
+    assert metric.preferred_basis == Basis.CONSOLIDATED
 
 
 def test_formula_leaves_are_derived_from_the_semantic_expression() -> None:

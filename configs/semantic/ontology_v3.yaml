@@ -18,7 +18,7 @@ sources:
     sha256: 264d538e83f933c503d40d7ce35325f9b056fe033aeddee83e93abe3832ca9f8
   extensions:
     path: configs/semantic/extensions_v3.yaml
-    sha256: e119a35aaeea41b38b386420938ee1958fcddfd61f5db7f3cef55d31745805d0
+    sha256: b7bc53c87305a1db2a68242f0697dc63ae6e57bb5465d3a88cb5f2b675bc4e33
 
 policies:
   metric_match: longest_normalized_prefix
@@ -27,3 +27,6 @@ policies:
   ambiguous_alias: abstain
   unreviewed_formula: abstain
   reported_metric_operations: [lookup]
+  # Measured corpus prior (579/635 unmarked cases) and annotation guideline §2.
+  # Explicit "công ty mẹ" / "hợp nhất" always overrides this soft preference.
+  unmarked_basis_default: consolidated

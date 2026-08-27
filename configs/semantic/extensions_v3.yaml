@@ -2,8 +2,7 @@ schema_version: 1
 extension_id: semantic-v3-cohort-formulas
 
 # V3-only aliases keep the immutable canonical V2 registries byte-identical.
-metric_aliases:
-  net_revenue: ["tong doanh thu thuan"]
+metric_aliases: {}
 
 formula_aliases:
   current_ratio: ["ty le tai san ngan han tren no ngan han"]

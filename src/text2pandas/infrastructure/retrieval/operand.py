@@ -147,7 +147,13 @@ class SqliteOperandRetriever:
             return "unit"
         direct, alias_length = match
         score = float(10 * direct + alias_length / 100.0)
-        reasons = ["metric:direct" if direct == 2 else "metric:aggregate_prefix"]
+        reasons = [
+            {
+                3: "metric:exact",
+                2: "metric:prefix",
+                1: "metric:aggregate_prefix",
+            }[direct]
+        ]
         if statement_type and str(statement_type) in request.statement_types:
             score += 3.0
             reasons.append("statement")
@@ -222,6 +228,9 @@ def _metric_match(
         return None
     if any(forbidden in normalized for forbidden in forbidden_contains):
         return None
+    exact = [alias for alias in aliases if normalized == alias]
+    if exact:
+        return 3, max(map(len, exact))
     direct = [alias for alias in aliases if _prefix(normalized, alias)]
     if direct:
         return 2, max(map(len, direct))

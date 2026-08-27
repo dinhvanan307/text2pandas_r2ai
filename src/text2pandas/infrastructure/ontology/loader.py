@@ -44,6 +44,13 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
     manifest = _document(manifest_file)
     if int(manifest.get("schema_version", 0)) != 3:
         raise OntologySourceError("ontology manifest schema_version must equal 3")
+    policies = _dict(manifest.get("policies"), "policies")
+    try:
+        unmarked_basis_default = Basis(str(policies["unmarked_basis_default"]))
+    except (KeyError, ValueError) as error:
+        raise OntologySourceError(
+            "policies.unmarked_basis_default must be consolidated or separate"
+        ) from error
     sources = _dict(manifest.get("sources"), "sources")
     metric_file, metric_digest = _verified_source(sources, "metrics", manifest_file)
     formula_file, formula_digest = _verified_source(sources, "formulas", manifest_file)
@@ -83,7 +90,7 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
     for raw_value in reported_document.get("metrics", []):
         raw = _dict(raw_value, "reported metric")
         label = normalize_phrase(str(raw.get("label", "")))
-        if not _reported_alias_is_semantic(label) or label in owned_aliases:
+        if not _reported_alias_is_semantic(label) or _alias_is_owned(label, owned_aliases):
             continue
         metric_id = "reported_" + hashlib.sha256(label.encode("utf-8")).hexdigest()[:16]
         metrics[metric_id] = MetricDefinition(
@@ -93,7 +100,7 @@ def load_ontology(manifest_path: str | Path = _DEFAULT_MANIFEST) -> MetricOntolo
             unit=UnitSpec(Dimension.UNKNOWN),
             period_semantics=PeriodSemantics.UNKNOWN,
             sign_policy="signed_as_reported",
-            preferred_basis=Basis.UNSPECIFIED,
+            preferred_basis=unmarked_basis_default,
             review_status="reported",
             legal_aggregations=("lookup",),
         )
@@ -291,3 +298,13 @@ def _reported_alias_is_semantic(alias: str) -> bool:
         "ky",
     }
     return len(alias) >= 5 and bool(tokens - structural)
+
+
+def _alias_is_owned(alias: str, owned_aliases: set[str]) -> bool:
+    if alias in owned_aliases:
+        return True
+    return any(
+        alias.removeprefix(prefix) in owned_aliases
+        for prefix in ("tong cong ", "tong ", "cong ")
+        if alias.startswith(prefix)
+    )

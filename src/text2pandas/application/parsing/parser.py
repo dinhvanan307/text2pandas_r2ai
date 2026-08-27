@@ -740,6 +740,19 @@ def _filtered_aggregate_roles(
             candidate.dimension, annotations.requested_unit.dimension
         )
     ]
+    if selected:
+        best_specificity = max(
+            _selection_specificity(candidate.dimension, annotations.requested_unit.dimension)
+            for candidate in selected
+        )
+        selected = [
+            candidate
+            for candidate in selected
+            if _selection_specificity(
+                candidate.dimension, annotations.requested_unit.dimension
+            )
+            == best_specificity
+        ]
     by_identity = {candidate.identity: candidate for candidate in selected}
     if not by_identity:
         return "FILTER_SELECTED_EXPRESSION_UNRESOLVED"
@@ -763,6 +776,14 @@ def _without_qualifiers(expression: Expression) -> Expression:
         expression.expected_unit,
         expression.period_semantics,
     )
+
+
+def _selection_specificity(source: Dimension, requested: Dimension) -> int:
+    if source == requested:
+        return 2
+    if {source, requested} <= {Dimension.RATIO, Dimension.PERCENT}:
+        return 2
+    return 0 if source == Dimension.UNKNOWN else 1
 
 
 def _threshold_predicate(

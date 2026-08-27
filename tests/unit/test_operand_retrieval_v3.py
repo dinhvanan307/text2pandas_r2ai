@@ -64,7 +64,7 @@ def test_sqlite_retriever_queries_one_operand_and_rejects_descendants() -> None:
     batch = SqliteOperandRetriever(_database(), load_ontology()).retrieve(request)
 
     assert [candidate.observation_uid for candidate in batch.candidates] == ["good"]
-    assert batch.candidates[0].score_reasons[:2] == ("metric:direct", "statement")
+    assert batch.candidates[0].score_reasons[:2] == ("metric:exact", "statement")
     assert batch.trace["scanned"] == 2
 
 
@@ -107,3 +107,39 @@ def test_sqlite_retriever_uses_question_qualifiers_and_primary_document_period()
     assert batch.candidates[0].score > next(
         value.score for value in batch.candidates if value.observation_uid == "comparative"
     )
+
+
+def test_exact_metric_leaf_outranks_prefixed_subcomponents() -> None:
+    connection = _database()
+    connection.executescript(
+        """
+        INSERT INTO observations VALUES
+          ('profit-exact', 't1', 'VCB', 'income_statement', 'Lợi nhuận sau thuế',
+           'Lợi nhuận sau thuế', 'Năm nay', '2024-12-31', 'current',
+           '100', '100', 'money', 'VND', 6, 0, 20, 2),
+          ('profit-prefix', 't1', 'VCB', 'income_statement',
+           'Lợi nhuận sau thuế chưa thực hiện', 'Lợi nhuận sau thuế chưa thực hiện',
+           'Năm nay', '2024-12-31', 'current',
+           '40', '40', 'money', 'VND', 6, 0, 21, 2);
+        INSERT INTO observation_readiness VALUES ('profit-exact', 1), ('profit-prefix', 1);
+        """
+    )
+    request = OperandRequest(
+        request_id="operand:profit",
+        metric_id="profit_after_tax",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("income_statement",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.FLOW,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    batch = SqliteOperandRetriever(connection, load_ontology()).retrieve(request)
+
+    assert batch.candidates[0].observation_uid == "profit-exact"
+    assert batch.candidates[0].score_reasons[0] == "metric:exact"
+    assert batch.candidates[1].score_reasons[0] == "metric:prefix"
