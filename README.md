@@ -9,11 +9,18 @@ The project uses a strangler migration. Canonical V2 remains the submission engi
 | Runtime | Current state | Latest full-corpus result |
 |---|---|---:|
 | Canonical V2 | Validated submission candidate | 561 answers and 451 fail-closed abstentions |
-| Semantic V3 | Shadow only; promotion blocked | 207 answers and 805 fail-closed abstentions |
+| Semantic V3 | Shadow only; promotion blocked | 272 answers and 740 fail-closed abstentions |
 
 The latest acceptance run validated all 1,012 output records and replayed 561 of 561 emitted Pandas queries. Thirteen previously emitted answers are now fail-closed because their operands mixed consolidated and separate statements. On the independently adjudicated local slice, 14 of 31 answers are correct and executable (45.16% local Answer and Execution Accuracy; 100% replay consistency among emitted answers). Official Answer Accuracy and Execution Accuracy remain `NOT_MEASURED` because organiser-held gold is unavailable.
 
-Read the [current acceptance report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-27.md) before making a production-readiness claim.
+V3 r6 adds typed quantified predicates for filtered cohorts, median,
+multi-entity aggregation and select-at-arg planning. Exact metric/basis binding
+fixes reduced ambiguous binding from 169 to 109 while keeping the existing
+diagnostic answer slice unchanged at 6 correct and 3 incorrect among nine
+emitted answers. These are coverage diagnostics, not production accuracy.
+
+Read the [8+ quality closure report](docs/reports/QUALITY_8PLUS_CLOSURE_2026-08-27.md)
+before making a production-readiness claim.
 
 ## System architecture
 
@@ -59,6 +66,7 @@ Each layer records the identity of its source. The runtime never selects an impl
 - Derive documents, table locators, and CSV evidence from selected observations
 - Validate the exact JSON and ZIP submission contract
 - Compare Semantic V3 with canonical V2 without promoting unmeasured behavior
+- Train and evaluate a checksum-bound S3 reranker without allowing held-out leakage
 
 ## Prerequisites
 
@@ -193,6 +201,19 @@ python -m text2pandas.pipelines.retrieval.evalkit.cli report \
 
 Do not compare checkpoints with different config fingerprints or evaluation schemas.
 
+The learned S3 candidate is intentionally not the default. Its model bytes,
+feature order, training split and retrieval snapshot are checksum-bound. Rebuild
+the development candidate and verify the sealed untouched cohort with:
+
+```bash
+python tools/retrieval/train_linear_reranker.py
+python tools/evaluation/freeze_reranker_heldout.py
+python tools/retrieval/evaluate_reranker_heldout.py
+```
+
+The final command returns `BLOCKED` until 120 held-out questions have a sealed,
+dual-annotated evidence-gold release. Legacy-dev uplift cannot promote the model.
+
 ## Submission contract
 
 A publishable package contains one JSON file at the root and referenced CSV files under `data/`:
@@ -249,6 +270,7 @@ The non-negotiable rules are:
 - Preserve exact evidence and Pandas replay
 - Report missing gold as `NOT_MEASURED`
 - Keep V3 in shadow mode until promotion policy passes
+- Never open held-out reranker labels before model and thresholds are frozen
 - Do not add a closed model, remote inference dependency, or production network call
 - Do not commit large generated databases, caches, run directories, or ZIP files
 
@@ -264,6 +286,7 @@ The non-negotiable rules are:
 - [Gap closure status](docs/GAP_CLOSURE_STATUS.md)
 - [Semantic V3 migration status](docs/SEMANTIC_V3_MIGRATION_STATUS.md)
 - [Current acceptance test report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-27.md)
+- [8+ quality closure report](docs/reports/QUALITY_8PLUS_CLOSURE_2026-08-27.md)
 - [Final acceptance test report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26_FINAL.md)
 - [Historical acceptance test report](docs/reports/ACCEPTANCE_TEST_REPORT_2026-08-26.md)
 - [Architecture decisions](docs/adr/)
@@ -276,7 +299,7 @@ The project is structurally valid and replayable, but several measured gaps rema
 - official Answer Accuracy and Execution Accuracy are unavailable without organiser gold
 - canonical executable coverage is 55.43%; mixed-basis arithmetic is intentionally rejected
 - multi-entity execution and operand binding cause most V2 abstentions
-- the current V2 reranker is an identity stage without measured uplift
+- S3 linear reranker improves the contaminated legacy-dev slice but remains unpromoted pending sealed held-out labels
 - Semantic V3 lacks enough adjudicated semantic and evidence gold for promotion
 - full-repository legacy V2 modules remain outside the zero-error production mypy gate
 - 42 approved historical-artifact tests skip under the exact allowlist in `configs/testing/approved_skips_v1.yaml`; unapproved skips fail CI

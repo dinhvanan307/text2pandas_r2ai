@@ -36,14 +36,18 @@ Updated: 2026-08-27
 | Entity COUNT | Typed sign/threshold (`hơn`, `vượt`) predicate cho explicit entity set, one fact per entity, distinct evidence; `tổng số công ty` cue; compound multi-metric predicates fail-closed |
 | Entity average | Typed mean cho reviewed direct monetary/share metrics, one fact per entity, distinct evidence và per-operand unit conversion; percent/ratio, filtered cohort và unreviewed metric fail-closed |
 | Entity SUM | Typed cross-company sum cho reviewed direct metrics, explicit sum cue, one fact per entity, expense sign policy, distinct evidence và per-operand unit conversion |
+| Predicate IR | `QuantifiedPredicate(ALL/ANY)` với scope projection, typed threshold, filtered cohort và fail-closed cardinality/unit checks |
+| Filtered cohort execution | SUM/AVERAGE/MEDIAN, extrema và select-at-arg chạy qua cùng typed visitor và restricted-Pandas compiler; integration tests đối chiếu hai đường thực thi |
+| Binding specificity | Exact reviewed metric leaf thắng prefix/aggregate alias bằng bounded bonus; unmarked basis dùng consolidated soft prior, explicit basis vẫn là hard constraint |
+| Reranker foundation | S3 linear feature model có versioned feature contract, model checksum, sealed 120-QID untouched selection và paired bootstrap evaluator |
 
 ## Open semantic gaps
 
 | Priority | Gap family | Questions | Fill strategy / exit gate |
 |---|---|---:|---|
-| P1 | Multi/global-entity aggregation/ranking | 248 | Extend the typed entity axis beyond reviewed difference, count, average, and sum routes; bind one fact per entity; prove no entity reuse; add rank emitters and multi-entity gold slices |
+| P1 | Multi/global-entity aggregation/ranking | Not re-counted after r6 | Typed aggregate/filter/rank/select-at-arg IR is implemented for reviewed explicit patterns; expand only from adjudicated error-funnel families and prove entity non-reuse on gold |
 | P1 | Unreviewed relational formulas | 23 | Curate formula and metric ontology; forbid generic numerator/denominator guessing; require reviewed formula tests and real-corpus smokes |
-| P1 | Complex extrema | 42 | Derived ranking: 4; filtered extrema: 6; select-at-arg: 32. Add separate rank metric/result metric and predicate IR |
+| P1 | Complex extrema | Not re-counted after r6 | Core IR is complete; remaining failures are chiefly selected/rank-expression resolution and require reviewed metric binding, not a generic parser heuristic |
 | P2 | Operand/period arity unresolved | 8 | SUBTRACT: 7; GROWTH: 1. Remaining cases need explicit two-operand semantics |
 | P2 | Formula composition mismatch | 11 | Support formula inside aggregate/extremum only after nested typed IR and complete evidence are implemented |
 | P2 | Single-entity conditional COUNT | 2 | Complex predicate: 1; existence/absence requiring negative-evidence completeness: 1. Two additional typed routes remain retrieval-dependent at runtime |
@@ -53,9 +57,9 @@ Updated: 2026-08-27
 | Priority | Gap | Evidence | Exit gate |
 |---|---|---|---|
 | P0 | Official Answer Accuracy và Execution Accuracy chưa đo được | Không có organiser-held answer gold. Local adjudicated slice: 14/31 correct + executable, 14/14 replay | Mở rộng independent answer/evidence gold hoặc chạy official scorer; luôn report riêng local/official scope |
-| P0 | Canonical executable coverage mới đạt 55,43% | V2 phát 561/1.012 answers và fail-closed 451 câu; 18 câu bị chặn bởi cross-basis policy | Đóng các semantic gaps P1, bind/execute trên gold và giữ fail-closed cho route chưa đủ evidence |
-| P1 | Semantic V3 chưa đủ điều kiện promotion | V3 shadow phát 207 answers, abstain 805, có 55 value disagreements và 32 V3-only answers | Adjudicate tối thiểu 300 semantic gold và 300 evidence gold; tất cả metric trong promotion policy phải measured và pass |
-| P1 | Rerank S3 chỉ là identity/truncation | MRR@10 của S2 và S3 cùng bằng 0,5450; uplift `+0,0000` trên 95 manual-gold cases. S2 full-list MRR 0,5497 chỉ là diagnostic top-50 | Tạo held-out rerank gold, benchmark deterministic/open-weight candidates và chỉ promote khi uplift có ý nghĩa thống kê |
+| P0 | Canonical executable coverage mới đạt 55,43% | V2 phát 561/1.012 answers và fail-closed 451 câu; mixed-basis arithmetic bị chặn có chủ đích | Đóng các semantic gaps P1, bind/execute trên gold và giữ fail-closed cho route chưa đủ evidence |
+| P1 | Semantic V3 chưa đủ điều kiện promotion | V3 r6 phát 272 answers, abstain 740, có 67 value disagreements và 48 V3-only answers | Adjudicate tối thiểu 300 answer/semantic/evidence gold; parser, retrieval, binding, answer, reranker held-out và submission replay cùng pass một sealed release |
+| P1 | Reranker chưa được phép promote | Candidate linear trên legacy dev19: F2@10 0,3406→0,4231; MRR@10 0,5439→0,6391; tập này contaminated bởi prior feature work. Untouched selection 120 QID đang `SEALED_UNLABELED` | Hai annotator độc lập + adjudicator, one-shot paired A/B: n>=100, ΔF2>=0, CI95 low>=0, protected slices>=-0,01 |
 | P1 | Retrieval gold chưa đủ đại diện | 95/1.012 câu có trusted table gold; 917 câu `NOT_MEASURED` | Mở rộng stratified evidence gold cho screen, multi-entity, bank, derived-metric và hard-negative slices |
 | CLOSED | Production strict typing | `make typecheck`: zero errors trên 78 source files thuộc `domain/application/infrastructure/interface` | Gate nằm trong `make ci`; legacy pipeline debt không được đưa ngược vào production boundary |
 | CLOSED | CI acceptance path | Locked `--require-hashes` install, correctness Ruff, strict mypy, 46-file docs-link check và self-hosted materialized lane | Duy trì `.github/workflows/ci.yml` và `materialized-acceptance.yml` |
