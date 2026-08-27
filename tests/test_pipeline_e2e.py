@@ -139,6 +139,23 @@ def test_subtract_end_to_end():
     assert res.answer == pytest.approx(2000.0)
 
 
+def test_explicit_absolute_period_difference_end_to_end():
+    newer = cell("df1", "Doanh thu", "2023VND", "1.000", 1000.0, 1000.0, 0,
+                 Unit(MONEY, 0), row_index=0, period="2023")
+    older = cell("df1", "Doanh thu", "2022VND", "3.000", 3000.0, 3000.0, 0,
+                 Unit(MONEY, 0), row_index=1, period="2022")
+    pool = [newer, older]
+
+    res = answer_question(
+        "Chênh lệch tuyệt đối doanh thu năm 2023 so với năm 2022 là bao nhiêu đồng?",
+        pool, frames_from(pool), qid=5, requested_unit=Unit(MONEY, 0),
+        selector=InOrder())
+
+    assert res.status == "OK", res.reason
+    assert res.answer == pytest.approx(2000.0)
+    assert res.query.startswith("abs(")
+
+
 def test_growth_end_to_end():
     new = cell("df1", "Doanh thu", "2023VND", "1.200", 1200.0, 1200.0, 0,
                Unit(MONEY, 0), row_index=0, period="2023")

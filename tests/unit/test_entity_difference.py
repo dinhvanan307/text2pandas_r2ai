@@ -79,6 +79,27 @@ def test_two_entity_difference_preserves_first_minus_second_direction() -> None:
     assert result.answer == pytest.approx(-3.0)
 
 
+def test_explicit_absolute_entity_difference_returns_non_negative_gap() -> None:
+    cells = [_cell("AAA", 2_000), _cell("BBB", 5_000)]
+
+    result = answer_entity_difference(
+        "Chênh lệch tuyệt đối doanh thu giữa AAA và BBB năm 2024 là bao nhiêu tỷ đồng?",
+        cells,
+        _frames(cells),
+        entities=["AAA", "BBB"],
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(MONEY, 9, "VND"),
+        selector=Selector(),
+        mode="compare",
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(3.0)
+    assert result.query.startswith("abs(")
+    assert result.trace[0]["absolute_difference"] is True
+
+
 def test_less_than_entity_difference_reverses_semantic_operands() -> None:
     cells = [_cell("AAA", 2_000), _cell("BBB", 5_000)]
 
@@ -98,6 +119,36 @@ def test_less_than_entity_difference_reverses_semantic_operands() -> None:
     assert result.answer == pytest.approx(3.0)
     assert result.trace[0]["semantic_entity_order"] == ["AAA", "BBB"]
     assert result.trace[0]["calculation_entity_order"] == ["BBB", "AAA"]
+
+
+@pytest.mark.parametrize(
+    "question,aaa_value,bbb_value",
+    [
+        ("So với BBB, doanh thu AAA cao hơn bao nhiêu tỷ đồng?", 5_000, 2_000),
+        ("So với BBB, doanh thu AAA thấp hơn bao nhiêu tỷ đồng?", 2_000, 5_000),
+    ],
+)
+def test_fronted_reference_entity_difference_executes_positive_gap(
+    question: str,
+    aaa_value: float,
+    bbb_value: float,
+) -> None:
+    cells = [_cell("AAA", aaa_value), _cell("BBB", bbb_value)]
+
+    result = answer_entity_difference(
+        question,
+        cells,
+        _frames(cells),
+        entities=["BBB", "AAA"],
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(MONEY, 9, "VND"),
+        selector=Selector(),
+        mode="compare",
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(3.0)
 
 
 def test_explicit_difference_cue_overrides_related_subject_heuristic() -> None:

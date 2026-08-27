@@ -31,6 +31,7 @@ from text2pandas.domain.semantic import (
     ResultKind,
     SelectAtArg,
     Unary,
+    UnaryOperator,
     UnitSpec,
     validate_question_ast,
 )
@@ -87,6 +88,7 @@ class SemanticParser:
                 "basis": annotations.basis.value,
                 "operation": annotations.operation.value,
                 "operation_evidence": annotations.operation_evidence,
+                "absolute_difference": annotations.absolute_difference,
             },
             {
                 "stage": "ONTOLOGY_MATCH",
@@ -233,7 +235,13 @@ class SemanticParser:
                 if operation == OperationKind.GROWTH
                 else ArithmeticOperator.SUBTRACT
             )
-            return Arithmetic(operator, left, right), ResultKind.SCALAR
+            expression: Expression = Arithmetic(operator, left, right)
+            if (
+                operation == OperationKind.SUBTRACT
+                and annotations.absolute_difference
+            ):
+                expression = Unary(UnaryOperator.ABSOLUTE, expression)
+            return expression, ResultKind.SCALAR
 
         if operation == OperationKind.EXTREMUM:
             if axis is None or len(members) < 2:
@@ -694,6 +702,7 @@ def _expand_aggregate_period_range(
         rank_direction=annotations.rank_direction,
         return_mode=annotations.return_mode,
         reverse_difference=annotations.reverse_difference,
+        absolute_difference=annotations.absolute_difference,
         operation_evidence=annotations.operation_evidence,
     )
 
@@ -732,6 +741,7 @@ def _rescope_expression(
         rank_direction=annotations.rank_direction,
         return_mode=annotations.return_mode,
         reverse_difference=annotations.reverse_difference,
+        absolute_difference=annotations.absolute_difference,
         operation_evidence=annotations.operation_evidence,
     )
     return _scope_expression(expression, scoped_annotations)

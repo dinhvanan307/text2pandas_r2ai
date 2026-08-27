@@ -102,6 +102,15 @@ _DIFFERENCE_CUE = re.compile(
     r"|\bh[ơo]n\b[^?]{0,80}\bm[ấa]y\b"
     r"|(?:k[ếe]t\s*qu[ảa]|l[ãa]i)\s+(?:thu[ầa]n|r[òo]ng)\s+(?:t[ừu]\s+)?ho[ạa]t\s*đ[ộo]ng\s+t[àa]i\s*ch[íi]nh)"
 )
+_LESS_THAN_DIFFERENCE = re.compile(
+    r"(?:b[ée]|k[ée]m|[íi]t|th[ấa]p)\s+h[ơo]n"
+)
+_FRONTED_COMPARISON_REFERENCE = re.compile(
+    r"^\s*so\s+v[ớo]i\b[^?,:]{1,160}[,:]"
+)
+_ABSOLUTE_DIFFERENCE = re.compile(
+    r"ch[êe]nh\s*l[ệe]ch\s+tuy[ệe]t\s+đ[ốo]i"
+)
 
 _OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     # A superlative marks the OUTER operation. A change/growth word inside such
@@ -162,6 +171,7 @@ class OperationHint:
     return_mode: Optional[str] = None
     requires_derived_metric: bool = False
     reverse_difference: bool = False
+    absolute_difference: bool = False
 
     @property
     def supported(self) -> bool:
@@ -201,6 +211,7 @@ class QuestionSemanticFrame:
             "return_mode": self.operation.return_mode,
             "requires_derived_metric": self.operation.requires_derived_metric,
             "reverse_difference": self.operation.reverse_difference,
+            "absolute_difference": self.operation.absolute_difference,
             "missing": list(self.missing),
         }
 
@@ -356,12 +367,29 @@ def classify_operation(question: str) -> OperationHint:
                 op,
                 reason=f"cue:{op}",
                 matched=m.group(0),
-                reverse_difference=bool(
-                    op == SUBTRACT
-                    and re.search(r"(?:b[ée]|k[ée]m|[íi]t|th[ấa]p)\s+h[ơo]n", m.group(0))
+                reverse_difference=(
+                    _reverse_difference(t, m.group(0)) if op == SUBTRACT else False
+                ),
+                absolute_difference=bool(
+                    op == SUBTRACT and _ABSOLUTE_DIFFERENCE.search(t)
                 ),
             )
     return OperationHint(LOOKUP, reason="default:no_operation_cue")
+
+
+def _reverse_difference(question: str, matched_cue: str) -> bool:
+    """Whether execution must swap source-mention operands.
+
+    In a direct comparison, ``A thấp hơn B`` asks for ``B - A`` while
+    ``A cao hơn B`` asks for ``A - B``.  A fronted reference reverses the
+    mention order: ``So với B, A cao hơn ...`` still means ``A - B`` and
+    ``So với B, A thấp hơn ...`` means ``B - A``.  Therefore the
+    execution swap is the XOR of those two independent syntactic signals.
+    """
+
+    less_than = _LESS_THAN_DIFFERENCE.search(matched_cue) is not None
+    fronted_reference = _FRONTED_COMPARISON_REFERENCE.search(question) is not None
+    return less_than != fronted_reference
 
 
 def parse_question(question: str, qid: Optional[int] = None,

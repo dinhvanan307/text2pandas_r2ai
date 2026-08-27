@@ -50,3 +50,35 @@ def test_kem_hon_marks_reverse_difference() -> None:
 
     assert operation.op == SUBTRACT
     assert operation.reverse_difference is True
+
+
+@pytest.mark.parametrize(
+    "question,expected_reverse",
+    [
+        (
+            "So với SCR, khoản tiền gửi của CRE cao hơn bao nhiêu tỷ đồng?",
+            True,
+        ),
+        (
+            "So với SCR, khoản tiền gửi của CRE thấp hơn bao nhiêu tỷ đồng?",
+            False,
+        ),
+    ],
+)
+def test_fronted_comparison_reference_controls_operand_direction(
+    question: str,
+    expected_reverse: bool,
+) -> None:
+    operation = classify_operation(question)
+
+    assert operation.op == SUBTRACT
+    assert operation.reverse_difference is expected_reverse
+
+
+def test_explicit_absolute_difference_is_preserved_in_operation_contract() -> None:
+    operation = classify_operation(
+        "Chênh lệch tuyệt đối dư nợ giữa HDB và EIB là bao nhiêu triệu đồng?"
+    )
+
+    assert operation.op == SUBTRACT
+    assert operation.absolute_difference is True

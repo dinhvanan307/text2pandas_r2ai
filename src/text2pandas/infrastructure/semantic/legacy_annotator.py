@@ -142,5 +142,6 @@ class LegacyVietnameseAnnotator:
             rank_direction=rank_direction,
             return_mode=return_mode,
             reverse_difference=operation.reverse_difference,
+            absolute_difference=operation.absolute_difference,
             operation_evidence=aggregate_evidence or operation.matched,
         )

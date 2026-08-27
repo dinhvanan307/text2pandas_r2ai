@@ -39,6 +39,7 @@ class QuestionAnnotations:
     rank_direction: RankDirection | None = None
     return_mode: ReturnMode = ReturnMode.VALUE
     reverse_difference: bool = False
+    absolute_difference: bool = False
     operation_evidence: str | None = None
 
 
@@ -56,4 +57,3 @@ class ParseResult:
     @property
     def ok(self) -> bool:
         return self.status == "OK"
-

@@ -127,7 +127,8 @@ def route(frame: QuestionSemanticFrame) -> RouteResult:
             newest, oldest = oldest, newest
         slots = (OperandSlot(MINUEND, period=newest, **common),
                  OperandSlot(SUBTRAHEND, period=oldest, **common))
-        return RouteResult(OperationIR(SUBTRACT, slots, out_unit), "OK")
+        notes = ("absolute_result",) if frame.operation.absolute_difference else ()
+        return RouteResult(OperationIR(SUBTRACT, slots, out_unit, notes=notes), "OK")
 
     if op in (SUM, AVG):
         if len(frame.periods) < 2:

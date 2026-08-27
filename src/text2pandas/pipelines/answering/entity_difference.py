@@ -103,9 +103,9 @@ def answer_entity_difference(
     """Bind the same metric once per entity and execute the semantic direction.
 
     Entity order is semantic: Vietnamese questions of the form ``A so với B``
-    ask for ``A - B``; ``A kém/thấp/bé hơn B`` asks for ``B - A``.
-    Taking ``abs`` silently discards the direction and makes signed cases look
-    plausible while being semantically wrong.
+    ask for ``A - B``; ``A kém/thấp/bé hơn B`` asks for ``B - A``.  Absolute
+    value is only applied when the question explicitly says ``chênh lệch tuyệt
+    đối``; applying it to ordinary differences would discard their direction.
     """
 
     if not is_typed_entity_difference(
@@ -149,6 +149,7 @@ def answer_entity_difference(
             "semantic_entity_order": [operand.slot.entity for operand in operands],
             "calculation_entity_order": [operand.slot.entity for operand in calculation_operands],
             "reverse_difference": operation.reverse_difference,
+            "absolute_difference": operation.absolute_difference,
             "operands": {
                 operand.slot.entity: {
                     "row_path": operand.cell.row_path,
@@ -177,6 +178,8 @@ def answer_entity_difference(
             )
         expressions.append(cell_expr(operand, conversion.factor))
     query = f"({expressions[0]} - {expressions[1]})"
+    if operation.absolute_difference:
+        query = f"abs({query})"
     used_frames = {operand.cell.df_var: frames[operand.cell.df_var] for operand in operands}
     answer, error = execute(query, used_frames)
     if error or answer is None:

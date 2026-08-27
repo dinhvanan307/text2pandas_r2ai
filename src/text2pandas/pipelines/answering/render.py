@@ -121,6 +121,8 @@ def render(ir: OperationIR, operands: list[BoundOperand]) -> RenderResult:
 
     if ir.op == SUBTRACT:
         body = f"({exprs[MINUEND][0]} - {exprs[SUBTRAHEND][0]})"
+        if "absolute_result" in ir.notes:
+            body = f"abs({body})"
         # operands were normalised to `target_each`; the difference carries the
         # result unit directly (PERCENT - PERCENT = PERCENT_POINT, 1:1 in value)
         return RenderResult("OK", body, per_operand_factor=factors, output_factor=1.0)

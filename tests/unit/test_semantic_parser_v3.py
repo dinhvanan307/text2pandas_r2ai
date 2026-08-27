@@ -20,6 +20,8 @@ from text2pandas.domain.semantic import (
     MetricRef,
     RankDirection,
     SelectAtArg,
+    Unary,
+    UnaryOperator,
     UnitSpec,
 )
 from text2pandas.infrastructure.ontology import load_ontology
@@ -72,6 +74,25 @@ def test_difference_across_entities_is_one_generic_arithmetic_tree() -> None:
     assert result.ast.expression.operator == ArithmeticOperator.SUBTRACT
     assert result.ast.expression.left.entities == ("VCB",)
     assert result.ast.expression.right.entities == ("BID",)
+
+
+def test_absolute_difference_compiles_to_typed_unary_expression() -> None:
+    annotations = _annotations(
+        entities=("VCB", "BID"),
+        operation=OperationKind.SUBTRACT,
+        absolute_difference=True,
+        mode="compare",
+    )
+    result = _parse(
+        "Chênh lệch tuyệt đối tổng tài sản VCB và BID năm 2024?",
+        annotations,
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Unary)
+    assert result.ast.expression.operator == UnaryOperator.ABSOLUTE
+    assert isinstance(result.ast.expression.expression, Arithmetic)
+    assert result.ast.expression.expression.operator == ArithmeticOperator.SUBTRACT
 
 
 def test_formula_can_be_aggregated_across_entity_axis() -> None:
