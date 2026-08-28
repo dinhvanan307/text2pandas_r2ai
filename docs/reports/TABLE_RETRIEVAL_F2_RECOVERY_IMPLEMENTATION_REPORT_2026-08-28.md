@@ -5,6 +5,8 @@
 **Production path:** Canonical V2  
 **Semantic V3:** giữ nguyên `SHADOW_ONLY`, không promote  
 **Quyết định cuối:** `KEEP BASELINE`
+**Review incorporation:** revision 2, đối chiếu
+`REVIEW_TABLE_F2_RECOVERY_2026-08-28.md`
 
 ## 1. Executive Summary
 
@@ -13,7 +15,8 @@
 Baseline immutable được đóng băng từ Canonical V2 tại commit
 `a2d3ef0308612f3025cf1a78c3d5bc470d0634f6`, với raw snapshot
 `ca033190f2e9e99f`, A6 build `c6887fb633374fad`, retrieval index
-`872ccb0dda9a2bb6` và submission SHA-256:
+`872ccb0dda9a2bb6` và submission SHA-256. Hai release run A/B tạo baseline ZIP
+được thực thi trong Python 3.11.15 hash-locked; không phải Python 3.13.9:
 
 ```text
 a96ecc3c1113af69895d3a131876f2ae48e3827651a6112f0cf7066adc00445c
@@ -23,6 +26,10 @@ Manual gold 95 câu xác nhận bottleneck không nằm ở S1: 95/95 câu có g
 trong S1 và 554/554 gold items còn trong candidate pool. Tuy nhiên chỉ 86/95
 câu có gold trong top 10, dynamic N chỉ giữ gold cho 50/95 câu và binding làm
 mất gold ở 10 câu.
+
+Giới hạn phạm vi: 95 câu này không chứa các known entity/open-universe
+boundaries Q464/Q508/Q783/Q792. Vì vậy `S1=95/95` chỉ kết luận S1 đầy đủ trên
+manual table-gold slice, không được tổng quát thành “entity resolution đã xong”.
 
 ### Changes
 
@@ -67,9 +74,9 @@ phải bằng chứng Table F2 chính thức đã tăng.
 **`KEEP BASELINE`.** Giữ lại observability, attribution tooling và year-range
 hardening vì chúng tăng khả năng kiểm toán mà không làm thay đổi scorer-facing
 output. Không promote các thử nghiệm ranking/N/binding. Không upload ZIP
-upgraded như một “cải thiện” vì nó byte-identical với baseline, official scorer
-không có trong repo, và không có upload target/credential/receipt interface để
-tạo mapping chính thức an toàn.
+upgraded như một “cải thiện” vì nó byte-identical với baseline và không tạo phép
+thử mới. Việc upload là thao tác thủ công của account owner; nếu thực hiện, phải
+ghi ledger/receipt trước khi đọc điểm.
 
 ## 2. Scope và source verification
 
@@ -95,6 +102,15 @@ pipeline song song. `MULTI_ENTITY_OPERATION_NOT_SUPPORTED` vẫn có 177 câu tr
 full run; không blanket-relax gate khi chưa chứng minh entity/metric/period/basis
 và operands resolve duy nhất.
 
+Manual 95 không phủ Q464/Q508/Q783/Q792. Bằng chứng ngoài slice vẫn xác nhận:
+
+- Q464 không có entity và S1 trả rỗng cho open-universe screen;
+- Q508 từng thiếu STB, hiện resolve đủ ACB/OCB/STB nhưng còn metric/route gap;
+- Q783/Q792 hiện resolve EIB/MBB nhưng vẫn fail closed ở basis/metric policy.
+
+Các boundary này không mâu thuẫn với P1 gate; chúng chứng minh P1 gate có phạm
+vi hẹp hơn full entity coverage.
+
 ## 3. Changed Components
 
 | File | Function/class | Old behavior | New behavior | Reason |
@@ -111,11 +127,13 @@ và operands resolve duy nhất.
 | `tools/retrieval/evaluate_stage_attribution.py` | CLI mới | Không có exact P1 reproduction tool | Sinh immutable trace, metrics và manifest cho manual 95 | Gate P1 có thể tái chạy |
 | `tools/retrieval/analyze_recovery_options.py` | CLI mới | Không có rank/feature/N/binding audit thống nhất | Sinh rank buckets, feature audit, policy và binding sweeps | So sánh giả thuyết trước khi chạm production |
 | `tools/retrieval/compare_canonical_runs.py` | CLI mới | Không có exact 1.012-QID paired comparator | So sánh mọi scorer-facing field, metrics, validation, ZIP SHA | Chứng minh wins/losses và output identity |
+| `configs/evaluation/submission_ledger_v1.json` | Review follow-up ledger | Submission scores rải trong reports, thiếu identity map | Ghi incomplete 3721/3757 và local candidate với required-field policy | Không lặp lại submission-ID/ZIP provenance gap |
 | `docs/adr/0013-year-range-intent-checkpoint-version.md` | ADR 0013 | Chưa có contract cho year range | Ghi quyết định semantic expansion + lexical retrieval boundary | Giải thích trade-off và rollback point |
 | `tests/test_retrieval_stage_attribution.py` | Unit tests mới | Không có transition classifier coverage | Cover tất cả loss labels và recovery cases | Ngăn attribution sai stage |
 | `tests/test_retrieval_r0_entity.py` | Parser regressions | Thiếu range dash/reversed/clipping cases | Cover `-`, `–`, `—`, reversed fail-closed và boundary clipping | Bảo vệ parser hardening |
 | `tests/test_integration_smoke.py` | Retrieval integration | Không assert trace/range-N boundary | Assert trace contract và range không phình N/S1 | Bảo vệ stage interaction |
 | `tests/test_p0_unify.py` | Behavior fingerprint | Chỉ biết đến `evalkit-11` | Thêm fingerprint `evalkit-12` | Bắt buộc bump checkpoint khi behavior đổi |
+| `tests/unit/test_submission_ledger.py` | Review follow-up contract | Ledger chưa có machine-checkable guard | Enforce unique IDs, required fields for complete entries và local/official separation | Ngăn local candidate bị ghi như official submission |
 
 Không đổi DB schema, submission JSON schema, entity resolver, V3 promotion
 policy hoặc canonical answer safety gates.
@@ -128,6 +146,20 @@ policy hoặc canonical answer safety gates.
 | Manual 95 gold metrics và sweeps | `DIAGNOSTIC` | Gold phát triển, không đại diện official hidden gold |
 | Official Table Precision/Recall/F2, Answer Accuracy, Execution Accuracy | `NOT_MEASURED` | Không có official scorer/hidden gold và chưa upload |
 | Causal attribution cho submission ID 3757 | `UNKNOWN` | Thiếu exact ZIP/receipt mapping của submission đó |
+
+### Environment boundary
+
+Hai môi trường phải được đọc tách biệt:
+
+| Workload | Environment | Vai trò |
+|---|---|---|
+| Clean release A/B tạo frozen baseline ZIP | Python 3.11.15, SQLite 3.53.2, clean detached worktree | Hash-locked release evidence; hai run byte-identical |
+| Recovery attribution/sweeps/upgraded verification | Python 3.13.9, SQLite 3.51.0 | Local diagnostic; không tự tạo release claim mới |
+
+Recovery run dưới 3.13 tái tạo cùng exact ZIP SHA với package đã được sinh dưới
+3.11. Điều này đóng output-identity comparison, nhưng mọi future promoted logic
+làm thay đổi ZIP vẫn phải chạy lại release A/B trong 3.11 hash-locked trước khi
+đủ điều kiện nộp.
 
 ## 5. Baseline vs upgraded metrics
 
@@ -250,6 +282,30 @@ Union với retrieval output cho local diagnostic gain, nhưng precision giảm 
 không có sealed held-out/official contract proof. Vì vậy không đổi binding
 production. Trace mới vẫn cho phép audit 10 `BINDING_LOSS` cases trực tiếp.
 
+### Audit 10 BINDING_LOSS records
+
+Đã đọc từng trace và đối chiếu row path, period, basis, ticker và table metadata.
+Không dùng answer gold để khẳng định correctness; phân loại dưới đây là semantic
+evidence review:
+
+| QID | Kết quả review | Evidence |
+|---:|---|---|
+| 305 | `LIKELY_BINDING_WRONG` | Retrieval chọn đúng bảng “Cam kết thuê hoạt động”; binder đổi sang “Tổng thu nhập hoạt động” |
+| 342 | `LIKELY_BINDING_WRONG` | Câu hỏi hỏi số dư tiền/vàng/đá quý; binder lấy một ô tài sản USD quy đổi, answer 0.035279 triệu |
+| 351 | `PLAUSIBLE_EQUIVALENT_SOURCE` | Cả gold/bound cùng report, gần nhau; bound row exact “Chi phí chờ phân bổ” đúng ngày |
+| 354 | `LIKELY_BINDING_WRONG` | Gold là note “Vay ngân hàng ngắn hạn”; binder dùng tổng “Vay ngắn hạn” trên balance sheet |
+| 636 | `LIKELY_BINDING_WRONG` | Câu hỏi “phải thu khác ngắn hạn”; binder lấy tổng “Các khoản phải thu ngắn hạn” |
+| 743 | `PLAUSIBLE_EQUIVALENT_SOURCE` | Bound lấy “Tài sản cố định hữu hình” trên balance sheet cho cả GEE/SAM; gold dùng note/equity-change tables |
+| 748 | `PLAUSIBLE_EQUIVALENT_SOURCE` | Bound lấy đúng cổ phiếu phổ thông lưu hành cho MBB/ACB; report-year khác chứa comparative 2018 |
+| 780 | `LIKELY_BINDING_WRONG` | BAB sai basis/report prior; SGB chọn “Dự phòng chung” trong change table thay vì tổng provision |
+| 860 | `PLAUSIBLE_EQUIVALENT_SOURCE` | Bound lấy exact “Chi phí khác” cho đủ 2017/2022/2023 từ statement/comparatives |
+| 910 | `PLAUSIBLE_EQUIVALENT_SOURCE` | Bound lấy exact “Hàng tồn kho” cho đủ 5 năm từ balance sheets; gold dùng inventory notes |
+
+Tổng hợp: 5 ca có semantic mismatch rõ, 5 ca có nguồn thay thế hợp lý và cho
+thấy manual gold có thể không exhaustive theo table location. Vì vậy union
+binding không được “minh oan” cũng không bị bác bỏ: binder cần sửa ở nhóm mismatch,
+còn evaluator/gold policy cần adjudicate equivalent-source ở nhóm còn lại.
+
 ## 10. Year-range hardening
 
 ### Rejected experiment
@@ -302,6 +358,28 @@ Kết quả:
 Validator: 1.012 records, 0 errors, 0 warnings. Replay: 563 executed, 563
 matched, 449 no-evidence, 0 errors.
 
+### 561/451 → 563/449 lineage check
+
+Historical r5 documentation ghi 561 answered / 451 abstained, trong khi clean
+release `a2d3ef0` ghi 563/449. Review nghi ngờ hai câu tăng do alias regeneration.
+Đối chiếu cho thấy attribution đó **chưa được chứng minh**:
+
+- exact r5 ZIP/records `submission_production-a6-v1.10-v2-r5-20260827.zip`
+  không còn trong workspace, nên không thể làm exact per-QID package diff;
+- question-attested aliases làm Q508/Q783/Q792 resolve entity đầy đủ hơn, nhưng
+  cả ba vẫn abstain trong release hiện tại;
+- source differential trên toàn bộ V2 parse/entity surfaces đã đổi cho thấy ba
+  historical-OK chuyển thành abstain (Q128/Q233/Q336) và ba historical-abstain
+  chuyển thành OK (Q612/Q639/Q966), net answered delta bằng 0;
+- Q625/Q649 đều OK ở hai phía nhưng answer/evidence thay đổi do operation
+  semantics, nên count alone còn che giấu behavioral drift.
+
+Vì vậy exact hai QID giải thích 561→563 vẫn là `UNKNOWN`, không được ghi là alias
+gain. Closure cần khôi phục exact r5 records/ZIP hoặc rerun exact r5 source/config
+trong frozen 3.11 environment rồi dùng paired comparator. Các tài liệu lịch sử
+giữ 561/451 vì đó là số của r5; tài liệu release hiện tại giữ 563/449 vì đó là
+số đo của `a2d3ef0`.
+
 ## 12. Failed or unproven hypotheses
 
 1. **“Tăng N toàn cục sẽ giải quyết F2.” — không được chứng minh để promote.**
@@ -316,7 +394,9 @@ matched, 449 no-evidence, 0 errors.
    QID `q425` regression rank 5 → 6 và N 2 → 4 mà không recover gold.
 
 4. **“Table F2 thấp đồng nghĩa parser/entity resolver sai.” — không được chứng
-   minh.** S1 đạt 95/95 và 554/554; entity coverage full run là 1.011/1.012.
+   minh trên manual 95.** S1 đạt 95/95 và 554/554, nhưng slice này không chứa
+   Q464/Q508/Q783/Q792. Entity/open-universe vẫn là known boundary ngoài slice;
+   kết luận đúng chỉ là chúng không giải thích loss distribution của 95 câu này.
 
 5. **“Cần rewrite retriever hoặc promote Semantic V3.” — không có evidence.**
    V3 vẫn shadow; không có thay đổi nào trong plan này justify promotion.
@@ -336,10 +416,12 @@ matched, 449 no-evidence, 0 errors.
 | P0 immutable baseline + 4 required JSON files | `PASS` |
 | P1 exact 95-question reproduction | `PASS` |
 | Targeted retrieval/parser/attribution tests | `106 passed` |
+| Submission ledger contract | `2 passed` |
 | Raw/A6/retrieval snapshots and identity checks | `PASS` |
 | `make snapshots-verify` | `PASS` |
-| `make ci` | `PASS`: mypy 85 source files; docs links clean; 2.091 passed, 42 skipped, 27 deselected |
-| `make test-integration` | `PASS`: 20 passed, 2.140 deselected |
+| `make ci` | `PASS`: mypy 85 source files; 60 docs/zero broken links; 2.093 passed, 42 skipped, 27 deselected |
+| `make test-integration` | `PASS`: 20 active integration tests passed, 2.142 non-active tests deselected by marker expression |
+| `make test-historical` | `EXPECTED RED`: 7 failed, 2.155 deselected; authentic legacy ZIP/report inputs remain absent |
 | Full 1.012 canonical run | `PASS` |
 | Submission validator | `PASS`: 0 errors, 0 warnings |
 | Replay | `PASS`: 563/563 matched, 0 errors |
@@ -347,9 +429,20 @@ matched, 449 no-evidence, 0 errors.
 | ZIP checksum equality | `PASS`: exact SHA-256 match |
 | Official leaderboard measurement | `NOT_MEASURED` |
 
-Local environment là CPython 3.13.9, SQLite 3.51.0, pandas 2.3.3, NumPy
-2.3.5, pytest 8.4.2 và PyYAML 6.0.3. Đây là môi trường chạy local, không được
-tuyên bố là hash-locked official acceptance environment.
+`make test-integration` chạy marker expression `integration and not historical`.
+Con số 2.142 deselected bao gồm toàn bộ unit/offline/historical tests không thuộc
+active integration target; không có nghĩa 2.140 test bị né riêng. Bảy H0 monitors
+phụ thuộc `submission_C1R_LOCAL.zip`, `submission_P0G2.zip` và
+`determinism_report_v2.json` được giữ nguyên, chuyển sang explicit `historical`
+scope tại commit `a2d3ef0` theo ADR 0010. Chạy trực tiếp `make test-historical`
+vẫn fail closed đúng 7/7 vì các authentic inputs chưa được khôi phục. Active
+replacement gate là snapshot lineage + hai canonical run A/B + strict validator
++ replay + full-ZIP equality; nó không giả lập legacy evidence.
+
+Recovery local environment là CPython 3.13.9, SQLite 3.51.0, pandas 2.3.3,
+NumPy 2.3.5, pytest 8.4.2 và PyYAML 6.0.3. Baseline release A/B riêng biệt đã
+chạy trong Python 3.11.15 hash-locked như nêu tại §4; không được trộn hai lớp
+evidence này.
 
 ## 14. Artifact inventory
 
@@ -411,6 +504,16 @@ artifacts/runs/evaluation/table-f2-recovery-final-a2d3ef-20260828-01/
 └── manifest.json
 ```
 
+### Review follow-up governance
+
+```text
+configs/evaluation/submission_ledger_v1.json
+```
+
+Ledger là source-controlled governance record. Nó không biến các score do user
+cung cấp thành reproducible official measurement; status vẫn incomplete cho đến
+khi có exact receipt và ZIP identity.
+
 ## 15. Submission provenance
 
 **Candidate package:**
@@ -441,15 +544,40 @@ timestamp:     null
 receipt:       null
 ```
 
-Repo không chứa một upload endpoint/CLI/credential flow đủ để nộp và lưu receipt
-an toàn. Quan trọng hơn, Phase 11 yêu cầu review trước upload và quyết định hiện
-tại là `KEEP BASELINE`; dùng leaderboard slot cho một ZIP byte-identical không
-tạo phép thử baseline-vs-upgraded mới. Nếu người sở hữu tài khoản vẫn muốn một
-controlled official baseline measurement, phải cung cấp/điều khiển upload target
-và sau đó lưu `submission_id ↔ ZIP ↔ SHA-256 ↔ git HEAD ↔ timestamp ↔ receipt`
-trong một artifact mới, không sửa các artifact immutable ở trên.
+Lý do quyết định không upload là ZIP byte-identical nên không tạo phép thử
+baseline-vs-upgraded mới. Upload là thao tác thủ công hợp lệ của account owner;
+endpoint/credential không nằm trong repo chỉ là operational boundary, không phải
+lý do quality chính.
 
-## 16. Final recommendation
+Đã thêm `configs/evaluation/submission_ledger_v1.json`. Hai entry 3721/3757 được
+ghi `INCOMPLETE_LEGACY_RECORD` với score classification
+`USER_REPORTED_OFFICIAL_UNATTRIBUTED`; các trường ZIP SHA, commit, timestamp và
+receipt cố ý để `null`, không điền bằng suy đoán. Local recovery candidate được
+ghi `NOT_SUBMITTED` cùng exact SHA. Ledger policy yêu cầu mọi submission mới ghi
+identity mapping trước khi đọc score.
+
+## 16. Proposed closure plan after review
+
+Đây là action register đề xuất; owner là vai trò chịu trách nhiệm, không tự gán
+tên cá nhân khi chưa có ủy quyền. Mốc ngày là target để blocker không tiếp tục
+trôi, không phải cam kết đã có resource.
+
+| ID | Work item | Proposed owner | Size/scope | Target | Exit gate | Status |
+|---|---|---|---|---|---|---|
+| N1 | Sealed held-out table gold | Evaluation lead + independent label lead | 200 câu: 100 single, 60 screen, 30 compare, 10 related; blind labels | Protocol freeze 2026-08-29; seal 2026-09-03 | SHA sealed trước khi chạy preregistered N/binding/ablation profiles | `BLOCKED_OWNER_ASSIGNMENT` |
+| N2 | Reconcile 3721/3757 receipts | Competition account owner | 2 submissions; receipt/screenshot/score export + exact ZIP | 2026-08-29 | Ledger entries đủ mọi required field | `BLOCKED_EXTERNAL_ARTIFACT` |
+| N3 | Release rerun after any promoted change | Release owner | Two full 1.012 A/B runs under Python 3.11 hash lock | Before next upload | Clean source, identical A/B SHA, validator/replay clean | `NOT_REQUIRED_FOR_NULL_ZIP`; mandatory after real output change |
+| N4 | Close 561→563 attribution | Retrieval maintainer | Restore r5 records/ZIP or exact frozen rerun; paired 1.012 diff | 2026-08-30 | Exact changed QID list and causal source/config diff | `BLOCKED_EXACT_R5_ARTIFACT` |
+| N5 | Document integration scope | Release maintainer | ADR-0010 + active/historical command evidence | Completed 2026-08-28 | 20 active pass; 7 historical fail closed without authentic inputs | `COMPLETE` |
+| N6 | Audit 10 binding losses | Retrieval/binding maintainer | 10 traces, row/period/basis comparison | Completed 2026-08-28 | Per-QID classification recorded in §9 | `COMPLETE` |
+
+Preregistered N1 profiles phải gồm: baseline; margin-N 0.5; conditional binding
+union chỉ khi bound evidence là strict subset hợp lệ; unit bonus ablation; period
+bonus ablation. Gold chỉ được mở một lần sau khi code/config hashes của mọi
+profile đã seal. Promotion cần F2 tăng, precision guard đạt, no protected-query
+regression và no answer/replay regression; không chọn profile sau khi nhìn gold.
+
+## 17. Final recommendation
 
 ### `KEEP BASELINE`
 

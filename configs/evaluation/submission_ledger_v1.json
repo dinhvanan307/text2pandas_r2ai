@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "policy": {
+    "append_before_reading_score": true,
+    "complete_entry_requires": [
+      "submission_id",
+      "submitted_at_utc",
+      "zip_sha256",
+      "git_commit",
+      "config_sha256",
+      "receipt_path",
+      "metrics"
+    ],
+    "identity_mapping": "submission_id <-> zip_sha256 <-> git_commit <-> config_sha256 <-> receipt_path"
+  },
+  "submissions": [
+    {
+      "submission_id": 3721,
+      "status": "INCOMPLETE_LEGACY_RECORD",
+      "submitted_at_utc": null,
+      "zip_path": null,
+      "zip_sha256": null,
+      "git_commit": null,
+      "config_sha256": null,
+      "receipt_path": null,
+      "metrics": {
+        "classification": "USER_REPORTED_OFFICIAL_UNATTRIBUTED",
+        "execution_accuracy": 0.2549,
+        "tables_f2_macro": 0.2511,
+        "tables_precision": 0.2904,
+        "tables_recall": 0.2475,
+        "tables_mrr_at_5": 0.3375,
+        "docs_f2_macro": 0.6321
+      },
+      "blocker": "Exact ZIP, SHA-256, commit, timestamp and receipt are absent.",
+      "source": "docs/reports/QUESTION_PARSER_RETRIEVAL_IMPACT_AUDIT_2026-08-28.md"
+    },
+    {
+      "submission_id": 3757,
+      "status": "INCOMPLETE_LEGACY_RECORD",
+      "submitted_at_utc": null,
+      "zip_path": null,
+      "zip_sha256": null,
+      "git_commit": null,
+      "config_sha256": null,
+      "receipt_path": null,
+      "metrics": {
+        "classification": "USER_REPORTED_OFFICIAL_UNATTRIBUTED",
+        "execution_accuracy": 0.2589,
+        "tables_f2_macro": 0.25,
+        "tables_precision": 0.2921,
+        "tables_recall": 0.2461,
+        "tables_mrr_at_5": 0.336,
+        "docs_f2_macro": 0.6326
+      },
+      "blocker": "Exact ZIP, SHA-256, commit, timestamp and receipt are absent.",
+      "source": "docs/reports/QUESTION_PARSER_RETRIEVAL_IMPACT_AUDIT_2026-08-28.md"
+    }
+  ],
+  "local_candidates": [
+    {
+      "run_id": "table-f2-recovery-upgraded-a2d3ef-20260828-01",
+      "status": "NOT_SUBMITTED",
+      "zip_path": "artifacts/submissions/submission_table-f2-recovery-upgraded-a2d3ef-20260828-01.zip",
+      "zip_sha256": "a96ecc3c1113af69895d3a131876f2ae48e3827651a6112f0cf7066adc00445c",
+      "source_baseline_commit": "a2d3ef0308612f3025cf1a78c3d5bc470d0634f6",
+      "decision": "KEEP_BASELINE",
+      "reason": "Byte-identical to the frozen baseline package; uploading would not create an upgraded-vs-baseline experiment."
+    }
+  ]
+}
