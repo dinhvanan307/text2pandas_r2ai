@@ -38,6 +38,8 @@ _SHORT_TERM_INTEREST_PAYABLE = "short_term_interest_payable"
 _TAXES_PAYABLE = "taxes_payable"
 _CURRENT_INCOME_TAX_EXPENSE = "current_income_tax_expense"
 _OUTSTANDING_SHARES = "outstanding_common_shares"
+_INTEREST_EXPENSE = "interest_expense"
+_EXPENSE_METRICS = frozenset({_INTEREST_EXPENSE})
 
 
 @dataclass(slots=True)
@@ -74,6 +76,8 @@ def is_typed_entity_average(
     entities: Sequence[str],
     years: Sequence[int],
     requested_unit: Unit,
+    *,
+    allow_interest_expense: bool = False,
 ) -> bool:
     """Return whether the question fits the reviewed direct-fact contract.
 
@@ -91,6 +95,7 @@ def is_typed_entity_average(
         and classify_operation(question).op == AVG
         and match_formula(question) is None
         and metric_id is not None
+        and (metric_id != _INTEREST_EXPENSE or allow_interest_expense)
         and requested_unit.dimension in {MONEY, SHARES}
         and not any(cue in folded for cue in _COMPARISON_CUES)
         and not any(cue in folded for cue in _FILTER_CUES)
@@ -109,10 +114,17 @@ def answer_entity_average(
     requested_unit: Unit,
     selector: Selector,
     qid: int | None = None,
+    allow_interest_expense: bool = False,
 ) -> EntityAverageAnswer | None:
     """Bind the same reported fact once per entity and return its mean."""
 
-    if not is_typed_entity_average(question, entities, years, requested_unit):
+    if not is_typed_entity_average(
+        question,
+        entities,
+        years,
+        requested_unit,
+        allow_interest_expense=allow_interest_expense,
+    ):
         return None
     result = EntityAverageAnswer("OK", qid=qid)
     year = years[0]
@@ -166,7 +178,14 @@ def answer_entity_average(
         )
         if not conversion.ok or conversion.factor is None:
             return _fail(result, "RENDER", f"ENTITY_AVERAGE_UNIT_ABSTAIN:{conversion.reason}")
-        expressions.append(cell_expr(operand, conversion.factor))
+        expression = cell_expr(operand, conversion.factor)
+        # Financial statements may print expenses in parentheses while cash
+        # flow adjustments print the same expense as a positive number.  This
+        # route admits only reviewed direct expense rows, so averaging their
+        # economic magnitude is deterministic across presentation signs.
+        if metric_id in _EXPENSE_METRICS:
+            expression = f"abs({expression})"
+        expressions.append(expression)
     query = f"(({' + '.join(expressions)}) / {len(expressions)})"
     used_frames = {operand.cell.df_var: frames[operand.cell.df_var] for operand in operands}
     answer, error = execute(query, used_frames)
@@ -218,6 +237,8 @@ def _match_metric(folded_question: str) -> str | None:
         or "so luong co phieu dang luu hanh" in folded_question
     ):
         return _OUTSTANDING_SHARES
+    if "chi phi lai vay" in folded_question:
+        return _INTEREST_EXPENSE
     return None
 
 
@@ -242,6 +263,15 @@ def _metric_cell_allowed(metric_id: str, cell: CandidateCell) -> bool:
             "chi phi thue tndn hien hanh",
             "chi phi thue thu nhap hien hanh",
             "chi phi thue thu nhap doanh nghiep hien hanh",
+        }
+    if metric_id == _INTEREST_EXPENSE:
+        # Restrict the new direct-fact route to the P&L row.  The corpus also
+        # contains accrued-interest balances and cash-flow adjustments with
+        # the same leaf text; those are different accounting concepts even
+        # when their values happen to coincide for some reports.
+        return cell.statement_type == "income_statement" and leaf in {
+            "chi phi lai vay",
+            "trong do chi phi lai vay",
         }
     return (
         metric_id == _OUTSTANDING_SHARES

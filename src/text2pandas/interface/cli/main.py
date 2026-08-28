@@ -219,6 +219,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         limit=args.limit,
         max_tables=args.n_tables,
         answer_pool_tables=args.answer_pool_tables,
+        enable_direct_interest_average=args.experimental_direct_interest_average,
         progress=(lambda i, n: print(f"  ... {i} câu, {n} có đáp án", flush=True))
         if args.verbose
         else None,
@@ -236,6 +237,9 @@ def cmd_run(args: argparse.Namespace) -> int:
                 "question_ids": sorted(args.question_id),
                 "max_tables": args.n_tables,
                 "answer_pool_tables": args.answer_pool_tables,
+                "experimental_direct_interest_average": (
+                    args.experimental_direct_interest_average
+                ),
                 "package_requested": not args.no_package,
                 "doc_id_variant": args.doc_id,
                 "locator_base": args.locator_base,
@@ -891,6 +895,11 @@ def main(argv: list[str] | None = None) -> int:
         default=MAX_RELEVANT_TABLES,
     )
     rn.add_argument("--answer-pool-tables", type=int, default=50)
+    rn.add_argument(
+        "--experimental-direct-interest-average",
+        action="store_true",
+        help="Enable the preregistered direct multi-entity interest-expense average trial",
+    )
     rn.add_argument("--no-package", action="store_true")
     rn.add_argument("--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped")
     rn.add_argument("--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1)

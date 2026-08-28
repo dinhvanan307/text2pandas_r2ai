@@ -527,6 +527,7 @@ def run_canonical_pipeline(
     limit: int = 0,
     max_tables: int = 10,
     answer_pool_tables: int = 50,
+    enable_direct_interest_average: bool = False,
     progress: Callable[[int, int], None] | None = None,
 ) -> CanonicalPipelineReport:
     """Run retrieval and fail-closed answer generation for a question slice."""
@@ -641,6 +642,7 @@ def run_canonical_pipeline(
                                 requested_unit=requested_unit,
                                 selector=selector,
                                 qid=qid,
+                                allow_interest_expense=enable_direct_interest_average,
                             )
                         if pipeline_result is None:
                             pipeline_result = answer_entity_sum(

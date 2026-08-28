@@ -127,6 +127,17 @@ profiles:
   manual:
     gold_source: manual
     ks: [1, 2, 3, 5, 10]
+  # Recovery ablations are deliberately diagnostic-only.  The same manual
+  # slice exposed the suspicious feature rates, so neither profile is allowed
+  # to promote a production weight without untouched held-out table labels.
+  manual_unit_off:
+    gold_source: manual
+    ks: [1, 2, 3, 5, 10]
+    bonuses: {unit: 0.0}
+  manual_period_off:
+    gold_source: manual
+    ks: [1, 2, 3, 5, 10]
+    bonuses: {period: 0.0}
   # Candidate S3 trained only on legacy development gold. It is intentionally
   # not a production default; promotion remains blocked until heldout_v1 is
   # independently labeled and the preregistered A/B gates pass.

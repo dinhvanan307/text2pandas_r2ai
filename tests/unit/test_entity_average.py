@@ -93,6 +93,71 @@ def test_entity_average_executes_absolute_share_counts() -> None:
     assert result.answer == pytest.approx(400.0)
 
 
+def test_entity_average_executes_reviewed_interest_expense_magnitudes() -> None:
+    cells = [
+        replace(
+            _cell("AAA", -300, "Trong đó: Chi phí lãi vay"),
+            statement_type="income_statement",
+        ),
+        replace(
+            _cell("BBB", -600, "Trong đó: Chi phí lãi vay"),
+            statement_type="income_statement",
+        ),
+        # Same words in a payable note are a closing balance, not period
+        # interest expense, and must not enter the average.
+        replace(
+            _cell("AAA", 9_000, "Chi phí phải trả ngắn hạn › Chi phí lãi vay"),
+            statement_type="note",
+            df_var="df9",
+            csv_path="data/AAA-note.csv",
+        ),
+    ]
+
+    result = answer_entity_average(
+        "Giá trị trung bình chi phí lãi vay của AAA và BBB năm 2024 "
+        "là bao nhiêu tỷ đồng?",
+        cells,
+        _frames(cells),
+        entities=["AAA", "BBB"],
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(MONEY, 9, "VND"),
+        selector=Selector(),
+        allow_interest_expense=True,
+    )
+
+    assert result is not None and result.ok
+    assert result.answer == pytest.approx(0.45)
+    assert result.query is not None and result.query.count("abs(") == 2
+
+
+def test_entity_average_interest_expense_trial_is_default_off() -> None:
+    cells = [
+        replace(
+            _cell("AAA", -300, "Trong đó: Chi phí lãi vay"),
+            statement_type="income_statement",
+        ),
+        replace(
+            _cell("BBB", -600, "Trong đó: Chi phí lãi vay"),
+            statement_type="income_statement",
+        ),
+    ]
+
+    result = answer_entity_average(
+        "Giá trị trung bình chi phí lãi vay của AAA và BBB năm 2024 "
+        "là bao nhiêu tỷ đồng?",
+        cells,
+        _frames(cells),
+        entities=["AAA", "BBB"],
+        years=[2024],
+        basis="consolidated",
+        requested_unit=Unit(MONEY, 9, "VND"),
+        selector=Selector(),
+    )
+
+    assert result is None
+
+
 def test_entity_average_abstains_when_reviewed_metric_is_unbound() -> None:
     cells = [_cell("AAA", 3_000), _cell("BBB", 6_000, "Doanh thu thuần")]
 
@@ -131,11 +196,9 @@ def test_entity_average_abstains_when_reviewed_metric_is_unbound() -> None:
             Unit(MONEY, 9, "VND"),
         ),
         (
-            (
-                "Giá trị trung bình chi phí lãi vay của AAA và BBB năm 2024 "
-                "là bao nhiêu tỷ đồng?"
-            ),
-            Unit(MONEY, 9, "VND"),
+            "Giá trị trung bình tỷ lệ chi phí lãi vay trên doanh thu của AAA và BBB "
+            "năm 2024 là bao nhiêu phần trăm?",
+            Unit(PERCENT),
         ),
     ],
 )
