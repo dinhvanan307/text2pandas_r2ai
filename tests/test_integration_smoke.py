@@ -30,7 +30,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from text2pandas.pipelines.retrieval.submission_adapter import (MAX_N,  # noqa: E402
+from text2pandas.pipelines.retrieval.submission_adapter import (MAX_N,
                                           RetrievalToSubmission,
                                           to_submission_ref)
 
@@ -145,6 +145,19 @@ def test_chinh_sach_N_theo_so_ma_va_so_nam(conn):
                              "là bao nhiêu tỷ đồng?")
     assert r.n_policy == 2                      # 2 mã × 1 năm
     assert len(r.relevant_tables) <= 2
+
+
+def test_score_margin_policy_extends_n_from_existing_s2_scores(conn):
+    ad = RetrievalToSubmission(ALIAS, max_n=3, output_score_margin=100.0)
+    r = ad.refs_for(
+        conn,
+        31,
+        "Doanh thu thuần của VNM năm 2023 là bao nhiêu tỷ đồng?",
+    )
+
+    assert r.trace["output_policy"]["base_n"] == 1
+    assert r.trace["output_policy"]["score_margin"] == 100.0
+    assert r.n_policy == min(3, len(r.ranked_table_uids))
 
 
 def test_range_expansion_does_not_inflate_policy_or_change_s1_boundary(conn):

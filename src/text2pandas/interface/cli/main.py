@@ -219,6 +219,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         limit=args.limit,
         max_tables=args.n_tables,
         answer_pool_tables=args.answer_pool_tables,
+        output_score_margin=args.output_score_margin,
+        retrieval_primary_boost=args.retrieval_primary_boost,
+        prefer_retrieval_output_in_binding=args.prefer_retrieval_output_in_binding,
         enable_direct_interest_average=args.experimental_direct_interest_average,
         progress=(lambda i, n: print(f"  ... {i} câu, {n} có đáp án", flush=True))
         if args.verbose
@@ -237,6 +240,11 @@ def cmd_run(args: argparse.Namespace) -> int:
                 "question_ids": sorted(args.question_id),
                 "max_tables": args.n_tables,
                 "answer_pool_tables": args.answer_pool_tables,
+                "output_score_margin": args.output_score_margin,
+                "retrieval_primary_boost": args.retrieval_primary_boost,
+                "prefer_retrieval_output_in_binding": (
+                    args.prefer_retrieval_output_in_binding
+                ),
                 "experimental_direct_interest_average": (
                     args.experimental_direct_interest_average
                 ),
@@ -895,6 +903,22 @@ def main(argv: list[str] | None = None) -> int:
         default=MAX_RELEVANT_TABLES,
     )
     rn.add_argument("--answer-pool-tables", type=int, default=50)
+    rn.add_argument(
+        "--output-score-margin",
+        type=float,
+        help="Extend scope-derived output N while S2 score remains within this margin",
+    )
+    rn.add_argument(
+        "--retrieval-primary-boost",
+        type=float,
+        default=0.0,
+        help="S2 boost for primary financial-statement tables in eligible modes",
+    )
+    rn.add_argument(
+        "--prefer-retrieval-output-in-binding",
+        action="store_true",
+        help="Prefer semantically valid cells from scorer-facing retrieval output",
+    )
     rn.add_argument(
         "--experimental-direct-interest-average",
         action="store_true",

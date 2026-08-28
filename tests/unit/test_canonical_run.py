@@ -130,6 +130,44 @@ def test_selector_soft_basis_prior_keeps_standalone_only_fallback() -> None:
     assert selected is separate
 
 
+def test_selector_prefers_semantically_valid_retrieval_output_table() -> None:
+    preferred = replace(_cell("Vay ngân hàng ngắn hạn"), table_uid="retrieved")
+    wider_pool = replace(
+        _cell("Vay ngân hàng ngắn hạn"),
+        table_uid="fallback",
+        metric_code="320",
+    )
+    selector = QuestionSelector(
+        "Vay ngân hàng ngắn hạn cuối năm 2022 là bao nhiêu?",
+        frozenset({"320"}),
+        preferred_table_uids=frozenset({"retrieved"}),
+    )
+
+    selected = selector.pick(
+        OperandSlot("value", period="2022"),
+        [wider_pool, preferred],
+    )
+
+    assert selected is preferred
+
+
+def test_selector_uses_wider_pool_when_retrieval_output_fails_semantic_gate() -> None:
+    preferred = replace(_cell("Tài sản khác"), table_uid="retrieved")
+    fallback = replace(_cell("Vay ngân hàng ngắn hạn"), table_uid="fallback")
+    selector = QuestionSelector(
+        "Vay ngân hàng ngắn hạn cuối năm 2022 là bao nhiêu?",
+        frozenset(),
+        preferred_table_uids=frozenset({"retrieved"}),
+    )
+
+    selected = selector.pick(
+        OperandSlot("value", period="2022"),
+        [preferred, fallback],
+    )
+
+    assert selected is fallback
+
+
 def test_selector_does_not_reward_keyword_stuffing_in_ancestors() -> None:
     selector = QuestionSelector(
         "Chi phí dịch vụ mua ngoài năm 2023 là bao nhiêu?",

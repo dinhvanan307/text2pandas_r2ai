@@ -26,6 +26,8 @@ from text2pandas.domain.units.lexicon import scan_unit
 from text2pandas.infrastructure.retrieval.index import tokenize
 from text2pandas.pipelines.answering import (
     DIVIDE,
+    LOOKUP,
+    SUBTRACT,
     CandidateCell,
     Selector,
     Unit,
@@ -124,6 +126,7 @@ class QuestionSelector(Selector):
         *,
         cross_entity_sum: bool = False,
         preferred_basis: str | None = None,
+        preferred_table_uids: frozenset[str] = frozenset(),
     ) -> None:
         normalized_question = tokenize(question)
         self.aggregate_required = not cross_entity_sum and any(
@@ -140,6 +143,7 @@ class QuestionSelector(Selector):
         self.question_tokens = set(self.question_sequence)
         self.code_hints = code_hints
         self.preferred_basis = preferred_basis
+        self.preferred_table_uids = preferred_table_uids
         self.requested_period_role: str | None
         role_text = question.casefold()
         if re.search(
@@ -238,6 +242,10 @@ class QuestionSelector(Selector):
         else:
             period_role_score = 0.0
         return (
+            # Retrieval is a hard preference only after the cell has passed
+            # the semantic gate above.  The wider answer pool remains a
+            # fail-closed fallback when shortlisted tables have no valid cell.
+            1.0 if cell.table_uid in self.preferred_table_uids else 0.0,
             1.0 if code_hit else 0.0,
             1.0 if self.aggregate_required and aggregate_row else 0.0,
             float(leaf_run),
@@ -527,6 +535,9 @@ def run_canonical_pipeline(
     limit: int = 0,
     max_tables: int = 10,
     answer_pool_tables: int = 50,
+    output_score_margin: float | None = None,
+    retrieval_primary_boost: float = 0.0,
+    prefer_retrieval_output_in_binding: bool = False,
     enable_direct_interest_average: bool = False,
     progress: Callable[[int, int], None] | None = None,
 ) -> CanonicalPipelineReport:
@@ -541,6 +552,8 @@ def run_canonical_pipeline(
         aliases,
         max_n=max_tables,
         top_k_rerank=max(answer_pool_tables, max_tables),
+        output_score_margin=output_score_margin,
+        primary_boost=retrieval_primary_boost,
     )
     questions = [
         json.loads(line)
@@ -580,6 +593,7 @@ def run_canonical_pipeline(
                 pipeline_result: _PipelineAnswer | None = None
                 frames_by_path: dict[str, pd.DataFrame] = {}
                 evidence_uids: list[str] = []
+                binding_preferred_uids: list[str] = []
                 if not refs.table_uids:
                     reason = "NO_RETRIEVED_TABLE"
                 elif not intent.targets:
@@ -599,12 +613,31 @@ def run_canonical_pipeline(
                         intent.years,
                         requested_unit,
                     )
+                    operation_kind = classify_operation(text).op
+                    binding_preference_allowed = (
+                        prefer_retrieval_output_in_binding
+                        and len(intent.targets) == 1
+                        and operation_kind in {LOOKUP, SUBTRACT}
+                    )
+                    if binding_preference_allowed:
+                        output_policy = refs.trace["output_policy"]
+                        binding_core_n = (
+                            int(output_policy.get("base_n", refs.n_policy))
+                            if isinstance(output_policy, dict)
+                            else refs.n_policy
+                        )
+                        binding_preferred_uids = refs.ranked_table_uids[:binding_core_n]
                     selector = QuestionSelector(
                         text,
                         metric_codes_hint(text),
                         drop=drop_terms(intent.targets, aliases),
                         cross_entity_sum=entity_sum_route,
                         preferred_basis=intent.basis,
+                        preferred_table_uids=(
+                            frozenset(binding_preferred_uids)
+                            if binding_preference_allowed
+                            else frozenset()
+                        ),
                     )
                     if len(intent.targets) >= 2:
                         pipeline_result = answer_entity_count(
@@ -681,7 +714,7 @@ def run_canonical_pipeline(
                                 qid=qid,
                             )
                         if pipeline_result is None:
-                            if classify_operation(text).op == DIVIDE:
+                            if operation_kind == DIVIDE:
                                 reason = "DIVIDE_REQUIRES_REVIEWED_FORMULA"
                             else:
                                 pipeline_result = answer_question(
@@ -744,6 +777,7 @@ def run_canonical_pipeline(
                     "effect": binding_effect,
                     "retrieval_selected_table_ids": refs.table_uids,
                     "answer_pool_table_ids": refs.ranked_table_uids[:answer_pool_tables],
+                    "preferred_retrieval_core_table_ids": binding_preferred_uids,
                     "selected_evidence_table_ids": evidence_uids,
                 }
                 results.append(result)

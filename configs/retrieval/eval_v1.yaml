@@ -138,6 +138,20 @@ profiles:
     gold_source: manual
     ks: [1, 2, 3, 5, 10]
     bonuses: {period: 0.0}
+  # Actual-recovery one-signal experiments. Each profile changes exactly one
+  # S2 decision relative to `manual`, and still records all 1,012 questions.
+  manual_primary:
+    gold_source: manual
+    ks: [1, 2, 3, 5, 10]
+    primary_boost: 0.60
+  manual_fanout2:
+    gold_source: manual
+    ks: [1, 2, 3, 5, 10]
+    per_ticker_k: 2
+  manual_stopdau:
+    gold_source: manual
+    ks: [1, 2, 3, 5, 10]
+    stop_mode: dau
   # Candidate S3 trained only on legacy development gold. It is intentionally
   # not a production default; promotion remains blocked until heldout_v1 is
   # independently labeled and the preregistered A/B gates pass.

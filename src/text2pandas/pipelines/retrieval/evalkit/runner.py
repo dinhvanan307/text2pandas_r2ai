@@ -74,6 +74,8 @@ __all__ = [
 #                         corpus-question-attested STB/EIB aliases (ADR 0012).
 #   evalkit-11 → evalkit-12 expand explicit ascending year ranges into their
 #                         complete period domain (ADR 0013).
+#   evalkit-12 → evalkit-13 add the governed adaptive output-size policy; old
+#                         checkpoints cannot represent its output boundary.
 #
 # VÌ SAO PHẢI BUMP, KHÔNG PHẢI CHỈ SỬA CODE
 # -----------------------------------------
@@ -85,7 +87,7 @@ __all__ = [
 # Kỷ luật con người không giữ được bất biến này (đã hỏng một lần rồi), nên
 # `tests/test_p0_unify.py::test_behavior_fingerprint` băm AST của các module
 # quyết định hành vi S2 và đỏ lên nếu chúng đổi mà hằng số này không đổi.
-SCHEMA_VERSION = "evalkit-12"
+SCHEMA_VERSION = "evalkit-13"
 
 
 @dataclass(frozen=True, slots=True)

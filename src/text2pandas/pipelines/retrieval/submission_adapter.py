@@ -50,11 +50,12 @@ from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker
                                       IdentityReranker)
 from text2pandas.pipelines.retrieval.policy import (
     MAX_RELEVANT_TABLES,
+    adaptive_submission_table_limit,
     submission_table_limit,
 )
 from text2pandas.pipelines.retrieval.question_intent import parse_intent
 
-__all__ = ["SubmissionRefs", "RetrievalToSubmission", "MAX_N", "to_submission_ref"]
+__all__ = ["MAX_N", "RetrievalToSubmission", "SubmissionRefs", "to_submission_ref"]
 
 MAX_N = MAX_RELEVANT_TABLES
 _REF = re.compile(r"^(?P<doc>.+)\|line:(?P<line>\d+)$")
@@ -105,15 +106,19 @@ class RetrievalToSubmission:
                  top_k_rank: int = 50, top_k_rerank: int = MAX_N,
                  basis_mode: str = "soft", use_hints: str = "code_single",
                  stop_mode: str = "fold", year_slack: int = 1,
-                 off_by_one: int = 0, max_n: int = MAX_N):
+                 off_by_one: int = 0, max_n: int = MAX_N,
+                 output_score_margin: float | None = None,
+                 primary_boost: float = 0.0):
         self.alias = alias
         self.s1 = HardFilterGenerator(basis_mode=basis_mode, year_slack=year_slack)
         self.s2 = Bm25StructuralRanker(alias, top_k=top_k_rank,
                                        use_hints=use_hints, basis_mode=basis_mode,
-                                       stop_mode=stop_mode)
+                                       stop_mode=stop_mode,
+                                       primary_boost=primary_boost)
         self.s3 = IdentityReranker(top_k=max(top_k_rerank, max_n))
         self.off_by_one = off_by_one
         self.max_n = max_n
+        self.output_score_margin = output_score_margin
 
     def n_for(self, intent) -> int:
         return submission_table_limit(
@@ -159,8 +164,18 @@ class RetrievalToSubmission:
         o1 = self.s1.generate(conn, question, it)
         o2 = self.s2.rank(conn, question, it, o1)
         o3 = self.s3.rerank(conn, question, it, o2)
-        n = self.n_for(it)
+        base_n = self.n_for(it)
         ranked = [r.table_uid for r in o3.ranked]
+        n = (
+            adaptive_submission_table_limit(
+                base_n,
+                tuple(float(item.score) for item in o3.ranked),
+                score_margin=self.output_score_margin,
+                maximum=self.max_n,
+            )
+            if self.output_score_margin is not None
+            else base_n
+        )
         chon = ranked[:n]
         refs, docs = self.submission_refs_for_uids(conn, chon)
         trace: dict[str, object] = {
@@ -197,7 +212,13 @@ class RetrievalToSubmission:
             },
             "output_policy": {
                 "n": n,
-                "reason": "targets_x_years_clamped",
+                "base_n": base_n,
+                "reason": (
+                    "score_margin_from_scope_floor"
+                    if self.output_score_margin is not None
+                    else "targets_x_years_clamped"
+                ),
+                "score_margin": self.output_score_margin,
                 "n_targets": len(it.targets),
                 "n_years": len(it.retrieval_years),
                 "maximum": self.max_n,
