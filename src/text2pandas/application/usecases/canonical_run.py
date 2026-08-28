@@ -742,6 +742,7 @@ def run_canonical_pipeline(
                                     qid=qid,
                                     requested_unit=requested_unit,
                                     selector=selector,
+                                    resolved_entity=intent.targets[0],
                                 )
                     if pipeline_result is not None and not pipeline_result.ok:
                         reason = f"{pipeline_result.stage_failed}:{pipeline_result.reason}"

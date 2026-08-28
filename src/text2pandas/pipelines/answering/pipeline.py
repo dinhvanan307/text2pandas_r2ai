@@ -115,13 +115,15 @@ def answer_question(question: str,
                     qid: Optional[int] = None,
                     metric_id: Optional[str] = None,
                     requested_unit: Optional[Unit] = None,
-                    selector: Optional[Selector] = None) -> PipelineResult:
+                    selector: Optional[Selector] = None,
+                    resolved_entity: Optional[str] = None) -> PipelineResult:
     """Run every stage. Abstains loudly instead of guessing at any point."""
     res = PipelineResult(qid=qid, status="OK")
 
     # -- FRAME
     frame = parse_question(question, qid=qid, metric_id=metric_id,
-                           requested_unit=requested_unit)
+                           requested_unit=requested_unit,
+                           resolved_entity=resolved_entity)
     res.frame = frame
     res.trace.append({"stage": "FRAME", "status": "OK",
                       "operation": frame.operation.op,

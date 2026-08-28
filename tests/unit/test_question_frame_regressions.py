@@ -92,3 +92,21 @@ def test_explicit_absolute_difference_is_preserved_in_operation_contract() -> No
 
     assert operation.op == SUBTRACT
     assert operation.absolute_difference is True
+
+
+def test_canonical_entity_resolution_overrides_acronym_inside_company_name() -> None:
+    frame = parse_question(
+        "Lợi nhuận sau thuế của CTCP Chứng khoán FPT năm 2023 là bao nhiêu?",
+        resolved_entity="FTS",
+    )
+
+    assert frame.entity == "FTS"
+    assert frame.entity_source == "canonical_intent"
+    assert "entity" not in frame.missing
+
+
+def test_lexical_entity_remains_the_standalone_parser_fallback() -> None:
+    frame = parse_question("Doanh thu của VCB năm 2024 là bao nhiêu?")
+
+    assert frame.entity == "VCB"
+    assert frame.entity_source == "lexical_ticker"

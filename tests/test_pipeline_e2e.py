@@ -5,6 +5,7 @@ rendered query, execution, validator, evidence -- because it is the smallest
 operation that exercises every multi-operand mechanism at once.
 """
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,6 +52,38 @@ class InOrder(Selector):
 
     def pick(self, slot, pool):
         return pool[0] if pool else None
+
+
+def test_resolved_entity_survives_the_frame_to_binding_contract():
+    candidate = replace(
+        cell(
+            "df1",
+            "Lợi nhuận sau thuế",
+            "2023Triệu đồng",
+            "1.000",
+            1000.0,
+            1000.0,
+            0,
+            Unit(MONEY, 6),
+            period="2023",
+        ),
+        entity="FTS",
+    )
+
+    result = answer_question(
+        "Lợi nhuận sau thuế của CTCP Chứng khoán FPT năm 2023 là bao nhiêu triệu đồng?",
+        [candidate],
+        frames_from([candidate]),
+        requested_unit=Unit(MONEY, 6),
+        selector=InOrder(),
+        resolved_entity="FTS",
+    )
+
+    assert result.ok, result.reason
+    assert result.frame is not None
+    assert result.frame.entity == "FTS"
+    assert result.ir is not None
+    assert result.ir.slots[0].entity == "FTS"
 
 
 # ----------------------------------------------------------------- RATIO E2E

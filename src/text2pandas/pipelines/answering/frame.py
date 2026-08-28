@@ -196,6 +196,12 @@ class QuestionSemanticFrame:
     requested_unit: Unit
     operation: OperationHint
 
+    #: provenance of ``entity``.  The canonical runtime resolves company names
+    #: with the governed alias index before it builds this lexical frame.  The
+    #: source marker keeps that resolution distinguishable from a ticker read
+    #: directly from the question.
+    entity_source: Optional[str] = None
+
     #: fields whose value could not be determined, for coverage reporting
     missing: tuple[str, ...] = field(default_factory=tuple)
 
@@ -203,6 +209,7 @@ class QuestionSemanticFrame:
         return {
             "qid": self.qid,
             "entity": self.entity,
+            "entity_source": self.entity_source,
             "metric_id": self.metric_id,
             "periods": list(self.periods),
             "basis": self.basis,
@@ -398,10 +405,25 @@ def _reverse_difference(question: str, matched_cue: str) -> bool:
 
 def parse_question(question: str, qid: Optional[int] = None,
                    metric_id: Optional[str] = None,
-                   requested_unit: Optional[Unit] = None) -> QuestionSemanticFrame:
+                   requested_unit: Optional[Unit] = None,
+                   resolved_entity: Optional[str] = None) -> QuestionSemanticFrame:
     """Build a frame. ``requested_unit`` may be injected by a caller that owns
-    a better lexicon; otherwise it is left UNKNOWN rather than guessed."""
-    entity = extract_entity(question)
+    a better lexicon; otherwise it is left UNKNOWN rather than guessed.
+
+    ``resolved_entity`` is the canonical entity normalizer's output, not a
+    downstream cell/table choice.  When supplied it owns the entity field so a
+    capitalized acronym inside a legal company name (for example ``FPT`` in
+    ``CTCP Chứng khoán FPT``) cannot replace the resolved ticker ``FTS``.
+    """
+    lexical_entity = extract_entity(question)
+    entity = resolved_entity if resolved_entity is not None else lexical_entity
+    entity_source = (
+        "canonical_intent"
+        if resolved_entity is not None
+        else "lexical_ticker"
+        if lexical_entity is not None
+        else None
+    )
     periods = extract_periods(question)
     basis = extract_basis(question)
     op = classify_operation(question)
@@ -429,5 +451,6 @@ def parse_question(question: str, qid: Optional[int] = None,
         requested_dimension=unit.dimension,
         requested_unit=unit,
         operation=op,
+        entity_source=entity_source,
         missing=tuple(missing),
     )
