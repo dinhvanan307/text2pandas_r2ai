@@ -25,7 +25,8 @@ export TZ             := UTC
 export LC_ALL         := C.UTF-8
 export LANG           := C.UTF-8
 
-.PHONY: help paths-check lint typecheck docs-check test-offline test-integration semantic-coverage snapshots-verify \
+.PHONY: help paths-check lint typecheck docs-check test-offline test-integration test-historical \
+        verify-active-candidate semantic-coverage snapshots-verify \
         data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
         dp-rebuild-check dp-package
@@ -49,10 +50,20 @@ docs-check: ## Validate relative links in tracked Markdown files
 	@$(PY) tools/check_docs.py
 
 test-offline: ## Unit/contract/regression không cần materialized artifacts
-	@$(PY) -m pytest -q -m "not integration"
+	@$(PY) -m pytest -q -m "not integration and not historical"
 
-test-integration: ## Gate cần raw/A6/retrieval/submission artifacts
-	@$(PY) -m pytest -q -m integration
+test-integration: ## Active gate cần raw/A6/retrieval; không đọc pre-refactor ZIP
+	@$(PY) -m pytest -q -m "integration and not historical"
+
+test-historical: ## Optional monitor; cần mount authentic pre-refactor artifacts
+	@$(PY) -m pytest -q -m historical
+
+verify-active-candidate: ## Gate hai canonical run. RUN_A= RUN_B= [REPORT_OUT=]
+	@test -n "$(RUN_A)" -a -n "$(RUN_B)" \
+	  || { echo "LỖI: cần RUN_A=<run-id> RUN_B=<run-id>" >&2; exit 2; }
+	@$(PY) tools/execution/verify_active_candidate.py \
+	  --run-a "$(RUN_A)" --run-b "$(RUN_B)" \
+	  $(if $(REPORT_OUT),--report-out "$(REPORT_OUT)")
 
 semantic-coverage: ## Đo route coverage trên 1.012 câu; không thay thế accuracy eval
 	@$(PY) -m text2pandas.interface.cli.main coverage --summary-only

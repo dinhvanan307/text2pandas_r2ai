@@ -138,6 +138,7 @@ def test_g10_q42_duoc_phan_xu_la_a6_defect():
     assert "triệu" in (r["raw_col_path"] or "").lower()
 
 
+@pytest.mark.historical
 def test_g10_q42_dap_an_dung_don_vi_trieu_dong():
     """Cột in 'Triệu đồng', ô in 1.855.837, câu hỏi hỏi 'triệu đồng'
     ⇒ đáp án phải là chính con số đó, không phải 1,855837."""
@@ -145,6 +146,7 @@ def test_g10_q42_dap_an_dung_don_vi_trieu_dong():
     assert s[42]["answer"] == pytest.approx(1_855_837.0, rel=1e-9)
 
 
+@pytest.mark.historical
 def test_g10_khong_tai_dien_lech_10_mu_6():
     s = {r["id"]: r for r in json.loads(zipfile.ZipFile(C1R).read("submission.json"))}
     for r in _phan_xu():
@@ -155,6 +157,7 @@ def test_g10_khong_tai_dien_lech_10_mu_6():
 
 
 # ── G4 · hợp đồng Retrieval vẫn FREEZE ────────────────────────────────────
+@pytest.mark.historical
 def test_g4_retrieval_contract_khong_doi():
     g = {r["id"]: r for r in json.loads(zipfile.ZipFile(NEN).read("submission.json"))}
     c = {r["id"]: r for r in json.loads(zipfile.ZipFile(C1R).read("submission.json"))}
@@ -164,17 +167,20 @@ def test_g4_retrieval_contract_khong_doi():
 
 
 # ── G2/G3 · định dạng + replay ────────────────────────────────────────────
+@pytest.mark.historical
 def test_g2_submission_du_va_unique():
     s = json.loads(zipfile.ZipFile(C1R).read("submission.json"))
     ids = [r["id"] for r in s]
     assert len(s) == 1012 and len(set(ids)) == 1012 and sorted(ids) == list(range(1, 1013))
 
 
+@pytest.mark.historical
 def test_g2_khong_co_duong_dan_khong_an_toan():
     for n in zipfile.ZipFile(C1R).namelist():
         assert not n.startswith("/") and ".." not in n.split("/")
 
 
+@pytest.mark.historical
 def test_g3_replay_toan_bo_query_chay_va_khop_answer():
     pd = pytest.importorskip("pandas")
     import io
@@ -203,6 +209,7 @@ def test_g3_replay_toan_bo_query_chay_va_khop_answer():
 
 
 # ── G5 · đóng gói tất định (đọc báo cáo đã sinh) ──────────────────────────
+@pytest.mark.historical
 def test_g5_full_zip_sha256_tat_dinh():
     report = _require(H0 / "determinism_report_v2.json")
     rep = json.loads(report.read_text(encoding="utf-8"))

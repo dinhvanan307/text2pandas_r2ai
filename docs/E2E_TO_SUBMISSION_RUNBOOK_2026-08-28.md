@@ -202,19 +202,42 @@ artifacts/execution/h0/determinism_report_v2.json
    - thay bằng materialized gates tương đương trên active canonical candidate;
    - review và commit thay đổi trước khi tiếp tục release.
 
-### Commands sau khi input authentic có mặt
+### Resolution executed on 2026-08-28
+
+The bounded search covered the local Dagoras-R2AI project tree and found no
+authentic copy of either legacy ZIP. The ADR-0010 branch was therefore taken:
+
+- the seven ZIP/report-dependent tests remain intact under the explicit
+  `historical` marker and `make test-historical`;
+- the other 20 real-data H0/integration tests remain active;
+- `make test-integration` and `make dp-test` select the active architecture,
+  without skip/xfail allowances;
+- after full runs A/B, `make verify-active-candidate RUN_A=... RUN_B=...`
+  independently enforces current manifest/source/snapshot identity, strict
+  validation, clean replay, 1,012 records, and byte-identical ZIPs.
+
+The active candidate gate is deliberately post-run because its inputs are the
+two immutable current canonical outputs. It does not reconstruct or replace a
+legacy artifact.
+
+### Commands for the selected architecture
 
 ```bash
-make materialize-h0
 make test-integration
 REPORT_REV=$(git rev-parse --short=12 HEAD)
 REPORT_STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 make dp-test REPORT_DIR="artifacts/reports/e2e_release_${REPORT_STAMP}_${REPORT_REV}"
+# after full canonical runs A and B
+make verify-active-candidate RUN_A=<run-a> RUN_B=<run-b>
 ```
 
 ### Gate G4
 
-PASS khi toàn bộ integration suite và machine-readable full suite có 0 failure/error. Không cho phép `xfail`, unapproved skip hoặc bỏ riêng `test_h0_gates.py` để lấy dấu xanh.
+PASS khi active integration suite và machine-readable active full suite có 0
+failure/error. Không cho phép `xfail`, unapproved skip hoặc bỏ riêng
+`test_h0_gates.py`; file này vẫn chạy toàn bộ 20 active tests. Bảy monitor cần
+pre-refactor ZIP được quản trị riêng bởi scope `historical`, không được tính là
+active acceptance evidence.
 
 ## 9. Phase 5 — Canonical V2 smoke
 
@@ -385,6 +408,7 @@ Hoàn thành khi và chỉ khi:
 - G0–G7 đều PASS trong Python 3.11 hash-locked environment;
 - materialized integration blocker đã được giải quyết bằng authentic evidence hoặc một ADR/test migration được review, không bằng artifact giả;
 - hai full canonical runs byte-identical;
+- active candidate gate trên hai full canonical runs có status `PASS`;
 - final `artifacts/submissions/submission.zip` tồn tại và có cùng SHA với candidate được chọn;
 - ZIP có 1.012 records, strict validation 0 lỗi/cảnh báo và clean replay 0 lỗi/mismatch;
 - source/data/config/run/package provenance đầy đủ;

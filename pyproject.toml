@@ -50,6 +50,7 @@ testpaths = ["tests"]
 markers = [
   "unit: kiểm thử đơn vị, không I/O",
   "integration: chạy trên fixture tĩnh",
+  "historical: monitor chỉ chạy khi authentic pre-refactor artifacts được mount",
   "regression: so sánh với kết quả đã chốt",
 ]
 

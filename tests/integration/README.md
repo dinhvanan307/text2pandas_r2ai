@@ -1,10 +1,13 @@
 # Integration tests
 
-Integration tests may require materialized raw/A6/retrieval/submission artifacts.
-They fail closed with the missing path when prerequisites are absent.
+Integration tests require the active raw/A6/retrieval artifacts and fail closed
+when those prerequisites are absent.
 
-- Offline gate: `pytest -m "not integration"`
-- Materialized gate: `pytest -m integration`
+- Offline gate: `pytest -m "not integration and not historical"`
+- Active materialized gate: `pytest -m "integration and not historical"`
+- Historical monitor: `pytest -m historical`
 
-H0 requires `artifacts/execution/h0/` plus legacy comparison submissions; it is
-intentionally not converted to a false-green skip.
+The seven pre-refactor H0 submission monitors still require authentic legacy
+comparison ZIPs. They are not skipped or synthesized: they run only in the
+explicit historical scope when those inputs are mounted. Current candidate ZIPs
+are gated after two canonical runs with `make verify-active-candidate`.

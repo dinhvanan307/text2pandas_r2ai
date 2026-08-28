@@ -51,8 +51,11 @@ def main() -> int:
     # dạng máy đọc được phổ thông để tự dựng lại kết quả mà không phải học
     # schema của ta. JUnit là định dạng đó, và pytest sinh sẵn.
     junit = out / "junit.xml"
+    # ADR-0010: machine-readable acceptance covers the active architecture.
+    # Historical monitors remain runnable explicitly with `make test-historical`
+    # when their authentic pre-refactor inputs are mounted.
     cmd = [sys.executable, "-m", "pytest", a.testpath, "-q", "--tb=short", "-rs",
-           f"--junit-xml={junit}"]
+           "-m", "not historical", f"--junit-xml={junit}"]
     t0 = time.time()
     proc = subprocess.run(cmd, capture_output=True, text=True)
     dur = round(time.time() - t0, 2)
