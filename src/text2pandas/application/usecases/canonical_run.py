@@ -555,6 +555,19 @@ def run_canonical_pipeline(
         output_score_margin=output_score_margin,
         primary_boost=retrieval_primary_boost,
     )
+    # Scorer-facing ranking experiments must not silently perturb answer
+    # selection.  Keep the wider binding pool on the baseline ranker; the
+    # candidate ranker controls only submitted table refs and the explicitly
+    # enabled retrieval-core preference below.
+    answer_pool_retrieval = (
+        RetrievalToSubmission(
+            aliases,
+            max_n=max_tables,
+            top_k_rerank=max(answer_pool_tables, max_tables),
+        )
+        if retrieval_primary_boost
+        else retrieval
+    )
     questions = [
         json.loads(line)
         for line in questions_path.read_text(encoding="utf-8").splitlines()
@@ -587,6 +600,11 @@ def run_canonical_pipeline(
                 n_entity += bool(intent.tickers)
                 n_year += bool(intent.years)
                 refs = retrieval.refs_for(ret_conn, qid, text)
+                answer_pool_refs = (
+                    answer_pool_retrieval.refs_for(ret_conn, qid, text)
+                    if answer_pool_retrieval is not retrieval
+                    else refs
+                )
                 n_retrieved += bool(refs.table_uids)
 
                 reason: str | None = None
@@ -599,7 +617,7 @@ def run_canonical_pipeline(
                 elif not intent.targets:
                     reason = "ANSWER_REQUIRES_ENTITY"
                 else:
-                    answer_tables = refs.ranked_table_uids[:answer_pool_tables]
+                    answer_tables = answer_pool_refs.ranked_table_uids[:answer_pool_tables]
                     pool, frames_by_path = load_candidate_cells(a6_conn, answer_tables)
                     frames = {
                         cell.df_var: frames_by_path[cell.csv_path]
@@ -776,7 +794,9 @@ def run_canonical_pipeline(
                     "status": "APPLIED" if binding_applied else "NOT_APPLIED",
                     "effect": binding_effect,
                     "retrieval_selected_table_ids": refs.table_uids,
-                    "answer_pool_table_ids": refs.ranked_table_uids[:answer_pool_tables],
+                    "answer_pool_table_ids": answer_pool_refs.ranked_table_uids[
+                        :answer_pool_tables
+                    ],
                     "preferred_retrieval_core_table_ids": binding_preferred_uids,
                     "selected_evidence_table_ids": evidence_uids,
                 }
