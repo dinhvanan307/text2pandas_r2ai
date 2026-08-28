@@ -1,7 +1,7 @@
 # TABLE RETRIEVAL FULL RECOVERY REPORT
 
 **Ngày:** 2026-08-28
-**Trạng thái:** `IN_PROGRESS`
+**Trạng thái:** `COMPLETE`
 **Production path:** Canonical V2
 **Semantic V3:** `SHADOW_ONLY`
 **Official status:** `OFFICIAL_NOT_MEASURED`
@@ -12,6 +12,7 @@
 |---|---|
 | Baseline commit | `a2d3ef0308612f3025cf1a78c3d5bc470d0634f6` |
 | Current audit HEAD | `421c62c51b4d1bf807e3d48e3b59e6bc88bc82b5` |
+| Evaluated candidate commit | `7ed2bfec309accc6a0ef5176e207630fe222a0ed` |
 | Dataset | 1.012 câu; raw snapshot `ca033190f2e9e99f` |
 | A6 | `c6887fb633374fad` |
 | Retrieval index | `872ccb0dda9a2bb6` |
@@ -97,15 +98,126 @@ E1/E2 chỉ thêm profile evalkit `manual_unit_off` và `manual_period_off`; kh�
 
 ## F. Experiments
 
-Sẽ cập nhật sau khi artifacts được sinh.
+### F1. Retrieval bonus ablations
+
+| Metric | E0 manual | E1 unit=0 | Delta E1 | E2 period=0 | Delta E2 |
+|---|---:|---:|---:|---:|---:|
+| F2@N* | 0,3035 | 0,3095 | +0,0060 | 0,2899 | -0,0136 |
+| hit@N* | 0,5263 | 0,5368 | +0,0105 | 0,5158 | -0,0105 |
+| F2@1, `|gold|=1` | 0,3333 | 0,3333 | 0 | 0,3030 | -0,0303 |
+| hit@1 | 0,3474 | 0,3474 | 0 | 0,3053 | -0,0421 |
+| hit@3 | 0,6842 | 0,6842 | 0 | 0,6211 | -0,0632 |
+| hit@10 | 0,9053 | 0,9053 | 0 | 0,8842 | -0,0211 |
+| MRR toàn top-50 | 0,5497 | 0,5519 | +0,0022 | 0,5073 | -0,0424 |
+
+E1 không tạo top-10 win/loss nào; cải thiện chỉ xuất hiện ở thứ tự sâu và
+proxy F2@N* trên development gold. Vì `unit_hit` còn là feature coarse, có tỷ
+lệ trên non-gold cao hơn gold, kết quả này không đủ quyền promotion. **Giữ
+unit bonus 0,15.**
+
+E2 làm Q774 từ hạng 7 xuống 17 và Q886 từ hạng 5 xuống 15, đồng thời giảm mọi
+metric chính. **Giữ period bonus 0,35.**
+
+Artifacts:
+
+- baseline: `artifacts/runs/retrieval/evalkit/metrics_manual_9e7a2cb0c56b510f.json`;
+- unit-off: `artifacts/runs/retrieval/evalkit/metrics_manual_unit_off_2b70a6c9d6f6d3ce.json`;
+- period-off: `artifacts/runs/retrieval/evalkit/metrics_manual_period_off_4f0f161eb1322f12.json`.
+
+Đây là diagnostic trên 95/1.012 câu, không phải official measurement.
+
+### F2. Direct multi-entity interest-expense average
+
+Q954 được bind tới ba direct P&L facts của năm 2018:
+
+| Entity | Evidence table/locator | Raw VND | Normalized tỷ đồng |
+|---|---|---:|---:|
+| DPM | `DPM_financial_statements_2019_consolidated|337` | 62.586.468.519 | 62,586468519 |
+| VIF | `VIF_financial_statements_2018_consolidated|300` | 9.589.605.241 | 9,589605241 |
+| HSG | `HSG_financial_statements_2018_consolidated|238` | -811.669.226.449 | 811,669226449 |
+
+Candidate tính economic expense magnitude:
+
+```text
+(abs(62.586468519) + abs(9.589605241) + abs(-811.669226449)) / 3
+= 294.61510006966665 tỷ đồng
+```
+
+Các table IDs lần lượt là `feb5f4e440a5c1e0`, `8b7c2752e32f8112`,
+`eed2f40df8900789`. Payable-note/cash-flow rows cùng tên không được phép bind.
+Source audit và replay chứng minh phép tính có thể thi hành; chúng không thay
+thế independent answer gold.
 
 ## G. Full E2E và per-QID regression
 
-Sẽ cập nhật sau full 1.012 run.
+Hai run độc lập trên CPython 3.11.15, dependency hash-lock khớp, source commit
+và snapshot giống nhau:
+
+- A: `table-retrieval-full-recovery-7ed2bfe-a-20260828-01`;
+- B: `table-retrieval-full-recovery-7ed2bfe-b-20260828-01`.
+
+| Gate | A | B | Kết quả |
+|---|---:|---:|---|
+| Questions | 1.012 | 1.012 | PASS |
+| Answered / abstained | 564 / 448 | 564 / 448 | PASS |
+| Validator errors / warnings | 0 / 0 | 0 / 0 | PASS |
+| Replay matched / executed / errors | 564 / 564 / 0 | 564 / 564 / 0 | PASS |
+| records SHA-256 | `c23a68f…783164` | `c23a68f…783164` | byte-identical |
+| ZIP bytes | 1.031.950 | 1.031.950 | identical |
+| ZIP SHA-256 | `587b83b8…0ecf7` | `587b83b8…0ecf7` | byte-identical |
+
+Determinism gate:
+`artifacts/runs/evaluation/table-retrieval-full-recovery-7ed2bfe-20260828-01/determinism_gate.json`.
+
+Exact baseline/candidate comparator trên 1.012 QID:
+
+| Classification | Count | QID / diễn giải |
+|---|---:|---|
+| `UNCHANGED` | 1.011 | Mọi scorer-facing field byte-equivalent |
+| `CHANGED_UNMEASURED` | 1 | Q954: abstain → answer 294,6151000697 |
+| `NEW_REGRESSION` | 0 | Không có |
+| `NEW_TABLE_REGRESSION` | 0 | Không có |
+| `ANSWER_LOSS` / `EXECUTION_LOSS` | 0 / 0 | Không có |
+| Official `NEW_WIN` / `TABLE_WIN` / `ANSWER_WIN` / `EXECUTION_WIN` | 0 | Không được gắn nhãn win khi thiếu independent gold |
+
+Q954 thay toàn bộ output hợp lý cho một abstain→answer: status, answer, refs,
+evidence, query, confidence và reason. Candidate ZIP vì thế khác baseline ZIP
+`a96ecc3c…00445c`. Comparator gắn đúng nhãn `gold unavailable`, không suy diễn
+official win. Artifact đầy đủ:
+`artifacts/runs/evaluation/table-retrieval-full-recovery-compare-7ed2bfe-20260828-01/`.
+
+Boundary cases được giữ nguyên:
+
+| QID | Baseline và candidate |
+|---:|---|
+| 464 | `ABSTAIN: NO_RETRIEVED_TABLE` |
+| 508 | `ABSTAIN: MULTI_ENTITY_OPERATION_NOT_SUPPORTED` |
+| 783 | `ABSTAIN: POLICY:CROSS_BASIS_OPERANDS` |
+| 792 | `ABSTAIN: POLICY:ENTITY_DIFFERENCE_METRIC_DRIFT` |
 
 ## H. Retrieval / execution metrics
 
-Sẽ cập nhật sau full run, validator và replay.
+| Metric | Baseline | Candidate | Status |
+|---|---:|---:|---|
+| Answered | 563 | 564 | measured coverage +1 |
+| Abstained | 449 | 448 | measured -1 |
+| `MULTI_ENTITY_OPERATION_NOT_SUPPORTED` | 177 | 176 | measured -1 |
+| Mean relevant tables | 2,5385375494 | 2,5385375494 | unchanged |
+| Max relevant tables | 10 | 10 | unchanged |
+| Replay | 563/563 | 564/564 | PASS |
+| Local table P/R/F2 | `NOT_MEASURED` | `NOT_MEASURED` | không có promotion-eligible table gold |
+| Answer accuracy | `NOT_MEASURED` | `NOT_MEASURED` | không có independent answer gold |
+| Execution accuracy | `NOT_MEASURED` | `NOT_MEASURED` | replay chỉ đo reproducibility, không đo correctness |
+| Official score delta | `NOT_MEASURED` | `NOT_MEASURED` | không có scorer/receipt |
+
+Tests trên release environment:
+
+- `make ci`: 2.096 passed, 42 skipped, 29 deselected;
+- `make test-integration`: 22 passed, 2.145 deselected;
+- semantic route mặc định: 684/1.012 eligible, 328 gaps, không đổi baseline;
+- `make test-historical`: 7 failures chỉ vì thiếu authentic legacy ZIP
+  `submission_C1R_LOCAL.zip`, `submission_P0G2.zip` và H0 determinism report;
+  không phải failure của active Canonical V2 gate.
 
 ## I. Official status
 
@@ -113,6 +225,27 @@ Sẽ cập nhật sau full run, validator và replay.
 OFFICIAL_NOT_MEASURED
 ```
 
+Không có hidden table/answer gold, official scorer hoặc receipt liên kết exact
+candidate ZIP. Vì vậy các số Tables P/R/F2/MRR5 và Execution Accuracy của
+candidate không thể được báo cáo trung thực. Submission không được upload.
+
 ## J. Final decision
 
-Sẽ chọn đúng một trong `PROMOTE`, `KEEP_BASELINE`, `ROLLBACK` sau các gate.
+```text
+KEEP_BASELINE
+```
+
+Lý do:
+
+1. Candidate kỹ thuật đạt: source-grounded, fail-closed, 1.012/1.012,
+   validator/replay sạch, A/B byte-deterministic và không đổi 1.011 QID.
+2. Candidate tạo một coverage gain có cơ sở cho Q954, nhưng chưa có independent
+   gold để chứng minh answer/table correctness hoặc official metric uplift.
+3. Strict acceptance không cho phép đổi production chỉ dựa trên execution
+   success hay development proxy. Comparator vì thế trả `BLOCKED` cho
+   promotion, và release decision giữ baseline.
+4. Implementation được giữ sau cờ opt-in mặc định tắt để có thể adjudicate lại;
+   Canonical V2 mặc định và Semantic V3 `SHADOW_ONLY` không đổi.
+
+Điều kiện mở lại promotion: adjudicate độc lập Q954 (answer và exact evidence),
+đưa case vào promotion-eligible registry, sau đó chạy lại cùng full A/B gate.
