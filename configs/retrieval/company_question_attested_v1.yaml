@@ -1,0 +1,17 @@
+# Corpus-question-attested entity aliases — curated, versioned, and source-bound.
+#
+# These aliases occur verbatim in the supplied competition questions. They
+# repair gaps or incorrect legal names in `metadata/companies.csv` without
+# introducing external entity knowledge. Keep aliases maximally specific when
+# a shorter phrase can name another corpus company (for example SCR vs STB).
+version: 1
+source:
+  dataset: data/raw/btc/questions/questions.jsonl
+  snapshot_id: ca033190f2e9e99f
+aliases:
+  EIB:
+    - alias: Eximbank
+      qids: [783, 792]
+  STB:
+    - alias: Ngân hàng TMCP Sài Gòn Thương Tín
+      qids: [508, 624]

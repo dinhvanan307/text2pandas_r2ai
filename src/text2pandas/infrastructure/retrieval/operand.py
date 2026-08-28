@@ -4,12 +4,36 @@ from __future__ import annotations
 
 import re
 import sqlite3
+from collections import Counter
+from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
 from text2pandas.application.planning import OperandRequest
 from text2pandas.application.retrieval import CandidateBatch, ObservationCandidate
 from text2pandas.domain.metrics import MetricOntology, normalize_phrase
 from text2pandas.domain.semantic import Basis, Dimension, PeriodSemantics, UnitSpec
+
+from .fact_label import fact_label_segments, normalize_fact_label
+
+FACT_RETRIEVAL_POLICY_VERSION = "fact-retrieval-v2"
+
+
+@dataclass(frozen=True, slots=True)
+class _MetricMatch:
+    quality: int
+    alias_length: int
+    method: str
+    features: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _MetricPattern:
+    raw_aliases: tuple[str, ...]
+    aliases: tuple[str, ...]
+    raw_forbidden_prefixes: tuple[str, ...]
+    forbidden_prefixes: tuple[str, ...]
+    raw_forbidden_contains: tuple[str, ...]
+    forbidden_contains: tuple[str, ...]
 
 
 class SqliteOperandRetriever:
@@ -21,15 +45,36 @@ class SqliteOperandRetriever:
         ontology: MetricOntology,
         *,
         top_k: int = 20,
-        allowed_table_uids: tuple[str, ...] = (),
+        hard_allowed_table_uids: tuple[str, ...] = (),
+        table_rank_priors: tuple[str, ...] = (),
     ):
         if top_k < 1:
             raise ValueError("top_k must be positive")
         self.connection = connection
         self.ontology = ontology
         self.top_k = top_k
-        self.allowed_table_uids = allowed_table_uids
-        self.table_rank = {uid: index for index, uid in enumerate(allowed_table_uids)}
+        self.hard_allowed_table_uids = hard_allowed_table_uids
+        self.table_rank = {uid: index for index, uid in enumerate(table_rank_priors)}
+        self._metric_patterns = {
+            metric_id: _MetricPattern(
+                tuple(dict.fromkeys(normalize_phrase(alias) for alias in metric.aliases)),
+                tuple(dict.fromkeys(normalize_fact_label(alias) for alias in metric.aliases)),
+                tuple(normalize_phrase(value) for value in metric.forbidden_prefixes),
+                tuple(normalize_fact_label(value) for value in metric.forbidden_prefixes),
+                tuple(normalize_phrase(value) for value in metric.forbidden_contains),
+                tuple(normalize_fact_label(value) for value in metric.forbidden_contains),
+            )
+            for metric_id, metric in ontology.metrics.items()
+        }
+        observation_columns = {
+            str(row[1]) for row in connection.execute("PRAGMA table_info(observations)")
+        }
+        self._row_uid_expression = (
+            "o.row_uid" if "row_uid" in observation_columns else "NULL"
+        )
+        self._metric_code_expression = (
+            "o.metric_code" if "metric_code" in observation_columns else "NULL"
+        )
 
     def retrieve(self, request: OperandRequest) -> CandidateBatch:
         metric = self.ontology.metrics.get(request.metric_id)
@@ -53,13 +98,14 @@ class SqliteOperandRetriever:
         if request.basis != Basis.UNSPECIFIED:
             clauses.append("d.basis = ?")
             parameters.append(request.basis.value)
-        if self.allowed_table_uids:
-            placeholders = ",".join("?" for _ in self.allowed_table_uids)
+        if self.hard_allowed_table_uids:
+            placeholders = ",".join("?" for _ in self.hard_allowed_table_uids)
             clauses.append(f"o.table_uid IN ({placeholders})")
-            parameters.extend(self.allowed_table_uids)
+            parameters.extend(self.hard_allowed_table_uids)
         rows = self.connection.execute(
             f"""
-            SELECT o.observation_uid, o.table_uid, t.directory_doc_id,
+            SELECT o.observation_uid, {self._row_uid_expression},
+                   {self._metric_code_expression}, o.table_uid, t.directory_doc_id,
                    o.ticker, d.basis, o.statement_type,
                    o.row_path_text, o.metric_label_clean, o.col_path_text,
                    o.period_end, o.period_role, o.value_decimal_text,
@@ -78,6 +124,7 @@ class SqliteOperandRetriever:
         scanned = 0
         rejected_metric = 0
         rejected_unit = 0
+        match_methods: Counter[str] = Counter()
         for row in rows:
             scanned += 1
             candidate = self._candidate(request, row)
@@ -88,8 +135,19 @@ class SqliteOperandRetriever:
                     rejected_unit += 1
                 continue
             candidates.append(candidate)
+            match_methods[candidate.match_method or "unknown"] += 1
         candidates.sort(key=lambda value: (-value.score, value.observation_uid))
         selected = tuple(candidates[: self.top_k])
+        failure_reason = None
+        if not candidates:
+            if scanned == 0:
+                failure_reason = "SCOPE_EMPTY"
+            elif rejected_metric == scanned:
+                failure_reason = "METRIC_REJECT_ALL"
+            elif rejected_unit == scanned:
+                failure_reason = "UNIT_REJECT_ALL"
+            else:
+                failure_reason = "CANDIDATE_EMPTY"
         return CandidateBatch(
             request.request_id,
             selected,
@@ -103,6 +161,11 @@ class SqliteOperandRetriever:
                 "matched": len(candidates),
                 "returned": len(selected),
                 "truncated_at": self.top_k,
+                "reason": failure_reason,
+                "match_methods": dict(sorted(match_methods.items())),
+                "retrieval_policy": FACT_RETRIEVAL_POLICY_VERSION,
+                "hard_table_filter": bool(self.hard_allowed_table_uids),
+                "table_prior_count": len(self.table_rank),
             },
         )
 
@@ -111,6 +174,8 @@ class SqliteOperandRetriever:
     ) -> ObservationCandidate | str:
         (
             observation_uid,
+            row_uid,
+            source_metric_code,
             table_uid,
             document_id,
             entity,
@@ -134,7 +199,9 @@ class SqliteOperandRetriever:
         metric = self.ontology.metrics[request.metric_id]
         label = str(row_path or metric_label or "")
         match = _metric_match(
-            metric.aliases, metric.forbidden_prefixes, metric.forbidden_contains, label
+            self._metric_patterns[request.metric_id],
+            str(row_path or ""),
+            str(metric_label or ""),
         )
         if match is None:
             return "metric"
@@ -154,14 +221,15 @@ class SqliteOperandRetriever:
             for phrase in request.required_context_phrases
         ):
             return "metric"
-        direct, alias_length = match
+        direct, alias_length = match.quality, match.alias_length
         # Exact leaves get a bounded tie-break, not a dominating bonus. Notes
         # may contain an exact label for a different concept while the correct
         # consolidated operand is a qualified prefix under a stronger section.
-        metric_score = {3: 22.0, 2: 20.0, 1: 10.0}[direct]
+        metric_score = {4: 22.25, 3: 22.0, 2: 20.0, 1: 10.0}[direct]
         score = metric_score + alias_length / 100.0
         reasons = [
             {
+                4: "metric:exact",
                 3: "metric:exact",
                 2: "metric:prefix",
                 1: "metric:aggregate_prefix",
@@ -225,37 +293,109 @@ class SqliteOperandRetriever:
             score_reasons=tuple(reasons),
             grid_row=int(str(grid_row)),
             grid_column=int(str(grid_column)),
+            row_uid=None if row_uid is None else str(row_uid),
+            source_metric_code=(
+                None if source_metric_code in (None, "") else str(source_metric_code)
+            ),
+            matched_metric_id=request.metric_id,
+            match_method=match.method,
+            match_features=match.features,
         )
 
 
 def _metric_match(
-    aliases: tuple[str, ...],
-    forbidden_prefixes: tuple[str, ...],
-    forbidden_contains: tuple[str, ...],
-    label: str,
-) -> tuple[int, int] | None:
-    normalized = normalize_phrase(label.rsplit("›", 1)[-1])
-    if not normalized:
+    pattern: _MetricPattern,
+    row_path: str,
+    metric_label: str,
+) -> _MetricMatch | None:
+    # Preserve legacy exact-match precedence. Fact normalization deliberately
+    # broadens recall; it must not make an enumerated/formula-normalized label
+    # tie with a source label that was already an exact canonical match.
+    raw_leaf = normalize_phrase((row_path or metric_label).rsplit("›", 1)[-1])
+    if any(
+        _prefix(raw_leaf, forbidden)
+        for forbidden in pattern.raw_forbidden_prefixes
+    ):
         return None
-    if any(_prefix(normalized, forbidden) for forbidden in forbidden_prefixes):
+    if any(
+        forbidden and forbidden in raw_leaf
+        for forbidden in pattern.raw_forbidden_contains
+    ):
         return None
-    if any(forbidden in normalized for forbidden in forbidden_contains):
-        return None
-    exact = [alias for alias in aliases if normalized == alias]
-    if exact:
-        return 3, max(map(len, exact))
-    direct = [alias for alias in aliases if _prefix(normalized, alias)]
-    if direct:
-        return 2, max(map(len, direct))
-    for aggregate_prefix in ("tong cong ", "tong ", "cong "):
-        if not normalized.startswith(aggregate_prefix):
-            continue
-        stripped = normalized.removeprefix(aggregate_prefix)
-        if any(_prefix(stripped, forbidden) for forbidden in forbidden_prefixes):
+    raw_exact = [alias for alias in pattern.raw_aliases if raw_leaf == alias]
+    if raw_exact:
+        return _MetricMatch(
+            4,
+            max(map(len, raw_exact)),
+            "row_leaf_raw_exact",
+            ("row_leaf", "source_normalized", "legacy_exact_precedence"),
+        )
+
+    segments = fact_label_segments(row_path)
+    leaf = segments[-1] if segments else normalize_fact_label(metric_label)
+    normalized_metric_label = normalize_fact_label(metric_label)
+    surfaces = [("row_leaf", leaf)]
+    if normalized_metric_label and normalized_metric_label != leaf:
+        surfaces.append(("metric_label", normalized_metric_label))
+    for _surface_name, surface in surfaces:
+        if any(_prefix(surface, forbidden) for forbidden in pattern.forbidden_prefixes):
             return None
-        matches = [alias for alias in aliases if _prefix(stripped, alias)]
+        if any(
+            forbidden and forbidden in surface
+            for forbidden in pattern.forbidden_contains
+        ):
+            return None
+
+    for surface_name, surface in surfaces:
+        exact = [alias for alias in pattern.aliases if surface == alias]
+        if exact:
+            return _MetricMatch(
+                3,
+                max(map(len, exact)),
+                f"{surface_name}_exact",
+                (surface_name, "fact_normalized"),
+            )
+    for surface_name, surface in surfaces:
+        direct = [alias for alias in pattern.aliases if _prefix(surface, alias)]
+        if direct:
+            return _MetricMatch(
+                2,
+                max(map(len, direct)),
+                f"{surface_name}_prefix",
+                (surface_name, "fact_normalized"),
+            )
+    for aggregate_prefix in ("tong cong ", "tong ", "cong "):
+        for surface_name, surface in surfaces:
+            if not surface.startswith(aggregate_prefix):
+                continue
+            stripped = surface.removeprefix(aggregate_prefix)
+            if any(
+                _prefix(stripped, forbidden)
+                for forbidden in pattern.forbidden_prefixes
+            ):
+                return None
+            matches = [alias for alias in pattern.aliases if _prefix(stripped, alias)]
+            if matches:
+                return _MetricMatch(
+                    1,
+                    max(map(len, matches)),
+                    f"{surface_name}_aggregate_prefix",
+                    (surface_name, "aggregate_prefix", "fact_normalized"),
+                )
+
+    # Full hierarchy is evidence only when the leaf is an explicitly generic
+    # total. This rescues paths such as ``Tài sản ngắn hạn › Tổng cộng`` without
+    # treating every descendant under ``Tài sản ngắn hạn`` as the parent total.
+    if len(segments) >= 2 and leaf in {"tong", "tong cong", "cong", "total"}:
+        parent = segments[-2]
+        matches = [alias for alias in pattern.aliases if parent == alias]
         if matches:
-            return 1, max(map(len, matches))
+            return _MetricMatch(
+                1,
+                max(map(len, matches)),
+                "row_hierarchy_parent",
+                ("row_hierarchy", "generic_total_leaf", "fact_normalized"),
+            )
     return None
 
 

@@ -30,7 +30,10 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from text2pandas.pipelines.retrieval import rank_s2
-from text2pandas.pipelines.retrieval.alias_store import load_aliases
+from text2pandas.pipelines.retrieval.alias_store import (
+    alias_artifact_sha256,
+    load_aliases,
+)
 from text2pandas.pipelines.retrieval.question_intent import parse_intent
 from text2pandas.infrastructure.paths import ProjectPaths
 from text2pandas.infrastructure.snapshots import ActiveSnapshots
@@ -67,6 +70,8 @@ __all__ = [
 #                         multi-entity comparisons (ADR 0011).
 #   evalkit-9 → evalkit-10  add a versioned learned S3 reranker; identity remains
 #                         the default and model bytes are checksum-bound.
+#   evalkit-10 → evalkit-11 bind checkpoints to effective alias bytes and add
+#                         corpus-question-attested STB/EIB aliases (ADR 0012).
 #
 # VÌ SAO PHẢI BUMP, KHÔNG PHẢI CHỈ SỬA CODE
 # -----------------------------------------
@@ -78,7 +83,7 @@ __all__ = [
 # Kỷ luật con người không giữ được bất biến này (đã hỏng một lần rồi), nên
 # `tests/test_p0_unify.py::test_behavior_fingerprint` băm AST của các module
 # quyết định hành vi S2 và đỏ lên nếu chúng đổi mà hằng số này không đổi.
-SCHEMA_VERSION = "evalkit-10"
+SCHEMA_VERSION = "evalkit-11"
 
 
 @dataclass(frozen=True, slots=True)
@@ -252,7 +257,10 @@ def checkpoint_path(
     db_path: Path | None = None,
 ) -> tuple[Path, EvaluationDataset, str]:
     dataset = resolve_evaluation_dataset(root, db_path)
-    effective = hashlib.sha256(f"{cfg.sha}:{dataset.sha}".encode("ascii")).hexdigest()[:16]
+    alias_sha = alias_artifact_sha256(cfg.brands)
+    effective = hashlib.sha256(
+        f"{cfg.sha}:{dataset.sha}:{alias_sha}".encode("ascii")
+    ).hexdigest()[:16]
     path = root / "artifacts/runs/retrieval/evalkit" / f"ek_{cfg.tag}_{effective}.jsonl"
     return path, dataset, effective
 
@@ -357,6 +365,7 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
     outdir = root / "artifacts/runs/retrieval/evalkit"
     outdir.mkdir(parents=True, exist_ok=True)
 
+    alias_sha = alias_artifact_sha256(cfg.brands)
     alias = load_aliases(brands=cfg.brands)
     qs = _questions(root)
     xong = _done(ck, evaluation_sha)
@@ -443,6 +452,7 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
             "cfg_sha": evaluation_sha,
             "config_sha": cfg.sha,
             "dataset_sha": dataset.sha,
+            "alias_artifact_sha256": alias_sha,
             "source_a6_build_id": dataset.source_a6_build_id,
             "retrieval_index_id": dataset.retrieval_index_id,
             "cfg_tag": cfg.tag,

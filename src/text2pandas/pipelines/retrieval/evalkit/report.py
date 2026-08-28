@@ -23,15 +23,15 @@ from .metrics import (QueryOutcome, f2_at_k, f2_at_policy, gold_size_stats,
                       ndcg_at_k, precision_at_k, precision_at_k_capped,
                       recall_at_k)
 from .taxonomy import Bucket
+from ..policy import MAX_RELEVANT_TABLES, submission_table_limit
 
 __all__ = ["load_rows", "to_outcomes", "render", "write_artifacts",
            "policy_n_map", "MAX_N"]
 
 # Chính sách N của bài nộp thật — `tools/rewrite_submission.py`.
-# Giữ CÙNG một công thức ở hai nơi là rủi ro trôi dạt đã biết; khi chính sách
-# đổi thì phải đổi cả hai, và test `test_policy_n_map_khop_rewrite_submission`
-# tồn tại để bắt việc đó.
-MAX_N = 10
+# Shared with submission generation and the public CLI. Keeping the cap and
+# formula in one module makes evaluation report the exact production policy.
+MAX_N = MAX_RELEVANT_TABLES
 
 
 def policy_n_map(rows: list[dict]) -> dict[int, int]:
@@ -43,7 +43,7 @@ def policy_n_map(rows: list[dict]) -> dict[int, int]:
     for r in rows:
         n_tick = max(1, int(r.get("n_targets") or 0) or 1)
         n_year = max(1, len(r.get("years") or []))
-        out[r["id"]] = max(1, min(n_tick * n_year, MAX_N))
+        out[r["id"]] = submission_table_limit(n_tick, n_year)
     return out
 
 

@@ -54,17 +54,21 @@ sys.path.insert(0, str(ROOT / "src"))
 import yaml  # noqa: E402
 
 from text2pandas.pipelines.retrieval.question_intent import parse_intent  # noqa: E402
+from text2pandas.pipelines.retrieval.policy import (  # noqa: E402
+    MAX_RELEVANT_TABLES,
+    submission_table_limit,
+)
 
 _CSV = re.compile(r"^data/(.+)_line(\d+)\.csv$")
 _TABREF = re.compile(r"^[^|]+\|\d+$")
-MAX_N = 10
+MAX_N = MAX_RELEVANT_TABLES
 
 
 def _n_tables(question: str, alias: dict) -> int:
     it = parse_intent(question, alias)
     n_tick = max(1, len(it.targets) or len(it.tickers) or 1)
     n_year = max(1, len(it.years))
-    return max(1, min(n_tick * n_year, MAX_N))
+    return submission_table_limit(n_tick, n_year)
 
 
 def _evidence_refs(row: dict) -> list[str]:

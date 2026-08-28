@@ -22,6 +22,7 @@ from text2pandas.infrastructure.builds import (
 )
 from text2pandas.infrastructure.paths import ProjectPaths
 from text2pandas.infrastructure.snapshots import ActiveSnapshots
+from text2pandas.pipelines.retrieval.policy import MAX_RELEVANT_TABLES
 
 ROOT = Path(__file__).resolve().parents[4]
 PROJECT_PATHS = ProjectPaths.from_repo_root(ROOT)
@@ -629,7 +630,10 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     from text2pandas.infrastructure.checksums import sha256_file
     from text2pandas.infrastructure.execution import PandasSandboxReplay
     from text2pandas.infrastructure.ontology import load_ontology
-    from text2pandas.infrastructure.retrieval import SqliteOperandRetriever
+    from text2pandas.infrastructure.retrieval import (
+        FACT_RETRIEVAL_POLICY_VERSION,
+        SqliteOperandRetriever,
+    )
     from text2pandas.infrastructure.semantic import (
         LegacyVietnameseAnnotator,
         load_promotion_policy,
@@ -763,6 +767,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
             },
             "semantic_schema_version": 3,
             "ontology_fingerprint": ontology.fingerprint,
+            "retrieval_policy": FACT_RETRIEVAL_POLICY_VERSION,
             "parameters": {
                 "offset": args.offset,
                 "limit": args.limit,
@@ -840,7 +845,12 @@ def main(argv: list[str] | None = None) -> int:
         default=[],
         help="Run one source question ID; repeat for an explicit evaluation slice",
     )
-    rn.add_argument("--n-tables", dest="n_tables", type=int, default=20)
+    rn.add_argument(
+        "--n-tables",
+        dest="n_tables",
+        type=int,
+        default=MAX_RELEVANT_TABLES,
+    )
     rn.add_argument("--answer-pool-tables", type=int, default=50)
     rn.add_argument("--no-package", action="store_true")
     rn.add_argument("--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped")

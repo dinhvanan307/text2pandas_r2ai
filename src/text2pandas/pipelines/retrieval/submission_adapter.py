@@ -48,11 +48,15 @@ from dataclasses import dataclass
 
 from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker, HardFilterGenerator,
                                       IdentityReranker)
+from text2pandas.pipelines.retrieval.policy import (
+    MAX_RELEVANT_TABLES,
+    submission_table_limit,
+)
 from text2pandas.pipelines.retrieval.question_intent import parse_intent
 
 __all__ = ["SubmissionRefs", "RetrievalToSubmission", "MAX_N", "to_submission_ref"]
 
-MAX_N = 10
+MAX_N = MAX_RELEVANT_TABLES
 _REF = re.compile(r"^(?P<doc>.+)\|line:(?P<line>\d+)$")
 
 
@@ -111,9 +115,9 @@ class RetrievalToSubmission:
         self.max_n = max_n
 
     def n_for(self, intent) -> int:
-        n_tick = max(1, len(intent.targets))
-        n_year = max(1, len(intent.years))
-        return max(1, min(n_tick * n_year, self.max_n))
+        return submission_table_limit(
+            len(intent.targets), len(intent.years), maximum=self.max_n
+        )
 
     def submission_refs_for_uids(
         self,

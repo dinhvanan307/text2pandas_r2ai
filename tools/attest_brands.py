@@ -84,7 +84,6 @@ _HEADER = """# SINH TỰ ĐỘNG bởi `tools/attest_brands.py` — KHÔNG sửa
 # Chứng thực: {n_co}/{n_tong} tên. Không chứng thực được ({n_khong}):
 {ds_khong}
 version: 1
-brands:
 """
 
 
@@ -105,9 +104,14 @@ def main(argv: list[str]) -> int:
     if ns.kiem:
         return 0
     ds = "\n".join(f"#   {tk:5s} {n}" for tk, n in khong) or "#   (không có)"
-    body = "".join(
-        f"  {tk}: [{', '.join(yaml.safe_dump(n, allow_unicode=True).strip() for n in names)}]\n"
-        for tk, names in sorted(co.items()))
+    # Dump the whole mapping. Dumping scalar strings one by one emits YAML's
+    # document-end marker (`...`), which used to become a literal suffix in all
+    # attested aliases and silently broke entity matching.
+    body = yaml.safe_dump(
+        {"brands": dict(sorted(co.items()))},
+        allow_unicode=True,
+        sort_keys=False,
+    )
     DST.write_text(
         _HEADER.format(n_co=n_co, n_tong=n_tong, n_khong=len(khong), ds_khong=ds)
         + body, encoding="utf-8")

@@ -34,7 +34,12 @@ class JointBinder:
             return _abstain(f"MISSING_CANDIDATE_BATCH:{','.join(sorted(missing_batches))}")
         empty = [request.request_id for request in plan.requests if not batches[request.request_id].candidates]
         if empty:
-            return _abstain(f"NO_CANDIDATES:{','.join(sorted(empty))}")
+            reasons = {
+                str(batches[request_id].trace.get("reason") or "CANDIDATE_EMPTY")
+                for request_id in empty
+            }
+            reason = next(iter(reasons)) if len(reasons) == 1 else "CANDIDATE_EMPTY_MIXED"
+            return _abstain(f"{reason}:{','.join(sorted(empty))}")
 
         ordered = sorted(
             plan.requests,
@@ -70,7 +75,7 @@ class JointBinder:
         tied = [state for state in states[1:] if state.score == winner.score]
         if any(not _semantically_equivalent(winner, contender) for contender in tied):
             return _abstain(
-                "AMBIGUOUS_BINDING",
+                "BINDING_TIE",
                 trace=(
                     {
                         "expanded": expanded,

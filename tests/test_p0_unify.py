@@ -207,6 +207,8 @@ _MODULE_HANH_VI = (
     "src/text2pandas/pipelines/retrieval/metric_hint.py",
     "src/text2pandas/pipelines/retrieval/normalize.py",
     "src/text2pandas/pipelines/retrieval/question_intent.py",
+    "src/text2pandas/pipelines/retrieval/alias_store.py",
+    "src/text2pandas/pipelines/retrieval/policy.py",
     "src/text2pandas/pipelines/retrieval/subject.py",
     "src/text2pandas/pipelines/retrieval/evalkit/stages.py",
     "src/text2pandas/pipelines/retrieval/rerank_s3.py",
@@ -244,6 +246,7 @@ _FINGERPRINT = {
     "evalkit-8": "28c7ebe62fec347a",
     "evalkit-9": "42ce338e3c3c58e8",
     "evalkit-10": "d3f96ffac7d45f59",
+    "evalkit-11": "ce67e596b49acb59",
 }
 
 _FIELD = {ast.Constant: "value", ast.Name: "id", ast.Attribute: "attr",
@@ -273,9 +276,9 @@ def behavior_fingerprint() -> str:
     Nên chỉ lấy: tên lớp node + đúng một trường mang ngữ nghĩa. Chú thích và
     docstring KHÔNG tính (sửa chú thích không đổi hành vi).
 
-    GIỚI HẠN ĐÃ BIẾT: không phủ `alias_store.py` và tệp dữ liệu alias. Alias là
-    DỮ LIỆU; `brands` đã nằm trong `cfg.sha`, còn nội dung tệp alias đổi thì
-    fingerprint này KHÔNG bắt được.
+    Nội dung artifact alias được băm riêng vào evaluation SHA ở `checkpoint_path`;
+    AST tại đây vẫn băm loader và policy để thay đổi cách diễn giải artifact
+    hoặc giới hạn đầu ra cũng bắt buộc bump schema.
     """
     import hashlib
     h = hashlib.sha256()

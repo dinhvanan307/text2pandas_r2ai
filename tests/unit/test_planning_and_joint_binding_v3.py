@@ -248,7 +248,7 @@ def test_joint_binder_fails_closed_when_any_operand_has_no_candidates() -> None:
     result = JointBinder().bind(plan, batches)
 
     assert not result.ok
-    assert result.reason.startswith("NO_CANDIDATES:")
+    assert result.reason.startswith("CANDIDATE_EMPTY:")
 
 
 def test_joint_binder_prefers_coherent_basis_over_incompatible_local_top1s() -> None:
@@ -341,5 +341,5 @@ def test_joint_binder_abstains_on_equal_score_semantically_different_assignments
     result = JointBinder().bind(scoped_plan, batches)
 
     assert not result.ok
-    assert result.reason == "AMBIGUOUS_BINDING"
+    assert result.reason == "BINDING_TIE"
     assert result.trace[0]["tied_assignments"] == 2

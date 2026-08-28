@@ -331,7 +331,7 @@ def main(argv: list[str]) -> int:
         s.add_argument("--basis-mode", choices=("soft", "hard"))
         s.add_argument("--use-hints",
                        choices=("none", "stmt", "code", "both", "code_single"))
-        s.add_argument("--brands", type=int, choices=(0, 1))
+        s.add_argument("--brands", choices=("0", "1", "off", "full", "a6"))
         s.add_argument("--top-k-rank", type=int)
         s.add_argument("--top-k-rerank", type=int)
         s.add_argument("--gold-source",
@@ -353,9 +353,16 @@ def main(argv: list[str]) -> int:
     if ns.cmd == "ab":
         return cmd_ab(ns.a, ns.b, paired=not ns.no_paired)
 
+    brands = {
+        "0": False,
+        "off": False,
+        "1": True,
+        "full": True,
+        "a6": "a6",
+    }.get(ns.brands)
     ov = {
         "basis_mode": ns.basis_mode, "use_hints": ns.use_hints,
-        "brands": None if ns.brands is None else bool(ns.brands),
+        "brands": brands,
         "top_k_rank": ns.top_k_rank, "top_k_rerank": ns.top_k_rerank,
         "gold_source": ns.gold_source,
         "free_scan": None if ns.free_scan is None else bool(ns.free_scan),

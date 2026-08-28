@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import replace
 
 from text2pandas.application.planning import OperandRequest
 from text2pandas.domain.semantic import Basis, Dimension, PeriodSemantics, UnitSpec
@@ -216,3 +217,173 @@ def test_required_counterparty_phrase_is_a_hard_evidence_constraint() -> None:
     batch = SqliteOperandRetriever(connection, load_ontology()).retrieve(request)
 
     assert [candidate.observation_uid for candidate in batch.candidates] == ["right-party"]
+
+
+def test_fact_normalization_recovers_punctuation_and_formula_suffix() -> None:
+    connection = _database()
+    connection.executescript(
+        """
+        INSERT INTO observations VALUES
+          ('punctuated', 't1', 'VCB', 'balance_sheet',
+           'I. TÀI SẢN NGẮN HẠN(100 = 110 + 120)',
+           'Tài sản ngắn hạn', 'Số cuối năm', '2024-12-31', 'closing',
+           '600', '600', 'money', 'VND', 6, 0, 40, 2);
+        INSERT INTO observation_readiness VALUES ('punctuated', 1);
+        """
+    )
+    request = OperandRequest(
+        request_id="operand:punctuation",
+        metric_id="current_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    batch = SqliteOperandRetriever(connection, load_ontology()).retrieve(request)
+
+    candidate = next(value for value in batch.candidates if value.observation_uid == "punctuated")
+    assert candidate.match_method == "row_leaf_exact"
+    assert candidate.matched_metric_id == "current_assets"
+    assert batch.trace["reason"] is None
+
+
+def test_hierarchy_parent_only_matches_generic_total_leaf() -> None:
+    connection = _database()
+    connection.executescript(
+        """
+        INSERT INTO observations VALUES
+          ('hierarchy-total', 't1', 'VCB', 'balance_sheet',
+           'Tài sản ngắn hạn › Tổng cộng', 'Tổng cộng', 'Số cuối năm',
+           '2024-12-31', 'closing', '600', '600', 'money', 'VND', 6, 0, 41, 2),
+          ('hierarchy-child', 't1', 'VCB', 'balance_sheet',
+           'Tài sản ngắn hạn › Tiền', 'Tiền', 'Số cuối năm',
+           '2024-12-31', 'closing', '200', '200', 'money', 'VND', 6, 0, 42, 2);
+        INSERT INTO observation_readiness VALUES ('hierarchy-total', 1), ('hierarchy-child', 1);
+        """
+    )
+    request = OperandRequest(
+        request_id="operand:hierarchy",
+        metric_id="current_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    batch = SqliteOperandRetriever(connection, load_ontology()).retrieve(request)
+
+    by_uid = {value.observation_uid: value for value in batch.candidates}
+    assert by_uid["hierarchy-total"].match_method == "row_hierarchy_parent"
+    assert "hierarchy-child" not in by_uid
+
+
+def test_candidate_exposes_source_identity_when_a6_columns_exist() -> None:
+    connection = _database()
+    connection.execute("ALTER TABLE observations ADD COLUMN row_uid TEXT")
+    connection.execute("ALTER TABLE observations ADD COLUMN metric_code TEXT")
+    connection.execute(
+        "UPDATE observations SET row_uid='row-total-assets', metric_code='270' "
+        "WHERE observation_uid='good'"
+    )
+    request = OperandRequest(
+        request_id="operand:identity",
+        metric_id="total_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    candidate = SqliteOperandRetriever(connection, load_ontology()).retrieve(request).candidates[0]
+
+    assert candidate.row_uid == "row-total-assets"
+    assert candidate.source_metric_code == "270"
+    assert candidate.matched_metric_id == "total_assets"
+    assert candidate.to_dict()["source_metric_code"] == "270"
+
+
+def test_hard_filter_and_soft_table_prior_are_independent() -> None:
+    connection = _database()
+    connection.executescript(
+        """
+        INSERT INTO documents VALUES ('d2', 'VCB-2024-B', 'consolidated');
+        INSERT INTO tables VALUES ('t2', 'd2', 'VCB-2024-B', 'consolidated', 'Bảng cân đối kế toán');
+        INSERT INTO observations VALUES
+          ('good-2', 't2', 'VCB', 'balance_sheet', 'TỔNG CỘNG TÀI SẢN',
+           'Tổng tài sản', 'Số cuối năm', '2024-12-31', 'closing',
+           '1000', '1.000', 'money', 'VND', 6, 0, 10, 2);
+        INSERT INTO observation_readiness VALUES ('good-2', 1);
+        """
+    )
+    request = OperandRequest(
+        request_id="operand:prior",
+        metric_id="total_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    prior_batch = SqliteOperandRetriever(
+        connection,
+        load_ontology(),
+        table_rank_priors=("t2", "t1"),
+    ).retrieve(request)
+    hard_batch = SqliteOperandRetriever(
+        connection,
+        load_ontology(),
+        hard_allowed_table_uids=("t1",),
+        table_rank_priors=("t2", "t1"),
+    ).retrieve(request)
+
+    assert prior_batch.candidates[0].table_uid == "t2"
+    assert {candidate.table_uid for candidate in prior_batch.candidates} == {"t1", "t2"}
+    assert {candidate.table_uid for candidate in hard_batch.candidates} == {"t1"}
+    assert prior_batch.trace["hard_table_filter"] is False
+    assert hard_batch.trace["hard_table_filter"] is True
+
+
+def test_empty_batch_reports_scope_and_metric_failures_separately() -> None:
+    request = OperandRequest(
+        request_id="operand:empty",
+        metric_id="total_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+    metric_empty = SqliteOperandRetriever(_database(), load_ontology()).retrieve(
+        replace(request, metric_id="inventory")
+    )
+    scope_empty = SqliteOperandRetriever(_database(), load_ontology()).retrieve(
+        replace(request, entity="NOT_IN_SCOPE")
+    )
+
+    assert metric_empty.trace["reason"] == "METRIC_REJECT_ALL"
+    assert scope_empty.trace["reason"] == "SCOPE_EMPTY"
