@@ -11,7 +11,13 @@ from decimal import Decimal, InvalidOperation
 from text2pandas.application.planning import OperandRequest
 from text2pandas.application.retrieval import CandidateBatch, ObservationCandidate
 from text2pandas.domain.metrics import MetricOntology, normalize_phrase
-from text2pandas.domain.semantic import Basis, Dimension, PeriodSemantics, UnitSpec
+from text2pandas.domain.semantic import (
+    Basis,
+    Dimension,
+    MetricBindingHint,
+    PeriodSemantics,
+    UnitSpec,
+)
 
 from .fact_label import fact_label_segments, normalize_fact_label
 
@@ -47,6 +53,7 @@ class SqliteOperandRetriever:
         top_k: int = 20,
         hard_allowed_table_uids: tuple[str, ...] = (),
         table_rank_priors: tuple[str, ...] = (),
+        source_build_id: str | None = None,
     ):
         if top_k < 1:
             raise ValueError("top_k must be positive")
@@ -55,6 +62,7 @@ class SqliteOperandRetriever:
         self.top_k = top_k
         self.hard_allowed_table_uids = hard_allowed_table_uids
         self.table_rank = {uid: index for index, uid in enumerate(table_rank_priors)}
+        self.source_build_id = source_build_id
         self._metric_patterns = {
             metric_id: _MetricPattern(
                 tuple(dict.fromkeys(normalize_phrase(alias) for alias in metric.aliases)),
@@ -69,16 +77,41 @@ class SqliteOperandRetriever:
         observation_columns = {
             str(row[1]) for row in connection.execute("PRAGMA table_info(observations)")
         }
-        self._row_uid_expression = (
-            "o.row_uid" if "row_uid" in observation_columns else "NULL"
-        )
+        self._row_uid_expression = "o.row_uid" if "row_uid" in observation_columns else "NULL"
         self._metric_code_expression = (
             "o.metric_code" if "metric_code" in observation_columns else "NULL"
         )
 
     def retrieve(self, request: OperandRequest) -> CandidateBatch:
         metric = self.ontology.metrics.get(request.metric_id)
-        if metric is None:
+        source_binding = request.source_binding
+        if source_binding is not None:
+            rejection = self._source_binding_rejection(request, source_binding)
+            if rejection is not None:
+                return CandidateBatch(
+                    request.request_id,
+                    (),
+                    {
+                        "reason": "SOURCE_BINDING_HINT_REJECTED",
+                        "detail": rejection,
+                        "metric_id": request.metric_id,
+                    },
+                )
+            pattern = _MetricPattern(
+                tuple(dict.fromkeys(normalize_phrase(value) for value in source_binding.labels)),
+                tuple(
+                    dict.fromkeys(normalize_fact_label(value) for value in source_binding.labels)
+                ),
+                (),
+                (),
+                (),
+                (),
+            )
+            section_aliases = source_binding.labels
+        elif metric is not None:
+            pattern = self._metric_patterns[request.metric_id]
+            section_aliases = metric.aliases
+        else:
             return CandidateBatch(
                 request.request_id,
                 (),
@@ -127,7 +160,13 @@ class SqliteOperandRetriever:
         match_methods: Counter[str] = Counter()
         for row in rows:
             scanned += 1
-            candidate = self._candidate(request, row)
+            candidate = self._candidate(
+                request,
+                row,
+                pattern=pattern,
+                section_aliases=section_aliases,
+                source_binding=source_binding,
+            )
             if isinstance(candidate, str):
                 if candidate == "metric":
                     rejected_metric += 1
@@ -166,11 +205,31 @@ class SqliteOperandRetriever:
                 "retrieval_policy": FACT_RETRIEVAL_POLICY_VERSION,
                 "hard_table_filter": bool(self.hard_allowed_table_uids),
                 "table_prior_count": len(self.table_rank),
+                **({"source_binding": True} if source_binding is not None else {}),
             },
         )
 
+    def _source_binding_rejection(
+        self, request: OperandRequest, binding: MetricBindingHint
+    ) -> str | None:
+        if request.metric_id != binding.source_metric_id:
+            return "METRIC_ID_MISMATCH"
+        if not binding.labels:
+            return "LABELS_EMPTY"
+        if self.source_build_id is None:
+            return "ACTIVE_SOURCE_BUILD_UNAVAILABLE"
+        if binding.source_build_id != self.source_build_id:
+            return "SOURCE_BUILD_MISMATCH"
+        return None
+
     def _candidate(
-        self, request: OperandRequest, row: tuple[object, ...]
+        self,
+        request: OperandRequest,
+        row: tuple[object, ...],
+        *,
+        pattern: _MetricPattern,
+        section_aliases: tuple[str, ...],
+        source_binding: MetricBindingHint | None,
     ) -> ObservationCandidate | str:
         (
             observation_uid,
@@ -196,10 +255,20 @@ class SqliteOperandRetriever:
             grid_column,
             section_text,
         ) = row
-        metric = self.ontology.metrics[request.metric_id]
         label = str(row_path or metric_label or "")
+        if source_binding is not None:
+            allowed_paths = {fact_label_segments(value) for value in source_binding.row_paths}
+            if allowed_paths and fact_label_segments(str(row_path or "")) not in allowed_paths:
+                return "metric"
+            if source_binding.metric_codes and (
+                source_metric_code is None
+                or str(source_metric_code) not in source_binding.metric_codes
+            ):
+                return "metric"
+            if request.statement_types and str(statement_type or "") not in request.statement_types:
+                return "metric"
         match = _metric_match(
-            self._metric_patterns[request.metric_id],
+            pattern,
             str(row_path or ""),
             str(metric_label or ""),
         )
@@ -212,9 +281,7 @@ class SqliteOperandRetriever:
             value = Decimal(str(decimal_text))
         except InvalidOperation:
             return "unit"
-        context = " ".join(
-            (str(row_path or ""), str(column_path or ""), str(section_text or ""))
-        )
+        context = " ".join((str(row_path or ""), str(column_path or ""), str(section_text or "")))
         normalized_context = normalize_phrase(context)
         if any(
             not _contains_phrase(normalized_context, phrase)
@@ -248,7 +315,7 @@ class SqliteOperandRetriever:
         if request.basis == Basis.UNSPECIFIED and basis == request.preferred_basis:
             score += 1.0
             reasons.append("preferred_basis")
-        section_score = _section_score(metric.aliases, str(section_text or ""))
+        section_score = _section_score(section_aliases, str(section_text or ""))
         score += section_score
         if section_score:
             reasons.append("section")
@@ -312,15 +379,9 @@ def _metric_match(
     # broadens recall; it must not make an enumerated/formula-normalized label
     # tie with a source label that was already an exact canonical match.
     raw_leaf = normalize_phrase((row_path or metric_label).rsplit("›", 1)[-1])
-    if any(
-        _prefix(raw_leaf, forbidden)
-        for forbidden in pattern.raw_forbidden_prefixes
-    ):
+    if any(_prefix(raw_leaf, forbidden) for forbidden in pattern.raw_forbidden_prefixes):
         return None
-    if any(
-        forbidden and forbidden in raw_leaf
-        for forbidden in pattern.raw_forbidden_contains
-    ):
+    if any(forbidden and forbidden in raw_leaf for forbidden in pattern.raw_forbidden_contains):
         return None
     raw_exact = [alias for alias in pattern.raw_aliases if raw_leaf == alias]
     if raw_exact:
@@ -340,10 +401,7 @@ def _metric_match(
     for _surface_name, surface in surfaces:
         if any(_prefix(surface, forbidden) for forbidden in pattern.forbidden_prefixes):
             return None
-        if any(
-            forbidden and forbidden in surface
-            for forbidden in pattern.forbidden_contains
-        ):
+        if any(forbidden and forbidden in surface for forbidden in pattern.forbidden_contains):
             return None
 
     for surface_name, surface in surfaces:
@@ -369,10 +427,7 @@ def _metric_match(
             if not surface.startswith(aggregate_prefix):
                 continue
             stripped = surface.removeprefix(aggregate_prefix)
-            if any(
-                _prefix(stripped, forbidden)
-                for forbidden in pattern.forbidden_prefixes
-            ):
+            if any(_prefix(stripped, forbidden) for forbidden in pattern.forbidden_prefixes):
                 return None
             matches = [alias for alias in pattern.aliases if _prefix(stripped, alias)]
             if matches:

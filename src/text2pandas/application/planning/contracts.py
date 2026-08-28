@@ -8,7 +8,13 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 
-from text2pandas.domain.semantic import Basis, PeriodSemantics, QuestionAST, UnitSpec
+from text2pandas.domain.semantic import (
+    Basis,
+    MetricBindingHint,
+    PeriodSemantics,
+    QuestionAST,
+    UnitSpec,
+)
 
 
 class ConstraintKind(StrEnum):
@@ -34,6 +40,7 @@ class OperandRequest:
     qualifiers: tuple[str, ...]
     consumers: tuple[str, ...]
     required_context_phrases: tuple[str, ...] = ()
+    source_binding: MetricBindingHint | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -49,6 +56,7 @@ class OperandRequest:
             "qualifiers": list(self.qualifiers),
             "required_context_phrases": list(self.required_context_phrases),
             "consumers": list(self.consumers),
+            **({"source_binding": self.source_binding.to_dict()} if self.source_binding else {}),
         }
 
 

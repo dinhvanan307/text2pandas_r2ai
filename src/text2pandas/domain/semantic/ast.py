@@ -27,6 +27,51 @@ from .types import (
 
 
 @dataclass(frozen=True, slots=True)
+class MetricBindingHint:
+    """Logical source evidence for a metric absent from the reviewed ontology."""
+
+    source_metric_id: str
+    source_build_id: str
+    labels: tuple[str, ...]
+    metric_codes: tuple[str, ...] = ()
+    row_paths: tuple[str, ...] = ()
+    resolution_method: str = "a6_source_label"
+    question_surface: str = ""
+    question_start: int = 0
+    question_end: int = 0
+    preferred_basis: Basis = Basis.UNSPECIFIED
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "source_metric_id": self.source_metric_id,
+            "source_build_id": self.source_build_id,
+            "labels": list(self.labels),
+            "metric_codes": list(self.metric_codes),
+            "row_paths": list(self.row_paths),
+            "resolution_method": self.resolution_method,
+            "question_surface": self.question_surface,
+            "question_start": self.question_start,
+            "question_end": self.question_end,
+            "preferred_basis": self.preferred_basis.value,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: Mapping[str, Any]) -> MetricBindingHint:
+        return cls(
+            source_metric_id=str(raw["source_metric_id"]),
+            source_build_id=str(raw["source_build_id"]),
+            labels=tuple(str(value) for value in raw.get("labels", ())),
+            metric_codes=tuple(str(value) for value in raw.get("metric_codes", ())),
+            row_paths=tuple(str(value) for value in raw.get("row_paths", ())),
+            resolution_method=str(raw.get("resolution_method", "a6_source_label")),
+            question_surface=str(raw.get("question_surface", "")),
+            question_start=int(raw.get("question_start", 0)),
+            question_end=int(raw.get("question_end", 0)),
+            preferred_basis=Basis(str(raw.get("preferred_basis", Basis.UNSPECIFIED.value))),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class MetricRef:
     metric_id: str
     entities: tuple[str, ...] = ()
@@ -39,6 +84,7 @@ class MetricRef:
     # Closed grammatical selectors such as "từ Công ty TNHH X của Tập đoàn Y".
     # Every phrase is a hard evidence requirement, unlike soft qualifiers.
     required_context_phrases: tuple[str, ...] = ()
+    source_binding: MetricBindingHint | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,15 +175,7 @@ class SelectAtArg:
 
 
 Expression: TypeAlias = (
-    MetricRef
-    | Literal
-    | Arithmetic
-    | Unary
-    | FormulaCall
-    | Aggregate
-    | Filter
-    | Rank
-    | SelectAtArg
+    MetricRef | Literal | Arithmetic | Unary | FormulaCall | Aggregate | Filter | Rank | SelectAtArg
 )
 Predicate: TypeAlias = Comparison | Exists | LogicalPredicate | QuantifiedPredicate
 
@@ -185,10 +223,17 @@ def expression_to_dict(expression: Expression) -> dict[str, Any]:
             "periods": list(expression.periods),
             "basis": expression.basis.value,
             "statement_types": list(expression.statement_types),
-            "expected_unit": expression.expected_unit.to_dict() if expression.expected_unit else None,
+            "expected_unit": expression.expected_unit.to_dict()
+            if expression.expected_unit
+            else None,
             "period_semantics": expression.period_semantics.value,
             "qualifiers": list(expression.qualifiers),
             "required_context_phrases": list(expression.required_context_phrases),
+            **(
+                {"source_binding": expression.source_binding.to_dict()}
+                if expression.source_binding
+                else {}
+            ),
         }
     if isinstance(expression, Literal):
         return {"type": "literal", "value": expression.value, "unit": expression.unit.to_dict()}
@@ -295,6 +340,11 @@ def expression_from_dict(raw: Mapping[str, Any]) -> Expression:
             qualifiers=tuple(str(value) for value in raw.get("qualifiers", ())),
             required_context_phrases=tuple(
                 str(value) for value in raw.get("required_context_phrases", ())
+            ),
+            source_binding=(
+                MetricBindingHint.from_dict(_mapping(raw["source_binding"]))
+                if raw.get("source_binding") is not None
+                else None
             ),
         )
     if kind == "literal":

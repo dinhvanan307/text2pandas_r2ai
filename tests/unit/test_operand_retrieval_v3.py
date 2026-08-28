@@ -4,7 +4,13 @@ import sqlite3
 from dataclasses import replace
 
 from text2pandas.application.planning import OperandRequest
-from text2pandas.domain.semantic import Basis, Dimension, PeriodSemantics, UnitSpec
+from text2pandas.domain.semantic import (
+    Basis,
+    Dimension,
+    MetricBindingHint,
+    PeriodSemantics,
+    UnitSpec,
+)
 from text2pandas.infrastructure.ontology import load_ontology
 from text2pandas.infrastructure.retrieval import SqliteOperandRetriever
 
@@ -67,6 +73,61 @@ def test_sqlite_retriever_queries_one_operand_and_rejects_descendants() -> None:
     assert [candidate.observation_uid for candidate in batch.candidates] == ["good"]
     assert batch.candidates[0].score_reasons[:2] == ("metric:exact", "statement")
     assert batch.trace["scanned"] == 2
+
+
+def test_source_binding_requires_build_label_hierarchy_scope_and_unit() -> None:
+    connection = _database()
+    connection.executescript(
+        """
+        INSERT INTO observations VALUES
+          ('source-good', 't1', 'VCB', 'note', 'Chi phí khác › Chi phí phạt',
+           'Chi phí phạt', 'Năm nay', '2024-12-31', 'current',
+           '10', '10', 'money', 'VND', 6, 0, 30, 2),
+          ('source-wrong-path', 't1', 'VCB', 'note', 'Chi phí khác › Chi phí phạt khác',
+           'Chi phí phạt', 'Năm nay', '2024-12-31', 'current',
+           '20', '20', 'money', 'VND', 6, 0, 31, 2);
+        INSERT INTO observation_readiness VALUES
+          ('source-good', 1), ('source-wrong-path', 1);
+        """
+    )
+    binding = MetricBindingHint(
+        source_metric_id="source:penalty",
+        source_build_id="fixture-build",
+        labels=("Chi phí phạt",),
+        row_paths=("Chi phí khác › Chi phí phạt",),
+        preferred_basis=Basis.CONSOLIDATED,
+    )
+    request = OperandRequest(
+        request_id="operand:source",
+        metric_id="source:penalty",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("note",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.UNKNOWN,
+        qualifiers=(),
+        consumers=("$.expression",),
+        source_binding=binding,
+    )
+    retriever = SqliteOperandRetriever(connection, load_ontology(), source_build_id="fixture-build")
+
+    batch = retriever.retrieve(request)
+    wrong_build = retriever.retrieve(
+        replace(
+            request,
+            source_binding=replace(binding, source_build_id="other-build"),
+        )
+    )
+    wrong_scope = retriever.retrieve(replace(request, entity="OTHER"))
+    wrong_unit = retriever.retrieve(replace(request, expected_unit=UnitSpec(Dimension.SHARES)))
+
+    assert [value.observation_uid for value in batch.candidates] == ["source-good"]
+    assert wrong_build.trace["reason"] == "SOURCE_BINDING_HINT_REJECTED"
+    assert wrong_scope.trace["reason"] == "SCOPE_EMPTY"
+    assert wrong_unit.candidates == ()
+    assert wrong_unit.trace["unit_rejected"] == 1
 
 
 def test_sqlite_retriever_uses_question_qualifiers_and_primary_document_period() -> None:

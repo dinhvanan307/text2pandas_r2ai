@@ -6,7 +6,13 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol
 
-from text2pandas.domain.semantic import Basis, QuestionAST, RankDirection, UnitSpec
+from text2pandas.domain.semantic import (
+    Basis,
+    PeriodSemantics,
+    QuestionAST,
+    RankDirection,
+    UnitSpec,
+)
 
 
 class OperationKind(StrEnum):
@@ -45,6 +51,71 @@ class QuestionAnnotations:
 
 class QuestionAnnotator(Protocol):
     def annotate(self, question: str) -> QuestionAnnotations: ...
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionMetricMention:
+    start: int
+    end: int
+    surface: str
+    normalized_surface: str
+
+
+@dataclass(frozen=True, slots=True)
+class MetricHypothesis:
+    mention: QuestionMetricMention
+    source_metric_id: str
+    source_build_id: str
+    aliases: tuple[str, ...]
+    metric_codes: tuple[str, ...]
+    row_paths: tuple[str, ...]
+    statement_types: tuple[str, ...]
+    unit: UnitSpec
+    period_semantics: PeriodSemantics
+    preferred_basis: Basis
+    match_method: str
+    score: tuple[int, int, int]
+    supporting_observations: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "mention": {
+                "start": self.mention.start,
+                "end": self.mention.end,
+                "surface": self.mention.surface,
+                "normalized_surface": self.mention.normalized_surface,
+            },
+            "source_metric_id": self.source_metric_id,
+            "source_build_id": self.source_build_id,
+            "aliases": list(self.aliases),
+            "metric_codes": list(self.metric_codes),
+            "row_paths": list(self.row_paths),
+            "statement_types": list(self.statement_types),
+            "unit": self.unit.to_dict(),
+            "period_semantics": self.period_semantics.value,
+            "preferred_basis": self.preferred_basis.value,
+            "match_method": self.match_method,
+            "score": list(self.score),
+            "supporting_observations": self.supporting_observations,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class MetricResolutionResult:
+    status: str
+    selected: tuple[MetricHypothesis, ...] = ()
+    hypotheses: tuple[MetricHypothesis, ...] = ()
+    reason: str | None = None
+    trace: tuple[dict[str, object], ...] = field(default_factory=tuple)
+
+
+class MetricMentionResolver(Protocol):
+    @property
+    def fingerprint(self) -> str: ...
+
+    def resolve(
+        self, question: str, annotations: QuestionAnnotations
+    ) -> MetricResolutionResult: ...
 
 
 @dataclass(frozen=True, slots=True)

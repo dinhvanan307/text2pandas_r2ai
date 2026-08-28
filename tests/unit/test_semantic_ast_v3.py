@@ -8,6 +8,7 @@ from text2pandas.domain.semantic import (
     Axis,
     Basis,
     Dimension,
+    MetricBindingHint,
     MetricRef,
     OutputSpec,
     QuestionAST,
@@ -52,6 +53,34 @@ def test_question_ast_round_trips_nested_select_at_arg() -> None:
     assert validate_question_ast(restored) == ()
 
 
+def test_source_binding_round_trips_and_old_payload_remains_compatible() -> None:
+    binding = MetricBindingHint(
+        source_metric_id="source:penalty",
+        source_build_id="a6-build",
+        labels=("Chi phí phạt",),
+        row_paths=("Chi phí khác › Chi phí phạt",),
+        question_surface="chi phi phat",
+    )
+    ast = QuestionAST(
+        question="Chi phí phạt?",
+        expression=MetricRef(
+            "source:penalty",
+            entities=("SCR",),
+            periods=("2017",),
+            expected_unit=_money(),
+            source_binding=binding,
+        ),
+        output=OutputSpec(ResultKind.SCALAR, _money()),
+    )
+
+    assert QuestionAST.from_dict(ast.to_dict()) == ast
+    old_payload = ast.to_dict()
+    old_payload["expression"].pop("source_binding")
+    restored_old = QuestionAST.from_dict(old_payload)
+    assert isinstance(restored_old.expression, MetricRef)
+    assert restored_old.expression.source_binding is None
+
+
 def test_ast_expresses_cross_entity_derived_average_without_new_engine() -> None:
     entities = ("VCB", "BID", "CTG")
     roe = Arithmetic(
@@ -84,4 +113,3 @@ def test_validator_rejects_invalid_rank_and_period() -> None:
     codes = {issue.code for issue in validate_question_ast(ast)}
 
     assert codes == {"INVALID_PERIOD", "RANK_ARITY", "RANK_LIMIT"}
-

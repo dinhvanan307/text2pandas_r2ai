@@ -11,7 +11,18 @@ from text2pandas.application.parsing import (
 )
 from text2pandas.application.planning import ConstraintKind, compile_execution_plan
 from text2pandas.application.retrieval import CandidateBatch, ObservationCandidate
-from text2pandas.domain.semantic import Aggregate, Basis, Dimension, FormulaCall, UnitSpec
+from text2pandas.domain.semantic import (
+    Aggregate,
+    Basis,
+    Dimension,
+    FormulaCall,
+    MetricBindingHint,
+    MetricRef,
+    OutputSpec,
+    QuestionAST,
+    ResultKind,
+    UnitSpec,
+)
 from text2pandas.infrastructure.ontology import load_ontology
 
 
@@ -78,7 +89,9 @@ def test_planner_expands_formula_per_entity_and_scopes_coherence() -> None:
 
     assert len(plan.requests) == 4
     same_document = [
-        constraint for constraint in plan.constraints if constraint.kind == ConstraintKind.SAME_DOCUMENT
+        constraint
+        for constraint in plan.constraints
+        if constraint.kind == ConstraintKind.SAME_DOCUMENT
     ]
     assert len(same_document) == 2
     assert all(len(constraint.request_ids) == 2 for constraint in same_document)
@@ -89,13 +102,39 @@ def test_planner_expands_formula_per_entity_and_scopes_coherence() -> None:
     ]
     assert len(same_period) == 2
     assert all(len(constraint.request_ids) == 2 for constraint in same_period)
-    assert any(
-        constraint.kind == ConstraintKind.SAME_BASIS for constraint in plan.constraints
-    )
-    assert any(
-        constraint.kind == ConstraintKind.SAME_DIMENSION for constraint in plan.constraints
-    )
+    assert any(constraint.kind == ConstraintKind.SAME_BASIS for constraint in plan.constraints)
+    assert any(constraint.kind == ConstraintKind.SAME_DIMENSION for constraint in plan.constraints)
     assert len(plan.fingerprint) == 64
+
+
+def test_planner_preserves_source_binding_without_promoting_ontology() -> None:
+    binding = MetricBindingHint(
+        source_metric_id="source:penalty",
+        source_build_id="a6-build",
+        labels=("Chi phí phạt",),
+        row_paths=("Chi phí khác › Chi phí phạt",),
+        preferred_basis=Basis.SEPARATE,
+    )
+    ast = QuestionAST(
+        question="Chi phí phạt?",
+        expression=MetricRef(
+            "source:penalty",
+            entities=("SCR",),
+            periods=("2017",),
+            basis=Basis.SEPARATE,
+            statement_types=("note",),
+            expected_unit=UnitSpec(Dimension.MONEY),
+            source_binding=binding,
+        ),
+        output=OutputSpec(ResultKind.SCALAR, UnitSpec(Dimension.MONEY)),
+    )
+
+    plan = compile_execution_plan(ast, load_ontology())
+
+    assert len(plan.requests) == 1
+    assert plan.requests[0].metric_id == "source:penalty"
+    assert plan.requests[0].source_binding == binding
+    assert "source:penalty" not in load_ontology().metrics
 
 
 def test_planner_honors_formula_that_explicitly_allows_cross_period_operands() -> None:
@@ -110,7 +149,9 @@ def test_planner_honors_formula_that_explicitly_allows_cross_period_operands() -
 
     relaxed = compile_execution_plan(relaxed_ast, load_ontology())
 
-    assert not any(constraint.kind == ConstraintKind.SAME_PERIOD for constraint in relaxed.constraints)
+    assert not any(
+        constraint.kind == ConstraintKind.SAME_PERIOD for constraint in relaxed.constraints
+    )
 
 
 def test_joint_binder_finds_coherent_assignment_greedy_selection_misses() -> None:
@@ -198,8 +239,7 @@ def test_joint_binder_enforces_reviewed_formula_same_period() -> None:
 
     assert result.ok
     selected = {
-        operand.candidate.observation_uid
-        for operand in result.bound_plan.operands.values()
+        operand.candidate.observation_uid for operand in result.bound_plan.operands.values()
     }
     assert selected == {"left-closing", "right-closing"}
     assert result.bound_plan.total_score == 19.0
@@ -295,9 +335,7 @@ def test_joint_binder_prefers_coherent_basis_over_incompatible_local_top1s() -> 
     result = JointBinder().bind(plan, batches)
 
     assert result.ok
-    assert len(
-        {operand.candidate.basis for operand in result.bound_plan.operands.values()}
-    ) == 1
+    assert len({operand.candidate.basis for operand in result.bound_plan.operands.values()}) == 1
     assert result.bound_plan.total_score == 19.0
 
 

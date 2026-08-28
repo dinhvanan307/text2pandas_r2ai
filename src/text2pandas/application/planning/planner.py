@@ -52,8 +52,34 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
     materialized: dict[tuple[object, ...], OperandRequest] = {}
     for key, item in sorted(requests.items(), key=lambda value: repr(value[0])):
         metric = ontology.metrics.get(item.metric_id)
-        if metric is None:
+        source_binding = item.ref.source_binding
+        if metric is None and source_binding is None:
             raise PlanningError(f"unknown ontology metric: {item.metric_id}")
+        if source_binding is not None:
+            if source_binding.source_metric_id != item.metric_id:
+                raise PlanningError(
+                    "source binding metric mismatch: "
+                    f"{item.metric_id}!={source_binding.source_metric_id}"
+                )
+            if not source_binding.source_build_id or not source_binding.labels:
+                raise PlanningError(f"incomplete source binding hint: {item.metric_id}")
+        if metric is not None:
+            preferred_basis = metric.preferred_basis
+            statement_types = item.ref.statement_types or metric.statement_types
+            expected_unit = item.ref.expected_unit or metric.unit
+            period_semantics = (
+                item.ref.period_semantics
+                if item.ref.period_semantics.value != "unknown"
+                else metric.period_semantics
+            )
+        else:
+            assert source_binding is not None
+            if item.ref.expected_unit is None:
+                raise PlanningError(f"source metric has no expected unit: {item.metric_id}")
+            preferred_basis = source_binding.preferred_basis
+            statement_types = item.ref.statement_types
+            expected_unit = item.ref.expected_unit
+            period_semantics = item.ref.period_semantics
         request_id = _request_id(key)
         materialized[key] = OperandRequest(
             request_id=request_id,
@@ -61,17 +87,14 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
             entity=item.entity,
             period=item.period,
             basis=item.ref.basis,
-            preferred_basis=metric.preferred_basis,
-            statement_types=item.ref.statement_types or metric.statement_types,
-            expected_unit=item.ref.expected_unit or metric.unit,
-            period_semantics=(
-                item.ref.period_semantics
-                if item.ref.period_semantics.value != "unknown"
-                else metric.period_semantics
-            ),
+            preferred_basis=preferred_basis,
+            statement_types=statement_types,
+            expected_unit=expected_unit,
+            period_semantics=period_semantics,
             qualifiers=item.ref.qualifiers,
             consumers=tuple(sorted(item.consumers)),
             required_context_phrases=item.ref.required_context_phrases,
+            source_binding=source_binding,
         )
 
     constraints: list[BindingConstraint] = []
@@ -109,9 +132,7 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
                 )
             )
             if same_period:
-                constraints.append(
-                    BindingConstraint(ConstraintKind.SAME_PERIOD, unique, reason)
-                )
+                constraints.append(BindingConstraint(ConstraintKind.SAME_PERIOD, unique, reason))
     return ExecutionPlan(
         ast=ast,
         requests=tuple(sorted(materialized.values(), key=lambda value: value.request_id)),
@@ -131,7 +152,7 @@ def _collect(
         periods: tuple[str | None, ...] = expression.periods or (None,)
         keys: set[tuple[object, ...]] = set()
         for entity, period in product(entities, periods):
-            key = (
+            key: tuple[object, ...] = (
                 expression.metric_id,
                 entity,
                 period,
@@ -140,6 +161,8 @@ def _collect(
                 expression.qualifiers,
                 expression.required_context_phrases,
             )
+            if expression.source_binding is not None:
+                key = (*key, repr(expression.source_binding.to_dict()))
             item = requests.setdefault(
                 key,
                 _RequestAccumulator(expression.metric_id, entity, period, expression),

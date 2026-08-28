@@ -1,0 +1,22 @@
+schema_version: 1
+resolver_id: a6-source-metric-v1
+
+source:
+  a6_build_id: c6887fb633374fad
+
+matching:
+  min_contiguous_tokens: 3
+  min_token_overlap: 3
+  min_source_coverage_milli: 600
+  max_hypotheses: 20
+  require_unique_winner_per_span: true
+
+abbreviation_rules:
+  - rule_id: corporate_income_tax_tndn_v1
+    phrase: chi phi thue thu nhap hien hanh
+    replacement: chi phi thue tndn hien hanh
+    evidence_qids: [89]
+    negative_examples:
+      - thu nhập khác
+      - thu nhập lãi thuần
+    scope: metric_label

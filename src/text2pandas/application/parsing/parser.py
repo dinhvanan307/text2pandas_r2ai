@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from text2pandas.domain.metrics import (
     FormulaDefinition,
@@ -25,6 +25,7 @@ from text2pandas.domain.semantic import (
     Literal,
     LogicalOperator,
     LogicalPredicate,
+    MetricBindingHint,
     MetricRef,
     OutputSpec,
     QuestionAST,
@@ -41,6 +42,8 @@ from text2pandas.domain.semantic.ast import Expression, Predicate
 from text2pandas.domain.units.lexicon import scan_unit
 
 from .contracts import (
+    MetricHypothesis,
+    MetricMentionResolver,
     OperationKind,
     ParseResult,
     QuestionAnnotations,
@@ -55,6 +58,8 @@ class MetricMention:
     end: int
     alias: str
     metric: MetricDefinition
+    source_binding: MetricBindingHint | None = None
+    resolution_score: tuple[int, int, int] = (0, 0, 0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,9 +78,15 @@ class SemanticParser:
     execution implementations.
     """
 
-    def __init__(self, ontology: MetricOntology, annotator: QuestionAnnotator):
+    def __init__(
+        self,
+        ontology: MetricOntology,
+        annotator: QuestionAnnotator,
+        resolver: MetricMentionResolver | None = None,
+    ):
         self.ontology = ontology
         self.annotator = annotator
+        self.resolver = resolver
 
     def parse(self, question: str, *, qid: int | None = None) -> ParseResult:
         annotations = _expand_aggregate_period_range(question, self.annotator.annotate(question))
@@ -83,6 +94,7 @@ class SemanticParser:
         formula = self.ontology.match_formula(normalized)
         mentions = self._metric_mentions(normalized)
         formula_mentions = self._formula_mentions(normalized)
+        role_fallback = _needs_source_role_fallback(normalized, annotations, formula, mentions)
         trace: list[dict[str, object]] = [
             {
                 "stage": "ANNOTATE",
@@ -101,12 +113,54 @@ class SemanticParser:
                 "ontology_fingerprint": self.ontology.fingerprint,
             },
         ]
+        unresolved_reason: str | None = None
+        if formula is None and self.resolver is not None and (not mentions or role_fallback):
+            resolved = self.resolver.resolve(question, annotations)
+            trace.extend(resolved.trace)
+            use_selected = resolved.status == "RESOLVED" or (
+                role_fallback and bool(resolved.selected)
+            )
+            if use_selected:
+                source_mentions = tuple(
+                    _source_metric_mention(value) for value in resolved.selected
+                )
+                if mentions:
+                    # Exact ontology mentions retain precedence. Source evidence
+                    # may only fill a missing, non-overlapping semantic role.
+                    source_mentions = tuple(
+                        value
+                        for value in source_mentions
+                        if not any(
+                            value.start < exact.end and exact.start < value.end
+                            for exact in mentions
+                        )
+                    )
+                    mentions = tuple(
+                        sorted(
+                            (*mentions, *source_mentions),
+                            key=lambda value: (value.start, value.end),
+                        )
+                    )
+                else:
+                    mentions = source_mentions
+            else:
+                unresolved_reason = resolved.reason
+            if role_fallback:
+                annotations = replace(annotations, return_mode=ReturnMode.SELECT_AT_ARG)
+                trace.append(
+                    {
+                        "stage": "V3_ROLE_GRAMMAR",
+                        "rule": "entity_has_rank_metric",
+                        "return_mode": ReturnMode.SELECT_AT_ARG.value,
+                    }
+                )
         result = self._compile(
             question,
             annotations,
             formula,
             mentions,
             formula_mentions,
+            unresolved_reason=unresolved_reason,
             qid=qid,
         )
         return ParseResult(result.status, result.ast, result.reason, tuple(trace) + result.trace)
@@ -118,6 +172,7 @@ class SemanticParser:
         formula: FormulaDefinition | None,
         mentions: tuple[MetricMention, ...],
         formula_mentions: tuple[FormulaMention, ...],
+        unresolved_reason: str | None,
         *,
         qid: int | None,
     ) -> ParseResult:
@@ -126,11 +181,7 @@ class SemanticParser:
         if annotations.operation == OperationKind.UNSUPPORTED:
             return _abstain("OPERATION_UNSUPPORTED")
 
-        base = self._base_expression(
-            normalize_phrase(question), annotations, formula, mentions
-        )
-        if base is None:
-            return _abstain("METRIC_UNRESOLVED")
+        base = self._base_expression(normalize_phrase(question), annotations, formula, mentions)
         expression_result = self._compose(
             question,
             base,
@@ -138,6 +189,7 @@ class SemanticParser:
             formula,
             mentions,
             formula_mentions,
+            unresolved_reason=unresolved_reason,
         )
         if isinstance(expression_result, str):
             return _abstain(expression_result)
@@ -182,8 +234,23 @@ class SemanticParser:
             )
         if not mentions:
             return None
-        mention = mentions[-1]
-        reference = _metric_ref(mention.metric, annotations)
+        source_mentions = [value for value in mentions if value.source_binding is not None]
+        # Compatibility: the reviewed/exact path retains its measured ordering.
+        # Source fallback never uses mention order as a semantic decision.
+        mention = (
+            max(
+                source_mentions,
+                key=lambda value: (
+                    value.resolution_score,
+                    value.end - value.start,
+                    -value.start,
+                    value.metric.metric_id,
+                ),
+            )
+            if source_mentions
+            else mentions[-1]
+        )
+        reference = _metric_ref(mention.metric, annotations, source_binding=mention.source_binding)
         return MetricRef(
             reference.metric_id,
             reference.entities,
@@ -193,19 +260,20 @@ class SemanticParser:
             reference.expected_unit,
             reference.period_semantics,
             reference.qualifiers,
-            _required_context_phrases(
-                normalized_question, mention.start, mention.end
-            ),
+            _required_context_phrases(normalized_question, mention.start, mention.end),
+            reference.source_binding,
         )
 
     def _compose(
         self,
         question: str,
-        base: Expression,
+        base: Expression | None,
         annotations: QuestionAnnotations,
         formula: FormulaDefinition | None,
         mentions: tuple[MetricMention, ...],
         formula_mentions: tuple[FormulaMention, ...],
+        *,
+        unresolved_reason: str | None,
     ) -> tuple[Expression, ResultKind] | str:
         operation = annotations.operation
         axis, members = _operation_axis(annotations)
@@ -216,9 +284,8 @@ class SemanticParser:
         # Validate the requested scope before ontology promotion policy.  A
         # derived operation with one missing side is a structural parse error,
         # irrespective of whether the surviving metric is reviewed.
-        if (
-            operation in (OperationKind.SUM, OperationKind.AVERAGE, OperationKind.COUNT)
-            and (axis is None or len(members) < 2)
+        if operation in (OperationKind.SUM, OperationKind.AVERAGE, OperationKind.COUNT) and (
+            axis is None or len(members) < 2
         ):
             return "AGGREGATE_AXIS_UNRESOLVED"
         if (
@@ -226,12 +293,51 @@ class SemanticParser:
             and _binary_scopes(annotations) is None
         ):
             return "BINARY_OPERANDS_UNRESOLVED"
+        count_role: tuple[Predicate, Expression] | str | None = None
+        if operation == OperationKind.COUNT:
+            count_role = _count_predicate_role(
+                question,
+                annotations,
+                mentions,
+                formula_mentions,
+            )
+            if isinstance(count_role, str):
+                return count_role
         if (
             not isinstance(base, FormulaCall)
             and any(mention.metric.review_status != "reviewed" for mention in mentions)
-            and operation not in (OperationKind.LOOKUP, OperationKind.EXTREMUM)
+            and operation
+            not in (
+                OperationKind.LOOKUP,
+                OperationKind.COUNT,
+                OperationKind.EXTREMUM,
+            )
         ):
             return "REPORTED_METRIC_REQUIRES_REVIEW_FOR_DERIVED_OPERATION"
+        if base is None and not (
+            operation == OperationKind.EXTREMUM
+            and annotations.return_mode == ReturnMode.SELECT_AT_ARG
+        ):
+            return unresolved_reason or "METRIC_UNRESOLVED"
+        if base is None:
+            roles = _select_at_arg_roles(
+                question,
+                annotations,
+                mentions,
+                formula_mentions,
+            )
+            if isinstance(roles, str):
+                return roles
+            rank_expression, selected_expression = roles
+            direction = annotations.rank_direction or RankDirection.DESCENDING
+            assert axis is not None
+            return (
+                SelectAtArg(
+                    Rank(axis, members, rank_expression, direction),
+                    selected_expression,
+                ),
+                ResultKind.SCALAR,
+            )
         if operation in (OperationKind.LOOKUP, OperationKind.DIVIDE):
             if operation == OperationKind.DIVIDE and not isinstance(base, FormulaCall):
                 return "UNREVIEWED_RELATIONAL_FORMULA"
@@ -245,14 +351,7 @@ class SemanticParser:
                 OperationKind.COUNT: AggregateFunction.COUNT,
             }[operation]
             if function == AggregateFunction.COUNT:
-                count_role = _count_predicate_role(
-                    question,
-                    annotations,
-                    mentions,
-                    formula_mentions,
-                )
-                if isinstance(count_role, str):
-                    return count_role
+                assert count_role is not None and not isinstance(count_role, str)
                 predicate, projection = count_role
                 return (
                     Aggregate(
@@ -297,10 +396,7 @@ class SemanticParser:
                 else ArithmeticOperator.SUBTRACT
             )
             expression: Expression = Arithmetic(operator, left, right)
-            if (
-                operation == OperationKind.SUBTRACT
-                and annotations.absolute_difference
-            ):
+            if operation == OperationKind.SUBTRACT and annotations.absolute_difference:
                 expression = Unary(UnaryOperator.ABSOLUTE, expression)
             return expression, ResultKind.SCALAR
 
@@ -316,15 +412,18 @@ class SemanticParser:
                     return "FILTER_PREDICATE_REQUIRED"
                 if not mentions:
                     return "FILTER_VALUE_METRIC_UNRESOLVED"
-                selected_metric = mentions[-1].metric
+                selected_mention = mentions[-1]
+                selected_metric = selected_mention.metric
                 if not _unit_dimensions_compatible(
                     selected_metric.unit.dimension, annotations.requested_unit.dimension
                 ):
                     return "FILTER_VALUE_UNIT_MISMATCH"
-                selected = _metric_ref(selected_metric, annotations)
-                filtered_expression = Filter(
-                    axis, members, threshold_predicate, selected
+                selected = _metric_ref(
+                    selected_metric,
+                    annotations,
+                    source_binding=selected_mention.source_binding,
                 )
+                filtered_expression = Filter(axis, members, threshold_predicate, selected)
                 function = (
                     AggregateFunction.MAXIMUM
                     if direction == RankDirection.DESCENDING
@@ -342,7 +441,9 @@ class SemanticParser:
                     return roles
                 rank_expression, selected_expression = roles
                 return (
-                    SelectAtArg(Rank(axis, members, rank_expression, direction), selected_expression),
+                    SelectAtArg(
+                        Rank(axis, members, rank_expression, direction), selected_expression
+                    ),
                     ResultKind.SCALAR,
                 )
             rank = Rank(axis, members, base, direction)
@@ -388,7 +489,9 @@ class SemanticParser:
         # Longest span owns nested aliases.  This is ontology resolution, not a
         # list of metric-specific exceptions.
         selected: list[MetricMention] = []
-        for mention in sorted(raw, key=lambda value: (-len(value.alias), value.start, value.metric.metric_id)):
+        for mention in sorted(
+            raw, key=lambda value: (-len(value.alias), value.start, value.metric.metric_id)
+        ):
             if any(mention.start >= other.start and mention.end <= other.end for other in selected):
                 continue
             selected.append(mention)
@@ -413,7 +516,46 @@ class SemanticParser:
         return tuple(sorted(selected, key=lambda value: (value.start, value.end)))
 
 
-def _metric_ref(metric: MetricDefinition, annotations: QuestionAnnotations) -> MetricRef:
+def _source_metric_mention(hypothesis: MetricHypothesis) -> MetricMention:
+    binding = MetricBindingHint(
+        source_metric_id=hypothesis.source_metric_id,
+        source_build_id=hypothesis.source_build_id,
+        labels=hypothesis.aliases,
+        metric_codes=hypothesis.metric_codes,
+        row_paths=hypothesis.row_paths,
+        resolution_method=hypothesis.match_method,
+        question_surface=hypothesis.mention.surface,
+        question_start=hypothesis.mention.start,
+        question_end=hypothesis.mention.end,
+        preferred_basis=hypothesis.preferred_basis,
+    )
+    metric = MetricDefinition(
+        metric_id=hypothesis.source_metric_id,
+        aliases=tuple(normalize_phrase(value) for value in hypothesis.aliases),
+        statement_types=hypothesis.statement_types,
+        unit=hypothesis.unit,
+        period_semantics=hypothesis.period_semantics,
+        sign_policy="signed_as_reported",
+        preferred_basis=hypothesis.preferred_basis,
+        review_status="source",
+        legal_aggregations=("lookup", "count", "minimum", "maximum"),
+    )
+    return MetricMention(
+        hypothesis.mention.start,
+        hypothesis.mention.end,
+        hypothesis.mention.normalized_surface,
+        metric,
+        binding,
+        hypothesis.score,
+    )
+
+
+def _metric_ref(
+    metric: MetricDefinition,
+    annotations: QuestionAnnotations,
+    *,
+    source_binding: MetricBindingHint | None = None,
+) -> MetricRef:
     return MetricRef(
         metric_id=metric.metric_id,
         entities=annotations.entities,
@@ -422,6 +564,7 @@ def _metric_ref(metric: MetricDefinition, annotations: QuestionAnnotations) -> M
         statement_types=metric.statement_types,
         expected_unit=metric.unit,
         period_semantics=metric.period_semantics,
+        source_binding=source_binding,
     )
 
 
@@ -437,6 +580,7 @@ def _scope_expression(expression: Expression, annotations: QuestionAnnotations) 
             period_semantics=expression.period_semantics,
             qualifiers=expression.qualifiers,
             required_context_phrases=expression.required_context_phrases,
+            source_binding=expression.source_binding,
         )
     if isinstance(expression, Literal):
         return expression
@@ -497,8 +641,34 @@ class _ExpressionMention:
 
 _SUPERLATIVE = re.compile(r"\b(?:cao nhat|thap nhat|lon nhat|nho nhat)\b")
 _RANK_CLAUSE = re.compile(
-    r"\b(?:tai nam co|trong nam co|o nam co|nam co|tai nam|cong ty co|doanh nghiep co)\b"
+    r"\b(?:tai nam co|trong nam co|o nam co|nam co|tai nam|cong ty co|doanh nghiep co|ngan hang co)\b"
 )
+
+_SOURCE_ROLE_FALLBACK_CLAUSE = re.compile(
+    r"\bngan hang co\b[^?]{0,240}\b(?:cao nhat|thap nhat|lon nhat|nho nhat)\b"
+)
+
+
+def _needs_source_role_fallback(
+    normalized_question: str,
+    annotations: QuestionAnnotations,
+    formula: FormulaDefinition | None,
+    mentions: tuple[MetricMention, ...],
+) -> bool:
+    """Open a V3-only role fallback when exact parsing has one missing role.
+
+    A single exact metric in an ``entity has <rank metric>`` clause is not
+    sufficient for select-at-arg. The source resolver may supplement it, but
+    never replace an exact mention or mutate the shared V2 lexical frame.
+    """
+
+    return (
+        formula is None
+        and annotations.operation == OperationKind.EXTREMUM
+        and annotations.return_mode == ReturnMode.VALUE
+        and len(mentions) == 1
+        and _SOURCE_ROLE_FALLBACK_CLAUSE.search(normalized_question) is not None
+    )
 
 
 def _select_at_arg_roles(
@@ -524,9 +694,7 @@ def _select_at_arg_roles(
     if not clause_matches:
         return "SELECT_AT_ARG_RANK_CLAUSE_UNRESOLVED"
     clause_start = clause_matches[-1].start()
-    candidates = _expression_mentions(
-        normalized, annotations, metric_mentions, formula_mentions
-    )
+    candidates = _expression_mentions(normalized, annotations, metric_mentions, formula_mentions)
     ranked = [
         value
         for value in candidates
@@ -544,8 +712,7 @@ def _select_at_arg_roles(
     prefix = [
         value
         for value in candidates
-        if value.end <= clause_start
-        and _selected_dimension_compatible(value.dimension, requested)
+        if value.end <= clause_start and _selected_dimension_compatible(value.dimension, requested)
     ]
     suffix = [
         value
@@ -598,6 +765,7 @@ def _apply_selected_output_unit(expression: Expression, requested: UnitSpec) -> 
             expression.period_semantics,
             expression.qualifiers,
             expression.required_context_phrases,
+            expression.source_binding,
         )
     return expression
 
@@ -633,7 +801,11 @@ def _expression_mentions(
             for formula_mention in formula_mentions
         ):
             continue
-        reference = _metric_ref(metric_mention.metric, annotations)
+        reference = _metric_ref(
+            metric_mention.metric,
+            annotations,
+            source_binding=metric_mention.source_binding,
+        )
         reference = MetricRef(
             reference.metric_id,
             reference.entities,
@@ -642,12 +814,11 @@ def _expression_mentions(
             reference.statement_types,
             reference.expected_unit,
             reference.period_semantics,
-            _qualifier_tokens(
-                normalized_question, metric_mention.start, metric_mention.end
-            ),
+            _qualifier_tokens(normalized_question, metric_mention.start, metric_mention.end),
             _required_context_phrases(
                 normalized_question, metric_mention.start, metric_mention.end
             ),
+            reference.source_binding,
         )
         output.append(
             _ExpressionMention(
@@ -750,15 +921,13 @@ def _count_predicate_role(
 ) -> tuple[Predicate, Expression] | str:
     """Compile an explicit numeric predicate for a finite-domain count.
 
-    COUNT is accepted only when the question provides a comparison operator,
-    numeric threshold and a single nearest reviewed expression. This keeps the
-    route closed: implicit notions such as "healthy" or "material" abstain.
+    COUNT is accepted only when the question provides an explicit comparison
+    or sign and a uniquely resolved expression. This keeps the route closed:
+    implicit notions such as "healthy" or "material" abstain.
     """
 
     normalized = normalize_phrase(question)
-    candidates = _expression_mentions(
-        normalized, annotations, metric_mentions, formula_mentions
-    )
+    candidates = _expression_mentions(normalized, annotations, metric_mentions, formula_mentions)
     threshold_matches = [
         match
         for match in _COHORT_THRESHOLD.finditer(normalized)
@@ -768,6 +937,9 @@ def _count_predicate_role(
         sign_role = _count_sign_predicate_role(normalized, candidates)
         if sign_role is not None:
             return sign_role
+        single_sign_role = _single_count_sign_predicate_role(normalized, candidates)
+        if single_sign_role is not None:
+            return single_sign_role
     if len(threshold_matches) != 1:
         return "COUNT_PREDICATE_REQUIRED"
     threshold = threshold_matches[0]
@@ -796,9 +968,7 @@ def _count_predicate_role(
         "": ComparisonOperator.GE,
     }[threshold.group("operator") or ""]
     value = float(threshold.group("value").replace(",", "."))
-    unit_dimension, unit_scale, _ = scan_unit(
-        normalized[threshold.start() : threshold.end() + 40]
-    )
+    unit_dimension, unit_scale, _ = scan_unit(normalized[threshold.start() : threshold.end() + 40])
     literal_dimension = {
         "MONEY": Dimension.MONEY,
         "PERCENT": Dimension.PERCENT,
@@ -821,6 +991,28 @@ def _count_predicate_role(
     )
 
 
+def _single_count_sign_predicate_role(
+    normalized_question: str,
+    candidates: tuple[_ExpressionMention, ...],
+) -> tuple[Predicate, Expression] | None:
+    """Compile one explicit ``metric âm/dương`` predicate for COUNT."""
+
+    if len(candidates) != 1:
+        return None
+    candidate = candidates[0]
+    clause = normalized_question[candidate.end : candidate.end + 80]
+    signs = re.findall(r"\b(am|duong)\b", clause)
+    if len(signs) != 1:
+        return None
+    operator = ComparisonOperator.LT if signs[0] == "am" else ComparisonOperator.GT
+    predicate = Comparison(
+        operator,
+        candidate.expression,
+        Literal(0, UnitSpec(candidate.dimension)),
+    )
+    return predicate, candidate.expression
+
+
 def _count_sign_predicate_role(
     normalized_question: str,
     candidates: tuple[_ExpressionMention, ...],
@@ -838,8 +1030,8 @@ def _count_sign_predicate_role(
     used: list[_ExpressionMention] = []
     ordered = sorted(candidates, key=lambda value: (value.start, value.end))
     for index, candidate in enumerate(ordered):
-        clause_end = ordered[index + 1].start if index + 1 < len(ordered) else len(
-            normalized_question
+        clause_end = (
+            ordered[index + 1].start if index + 1 < len(ordered) else len(normalized_question)
         )
         clause = normalized_question[candidate.end : min(clause_end, candidate.end + 80)]
         signs = re.findall(r"\b(am|duong)\b", clause)
@@ -876,9 +1068,7 @@ def _filtered_aggregate_roles(
     normalized = normalize_phrase(question)
     if not re.search(r"\b(?:cac cong ty|cac doanh nghiep|trong so|trong nhom)\b", normalized):
         return None
-    candidates = _expression_mentions(
-        normalized, annotations, metric_mentions, formula_mentions
-    )
+    candidates = _expression_mentions(normalized, annotations, metric_mentions, formula_mentions)
     if len(candidates) < 2:
         return None
     threshold_matches = [
@@ -942,9 +1132,7 @@ def _filtered_aggregate_roles(
         selected = [
             candidate
             for candidate in selected
-            if _selection_specificity(
-                candidate.dimension, annotations.requested_unit.dimension
-            )
+            if _selection_specificity(candidate.dimension, annotations.requested_unit.dimension)
             == best_specificity
         ]
     by_identity = {candidate.identity: candidate for candidate in selected}
@@ -971,6 +1159,7 @@ def _without_qualifiers(expression: Expression) -> Expression:
         expression.period_semantics,
         (),
         expression.required_context_phrases,
+        expression.source_binding,
     )
 
 

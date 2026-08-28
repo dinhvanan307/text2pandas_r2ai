@@ -1,7 +1,7 @@
 """CLI — điểm vào duy nhất của pipeline.
 
-    python -m text2pandas.interface.cli.main catalog
-    python -m text2pandas.interface.cli.main parse-check --limit 2000
+python -m text2pandas.interface.cli.main catalog
+python -m text2pandas.interface.cli.main parse-check --limit 2000
 """
 
 from __future__ import annotations
@@ -143,19 +143,18 @@ def cmd_parse_check(args: argparse.Namespace) -> int:
     if dims:
         rows = sorted(d[0] for d in dims)
         cols = sorted(d[1] for d in dims)
-        print(f"  hàng/bảng          trung vị {rows[len(rows)//2]:>4}  max {rows[-1]:>5}")
-        print(f"  cột/bảng           trung vị {cols[len(cols)//2]:>4}  max {cols[-1]:>5}")
+        print(f"  hàng/bảng          trung vị {rows[len(rows) // 2]:>4}  max {rows[-1]:>5}")
+        print(f"  cột/bảng           trung vị {cols[len(cols) // 2]:>4}  max {cols[-1]:>5}")
     print("  ── quy ước phân cách theo bảng ──")
     for k, v in conv.most_common():
         print(f"  {k:<18} {v:>12,}")
     tot = sum(cellstat.values()) or 1
     print(f"  ── phân loại ô ({tot:,}) ──")
     for k, v in cellstat.most_common():
-        print(f"  {k:<18} {v:>12,}  {100*v/tot:5.2f}%")
+        print(f"  {k:<18} {v:>12,}  {100 * v / tot:5.2f}%")
     for b in bad:
         print(f"  ✗ {b}")
     return 0
-
 
 
 def cmd_index(args: argparse.Namespace) -> int:
@@ -165,7 +164,11 @@ def cmd_index(args: argparse.Namespace) -> int:
     target = _legacy_output(args, "table_index.sqlite")
     work = _workdb(f"{args.run_id}-table_index.sqlite")
     work.unlink(missing_ok=True)
-    rep = build_index(cat, work, progress=(lambda n: print(f"  ... {n:,} bảng", flush=True)) if args.verbose else None)
+    rep = build_index(
+        cat,
+        work,
+        progress=(lambda n: print(f"  ... {n:,} bảng", flush=True)) if args.verbose else None,
+    )
     publish_new_file(work, target)
     print("\n╔═══════════ INDEX ═══════════╗")
     for k, v in rep.items():
@@ -216,7 +219,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         limit=args.limit,
         max_tables=args.n_tables,
         answer_pool_tables=args.answer_pool_tables,
-        progress=(lambda i, n: print(f"  ... {i} câu, {n} có đáp án", flush=True)) if args.verbose else None,
+        progress=(lambda i, n: print(f"  ... {i} câu, {n} có đáp án", flush=True))
+        if args.verbose
+        else None,
     )
     pipeline_manifest_path = stage / "manifest.json"
     write_manifest(
@@ -243,10 +248,18 @@ def cmd_run(args: argparse.Namespace) -> int:
     )
     print("\n╔═══════════ PIPELINE ═══════════╗")
     print(f"  câu hỏi              : {rep.n_questions:,}")
-    print(f"  nhận diện thực thể   : {rep.n_with_entity:,}  ({100*rep.n_with_entity/max(rep.n_questions,1):.1f}%)")
-    print(f"  nhận diện được năm   : {rep.n_with_year:,}  ({100*rep.n_with_year/max(rep.n_questions,1):.1f}%)")
-    print(f"  truy hồi được bảng   : {rep.n_retrieved:,}  ({100*rep.n_retrieved/max(rep.n_questions,1):.1f}%)")
-    print(f"  answer qua đủ gate   : {rep.n_answered:,}  ({100*rep.n_answered/max(rep.n_questions,1):.1f}%)")
+    print(
+        f"  nhận diện thực thể   : {rep.n_with_entity:,}  ({100 * rep.n_with_entity / max(rep.n_questions, 1):.1f}%)"
+    )
+    print(
+        f"  nhận diện được năm   : {rep.n_with_year:,}  ({100 * rep.n_with_year / max(rep.n_questions, 1):.1f}%)"
+    )
+    print(
+        f"  truy hồi được bảng   : {rep.n_retrieved:,}  ({100 * rep.n_retrieved / max(rep.n_questions, 1):.1f}%)"
+    )
+    print(
+        f"  answer qua đủ gate   : {rep.n_answered:,}  ({100 * rep.n_answered / max(rep.n_questions, 1):.1f}%)"
+    )
     print(f"  abstain              : {rep.n_abstained:,}")
     print(f"  thời gian            : {rep.seconds}s")
     for reason, count in list(rep.abstain_reasons.items())[:8]:
@@ -280,19 +293,15 @@ def cmd_run(args: argparse.Namespace) -> int:
     for k, v in stat.items():
         print(f"  {k:<12} {v:,}")
     if stat["executed"]:
-        print(f"  khớp answer  {100*stat['matched']/stat['executed']:.2f}% số câu chạy được")
+        print(f"  khớp answer  {100 * stat['matched'] / stat['executed']:.2f}% số câu chạy được")
 
-    package_ok = (
-        val.ok
-        and stat["error"] == 0
-        and stat["matched"] == stat["executed"]
-    )
+    package_ok = val.ok and stat["error"] == 0 and stat["matched"] == stat["executed"]
     final = SUBMIT_DIR / f"submission_{args.run_id}.zip"
     published = None
     if package_ok:
         publish_new_file(zip_path, final)
         published = final
-        print(f"\n  ZIP: {final}  ({zip_path.stat().st_size/1e6:.1f} MB)")
+        print(f"\n  ZIP: {final}  ({zip_path.stat().st_size / 1e6:.1f} MB)")
     else:
         print("\n  CHẶN PUBLISH: submission chưa qua validator/replay", file=sys.stderr)
     submission_manifest_path = stage / "submission_manifest.json"
@@ -310,7 +319,6 @@ def cmd_run(args: argparse.Namespace) -> int:
     )
     print(f"  submission manifest: {submission_manifest_path}")
     return 0 if package_ok else 1
-
 
 
 def cmd_package(args: argparse.Namespace) -> int:
@@ -345,9 +353,13 @@ def cmd_package(args: argparse.Namespace) -> int:
         r = json.loads(line)
         evidence = r.get("evidence") or []
         seen[r["qid"]] = AnswerResult(
-            qid=r["qid"], answer=r["answer"], relevant_docs=r["relevant_docs"],
-            relevant_tables=r["relevant_tables"], evidence=evidence,
-            pandas_query=r["pandas_query"], confidence=r["confidence"],
+            qid=r["qid"],
+            answer=r["answer"],
+            relevant_docs=r["relevant_docs"],
+            relevant_tables=r["relevant_tables"],
+            evidence=evidence,
+            pandas_query=r["pandas_query"],
+            confidence=r["confidence"],
             csv_name=(Path(evidence[0]["csv_path"]).name if evidence else ""),
             has_csv=bool(evidence),
             notes=([r["reason"]] if r.get("reason") else []),
@@ -379,17 +391,18 @@ def cmd_package(args: argparse.Namespace) -> int:
     for e in val.errors[:8]:
         print(f"   ✗ {e}")
     stat = replay_zip(zip_path, SCRATCH / "replay")
-    print(f"  replay    : chạy được {stat['executed']:,} · khớp {stat['matched']:,} · lỗi {stat['error']:,} · không evidence {stat['no_evidence']:,}")
+    print(
+        f"  replay    : chạy được {stat['executed']:,} · khớp {stat['matched']:,} · lỗi {stat['error']:,} · không evidence {stat['no_evidence']:,}"
+    )
     if stat["executed"]:
-        print(f"  bất biến answer == eval(query): {100*stat['matched']/stat['executed']:.2f}%")
+        print(f"  bất biến answer == eval(query): {100 * stat['matched'] / stat['executed']:.2f}%")
     package_ok = val.ok and stat["error"] == 0 and stat["matched"] == stat["executed"]
     published = None
     if package_ok:
         published = SUBMIT_DIR / f"submission_{args.run_id}.zip"
         publish_new_file(zip_path, published)
         print(
-            f"  ZIP       : {published.relative_to(ROOT)}  "
-            f"({zip_path.stat().st_size/1e6:.2f} MB)"
+            f"  ZIP       : {published.relative_to(ROOT)}  ({zip_path.stat().st_size / 1e6:.2f} MB)"
         )
     else:
         print("  CHẶN PUBLISH: submission chưa qua validator/replay", file=sys.stderr)
@@ -468,9 +481,7 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
     questions = {
         int(row["id"]): str(row["question"])
         for row in (
-            json.loads(line)
-            for line in QUESTIONS.read_text(encoding="utf-8").splitlines()
-            if line
+            json.loads(line) for line in QUESTIONS.read_text(encoding="utf-8").splitlines() if line
         )
     }
     cfg = SubmissionConfig(doc_id_variant=args.doc_id, locator_base=args.locator_base)
@@ -517,7 +528,6 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
     return 0 if not validation.errors and not replay["error"] and not replay_mismatches else 1
 
 
-
 def cmd_silver(args: argparse.Namespace) -> int:
     """Bronze -> Silver: đặc trưng bảng + ô định dạng dài."""
     from text2pandas.application.usecases.build_silver import build_silver
@@ -527,25 +537,36 @@ def cmd_silver(args: argparse.Namespace) -> int:
     work = _workdb(f"{args.run_id}-silver.sqlite")
     work.unlink(missing_ok=True)
     rep = build_silver(
-        cat, CORPUS, work, offset=args.offset, limit=args.limit,
+        cat,
+        CORPUS,
+        work,
+        offset=args.offset,
+        limit=args.limit,
         progress=(lambda k, t, c: print(f"  ... {k} tài liệu · {t:,} bảng · {c:,} ô", flush=True))
-        if args.verbose else None,
+        if args.verbose
+        else None,
     )
     publish_new_file(work, target)
     print("\n╔═══════════ SILVER ═══════════╗")
     print(f"  tài liệu           : {rep.n_documents:,}")
     print(f"  bảng               : {rep.n_tables:,}")
-    print(f"  bảng DỮ LIỆU       : {rep.n_data_tables:,}  ({100*rep.n_data_tables/max(rep.n_tables,1):.1f}%)")
+    print(
+        f"  bảng DỮ LIỆU       : {rep.n_data_tables:,}  ({100 * rep.n_data_tables / max(rep.n_tables, 1):.1f}%)"
+    )
     print(f"  ô số lưu lại       : {rep.n_cells:,}")
-    print(f"  bảng có cột-kỳ     : {rep.n_with_period:,}  ({100*rep.n_with_period/max(rep.n_tables,1):.1f}%)")
-    print(f"  bảng có cột Mã số  : {rep.n_with_ma_so:,}  ({100*rep.n_with_ma_so/max(rep.n_tables,1):.1f}%)")
+    print(
+        f"  bảng có cột-kỳ     : {rep.n_with_period:,}  ({100 * rep.n_with_period / max(rep.n_tables, 1):.1f}%)"
+    )
+    print(
+        f"  bảng có cột Mã số  : {rep.n_with_ma_so:,}  ({100 * rep.n_with_ma_so / max(rep.n_tables, 1):.1f}%)"
+    )
     print(f"  thời gian          : {rep.seconds}s")
     print("  ── loại bảng ──")
     for k, v in sorted(rep.by_type.items(), key=lambda x: -x[1]):
-        print(f"    {k:<18} {v:>8,}  {100*v/rep.n_tables:5.1f}%")
+        print(f"    {k:<18} {v:>8,}  {100 * v / rep.n_tables:5.1f}%")
     print("  ── nguồn đơn vị ──")
     for k, v in sorted(rep.by_unit_source.items(), key=lambda x: -x[1]):
-        print(f"    {k:<18} {v:>8,}  {100*v/rep.n_tables:5.1f}%")
+        print(f"    {k:<18} {v:>8,}  {100 * v / rep.n_tables:5.1f}%")
     print(f"  db                 : {target}")
     return 0
 
@@ -558,8 +579,9 @@ def cmd_cards(args: argparse.Namespace) -> int:
     target = _legacy_output(args, "card_index.sqlite")
     work = _workdb(f"{args.run_id}-card_index.sqlite")
     work.unlink(missing_ok=True)
-    rep = build_card_index(sil, work,
-                           progress=(lambda n: print(f"  ... {n:,}", flush=True)) if args.verbose else None)
+    rep = build_card_index(
+        sil, work, progress=(lambda n: print(f"  ... {n:,}", flush=True)) if args.verbose else None
+    )
     publish_new_file(work, target)
     print("\n╔═══════════ CARD INDEX ═══════════╗")
     for k, v in rep.items():
@@ -588,9 +610,7 @@ def cmd_coverage(args: argparse.Namespace) -> int:
     if not source.is_file():
         raise BuildSafetyError(f"missing questions file: {source}")
     questions = [
-        json.loads(line)
-        for line in source.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in source.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
     report = analyze_semantic_coverage(questions, load_aliases("a6"))
     document = json.dumps(
@@ -612,6 +632,8 @@ def cmd_coverage(args: argparse.Namespace) -> int:
 
 def cmd_shadow_v3(args: argparse.Namespace) -> int:
     """Run Semantic Query Engine v3 without changing the canonical V2 path."""
+    import platform
+    import resource
     import sqlite3
     import time
     from collections import Counter
@@ -635,6 +657,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
         SqliteOperandRetriever,
     )
     from text2pandas.infrastructure.semantic import (
+        A6MetricMentionResolver,
         LegacyVietnameseAnnotator,
         load_promotion_policy,
     )
@@ -673,14 +696,28 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
 
     ontology = load_ontology()
     aliases = load_aliases("a6")
-    parser = SemanticParser(ontology, LegacyVietnameseAnnotator(aliases))
     connection = sqlite3.connect(
         f"file:{(ACTIVE_SNAPSHOTS.a6_path / 'silver.db').resolve()}?mode=ro&immutable=1",
         uri=True,
     )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
+        entity_aliases=aliases,
+    )
+    parser = SemanticParser(
+        ontology,
+        LegacyVietnameseAnnotator(aliases),
+        resolver,
+    )
     engine = SemanticV3Engine(
         parser,
-        SqliteOperandRetriever(connection, ontology, top_k=args.operand_k),
+        SqliteOperandRetriever(
+            connection,
+            ontology,
+            top_k=args.operand_k,
+            source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
+        ),
         PandasSandboxReplay(),
     )
     statuses: Counter[str] = Counter()
@@ -720,9 +757,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                     for observation_uid, value in rows:
                         previous = values.setdefault(str(observation_uid), value)
                         if previous != value:
-                            raise BuildSafetyError(
-                                f"A6 evidence value drift: {observation_uid}"
-                            )
+                            raise BuildSafetyError(f"A6 evidence value drift: {observation_uid}")
                     evidence["csv_path"] = str(
                         (stage / "data" / f"{table_uid}.csv").relative_to(ROOT)
                     )
@@ -741,6 +776,8 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     finally:
         connection.close()
     seconds = round(time.time() - started, 3)
+    peak_rss_raw = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    peak_rss_bytes = int(peak_rss_raw if platform.system() == "Darwin" else peak_rss_raw * 1024)
     promotion = evaluate_promotion(
         PromotionMetrics(
             questions=len(questions),
@@ -768,6 +805,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
             "semantic_schema_version": 3,
             "ontology_fingerprint": ontology.fingerprint,
             "retrieval_policy": FACT_RETRIEVAL_POLICY_VERSION,
+            "metric_resolution": resolver.metadata,
             "parameters": {
                 "offset": args.offset,
                 "limit": args.limit,
@@ -780,6 +818,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                 "reasons": dict(reasons.most_common()),
                 "differentials": dict(differentials),
                 "seconds": seconds,
+                "peak_rss_bytes": peak_rss_bytes,
             },
             "promotion": promotion.to_dict(),
             "outputs": {
@@ -868,8 +907,7 @@ def main(argv: list[str] | None = None) -> int:
     cv.add_argument(
         "--questions",
         default=str(
-            PROJECT_PATHS.repo_root
-            / "data/curated/evaluation/legacy/question_plans_1012.jsonl"
+            PROJECT_PATHS.repo_root / "data/curated/evaluation/legacy/question_plans_1012.jsonl"
         ),
     )
     cv.add_argument("--output")
@@ -892,11 +930,19 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     args = p.parse_args(argv)
-    handlers = {"catalog": cmd_catalog, "parse-check": cmd_parse_check,
-                "index": cmd_index, "run": cmd_run, "package": cmd_package,
-                "silver": cmd_silver, "cards": cmd_cards, "verify": cmd_verify,
-                "coverage": cmd_coverage, "shadow-v3": cmd_shadow_v3,
-                "package-v3": cmd_package_v3}
+    handlers = {
+        "catalog": cmd_catalog,
+        "parse-check": cmd_parse_check,
+        "index": cmd_index,
+        "run": cmd_run,
+        "package": cmd_package,
+        "silver": cmd_silver,
+        "cards": cmd_cards,
+        "verify": cmd_verify,
+        "coverage": cmd_coverage,
+        "shadow-v3": cmd_shadow_v3,
+        "package-v3": cmd_package_v3,
+    }
     try:
         return handlers[args.cmd](args)
     except BuildSafetyError as error:
