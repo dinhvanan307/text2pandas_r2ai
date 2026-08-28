@@ -578,6 +578,7 @@ def run_canonical_pipeline(
                 reason: str | None = None
                 pipeline_result: _PipelineAnswer | None = None
                 frames_by_path: dict[str, pd.DataFrame] = {}
+                evidence_uids: list[str] = []
                 if not refs.table_uids:
                     reason = "NO_RETRIEVED_TABLE"
                 elif not intent.targets:
@@ -725,11 +726,30 @@ def run_canonical_pipeline(
                         confidence=0.0,
                         notes=[reason],
                     )
+                binding_applied = pipeline_result is not None and pipeline_result.ok
+                if not binding_applied:
+                    binding_effect = "NOT_APPLIED"
+                elif evidence_uids == refs.table_uids:
+                    binding_effect = "UNCHANGED"
+                elif set(evidence_uids) & set(refs.table_uids):
+                    binding_effect = "PARTIAL_REPLACEMENT"
+                elif evidence_uids:
+                    binding_effect = "REPLACED"
+                else:
+                    binding_effect = "EMPTY"
+                binding_trace = {
+                    "status": "APPLIED" if binding_applied else "NOT_APPLIED",
+                    "effect": binding_effect,
+                    "retrieval_selected_table_ids": refs.table_uids,
+                    "answer_pool_table_ids": refs.ranked_table_uids[:answer_pool_tables],
+                    "selected_evidence_table_ids": evidence_uids,
+                }
                 results.append(result)
                 handle.write(
                     json.dumps(
                         {
                             "qid": qid,
+                            "question": text,
                             "status": "OK" if result.answer is not None else "ABSTAIN",
                             "answer": result.answer,
                             "relevant_docs": result.relevant_docs,
@@ -739,6 +759,12 @@ def run_canonical_pipeline(
                             "confidence": result.confidence,
                             "reason": reason,
                             "trace": pipeline_result.to_dict() if pipeline_result else None,
+                            "retrieval": refs.trace,
+                            "binding": binding_trace,
+                            "final": {
+                                "relevant_tables": result.relevant_tables,
+                                "relevant_docs": result.relevant_docs,
+                            },
                         },
                         ensure_ascii=False,
                     )

@@ -236,6 +236,9 @@ _MODULE_HANH_VI = (
 #                     dài nay fail-fast thay vì cắt im lặng.
 #   42ce338e3c3c58e8  Comparison targets giữ source mention order thay vì
 #                     lexical order; bắt buộc cho phép trừ có hướng (ADR 0011).
+#   0d3fe05da2e1d82d  Expand explicit ascending year ranges for semantic
+#                     consumers while preserving lexical retrieval/N years;
+#                     checkpoint bump required by ADR 0013.
 _FINGERPRINT = {
     "evalkit-2": "dce65cd2bfaf25e0",
     "evalkit-3": "89cd3974d9ad7579",
@@ -247,6 +250,7 @@ _FINGERPRINT = {
     "evalkit-9": "42ce338e3c3c58e8",
     "evalkit-10": "d3f96ffac7d45f59",
     "evalkit-11": "ce67e596b49acb59",
+    "evalkit-12": "0d3fe05da2e1d82d",
 }
 
 _FIELD = {ast.Constant: "value", ast.Name: "id", ast.Attribute: "attr",

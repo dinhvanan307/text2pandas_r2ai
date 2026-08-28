@@ -110,6 +110,11 @@ def test_smoke_het_chuoi_mot_ma_mot_nam(conn):
     assert r.relevant_docs == [r.relevant_tables[0].rsplit("|", 1)[0]]
     assert r.n_candidates >= 2                  # S1 giữ cả hợp nhất lẫn riêng
     assert r.ranked_table_uids[:len(r.table_uids)] == r.table_uids
+    assert r.trace["intent"]["targets"] == ["VNM"]
+    assert r.trace["s1"]["candidate_count"] == r.n_candidates
+    assert set(r.trace["s1"]["candidate_table_ids"]) >= set(r.table_uids)
+    assert [item["table_uid"] for item in r.trace["s3"]["top_k"]] == r.ranked_table_uids
+    assert r.trace["output_policy"]["selected_table_ids"] == r.table_uids
 
 
 def test_relevant_docs_luon_suy_ra_tu_relevant_tables(conn):
@@ -140,6 +145,20 @@ def test_chinh_sach_N_theo_so_ma_va_so_nam(conn):
                              "là bao nhiêu tỷ đồng?")
     assert r.n_policy == 2                      # 2 mã × 1 năm
     assert len(r.relevant_tables) <= 2
+
+
+def test_range_expansion_does_not_inflate_policy_or_change_s1_boundary(conn):
+    ad = RetrievalToSubmission(ALIAS)
+    r = ad.refs_for(
+        conn,
+        30,
+        "Doanh thu thuần của VNM trong giai đoạn 2021–2024 là bao nhiêu?",
+    )
+
+    assert r.trace["intent"]["years"] == [2021, 2022, 2023, 2024]
+    assert r.trace["intent"]["retrieval_years"] == [2021, 2024]
+    assert r.n_policy == 2
+    assert r.n_candidates == 3
 
 
 def test_khong_phan_giai_duoc_ma_thi_khong_nop_bua(conn):

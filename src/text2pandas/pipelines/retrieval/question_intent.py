@@ -38,6 +38,9 @@ BASIS_OF_SCOPE = {"công ty mẹ": "separate", "hợp nhất": "consolidated"}
 SCOPE_DEFAULT = "hợp nhất"
 
 _YEAR_RE = re.compile(r"(?<!\d)(20[0-2]\d)(?!\d)")
+_YEAR_RANGE_RE = re.compile(
+    r"(?<!\d)(20[0-2]\d)\s*[-–—]\s*(20[0-2]\d)(?!\d)"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +52,7 @@ class Intent:
     mode: str = "none"                  # single | screen | compare | related | none
     subject: str | None = None          # mã CHỦ THỂ khi xác định được
     ticker_order: tuple[str, ...] = ()   # thứ tự thực thể xuất hiện trong câu
+    lexical_years: tuple[int, ...] = ()  # năm ghi trực tiếp; range chỉ có endpoints
 
     @property
     def ordered_tickers(self) -> tuple[str, ...]:
@@ -57,6 +61,17 @@ class Intent:
         if len(self.ticker_order) == len(self.tickers) and set(self.ticker_order) == self.tickers:
             return self.ticker_order
         return tuple(sorted(self.tickers))
+
+    @property
+    def retrieval_years(self) -> tuple[int, ...]:
+        """Years used by ranking bonuses and output-cardinality policy.
+
+        `years` is the complete semantic period domain.  Keeping the literal
+        endpoints here prevents a parser hardening change from silently
+        increasing submitted N or reweighting every interior-year table.
+        """
+
+        return self.lexical_years or self.years
 
     @property
     def basis(self) -> str | None:
@@ -197,15 +212,29 @@ def parse_intent(query: str, companies: Mapping[str, str | Sequence[str]],
              else "hợp nhất" if consolidated and not parent else None)
 
     lo, hi = year_range
-    years = tuple(sorted({int(m.group(1)) for m in _YEAR_RE.finditer(query)
-                          if lo <= int(m.group(1)) <= hi}))
+    lexical_years = tuple(sorted({
+        int(m.group(1))
+        for m in _YEAR_RE.finditer(query)
+        if lo <= int(m.group(1)) <= hi
+    }))
+    years_found = set(lexical_years)
+    # A range denotes the complete period domain, not just two lexical year
+    # mentions.  S1 already filters by min..max, so expansion preserves the
+    # candidate boundary while fixing operand cardinality and output-policy N.
+    # Only ascending, explicit dash ranges are expanded; ambiguous reversed
+    # text remains the two literal years and is handled fail-closed downstream.
+    for match in _YEAR_RANGE_RE.finditer(query):
+        start, end = int(match.group(1)), int(match.group(2))
+        if start <= end:
+            years_found.update(range(max(lo, start), min(hi, end) + 1))
+    years = tuple(sorted(years_found))
     tk = frozenset(tickers)
     mode = classify(query, len(tk))
     subject = (next(iter(tk)) if len(tk) == 1
                else pick_subject(query, names_of, tk) if mode == QuestionMode.RELATED
                else None)
     ticker_order = _ticker_mention_order(words, tk, matched_aliases)
-    return Intent(tk, scope, years, how, mode, subject, ticker_order)
+    return Intent(tk, scope, years, how, mode, subject, ticker_order, lexical_years)
 
 
 def _ticker_mention_order(

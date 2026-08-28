@@ -72,6 +72,8 @@ __all__ = [
 #                         the default and model bytes are checksum-bound.
 #   evalkit-10 → evalkit-11 bind checkpoints to effective alias bytes and add
 #                         corpus-question-attested STB/EIB aliases (ADR 0012).
+#   evalkit-11 → evalkit-12 expand explicit ascending year ranges into their
+#                         complete period domain (ADR 0013).
 #
 # VÌ SAO PHẢI BUMP, KHÔNG PHẢI CHỈ SỬA CODE
 # -----------------------------------------
@@ -83,7 +85,7 @@ __all__ = [
 # Kỷ luật con người không giữ được bất biến này (đã hỏng một lần rồi), nên
 # `tests/test_p0_unify.py::test_behavior_fingerprint` băm AST của các module
 # quyết định hành vi S2 và đỏ lên nếu chúng đổi mà hằng số này không đổi.
-SCHEMA_VERSION = "evalkit-11"
+SCHEMA_VERSION = "evalkit-12"
 
 
 @dataclass(frozen=True, slots=True)
@@ -460,6 +462,7 @@ def collect(root: Path, cfg: EvalConfig, db_path: Path | None = None,
             "resolved_by": intent.resolved_by,
             "n_targets": len(intent.targets), "targets": list(intent.targets),
             "years": list(intent.years),
+            "retrieval_years": list(intent.retrieval_years),
             # ── theo TẦNG, tách bạch ──────────────────────────────────────
             "s1_n": o1.n, "s1_clauses": o1.trace.get("active_clauses"),
             "s2_n": len(o2.ranked), "s3_n": len(o3.ranked),

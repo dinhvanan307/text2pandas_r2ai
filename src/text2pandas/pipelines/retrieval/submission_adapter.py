@@ -44,7 +44,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from text2pandas.pipelines.retrieval.evalkit.stages import (Bm25StructuralRanker, HardFilterGenerator,
                                       IdentityReranker)
@@ -85,6 +85,7 @@ class SubmissionRefs:
     n_candidates: int
     table_uids: list[str]
     ranked_table_uids: list[str]
+    trace: dict[str, object] = field(default_factory=dict)
 
     def as_item(self, question: str, answer: str = "") -> dict:
         """Một phần tử của tệp JSON nộp bài. `answer` để trống là HỢP LỆ ở giai
@@ -116,7 +117,7 @@ class RetrievalToSubmission:
 
     def n_for(self, intent) -> int:
         return submission_table_limit(
-            len(intent.targets), len(intent.years), maximum=self.max_n
+            len(intent.targets), len(intent.retrieval_years), maximum=self.max_n
         )
 
     def submission_refs_for_uids(
@@ -162,6 +163,74 @@ class RetrievalToSubmission:
         ranked = [r.table_uid for r in o3.ranked]
         chon = ranked[:n]
         refs, docs = self.submission_refs_for_uids(conn, chon)
+        trace: dict[str, object] = {
+            "qid": qid,
+            "question": question,
+            "intent": {
+                "tickers": list(it.ordered_tickers),
+                "targets": list(it.targets),
+                "years": list(it.years),
+                "retrieval_years": list(it.retrieval_years),
+                "basis": it.basis,
+                "explicit_scope": it.explicit_scope,
+                "mode": it.mode,
+                "resolved_by": it.resolved_by,
+            },
+            "s1": {
+                "candidate_count": o1.n,
+                # Full compact IDs are intentional: a count/hash alone cannot
+                # prove whether a later gold table survived the hard filter.
+                "candidate_table_ids": sorted(o1.uids),
+                "trace": o1.trace,
+            },
+            "s2": {
+                "truncated_at": o2.truncated_at,
+                "top_k": [_ranked_item_trace(index, item)
+                          for index, item in enumerate(o2.ranked, 1)],
+                "trace": o2.trace,
+            },
+            "s3": {
+                "truncated_at": o3.truncated_at,
+                "top_k": [_ranked_item_trace(index, item)
+                          for index, item in enumerate(o3.ranked, 1)],
+                "trace": o3.trace,
+            },
+            "output_policy": {
+                "n": n,
+                "reason": "targets_x_years_clamped",
+                "n_targets": len(it.targets),
+                "n_years": len(it.retrieval_years),
+                "maximum": self.max_n,
+                "selected_table_ids": chon,
+            },
+            "submission_refs": {
+                "relevant_tables": refs,
+                "relevant_docs": docs,
+            },
+        }
         return SubmissionRefs(qid=qid, relevant_tables=refs, relevant_docs=docs,
                               n_policy=n, n_candidates=o1.n, table_uids=chon,
-                              ranked_table_uids=ranked)
+                              ranked_table_uids=ranked, trace=trace)
+
+
+def _ranked_item_trace(rank: int, item) -> dict[str, object]:
+    """Serialize score contributions without changing ranker behavior."""
+
+    scored = item.scored
+    candidate = item.cand
+    return {
+        "rank": rank,
+        "table_uid": item.table_uid,
+        "score": item.score,
+        "bm25": scored.bm25 if scored is not None else None,
+        "reasons": list(item.reasons),
+        "period_hit": scored.period_hit if scored is not None else None,
+        "unit_hit": scored.unit_hit if scored is not None else None,
+        "statement_hit": scored.stmt_hit if scored is not None else None,
+        "basis_hit": scored.basis_hit if scored is not None else None,
+        "ticker": candidate.ticker if candidate is not None else None,
+        "doc_year": candidate.doc_year if candidate is not None else None,
+        "basis": candidate.basis if candidate is not None else None,
+        "statement_type": candidate.statement_type if candidate is not None else None,
+        "clean_ratio": candidate.clean_ratio if candidate is not None else None,
+    }

@@ -247,7 +247,7 @@ class Bm25StructuralRanker:
         dung_code = (self.use_hints in ("both", "code")
                      or (self.use_hints == "code_single" and don_the))
         scored: list[Scored] = rank(
-            conn, cands, build_match(terms), period_ends_of(intent.years),
+            conn, cands, build_match(terms), period_ends_of(intent.retrieval_years),
             unit_kind_of(question),
             statement_hint(question) if self.use_hints in ("both", "stmt") else None,
             self.top_k,

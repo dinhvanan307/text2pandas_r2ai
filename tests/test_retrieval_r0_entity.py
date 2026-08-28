@@ -125,6 +125,23 @@ def test_nam_ngoai_pham_vi_corpus_bi_loai(comp):
     assert parse_intent("số liệu năm 1999 và 2019", comp).years == (2019,)
 
 
+@pytest.mark.parametrize("separator", ["-", "–", "—"])
+def test_explicit_year_range_expands_complete_period_domain(comp, separator):
+    intent = parse_intent(f"Trong giai đoạn 2019{separator}2023", comp)
+    assert intent.years == (2019, 2020, 2021, 2022, 2023)
+    assert intent.retrieval_years == (2019, 2023)
+
+
+def test_reversed_year_range_is_not_silently_reinterpreted(comp):
+    intent = parse_intent("Từ 2023-2019", comp)
+    assert intent.years == (2019, 2023)
+
+
+def test_year_range_is_clipped_to_active_parser_boundary(comp):
+    intent = parse_intent("Trong giai đoạn 2013-2017", comp)
+    assert intent.years == (2015, 2016, 2017)
+
+
 # ── bảng alias ──────────────────────────────────────────────────────────
 def test_alias_khong_co_bien_the_mo_ho():
     """Biến thể khớp nhầm sang mã khác phải bị LOẠI, không phải cho điểm thấp."""
