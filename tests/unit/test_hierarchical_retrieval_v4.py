@@ -100,7 +100,7 @@ def test_hierarchical_retriever_deduplicates_logical_facts_and_penalises_collisi
     ]
     assert batch.trace["semantic_duplicates_removed"] == 1
     assert batch.trace["logical_table_count"] == 2
-    assert batch.trace["hierarchical_retrieval"] == "hierarchical-fact-retrieval-v1"
+    assert batch.trace["hierarchical_retrieval"] == "hierarchical-fact-retrieval-v2"
 
 
 def test_candidate_table_ranking_rewards_cross_operand_support() -> None:
@@ -132,3 +132,30 @@ def test_logical_table_diversity_is_bounded_by_policy() -> None:
 
     assert len(batch.candidates) == 2
     assert batch.trace["logical_diversity_rejected"] == 3
+
+
+def test_unrequested_segment_context_is_penalized_but_explicit_scope_is_not() -> None:
+    primary = _candidate("primary", "primary-table", 20.0)
+    segment = replace(
+        _candidate("segment", "segment-table", 21.0),
+        section_text="BÁO CÁO BỘ PHẬN THEO KHU VỰC ĐỊA LÝ",
+        row_path="Bộ phận theo khu vực địa lý › Tổng tài sản",
+        row_hierarchy=("Bộ phận theo khu vực địa lý", "Tổng tài sản"),
+    )
+    retriever = HierarchicalOperandRetriever(
+        _StaticRetriever((segment, primary)),
+        HierarchicalRetrievalPolicy(top_k=5),
+    )
+
+    unqualified = retriever.retrieve(_request())
+    explicit = retriever.retrieve(
+        replace(
+            _request(),
+            qualifiers=("bo", "phan", "theo", "khu", "vuc", "dia", "ly"),
+        )
+    )
+
+    assert unqualified.candidates[0].observation_uid == "primary"
+    assert "hierarchy:component_context_penalty" in unqualified.candidates[1].score_reasons
+    assert explicit.candidates[0].observation_uid == "segment"
+    assert "hierarchy:component_context_penalty" not in explicit.candidates[0].score_reasons

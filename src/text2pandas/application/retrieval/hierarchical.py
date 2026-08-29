@@ -7,11 +7,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
 from text2pandas.application.planning import OperandRequest
+from text2pandas.domain.metrics import normalize_phrase
 from text2pandas.domain.semantic import PeriodSemantics
 
 from .contracts import CandidateBatch, ObservationCandidate, OperandRetriever
 
-HIERARCHICAL_RETRIEVAL_VERSION = "hierarchical-fact-retrieval-v1"
+HIERARCHICAL_RETRIEVAL_VERSION = "hierarchical-fact-retrieval-v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +24,7 @@ class HierarchicalRetrievalPolicy:
     hierarchy_bonus: float = 0.12
     statement_bonus: float = 0.4
     period_role_bonus: float = 0.5
+    component_context_penalty: float = 2.5
     recoverable_penalty: float = 2.5
     collision_penalty: float = 1.0
 
@@ -112,6 +114,9 @@ class HierarchicalOperandRetriever:
         if _period_role_matches(request.period_semantics, candidate.period_role):
             adjustment += self.policy.period_role_bonus
             reasons.append("hierarchy:period_role")
+        if _is_unrequested_component_context(request, candidate):
+            adjustment -= self.policy.component_context_penalty
+            reasons.append("hierarchy:component_context_penalty")
         if candidate.readiness == "recoverable":
             adjustment -= self.policy.recoverable_penalty
             reasons.append("hierarchy:recoverable_penalty")
@@ -190,3 +195,31 @@ def _period_role_matches(semantics: PeriodSemantics, role: str | None) -> bool:
     if semantics == PeriodSemantics.FLOW:
         return role in {"current", "prior"}
     return False
+
+
+_COMPONENT_CONTEXT_PHRASES = (
+    "bao cao bo phan",
+    "bo phan theo",
+    "theo linh vuc kinh doanh",
+    "theo khu vuc dia ly",
+    "segment reporting",
+)
+
+
+def _is_unrequested_component_context(
+    request: OperandRequest,
+    candidate: ObservationCandidate,
+) -> bool:
+    qualifier_tokens = set(request.qualifiers)
+    if any(set(phrase.split()) <= qualifier_tokens for phrase in _COMPONENT_CONTEXT_PHRASES):
+        return False
+    context = normalize_phrase(
+        " ".join(
+            (
+                candidate.row_path,
+                candidate.column_path,
+                candidate.section_text or "",
+            )
+        )
+    )
+    return any(phrase in context for phrase in _COMPONENT_CONTEXT_PHRASES)

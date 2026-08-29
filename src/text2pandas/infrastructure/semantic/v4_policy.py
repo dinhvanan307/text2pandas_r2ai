@@ -58,6 +58,9 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         hierarchy_bonus=_float(hierarchy.get("hierarchy_bonus", 0.12)),
         statement_bonus=_float(hierarchy.get("statement_bonus", 0.4)),
         period_role_bonus=_float(hierarchy.get("period_role_bonus", 0.5)),
+        component_context_penalty=_float(
+            hierarchy.get("component_context_penalty", 2.5)
+        ),
         recoverable_penalty=_float(hierarchy.get("recoverable_penalty", 2.5)),
         collision_penalty=_float(hierarchy.get("collision_penalty", 1.0)),
     )

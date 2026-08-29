@@ -22,7 +22,7 @@ from text2pandas.domain.semantic import (
 
 from .fact_label import fact_label_segments, normalize_fact_label
 
-FACT_RETRIEVAL_POLICY_VERSION = "fact-retrieval-v2"
+FACT_RETRIEVAL_POLICY_VERSION = "fact-retrieval-v3"
 RECOVERABLE_COLLISION_CLASSES = ("missing_column_group", "missing_row_parent")
 
 
