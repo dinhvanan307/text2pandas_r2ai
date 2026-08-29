@@ -104,7 +104,7 @@ def main() -> int:
         "- Release class: experimental manual-upload candidate\n"
         f"- Production-promotion blockers: {blockers or 'none'}\n\n"
         "Manual leaderboard upload is allowed for measurement; it does not mark "
-        "Semantic V3 as production-promoted. Record the returned submission ID and "
+        "the semantic candidate as production-promoted. Record the returned submission ID and "
         "all ten official metrics in the implementation report.\n",
         encoding="utf-8",
     )
