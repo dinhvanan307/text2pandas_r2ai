@@ -345,9 +345,48 @@ def _align(
         return [
             (scope, value, right.values[scalar]) for scope, value in sorted(left.values.items())
         ]
+    projected = _align_rendered_on_shared_axis(left, right)
+    if projected is not None:
+        return projected
     if len(left.values) == len(right.values) == 1:
         return [(Scope(), next(iter(left.values.values())), next(iter(right.values.values())))]
     raise CompilationError(f"SERIES_SCOPE_MISMATCH:{sorted(left.values)}:{sorted(right.values)}")
+
+
+def _align_rendered_on_shared_axis(
+    left: _RenderedSeries, right: _RenderedSeries
+) -> list[tuple[Scope, _RenderedQuantity, _RenderedQuantity]] | None:
+    """Compiler equivalent of vectorized shared-axis temporal alignment."""
+
+    for attribute in ("entity", "period"):
+        left_by_key = _unique_rendered_scope_values(left, attribute)
+        right_by_key = _unique_rendered_scope_values(right, attribute)
+        if left_by_key is None or right_by_key is None or set(left_by_key) != set(right_by_key):
+            continue
+        output: list[tuple[Scope, _RenderedQuantity, _RenderedQuantity]] = []
+        for key in sorted(left_by_key):
+            left_scope, left_value = left_by_key[key]
+            right_scope, right_value = right_by_key[key]
+            scope = Scope(entity=key) if attribute == "entity" else Scope(period=key)
+            other_left = left_scope.period if attribute == "entity" else left_scope.entity
+            other_right = right_scope.period if attribute == "entity" else right_scope.entity
+            if other_left == other_right:
+                scope = left_scope
+            output.append((scope, left_value, right_value))
+        return output
+    return None
+
+
+def _unique_rendered_scope_values(
+    values: _RenderedSeries, attribute: str
+) -> dict[str, tuple[Scope, _RenderedQuantity]] | None:
+    output: dict[str, tuple[Scope, _RenderedQuantity]] = {}
+    for scope, value in values.values.items():
+        key = getattr(scope, attribute)
+        if key is None or key in output:
+            return None
+        output[key] = (scope, value)
+    return output
 
 
 def _common(
@@ -385,6 +424,10 @@ def _convert(value: _RenderedQuantity, target: UnitSpec) -> _RenderedQuantity:
     elif source.dimension == Dimension.RATIO and target.dimension == Dimension.PERCENT:
         factor = Decimal(100)
     elif source.dimension == Dimension.PERCENT and target.dimension == Dimension.RATIO:
+        factor = Decimal("0.01")
+    elif source.dimension == Dimension.RATIO and target.dimension == Dimension.PERCENT_POINT:
+        factor = Decimal(100)
+    elif source.dimension == Dimension.PERCENT_POINT and target.dimension == Dimension.RATIO:
         factor = Decimal("0.01")
     else:
         raise CompilationError(f"DIMENSION_MISMATCH:{source.dimension}:{target.dimension}")

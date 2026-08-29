@@ -31,6 +31,8 @@ from text2pandas.domain.semantic import (
     MetricBindingHint,
     MetricRef,
     OutputSpec,
+    PredicateQuantifier,
+    QuantifiedPredicate,
     QuestionAST,
     Rank,
     RankDirection,
@@ -493,6 +495,25 @@ class SemanticParser:
                     ResultKind.SCALAR,
                 )
             if axis == Axis.ENTITY:
+                temporal_roles = _temporal_filtered_aggregate_roles(
+                    question,
+                    annotations,
+                    mentions,
+                    formula_mentions,
+                )
+                if isinstance(temporal_roles, str):
+                    return temporal_roles
+                if temporal_roles is not None:
+                    cohort_predicate, cohort_value = temporal_roles
+                    return (
+                        Aggregate(
+                            function,
+                            axis,
+                            Filter(axis, members, cohort_predicate, cohort_value),
+                            members,
+                        ),
+                        ResultKind.SCALAR,
+                    )
                 filtered_roles = _filtered_aggregate_roles(
                     question,
                     annotations,
@@ -1351,6 +1372,143 @@ def _filtered_aggregate_roles(
     chosen = next(iter(by_identity.values()))
     return predicate, _apply_selected_output_unit(
         _without_qualifiers(chosen.expression), annotations.requested_unit
+    )
+
+
+_TEMPORAL_COHORT_CUE = re.compile(
+    r"\b(?:voi|xet)?\s*cac\s+(?:cong ty|doanh nghiep)\s+co\b"
+)
+_TEMPORAL_CHANGE = re.compile(r"\b(?:ty le\s+)?tang truong\b")
+_TEMPORAL_DIFFERENCE = re.compile(r"\b(?:muc\s+)?(?:thay doi|chenh lech)\b")
+
+
+def _temporal_filtered_aggregate_roles(
+    question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+    formula_mentions: tuple[FormulaMention, ...],
+) -> tuple[Predicate, Expression] | str | None:
+    """Compile temporal cohort predicates before aggregating their projection.
+
+    The grammar covers questions of the form ``entities whose X is positive in
+    every period, average growth of Y`` and ``entities whose growth of X is
+    positive, average change of Y``.  Years are scope markers here, never
+    numeric thresholds.  The route requires explicit cohort, sign, temporal
+    transform and two-period evidence; partial matches remain on the canonical
+    fail-closed path.
+    """
+
+    normalized = normalize_phrase(question)
+    if (
+        len(annotations.entities) < 2
+        or len(annotations.periods) != 2
+        or _TEMPORAL_COHORT_CUE.search(normalized) is None
+    ):
+        return None
+    signs = tuple(re.finditer(r"\b(?:am|duong)\b", normalized))
+    if len(signs) != 1:
+        return None
+    sign = signs[0]
+    candidates = _expression_mentions(
+        normalized, annotations, metric_mentions, formula_mentions
+    )
+    predicate_candidates = [value for value in candidates if value.end <= sign.start()]
+    if not predicate_candidates:
+        return "TEMPORAL_FILTER_PREDICATE_EXPRESSION_UNRESOLVED"
+    predicate_expression = max(
+        predicate_candidates, key=lambda value: (value.end, value.end - value.start)
+    )
+    if sign.start() - predicate_expression.end > 80:
+        return "TEMPORAL_FILTER_PREDICATE_EXPRESSION_UNRESOLVED"
+
+    selected_candidates = [value for value in candidates if value.start >= sign.end()]
+    selected_by_span = {
+        (value.start, value.end, value.identity): value for value in selected_candidates
+    }
+    if not selected_by_span:
+        return "TEMPORAL_FILTER_SELECTED_EXPRESSION_UNRESOLVED"
+    if len(selected_by_span) > 1:
+        return "TEMPORAL_FILTER_SELECTED_EXPRESSION_AMBIGUOUS"
+    selected_expression = next(iter(selected_by_span.values()))
+
+    predicate_clause = normalized[
+        max(0, predicate_expression.start - 40) : sign.end()
+    ]
+    selected_clause = normalized[sign.end() :]
+    predicate_operator = _temporal_operator(predicate_clause)
+    selected_operator = _temporal_operator(selected_clause)
+    if selected_operator is None:
+        return None
+
+    predicate_base = _without_qualifiers(predicate_expression.expression)
+    sign_operator = (
+        ComparisonOperator.GT
+        if sign.group(0) == "duong"
+        else ComparisonOperator.LT
+    )
+    if predicate_operator is not None:
+        predicate_value = _temporal_arithmetic(
+            predicate_base, annotations, predicate_operator
+        )
+        predicate: Predicate = Comparison(
+            sign_operator,
+            predicate_value,
+            Literal(0, UnitSpec(Dimension.RATIO)),
+        )
+    elif re.search(r"\btrong\s+ca\s+nam\b", normalized[sign.end() :]) is not None:
+        zero_unit = UnitSpec(
+            predicate_expression.dimension,
+            0
+            if predicate_expression.dimension in {Dimension.MONEY, Dimension.SHARES}
+            else None,
+        )
+        predicate = QuantifiedPredicate(
+            Axis.PERIOD,
+            PredicateQuantifier.ALL,
+            Comparison(
+                sign_operator,
+                predicate_base,
+                Literal(0, zero_unit),
+            ),
+        )
+    else:
+        return None
+
+    selected_base = _without_qualifiers(selected_expression.expression)
+    selected_value = _temporal_arithmetic(
+        selected_base, annotations, selected_operator
+    )
+    if selected_operator == ArithmeticOperator.GROWTH:
+        if annotations.requested_unit.dimension not in {
+            Dimension.RATIO,
+            Dimension.PERCENT,
+        }:
+            return "TEMPORAL_FILTER_SELECTED_UNIT_MISMATCH"
+    elif not _selected_dimension_compatible(
+        selected_expression.dimension, annotations.requested_unit.dimension
+    ):
+        return "TEMPORAL_FILTER_SELECTED_UNIT_MISMATCH"
+    return predicate, selected_value
+
+
+def _temporal_operator(clause: str) -> ArithmeticOperator | None:
+    if _TEMPORAL_CHANGE.search(clause) is not None:
+        return ArithmeticOperator.GROWTH
+    if _TEMPORAL_DIFFERENCE.search(clause) is not None:
+        return ArithmeticOperator.SUBTRACT
+    return None
+
+
+def _temporal_arithmetic(
+    expression: Expression,
+    annotations: QuestionAnnotations,
+    operator: ArithmeticOperator,
+) -> Arithmetic:
+    newest, oldest = max(annotations.periods), min(annotations.periods)
+    return Arithmetic(
+        operator,
+        _scope_expression(expression, replace(annotations, periods=(newest,))),
+        _scope_expression(expression, replace(annotations, periods=(oldest,))),
     )
 
 

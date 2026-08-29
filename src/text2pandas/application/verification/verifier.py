@@ -34,13 +34,15 @@ class ProgramVerifier:
         elif typed.answer is not None and not answers_match(typed.answer, replayed):
             hard_failures.append("TYPED_PANDAS_MISMATCH")
 
-        observation_uids: set[str] = set()
+        observation_uids: dict[str, tuple[str, str | None, str | None]] = {}
         for request_id, operand in sorted(bound_plan.operands.items()):
             request = operand.request
             candidate = operand.candidate
-            if candidate.observation_uid in observation_uids:
+            semantic_fact = (request.metric_id, request.entity, request.period)
+            previous_fact = observation_uids.get(candidate.observation_uid)
+            if previous_fact is not None and previous_fact != semantic_fact:
                 hard_failures.append(f"DUPLICATE_OBSERVATION:{request_id}")
-            observation_uids.add(candidate.observation_uid)
+            observation_uids[candidate.observation_uid] = semantic_fact
             if request.entity and candidate.entity != request.entity:
                 hard_failures.append(f"ENTITY_SCOPE_MISMATCH:{request_id}")
             if request.period and not _period_matches(request.period, candidate.period):

@@ -22,6 +22,8 @@ from text2pandas.domain.semantic import (
     Literal,
     LogicalPredicate,
     MetricRef,
+    PredicateQuantifier,
+    QuantifiedPredicate,
     RankDirection,
     SelectAtArg,
     Unary,
@@ -615,3 +617,65 @@ def test_filtered_multi_entity_average_supports_distinct_reviewed_formulas() -> 
     assert aggregate.expression.predicate.left.formula_id == "current_ratio"
     assert aggregate.expression.predicate.operator.value == "ge"
     assert aggregate.expression.expression.formula_id == "inventory_to_current_liabilities"
+
+
+def test_temporal_cohort_average_requires_positive_metric_in_every_period() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"DCM": "DCM", "DPM": "DPM", "PRT": "PRT"}),
+    )
+
+    result = parser.parse(
+        "Trong ba mã cổ phiếu DCM, DPM và PRT, với các công ty có lưu chuyển "
+        "tiền thuần từ hoạt động kinh doanh dương trong cả năm 2019 và 2020, "
+        "bình quân tỷ lệ tăng trưởng doanh thu thuần từ năm 2019 đến 2020 là "
+        "bao nhiêu %?"
+    )
+
+    assert result.ok
+    aggregate = result.ast.expression
+    assert isinstance(aggregate, Aggregate)
+    assert isinstance(aggregate.expression, Filter)
+    predicate = aggregate.expression.predicate
+    assert isinstance(predicate, QuantifiedPredicate)
+    assert predicate.axis == Axis.PERIOD
+    assert predicate.quantifier == PredicateQuantifier.ALL
+    assert predicate.predicate.left.metric_id == "cash_flow_from_operations"
+    assert predicate.predicate.left.periods == ("2019", "2020")
+    projection = aggregate.expression.expression
+    assert isinstance(projection, Arithmetic)
+    assert projection.operator == ArithmeticOperator.GROWTH
+    assert projection.left.entities == ("DCM", "DPM", "PRT")
+    assert projection.left.periods == ("2020",)
+    assert projection.right.periods == ("2019",)
+
+
+def test_temporal_cohort_average_changes_formula_after_positive_growth_filter() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"DCM": "DCM", "DPM": "DPM", "PRT": "PRT"}),
+    )
+
+    result = parser.parse(
+        "Trong nhóm DCM, DPM và PRT, xét các công ty có tăng trưởng doanh thu "
+        "thuần dương từ 2019 đến 2020, thay đổi biên lợi nhuận gộp bình quân "
+        "là bao nhiêu điểm phần trăm?"
+    )
+
+    assert result.ok
+    aggregate = result.ast.expression
+    assert isinstance(aggregate, Aggregate)
+    assert isinstance(aggregate.expression, Filter)
+    predicate = aggregate.expression.predicate
+    assert isinstance(predicate, Comparison)
+    assert isinstance(predicate.left, Arithmetic)
+    assert predicate.left.operator == ArithmeticOperator.GROWTH
+    assert predicate.left.left.periods == ("2020",)
+    assert predicate.left.right.periods == ("2019",)
+    projection = aggregate.expression.expression
+    assert isinstance(projection, Arithmetic)
+    assert projection.operator == ArithmeticOperator.SUBTRACT
+    assert isinstance(projection.left, FormulaCall)
+    assert projection.left.formula_id == "gross_margin"
+    assert projection.left.expression.left.periods == ("2020",)
+    assert projection.right.expression.left.periods == ("2019",)

@@ -71,6 +71,9 @@ def _answer(
         "VCB": "Ngân hàng TMCP Ngoại thương Việt Nam",
         "BID": "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam",
         "CTG": "Ngân hàng TMCP Công thương Việt Nam",
+        "DCM": "CTCP Phân bón Dầu khí Cà Mau",
+        "DPM": "Tổng CTCP Phân bón và Hóa chất Dầu khí",
+        "PRT": "PRT",
     }
     engine = SemanticV4Engine(
         SemanticParser(
@@ -136,6 +139,51 @@ def _answer(
                 ("profit_after_tax", "CTG", "2024"): Decimal(180),
             },
             Decimal("0.25"),
+        ),
+        (
+            (
+                "Trong ba mã cổ phiếu DCM, DPM và PRT, với các công ty có lưu "
+                "chuyển tiền thuần từ hoạt động kinh doanh dương trong cả năm "
+                "2019 và 2020, bình quân tỷ lệ tăng trưởng doanh thu thuần từ "
+                "năm 2019 đến 2020 là bao nhiêu %?"
+            ),
+            {
+                ("cash_flow_from_operations", "DCM", "2019"): Decimal(10),
+                ("cash_flow_from_operations", "DCM", "2020"): Decimal(12),
+                ("cash_flow_from_operations", "DPM", "2019"): Decimal(8),
+                ("cash_flow_from_operations", "DPM", "2020"): Decimal(-1),
+                ("cash_flow_from_operations", "PRT", "2019"): Decimal(5),
+                ("cash_flow_from_operations", "PRT", "2020"): Decimal(6),
+                ("net_revenue", "DCM", "2019"): Decimal(100),
+                ("net_revenue", "DCM", "2020"): Decimal(120),
+                ("net_revenue", "DPM", "2019"): Decimal(100),
+                ("net_revenue", "DPM", "2020"): Decimal(200),
+                ("net_revenue", "PRT", "2019"): Decimal(200),
+                ("net_revenue", "PRT", "2020"): Decimal(220),
+            },
+            Decimal(15),
+        ),
+        (
+            (
+                "Trong nhóm DCM, DPM và PRT, xét các công ty có tăng trưởng "
+                "doanh thu thuần dương từ 2019 đến 2020, thay đổi biên lợi "
+                "nhuận gộp bình quân là bao nhiêu điểm phần trăm?"
+            ),
+            {
+                ("net_revenue", "DCM", "2019"): Decimal(100),
+                ("net_revenue", "DCM", "2020"): Decimal(110),
+                ("net_revenue", "DPM", "2019"): Decimal(100),
+                ("net_revenue", "DPM", "2020"): Decimal(90),
+                ("net_revenue", "PRT", "2019"): Decimal(200),
+                ("net_revenue", "PRT", "2020"): Decimal(220),
+                ("gross_profit", "DCM", "2019"): Decimal(20),
+                ("gross_profit", "DCM", "2020"): Decimal(33),
+                ("gross_profit", "DPM", "2019"): Decimal(20),
+                ("gross_profit", "DPM", "2020"): Decimal(27),
+                ("gross_profit", "PRT", "2019"): Decimal(50),
+                ("gross_profit", "PRT", "2020"): Decimal(55),
+            },
+            Decimal(5),
         ),
     ],
 )

@@ -206,9 +206,58 @@ def _align(
         return [
             (scope, value, right.values[scalar]) for scope, value in sorted(left.values.items())
         ]
+    projected = _align_on_shared_axis(left, right)
+    if projected is not None:
+        return projected
     if len(left.values) == len(right.values) == 1:
         return [(Scope(), next(iter(left.values.values())), next(iter(right.values.values())))]
     raise ExecutionError(f"SERIES_SCOPE_MISMATCH:{sorted(left.values)}:{sorted(right.values)}")
+
+
+def _align_on_shared_axis(
+    left: SeriesValue, right: SeriesValue
+) -> list[tuple[Scope, QuantityValue, QuantityValue]] | None:
+    """Pair two temporal/entity slices while retaining their shared axis.
+
+    A vectorized change such as ``value(entity, 2020) - value(entity, 2019)``
+    has different full scopes but one unambiguous entity key.  The resulting
+    series is entity-scoped.  The symmetric period-scoped case is supported as
+    well; non-unique projections continue to fail closed.
+    """
+
+    for attribute in ("entity", "period"):
+        left_by_key = _unique_scope_values(left, attribute)
+        right_by_key = _unique_scope_values(right, attribute)
+        if left_by_key is None or right_by_key is None or set(left_by_key) != set(right_by_key):
+            continue
+        output: list[tuple[Scope, QuantityValue, QuantityValue]] = []
+        for key in sorted(left_by_key):
+            left_scope, left_value = left_by_key[key]
+            right_scope, right_value = right_by_key[key]
+            scope = (
+                Scope(entity=key)
+                if attribute == "entity"
+                else Scope(period=key)
+            )
+            other_left = left_scope.period if attribute == "entity" else left_scope.entity
+            other_right = right_scope.period if attribute == "entity" else right_scope.entity
+            if other_left == other_right:
+                scope = left_scope
+            output.append((scope, left_value, right_value))
+        return output
+    return None
+
+
+def _unique_scope_values(
+    values: SeriesValue, attribute: str
+) -> dict[str, tuple[Scope, QuantityValue]] | None:
+    output: dict[str, tuple[Scope, QuantityValue]] = {}
+    for scope, value in values.values.items():
+        key = getattr(scope, attribute)
+        if key is None or key in output:
+            return None
+        output[key] = (scope, value)
+    return output
 
 
 def _aggregate(function: AggregateFunction, series: SeriesValue) -> SeriesValue:
