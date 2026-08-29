@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "text2pandas.semantic-gold-v2.annotation",
+  "title": "Text2Pandas independent semantic annotation v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "qid",
+    "question",
+    "question_sha256",
+    "cohort",
+    "selection_digest",
+    "reviewer_slot",
+    "reviewer_id",
+    "attestations",
+    "record_status",
+    "entities",
+    "metrics",
+    "periods",
+    "basis",
+    "unit",
+    "operation_tree",
+    "output",
+    "operands",
+    "field_status",
+    "source_evidence",
+    "ambiguity_alternatives",
+    "adjudication",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": {"const": 2},
+    "qid": {"type": "integer", "minimum": 1},
+    "question": {"type": "string", "minLength": 1},
+    "question_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "cohort": {"enum": ["HEADLINE_CORE", "DIAGNOSTIC_SUPPLEMENT", "RESERVE"]},
+    "selection_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "primary_stratum": {"type": ["string", "null"]},
+    "secondary_tags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "reviewer_slot": {"enum": ["A", "B", "C"]},
+    "reviewer_id": {"type": ["string", "null"]},
+    "attestations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "independent_of_model_development",
+        "blind_to_model_outputs",
+        "source_evidence_reviewed",
+        "guideline_sha256",
+        "metric_vocabulary_sha256",
+        "operation_vocabulary_sha256"
+      ],
+      "properties": {
+        "independent_of_model_development": {"type": ["boolean", "null"]},
+        "blind_to_model_outputs": {"type": ["boolean", "null"]},
+        "source_evidence_reviewed": {"type": ["boolean", "null"]},
+        "guideline_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "metric_vocabulary_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "operation_vocabulary_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "record_status": {"type": ["string", "null"], "enum": [null, "RESOLVED", "AMBIGUOUS", "UNRESOLVED"]},
+    "entities": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+    "metrics": {"type": "array", "items": {"$ref": "#/$defs/metric"}},
+    "periods": {"type": "array", "items": {"$ref": "#/$defs/period"}},
+    "basis": {"anyOf": [{"$ref": "#/$defs/basis"}, {"type": "null"}]},
+    "unit": {"anyOf": [{"$ref": "#/$defs/unit"}, {"type": "null"}]},
+    "operation_tree": {"type": ["object", "null"]},
+    "output": {"anyOf": [{"$ref": "#/$defs/output"}, {"type": "null"}]},
+    "operands": {"type": "array", "items": {"$ref": "#/$defs/operand"}},
+    "field_status": {
+      "type": "object",
+      "additionalProperties": {"enum": ["RESOLVED", "AMBIGUOUS", "UNRESOLVED", "NOT_APPLICABLE"]}
+    },
+    "source_evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+    "ambiguity_alternatives": {"type": "array", "items": {"type": "object"}},
+    "adjudication": {"type": ["object", "null"]},
+    "notes": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "start", "end"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "start": {"type": "integer", "minimum": 0},
+        "end": {"type": "integer", "minimum": 1}
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_ref", "mention", "canonical_ref", "resolution_status", "semantic_role"],
+      "properties": {
+        "entity_ref": {"type": "string", "pattern": "^e[1-9][0-9]*$"},
+        "mention": {"$ref": "#/$defs/span"},
+        "canonical_ref": {"type": ["string", "null"]},
+        "resolution_status": {"enum": ["RESOLVED", "AMBIGUOUS", "UNRESOLVED"]},
+        "semantic_role": {"type": "string", "minLength": 1}
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric_ref", "phrase", "concept_id", "concept_status", "reported_or_derived"],
+      "properties": {
+        "metric_ref": {"type": "string", "pattern": "^m[1-9][0-9]*$"},
+        "phrase": {"$ref": "#/$defs/span"},
+        "concept_id": {"type": ["string", "null"]},
+        "concept_status": {"enum": ["RESOLVED", "AMBIGUOUS", "UNRESOLVED"]},
+        "reported_or_derived": {"enum": ["REPORTED", "DERIVED", "UNKNOWN"]},
+        "variant": {"type": ["string", "null"]}
+      }
+    },
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["period_ref", "year", "quarter", "point", "role", "explicit"],
+      "properties": {
+        "period_ref": {"type": "string", "pattern": "^p[1-9][0-9]*$"},
+        "year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 2100},
+        "quarter": {"type": ["integer", "null"], "minimum": 1, "maximum": 4},
+        "point": {"enum": ["PERIOD", "OPENING", "CLOSING", "INSTANT", "UNKNOWN"]},
+        "role": {"enum": ["VALUE", "CURRENT", "PREVIOUS", "START", "END", "RANK_DOMAIN", "FILTER_DOMAIN"]},
+        "explicit": {"type": "boolean"}
+      }
+    },
+    "basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "explicit"],
+      "properties": {
+        "value": {"enum": ["CONSOLIDATED", "SEPARATE", "UNSPECIFIED"]},
+        "explicit": {"type": "boolean"}
+      }
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension", "scale_exponent", "currency", "explicit"],
+      "properties": {
+        "dimension": {"enum": ["MONEY", "PERCENT", "PERCENT_POINT", "RATIO", "COUNT", "SHARES", "UNKNOWN"]},
+        "scale_exponent": {"type": ["integer", "null"], "enum": [null, 0, 3, 6, 9, 12]},
+        "currency": {"type": ["string", "null"]},
+        "explicit": {"type": "boolean"}
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shape"],
+      "properties": {
+        "shape": {"enum": ["SCALAR", "ENTITY", "PERIOD", "COUNT", "TABLE", "SET", "BOOLEAN", "OTHER"]}
+      }
+    },
+    "operand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operand_ref", "role", "metric_ref", "entity_ref", "period_ref", "basis", "unit"],
+      "properties": {
+        "operand_ref": {"type": "string", "pattern": "^o[1-9][0-9]*$"},
+        "role": {"type": "string", "minLength": 1},
+        "metric_ref": {"type": ["string", "null"]},
+        "entity_ref": {"type": ["string", "null"]},
+        "period_ref": {"type": ["string", "null"]},
+        "basis": {"anyOf": [{"$ref": "#/$defs/basis"}, {"type": "null"}]},
+        "unit": {"anyOf": [{"$ref": "#/$defs/unit"}, {"type": "null"}]}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["csv_path", "row_path", "col_label", "status"],
+      "properties": {
+        "csv_path": {"type": ["string", "null"]},
+        "row_path": {"type": ["string", "null"]},
+        "col_label": {"type": ["string", "null"]},
+        "status": {"enum": ["LOCATED", "NOT_LOCATED", "NOT_APPLICABLE"]}
+      }
+    }
+  }
+}

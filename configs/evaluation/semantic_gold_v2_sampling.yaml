@@ -1,0 +1,84 @@
+schema_version: 1
+sampling_id: semantic-gold-v2-phase1.5-sampling
+
+headline_core:
+  records: 100
+  seed: text2pandas-semantic-gold-v2-headline-core
+  method: sha256_hash_order_equal_probability
+
+diagnostic_supplement:
+  records: 20
+  seed: text2pandas-semantic-gold-v2-diagnostic
+  method: question_text_proxy_stratified
+  # Precedence is explicit. Each QID receives only the first matching primary
+  # stratum that still has quota; all matching proxy tags remain secondary.
+  strata:
+    - id: NESTED_COMPOSED
+      quota: 3
+      patterns_any:
+        - '(?:cao nhat|thap nhat|lon nhat|nho nhat).*(?:sau do|tai nam|cua doanh nghiep|chenh lech|trung vi|chi xet)'
+        - '(?:chi xet|trong nhung|trong cac).*(?:cao nhat|thap nhat|lon nhat|nho nhat)'
+        - '(?:trung vi|binh quan).*(?:cao nhat|thap nhat|chenh lech)'
+    - id: ARG_SELECT_PROJECT
+      quota: 3
+      patterns_any:
+        - '(?:tai|vao|o) nam .*?(?:cao nhat|thap nhat|lon nhat|nho nhat)'
+        - '(?:cong ty|doanh nghiep).*(?:cao nhat|thap nhat|lon nhat|nho nhat).*(?:co|bang|la|chiem|gap)'
+        - '(?:cua cong ty|cua doanh nghiep) co .*?(?:cao nhat|thap nhat|lon nhat|nho nhat)'
+    - id: DIVIDE_EXPLICIT_RATIO
+      quota: 4
+      patterns_any:
+        - 'chia cho'
+        - 'tren tong'
+        - 'gap (?:bao nhieu )?lan'
+        - 'chiem bao nhieu.*trong'
+        - 'tren moi'
+    - id: SUBTRACT_DIRECTIONAL
+      quota: 3
+      patterns_any:
+        - 'chenh lech'
+        - 'hieu so'
+        - 'cao hon'
+        - 'thap hon'
+        - 'kem hon'
+        - 'nhieu hon'
+        - 'it hon'
+    - id: GROWTH_PERCENT_CHANGE
+      quota: 2
+      patterns_any:
+        - 'tang truong'
+        - 'toc do tang'
+        - '(?:tang|giam|thay doi).*?(?:%|phan tram)'
+    - id: MULTI_ENTITY_DIRECTIONAL
+      quota: 2
+      patterns_any:
+        - 'giua .+ va .+'
+        - 'trong (?:hai|2) doanh nghiep'
+        - ', .+ va .+'
+        - 'nhom (?:co phieu|cong ty|doanh nghiep)'
+    - id: COUNT
+      quota: 1
+      patterns_any:
+        - 'co bao nhieu'
+        - 'so luong (?:cong ty|doanh nghiep|nam)'
+        - 'tong so (?:cong ty|doanh nghiep)'
+    - id: BASIS_SENSITIVE
+      quota: 1
+      patterns_any:
+        - 'cong ty me'
+        - 'rieng le'
+        - 'bao cao rieng'
+        - 'hop nhat'
+    - id: UNIT_SCALE_SENSITIVE
+      quota: 1
+      patterns_any:
+        - 'nghin ty'
+        - 'tram ty'
+        - 'diem phan tram'
+        - 'trieu (?:dong|vnd)'
+        - 'ty (?:dong|vnd)'
+
+reserve:
+  records: 30
+  seed: text2pandas-semantic-gold-v2-reserve
+  method: sha256_hash_order_equal_probability

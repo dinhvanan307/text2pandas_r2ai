@@ -1,0 +1,89 @@
+schema_version: 1
+vocabulary_id: semantic-metric-concepts-v1
+status: DRAFT_FOR_CALIBRATION
+
+policy:
+  authority: question_meaning_plus_source_evidence
+  silver_row_is_not_concept: true
+  unknown_policy: mark_UNRESOLVED_do_not_invent
+  extension_policy: calibration_review_only_before_final_annotation
+
+concepts:
+  - id: REVENUE
+    definition_vi: Doanh thu nói chung khi câu hỏi không giới hạn thành doanh thu thuần.
+  - id: NET_REVENUE
+    definition_vi: Doanh thu thuần sau các khoản giảm trừ doanh thu.
+  - id: GROSS_PROFIT
+    definition_vi: Lợi nhuận gộp từ hoạt động bán hàng hoặc cung cấp dịch vụ.
+  - id: OPERATING_PROFIT
+    definition_vi: Lợi nhuận từ hoạt động kinh doanh theo đúng nghĩa được câu hỏi nêu.
+  - id: PROFIT_BEFORE_TAX
+    definition_vi: Lợi nhuận kế toán trước thuế.
+  - id: PROFIT_AFTER_TAX
+    definition_vi: Lợi nhuận sau thuế, không mặc định là phần thuộc cổ đông công ty mẹ.
+  - id: CASH_AND_EQUIVALENTS
+    definition_vi: Tiền và các khoản tương đương tiền.
+  - id: INVENTORY
+    definition_vi: Hàng tồn kho theo giá trị được báo cáo.
+  - id: RECEIVABLES
+    definition_vi: Các khoản phải thu khi câu hỏi không nêu subtype cụ thể.
+  - id: CURRENT_ASSETS
+    definition_vi: Tổng tài sản ngắn hạn.
+  - id: TOTAL_ASSETS
+    definition_vi: Tổng cộng tài sản.
+  - id: CURRENT_LIABILITIES
+    definition_vi: Tổng nợ ngắn hạn.
+  - id: TOTAL_LIABILITIES
+    definition_vi: Tổng nợ phải trả, không gồm vốn chủ sở hữu.
+  - id: EQUITY
+    definition_vi: Vốn chủ sở hữu.
+  - id: CHARTER_CAPITAL
+    definition_vi: Vốn điều lệ hoặc vốn góp của chủ sở hữu khi câu hỏi dùng đúng khái niệm đó.
+  - id: COST_OF_GOODS_SOLD
+    definition_vi: Giá vốn hàng bán hoặc giá vốn dịch vụ.
+  - id: FINANCIAL_INCOME
+    definition_vi: Doanh thu hoạt động tài chính.
+  - id: INTEREST_EXPENSE
+    definition_vi: Chi phí lãi vay hoặc chi phí lãi theo ngữ cảnh câu hỏi.
+  - id: SELLING_EXPENSE
+    definition_vi: Chi phí bán hàng.
+  - id: ADMIN_EXPENSE
+    definition_vi: Chi phí quản lý doanh nghiệp.
+  - id: TAX_EXPENSE
+    definition_vi: Chi phí thuế thu nhập doanh nghiệp.
+  - id: CFO
+    definition_vi: Lưu chuyển tiền thuần từ hoạt động kinh doanh.
+  - id: CFI
+    definition_vi: Lưu chuyển tiền thuần từ hoạt động đầu tư.
+  - id: CFF
+    definition_vi: Lưu chuyển tiền thuần từ hoạt động tài chính.
+  - id: CAPEX
+    definition_vi: Chi đầu tư hoặc mua sắm tài sản dài hạn theo định nghĩa câu hỏi.
+  - id: EPS
+    definition_vi: Lãi cơ bản trên cổ phiếu được báo cáo.
+  - id: ROE
+    definition_vi: Tỷ suất sinh lời trên vốn chủ sở hữu; variant mẫu số phải được ghi riêng nếu câu hỏi spell out.
+  - id: ROA
+    definition_vi: Tỷ suất sinh lời trên tài sản; variant mẫu số phải được ghi riêng nếu câu hỏi spell out.
+  - id: GROSS_MARGIN
+    definition_vi: Lợi nhuận gộp chia doanh thu thuần, khi được nêu như một metric có tên.
+  - id: NET_MARGIN
+    definition_vi: Lợi nhuận sau thuế chia doanh thu thuần, khi được nêu như một metric có tên.
+  - id: DEBT_TO_EQUITY
+    definition_vi: Nợ phải trả trên vốn chủ sở hữu, khi được nêu như một metric có tên.
+  - id: BAD_DEBT
+    definition_vi: Nợ xấu theo giá trị tuyệt đối.
+  - id: BAD_DEBT_RATIO
+    definition_vi: Tỷ lệ nợ xấu được nêu như một metric báo cáo.
+  - id: TOTAL_LOANS
+    definition_vi: Tổng dư nợ hoặc cho vay khách hàng theo phạm vi câu hỏi.
+  - id: CUSTOMER_DEPOSITS
+    definition_vi: Tiền gửi của khách hàng.
+  - id: PROVISION_EXPENSE
+    definition_vi: Chi phí dự phòng theo subtype được câu hỏi nêu.
+  - id: GOODWILL
+    definition_vi: Lợi thế thương mại.
+  - id: OUTSTANDING_SHARES
+    definition_vi: Số cổ phiếu đang lưu hành.
+  - id: OTHER_REPORTED_METRIC
+    definition_vi: Metric báo cáo cụ thể đã hiểu rõ nhưng chưa có ID riêng; phải ghi proposed definition và đưa qua calibration review.

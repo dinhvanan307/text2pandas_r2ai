@@ -27,6 +27,7 @@ export LANG           := C.UTF-8
 
 .PHONY: help paths-check lint typecheck docs-check test-offline test-integration test-historical \
         verify-active-candidate semantic-coverage snapshots-verify \
+        semantic-gold-v2-prepare \
         data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
         dp-rebuild-check dp-package
@@ -67,6 +68,12 @@ verify-active-candidate: ## Gate hai canonical run. RUN_A= RUN_B= [REPORT_OUT=]
 
 semantic-coverage: ## Đo route coverage trên 1.012 câu; không thay thế accuracy eval
 	@$(PY) -m text2pandas.interface.cli.main coverage --summary-only
+
+semantic-gold-v2-prepare: ## Tạo packet Phase 1.5 prediction-blind; PROTOCOL= PACKET=
+	@test -n "$(PROTOCOL)" -a -n "$(PACKET)" \
+	  || { echo "LỖI: cần PROTOCOL=<path> PACKET=<artifacts/path>" >&2; exit 2; }
+	@$(PY) tools/evaluation/prepare_semantic_gold_v2.py \
+	  --protocol "$(PROTOCOL)" --output "$(PACKET)"
 
 materialize-h0: ## Tái tạo adjudication ledger + ZIP determinism report; FORCE=1 để ghi đè
 	@$(PY) tools/execution/materialize_h0.py $(if $(FORCE),--force)

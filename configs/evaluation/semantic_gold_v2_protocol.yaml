@@ -1,0 +1,70 @@
+schema_version: 2
+protocol_id: semantic-gold-v2-phase1.5
+
+target_parser:
+  engine: canonical-v2-effective-public-prebind
+  source_commit: 08907c362d440aeb51ac024aedccf75de98a2b0f
+  raw_snapshot_id: ca033190f2e9e99f
+  a6_build_id: c6887fb633374fad
+  retrieval_index_id: 872ccb0dda9a2bb6
+
+question_source:
+  path: data/raw/btc/questions/questions.jsonl
+  sha256: 64a428d90a8c5ad5d36a397d2de3b6e3aa4e4c1224dcdcb118fe3a4fca056ff0
+  records: 1012
+
+contracts:
+  schema: configs/evaluation/semantic_gold_v2_schema.json
+  sampling: configs/evaluation/semantic_gold_v2_sampling.yaml
+  metric_vocabulary: configs/evaluation/semantic_metric_concepts_v1.yaml
+  operation_vocabulary: configs/evaluation/semantic_operation_vocabulary_v1.yaml
+  guideline: data/curated/gold/semantic_gold_v2/README.md
+
+# These are manually reviewed or development-facing cohorts. Generated
+# full-corpus traces are deliberately absent: exposure to a runtime trace alone
+# is not a semantic label, while including them would contaminate all 1,012
+# questions and make an untouched headline cohort impossible.
+contamination_sources:
+  - path: data/curated/gold/semantic_gold.jsonl
+    reason: semantic_gold_v1_used_for_parser_diagnosis_and_regressions
+  - path: data/curated/dev-legacy/answer_gold/answer_gold_wave1_final.jsonl
+    reason: manually_reviewed_answer_gold
+  - path: data/curated/dev-legacy/execution_gold/dev60_labels.jsonl
+    reason: execution_label_cohort
+  - path: data/curated/dev-legacy/gold_tay_pool_v7.jsonl
+    reason: manual_gold_pool
+  - path: data/curated/evaluation/legacy/fact_candidates_gold45_v12.jsonl
+    reason: fact_candidate_gold
+
+protected_surface:
+  - configs/datasets/active_snapshot.yaml
+  - configs/answer_v2/metrics_v1.yaml
+  - configs/answer_v2/formulas_v1.yaml
+  - src/text2pandas/application/usecases/canonical_run.py
+  - src/text2pandas/pipelines/retrieval/question_intent.py
+  - src/text2pandas/pipelines/retrieval/metric_hint.py
+  - src/text2pandas/pipelines/answering/frame.py
+  - src/text2pandas/pipelines/answering/router.py
+  - src/text2pandas/pipelines/answering/ir.py
+  - src/text2pandas/pipelines/answering/formula_engine.py
+  - src/text2pandas/pipelines/answering/pipeline.py
+
+review:
+  minimum_independent_annotators: 2
+  require_distinct_adjudicator: true
+  require_source_evidence_review: true
+  require_blind_model_outputs: true
+  require_independent_of_model_development: true
+  allowed_record_statuses:
+    - RESOLVED
+    - AMBIGUOUS
+    - UNRESOLVED
+
+release:
+  minimum_records: 100
+  maximum_records: 150
+  minimum_resolved_records: 100
+  immutable: true
+  checksum_algorithm: sha256
+  allowed_statuses:
+    - SEALED
