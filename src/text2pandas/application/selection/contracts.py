@@ -9,6 +9,22 @@ from text2pandas.domain.semantic import Basis, Dimension, PeriodSemantics
 
 
 @dataclass(frozen=True, slots=True)
+class MetricSelectorPolicy:
+    min_guarded_confidence: float
+    max_rebind_candidates: int
+    ambiguity_margin: float
+    config_sha256: str
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.min_guarded_confidence <= 1.0:
+            raise ValueError("min_guarded_confidence must be between 0 and 1")
+        if not 1 <= self.max_rebind_candidates <= 3:
+            raise ValueError("max_rebind_candidates must be between 1 and 3")
+        if not 0.0 <= self.ambiguity_margin <= 1.0:
+            raise ValueError("ambiguity_margin must be between 0 and 1")
+
+
+@dataclass(frozen=True, slots=True)
 class ResolvedMetricMention:
     start: int
     end: int
