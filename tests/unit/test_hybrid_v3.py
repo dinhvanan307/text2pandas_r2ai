@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from text2pandas.application.usecases.hybrid_v3 import (
     HybridDecisionKind,
     HybridPolicy,
@@ -10,6 +12,7 @@ from text2pandas.application.usecases.hybrid_v3 import (
     build_hybrid_candidate,
     decide_hybrid_record,
     hybrid_publication_eligibility,
+    validate_source_manifest,
 )
 
 
@@ -116,6 +119,28 @@ def test_publication_requires_policy_and_locked_semantic_gate() -> None:
         ("SEMANTIC_SOURCE_NOT_PROMOTABLE:BLOCKED",),
     )
     assert hybrid_publication_eligibility(production, "PROMOTABLE") == (True, ())
+
+
+def test_source_manifest_is_bound_to_run_id_and_records_digest() -> None:
+    manifest = {
+        "run_id": "semantic-1",
+        "outputs": {"records_jsonl": {"sha256": "abc123"}},
+    }
+
+    validate_source_manifest(
+        manifest,
+        expected_run_id="semantic-1",
+        records_sha256="abc123",
+        source_label="semantic",
+    )
+
+    with pytest.raises(ValueError, match="records sha256 does not match"):
+        validate_source_manifest(
+            manifest,
+            expected_run_id="semantic-1",
+            records_sha256="changed",
+            source_label="semantic",
+        )
 
 
 def test_builder_renames_v3_evidence_and_separates_scorer_refs(tmp_path: Path) -> None:

@@ -549,6 +549,7 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
         build_hybrid_candidate,
         hybrid_publication_eligibility,
         table_locator_map,
+        validate_source_manifest,
     )
     from text2pandas.application.usecases.run_manifest import write_manifest
     from text2pandas.application.usecases.submission import (
@@ -573,10 +574,31 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
     if not policy_path.is_file():
         raise BuildSafetyError(f"missing hybrid policy: {policy_path}")
     policy = load_hybrid_policy(policy_path)
+    legacy_manifest_path = legacy_stage / "manifest.json"
     semantic_manifest_path = semantic_stage / "manifest.json"
+    if not legacy_manifest_path.is_file():
+        raise BuildSafetyError(f"missing legacy source manifest: {legacy_manifest_path}")
     if not semantic_manifest_path.is_file():
         raise BuildSafetyError(f"missing semantic source manifest: {semantic_manifest_path}")
+    legacy_manifest = json.loads(legacy_manifest_path.read_text(encoding="utf-8"))
     semantic_manifest = json.loads(semantic_manifest_path.read_text(encoding="utf-8"))
+    legacy_records_sha256 = sha256_file(legacy_stage / "records.jsonl")
+    semantic_records_sha256 = sha256_file(semantic_stage / "records.jsonl")
+    try:
+        validate_source_manifest(
+            legacy_manifest,
+            expected_run_id=args.legacy_run_id,
+            records_sha256=legacy_records_sha256,
+            source_label="legacy",
+        )
+        validate_source_manifest(
+            semantic_manifest,
+            expected_run_id=args.semantic_run_id,
+            records_sha256=semantic_records_sha256,
+            source_label="semantic",
+        )
+    except HybridBuildError as error:
+        raise BuildSafetyError(str(error)) from error
     semantic_promotion = semantic_manifest.get("promotion")
     semantic_promotion_status = (
         str(semantic_promotion.get("status"))
@@ -629,9 +651,11 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
             "source": git_source_identity(ROOT),
             "inputs": {
                 "legacy_run_id": args.legacy_run_id,
-                "legacy_records_sha256": sha256_file(legacy_stage / "records.jsonl"),
+                "legacy_records_sha256": legacy_records_sha256,
+                "legacy_manifest_sha256": sha256_file(legacy_manifest_path),
                 "semantic_run_id": args.semantic_run_id,
-                "semantic_records_sha256": sha256_file(semantic_stage / "records.jsonl"),
+                "semantic_records_sha256": semantic_records_sha256,
+                "semantic_manifest_sha256": sha256_file(semantic_manifest_path),
                 "policy": str(policy_path.relative_to(ROOT)),
                 "policy_sha256": sha256_file(policy_path),
             },

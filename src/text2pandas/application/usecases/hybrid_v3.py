@@ -122,6 +122,27 @@ def hybrid_publication_eligibility(
     return not blockers, tuple(blockers)
 
 
+def validate_source_manifest(
+    manifest: Mapping[str, object],
+    *,
+    expected_run_id: str,
+    records_sha256: str,
+    source_label: str,
+) -> None:
+    """Bind a source run ID and records digest to its immutable manifest."""
+    if str(manifest.get("run_id") or "") != expected_run_id:
+        raise HybridBuildError(
+            f"{source_label} manifest run_id does not match {expected_run_id}"
+        )
+    outputs = manifest.get("outputs")
+    records = outputs.get("records_jsonl") if isinstance(outputs, Mapping) else None
+    declared = records.get("sha256") if isinstance(records, Mapping) else None
+    if not declared:
+        raise HybridBuildError(f"{source_label} manifest is missing records sha256")
+    if str(declared) != records_sha256:
+        raise HybridBuildError(f"{source_label} records sha256 does not match manifest")
+
+
 def decide_hybrid_record(
     legacy: Mapping[str, object],
     semantic: Mapping[str, object],
