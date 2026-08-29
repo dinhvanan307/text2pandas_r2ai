@@ -196,8 +196,9 @@ Tự gán nhãn bằng chính agent sửa parser sẽ tạo prediction leakage v
 nguyên tắc “không sửa vì đoán”.
 
 Raw baseline 40 QID, chứa question, gold semantic và predicted public semantic,
-được ghi tại
-[`parser_baseline.jsonl`](../../artifacts/audits/parser-phase1-baseline-20260829/parser_baseline.jsonl),
+được ghi nhận theo immutable path
+`artifacts/audits/parser-phase1-baseline-20260829/parser_baseline.jsonl`
+(artifact không được materialize trong checkout hiện tại),
 SHA-256 `dfff7c6eb399da9ab20440f6ea124ffb0d08216c89ede5f5fb31e89d69d877ef`.
 
 # 6. BASELINE MEASUREMENT
@@ -220,8 +221,9 @@ diagnostic evidence, không phải promotion accuracy.
 | Operand-role metric match | — | — | `NOT_MEASURED` |
 | Full semantic frame exact | — | — | `NOT_MEASURED` |
 
-Machine-readable summary:
-[`parser_vs_gold_summary.json`](../../artifacts/audits/parser-phase1-baseline-20260829/parser_vs_gold_summary.json),
+Machine-readable summary được ghi nhận tại
+`artifacts/audits/parser-phase1-baseline-20260829/parser_vs_gold_summary.json`
+(artifact không được materialize trong checkout hiện tại),
 SHA-256 `606dd36b54582c42bb1eea4b657ea74c083c1ff712de25bf8d41296cf33a5bbd`.
 
 Full-corpus structural baseline trước fix:
@@ -247,8 +249,9 @@ Full-corpus counterfactual sau fix:
 | Old-OK table-ref drift | — | 0/563 | 0 |
 | Clean replay | 563/563 baseline | 585/585 | +22 replayable |
 
-Post-fix records:
-[`records.jsonl`](../../artifacts/runs/answer/parser-phase1-entity-bridge-full-20260829/records.jsonl),
+Post-fix records được ghi nhận tại
+`artifacts/runs/answer/parser-phase1-entity-bridge-full-20260829/records.jsonl`
+(artifact không được materialize trong checkout hiện tại),
 SHA-256 `2e9bd66aadb248dfd1ed1da815e24479bd51e505d31b68c55c38c6135edd8bca`.
 
 # 7. FAILURE BREAKDOWN

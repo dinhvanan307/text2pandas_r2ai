@@ -23,10 +23,10 @@ Quyết định kỹ thuật:
 
 ### Lưu ý về schema dữ liệu leaderboard
 
-Bảng trong prompt bỏ hai cột MRR và gắn nhãn khác raw submission 3770 đã được
-xác nhận trước đó. Phần so sánh Top 1 trong báo cáo này dùng đúng schema do
-prompt quy định; phân tích causal 3766 → 3770 dùng raw official metrics đã xác
-nhận. Không trộn hai schema khi tính delta submission.
+Các metric dưới đây được map trực tiếp bằng `column_key` trong raw leaderboard
+JSON, không suy ra theo vị trí cột của screenshot. Screenshot thứ nhất bị cắt
+ngang nên không hiển thị đủ các cột MRR/Docs; screenshot thứ hai xác nhận thứ tự
+chi tiết. Raw JSON là nguồn định danh metric có thẩm quyền.
 
 ## 2. VAR VS TOP 1
 
@@ -39,18 +39,20 @@ Relative gap được tính bằng:
 | Metric | VAR | Top 1 | Gap tuyệt đối | Gap tương đối | Mức độ |
 |---|---:|---:|---:|---:|---|
 | Execution Accuracy | 0.2589 | 0.7115 | 0.4526 | 63.61% | Critical |
-| Tables Precision | 0.3000 | 0.6120 | 0.3120 | 50.98% | Critical |
-| Tables Recall | 0.7086 | 0.9618 | 0.2532 | 26.33% | High |
-| Tables MRR5 | 0.2707 | 0.5928 | 0.3221 | 54.34% | Critical |
-| Docs Precision | 0.3435 | 0.6261 | 0.2826 | 45.13% | High |
-| Docs Recall | 0.6349 | 0.9587 | 0.3238 | 33.77% | High |
-| Docs MRR5 | 0.7651 | 0.9678 | 0.2027 | 20.94% | Medium |
+| Tables F2-macro | 0.3000 | 0.6120 | 0.3120 | 50.98% | Critical |
+| Docs F2-macro | 0.7086 | 0.9618 | 0.2532 | 26.33% | High |
+| Tables Precision | 0.2707 | 0.5928 | 0.3221 | 54.34% | Critical |
+| Tables Recall | 0.3435 | 0.6261 | 0.2826 | 45.14% | High |
+| Tables MRR5 | 0.3801 | 0.6514 | 0.2713 | 41.65% | High |
+| Docs Precision | 0.6349 | 0.9587 | 0.3238 | 33.77% | High |
+| Docs Recall | 0.7651 | 0.9678 | 0.2027 | 20.94% | Medium |
+| Docs MRR5 | 0.7885 | 0.9806 | 0.1921 | 19.59% | Medium |
 | Answer Accuracy | 0.2589 | 0.7115 | 0.4526 | 63.61% | Critical |
 
 Điểm đáng chú ý:
 
 - Docs MRR5 tương đối tốt hơn các retrieval metric khác.
-- Tables MRR5 rất thấp so với Docs MRR5: document có thể đã được tìm khá sớm,
+- Tables MRR5 thấp rõ rệt so với Docs MRR5: document có thể đã được tìm khá sớm,
   nhưng đúng table trong document chưa được xếp hạng tốt.
 - Khoảng cách Execution lớn hơn nhiều so với khoảng cách Recall. Retrieval
   không giải thích hết phần thiếu `0.4526`.
@@ -90,9 +92,9 @@ Answered but likely wrong:   ≈302
 
 | Tầng | Đánh giá | Evidence |
 |---|---|---|
-| Document retrieval | Có vấn đề, nhưng không phải P0 | Docs recall còn thấp, nhưng Docs MRR tương đối mạnh |
-| Table candidate generation | Có miss nhưng không catastrophic | Prompt recall 0.7086; manual-95 S1 hit 95/95 |
-| Table ranking | Bottleneck retrieval lớn | Tables MRR5 0.2707; gap 54.34% |
+| Document retrieval | Có vấn đề, nhưng không phải P0 | Docs recall 0.7651 và Docs MRR5 0.7885 tương đối mạnh |
+| Table candidate generation | Có miss đáng kể | Official Tables recall 0.3435; manual-95 S1 hit 95/95 không đại diện official scope |
+| Table ranking | Bottleneck retrieval lớn | Tables MRR5 0.3801; thấp hơn Docs MRR5 0.7885 |
 | Semantic parsing | Bottleneck P0 | `metric_id` thường rỗng, thiếu operand specifications |
 | Metric/row resolution | Bottleneck P0 | 40 `BIND:UNBOUND_OPERANDS`; nhiều lookup không map chắc vào row label |
 | Planning/composition | Bottleneck P1 | 176 multi-entity unsupported, 32 arg-select, 27 divide, 19 nested extremum |
@@ -146,7 +148,7 @@ Pattern này cho thấy ba vấn đề khác nhau:
    statement, basis hoặc period role.
 3. MRR thấp: khi gold đã tồn tại, nó thường đứng sau distractor.
 
-Chênh lệch lớn giữa Docs MRR5 và Tables MRR5 gợi ý:
+Chênh lệch `0.4084` giữa Docs MRR5 và Tables MRR5 gợi ý:
 
 ```text
 đúng document có thể được tìm sớm

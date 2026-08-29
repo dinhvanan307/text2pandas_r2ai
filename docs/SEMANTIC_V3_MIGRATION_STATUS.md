@@ -1,6 +1,6 @@
 # Semantic Query Engine v3 migration status
 
-Updated: 2026-08-27
+Updated: 2026-08-29
 
 ## Decision
 
@@ -25,35 +25,53 @@ second production implementation.
 
 ## Current full-corpus shadow baseline
 
-The current run uses all 1,012 questions, A6 build `c6887fb633374fad`, operand top-K 20, and canonical run `production-a6-v1.10-v2-r5-20260827`.
+The current no-prior run uses all 1,012 questions, A6 build
+`c6887fb633374fad`, operand top-K 20, and canonical run
+`production-a6-v1.10-v2-r5-20260827`.
 
 | Metric | Result |
 |---|---:|
-| V3 OK | 269 |
-| V3 abstain | 743 |
-| Metric unresolved | 198 |
-| Ambiguous binding | 108 |
-| Reported metric blocked for derived operation | 149 |
+| V3 OK | 362 |
+| V3 abstain | 650 |
+| Metric unresolved | 0 |
+| Binding tie | 121 |
+| Reported metric blocked for derived operation | 162 |
 | Typed/Pandas replay mismatch | 0 |
-| Both V2/V3 OK and equal | 157 |
-| Both OK but value differs | 66 |
-| V3-only OK | 46 |
-| V2-only OK | 338 |
-| Runtime | 64.17 s |
+| Both V2/V3 OK and equal | 212 |
+| Both OK but value differs | 95 |
+| V3-only OK | 55 |
+| V2-only OK | 254 |
+| Runtime | 100.477 s |
 
-Artifact: `artifacts/runs/semantic-v3/semantic-v3-a6-v1.10-r17-20260827/manifest.json`.
+Artifact:
+`artifacts/runs/semantic-v3/semantic-v3-hybrid-fe6667e-20260829-01/manifest.json`.
 
-These are coverage and differential measurements, not accuracy. The 66 value
-differences and 46 V3-only answers require independent adjudication before
-promotion. On the existing 31-record diagnostic slice, r17 has 6 correct among
-6 emitted answers and fail-closes on 25. It no longer emits the three known
-wrong answers present before the formula/rank safety audit. External execution
-accuracy remains `NOT_MEASURED`; all 269 returned answers pass typed/Pandas and
-clean packaged replay.
+These are coverage and differential measurements, not accuracy. The 95 value
+differences and 55 V3-only answers require independent adjudication before
+promotion. On the existing 31-record diagnostic slice, this run emits 12 and
+answers 9 correctly; all 12 replay consistently. Official execution accuracy
+remains `NOT_MEASURED`.
 
-The r17 submission candidate contains exactly 1,012 records, validates with zero
-errors/warnings, and replays 269/269 emitted queries. Its package SHA-256 is
-`dfe1544388e12fe7753ee2e4e0d45a6ac01a90c3b40bd0ac26b59a68b6959f10`.
+The Canonical-table soft-prior experiment increases V3 OK from `362` to `396`
+and reduces binding ties from `121` to `85`. Across the two V3 runs, 359 old OK
+answers remain OK with identical values, 37 abstentions become OK and 3 old OK
+answers become binding ties. Because the governed hybrid recovers fewer
+Canonical abstentions with this experiment (`18` versus `21`) and local table
+MRR5 is lower, the prior remains opt-in and is not selected for the candidate.
+
+## Governed hybrid candidate
+
+The artifact-level strangler composes immutable Canonical and Semantic runs
+under `configs/semantic/hybrid_candidate_safe_v1.yaml`. It may recover a
+Canonical abstention or reuse a replay-identical value; it cannot replace an
+existing Canonical numeric answer. Missing binding margin fails closed.
+
+On the current 585-answer Canonical control, the selected no-prior hybrid emits
+606 answers, changes zero existing values and replays 606/606. Local diagnostic
+answer/execution correctness is 15/31 versus 14/31 for Canonical. The policy and
+source promotion manifest are both checked before publication; the candidate
+is correctly blocked because the policy is experimental and the Semantic
+source status is `BLOCKED`.
 
 ## Promotion state
 

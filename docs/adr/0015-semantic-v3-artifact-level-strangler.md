@@ -22,6 +22,13 @@ The default Canonical V2 command is unchanged. Hybrid policies are experimental
 and `production_eligible=false` until the existing Semantic V3 promotion gate
 passes on a sealed independent release.
 
+Publication uses a two-factor gate: the route policy must explicitly be
+production-eligible and the Semantic source manifest must report
+`promotion.status=PROMOTABLE`. Source run IDs and record SHA-256 digests must
+match their manifests. A policy file alone cannot bypass the locked promotion
+gate, and a missing binding margin fails closed when the route declares a
+minimum.
+
 Semantic evidence CSV files receive a `v3_` prefix so their observation schema
 cannot collide with a Canonical V2 long-format CSV for the same table UID.
 Scorer-facing table references are policy-controlled and remain distinct from

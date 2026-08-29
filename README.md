@@ -163,7 +163,8 @@ V3 writes an immutable differential run and never changes the canonical output:
 text2pandas shadow-v3 \
   --run-id semantic_v3_shadow_001 \
   --operand-k 20 \
-  --legacy-run-id submission_candidate_001
+  --legacy-run-id submission_candidate_001 \
+  --canonical-table-priors
 
 text2pandas package-v3 \
   --run-id semantic_v3_shadow_001 \
@@ -177,6 +178,23 @@ replays every emitted query. The manifest records the ontology fingerprint,
 differential taxonomy, evidence checksums, replay status, and promotion decision.
 `configs/semantic/promotion_policy_v3.yaml` blocks promotion when any required
 metric is absent or below threshold.
+
+Compose the two immutable runs with an experimental, fail-closed route policy:
+
+```bash
+text2pandas hybrid-v3 \
+  --run-id hybrid_safe_001 \
+  --legacy-run-id submission_candidate_001 \
+  --semantic-run-id semantic_v3_shadow_001 \
+  --policy configs/semantic/hybrid_candidate_safe_v1.yaml
+```
+
+`--canonical-table-priors` only supplies the Canonical table order as a
+question-scoped soft prior; it does not hard-filter V3 candidates. The safe
+hybrid policy may recover Canonical abstentions or reuse a replay-identical V3
+answer, but cannot change an existing Canonical value. All bundled hybrid
+policies are `production_eligible=false`; the command validates and replays the
+candidate but refuses publication until the locked promotion gate passes.
 
 ## Test the project
 
