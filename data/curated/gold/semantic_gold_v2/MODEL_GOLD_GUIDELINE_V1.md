@@ -46,7 +46,10 @@ metric phrase without entity, period, unit, or question boilerplate.
 
 Use the 39 concepts inherited from `semantic-metric-concepts-v1`. A clear niche
 reported line outside that ontology uses `OTHER_REPORTED_METRIC` plus a stable,
-non-empty Vietnamese `variant`. This is not a table/row identifier.
+non-empty Vietnamese `variant`. This is not a table/row identifier. A precise
+named reported line must not be marked unresolved merely because the compact
+base ontology lacks a dedicated ID; `variant` is used only with
+`OTHER_REPORTED_METRIC`, `RESOLVED`, and `REPORTED`.
 
 ## Entity, period, basis, and unit
 

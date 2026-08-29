@@ -23,7 +23,11 @@ Important rules:
    input with `source_kind=NODE` must reference one direct child node.
 6. For a precise reported metric absent from the base ontology, use
    `OTHER_REPORTED_METRIC` and put a concise stable Vietnamese semantic definition
-   in `variant`.
+   in `variant`. This is mandatory: NEVER emit concept_id=null/UNRESOLVED merely
+   because a clearly named reported line item (for example `chi phí nhân công`
+   or `lãi thuần từ hoạt động dịch vụ`) is absent from the compact ontology.
+   `variant` is reserved exclusively for OTHER_REPORTED_METRIC, whose
+   concept_status is RESOLVED and reported_or_derived is REPORTED.
 7. Use UNSPECIFIED/explicit=false when the question states no reporting basis.
 8. `trăm tỷ` is MONEY exponent 11; `nghìn tỷ` is exponent 12.
    Vietnamese `đồng` means currency `VND`. A stated unit such as `triệu đồng`

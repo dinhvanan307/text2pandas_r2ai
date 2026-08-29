@@ -487,6 +487,16 @@ def validate_model_gold_record(
             errors.append(f"metrics[{index}].concept_id is outside frozen vocabulary")
         if concept == "OTHER_REPORTED_METRIC" and not str(metric.get("variant") or "").strip():
             errors.append(f"metrics[{index}] OTHER_REPORTED_METRIC requires variant")
+        if concept == "OTHER_REPORTED_METRIC" and (
+            status != "RESOLVED" or metric.get("reported_or_derived") != "REPORTED"
+        ):
+            errors.append(
+                f"metrics[{index}] OTHER_REPORTED_METRIC must be RESOLVED/REPORTED"
+            )
+        if concept != "OTHER_REPORTED_METRIC" and metric.get("variant") is not None:
+            errors.append(
+                f"metrics[{index}] variant is reserved for OTHER_REPORTED_METRIC"
+            )
         if status == "UNRESOLVED" and concept is not None:
             errors.append(f"metrics[{index}] unresolved concept_id must be null")
     for index, period in enumerate(periods):
