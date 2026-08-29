@@ -29,6 +29,7 @@ export LANG           := C.UTF-8
         verify-active-candidate semantic-coverage snapshots-verify \
         semantic-gold-v2-prepare semantic-gold-v2-local-e2e \
         semantic-failure-review independent-gold-audit semantic-promotion-eval \
+        reranker-review-prepare reranker-review-seal reranker-heldout-eval \
         submission-handoff \
         data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
@@ -98,6 +99,31 @@ independent-gold-audit: ## Audit human review completeness; PACKET= OUTPUT=
 	  || { echo "LỖI: cần PACKET=<annotation-packet> OUTPUT=<report.json>" >&2; exit 2; }
 	@$(PY) tools/evaluation/audit_independent_gold.py \
 	  --packet "$(PACKET)" --output "$(OUTPUT)"
+
+reranker-review-prepare: ## Tạo packet A/B/C prediction-blind cho 120 QID reranker; OUTPUT=
+	@test -n "$(OUTPUT)" \
+	  || { echo "LỖI: cần OUTPUT=<immutable-dir>" >&2; exit 2; }
+	@$(PY) tools/evaluation/prepare_reranker_heldout_review.py \
+	  --output "$(OUTPUT)" \
+	  $(if $(SELECTION),--selection "$(SELECTION)") \
+	  $(if $(QUESTIONS),--questions "$(QUESTIONS)")
+
+reranker-review-seal: ## Seal nhãn evidence độc lập; PACKET= OUTPUT= RELEASE_ID=
+	@test -n "$(PACKET)" -a -n "$(OUTPUT)" -a -n "$(RELEASE_ID)" \
+	  || { echo "LỖI: cần PACKET= OUTPUT= RELEASE_ID=" >&2; exit 2; }
+	@$(PY) tools/evaluation/seal_reranker_heldout_review.py \
+	  --packet "$(PACKET)" \
+	  --selection "$(or $(SELECTION),configs/evaluation/reranker_heldout_v1.json)" \
+	  --questions "$(or $(QUESTIONS),data/gold/retrieval/heldout_v1_questions.jsonl)" \
+	  --output "$(OUTPUT)" --release-id "$(RELEASE_ID)"
+
+reranker-heldout-eval: ## Chạy one-shot paired A/B trên sealed labels; LABELS= LABEL_MANIFEST= OUTPUT=
+	@test -n "$(LABELS)" -a -n "$(LABEL_MANIFEST)" -a -n "$(OUTPUT)" \
+	  || { echo "LỖI: cần LABELS= LABEL_MANIFEST= OUTPUT=" >&2; exit 2; }
+	@$(PY) tools/retrieval/evaluate_reranker_heldout.py \
+	  --selection "$(or $(SELECTION),configs/evaluation/reranker_heldout_v1.json)" \
+	  --labels "$(LABELS)" --label-manifest "$(LABEL_MANIFEST)" \
+	  --output "$(OUTPUT)"
 
 semantic-promotion-eval: ## Chấm sealed gold + locked policy; RECORDS= GOLD_RELEASE= SUBMISSION_HANDOFF= OUTPUT=
 	@test -n "$(RECORDS)" -a -n "$(GOLD_RELEASE)" \

@@ -1,32 +1,31 @@
-#!/usr/bin/env python3
 """Run the one-shot paired A/B after an independent held-out label release exists."""
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import sqlite3
-import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
 
-from text2pandas.application.usecases.reranker_evaluation import (  # noqa: E402
+from text2pandas.application.usecases.reranker_evaluation import (
     RerankOutcome,
     evaluate_reranker_ab,
 )
-from text2pandas.pipelines.retrieval.alias_store import load_aliases  # noqa: E402
-from text2pandas.pipelines.retrieval.evalkit.runner import (  # noqa: E402
+from text2pandas.pipelines.retrieval.alias_store import load_aliases
+from text2pandas.pipelines.retrieval.evalkit.runner import (
     EvalConfig,
     _build_reranker,
     resolve_evaluation_dataset,
 )
-from text2pandas.pipelines.retrieval.evalkit.stages import (  # noqa: E402
+from text2pandas.pipelines.retrieval.evalkit.stages import (
     Bm25StructuralRanker,
     HardFilterGenerator,
 )
-from text2pandas.pipelines.retrieval.question_intent import parse_intent  # noqa: E402
+from text2pandas.pipelines.retrieval.question_intent import parse_intent
 
 SELECTION = ROOT / "configs/evaluation/reranker_heldout_v1.json"
 LABELS = ROOT / "data/gold/retrieval/heldout_v1_gold.jsonl"
@@ -39,20 +38,24 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _load_release() -> tuple[dict[int, dict], dict]:
-    if not LABELS.is_file() or not LABEL_MANIFEST.is_file():
+def _load_release(
+    selection_path: Path,
+    labels_path: Path,
+    label_manifest_path: Path,
+) -> tuple[dict[int, dict[str, Any]], dict[str, Any]]:
+    if not labels_path.is_file() or not label_manifest_path.is_file():
         raise FileNotFoundError(
             "independent held-out labels are absent; model promotion remains BLOCKED"
         )
-    selection = json.loads(SELECTION.read_text(encoding="utf-8"))
-    release = json.loads(LABEL_MANIFEST.read_text(encoding="utf-8"))
+    selection = json.loads(selection_path.read_text(encoding="utf-8"))
+    release = json.loads(label_manifest_path.read_text(encoding="utf-8"))
     if release.get("status") != "SEALED" or release.get("independent") is not True:
         raise ValueError("held-out label release must be SEALED and independent")
-    if release.get("selection_manifest_sha256") != _sha(SELECTION):
+    if release.get("selection_manifest_sha256") != _sha(selection_path):
         raise ValueError("held-out selection manifest checksum mismatch")
-    if release.get("labels_sha256") != _sha(LABELS):
+    if release.get("labels_sha256") != _sha(labels_path):
         raise ValueError("held-out labels checksum mismatch")
-    rows = [json.loads(line) for line in LABELS.read_text(encoding="utf-8").splitlines()
+    rows = [json.loads(line) for line in labels_path.read_text(encoding="utf-8").splitlines()
             if line.strip()]
     by_qid = {int(row["id"]): row for row in rows}
     expected = set(map(int, selection["heldout_qids"]))
@@ -67,8 +70,18 @@ def _load_release() -> tuple[dict[int, dict], dict]:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--selection", type=Path, default=SELECTION)
+    parser.add_argument("--labels", type=Path, default=LABELS)
+    parser.add_argument("--label-manifest", type=Path, default=LABEL_MANIFEST)
+    parser.add_argument("--output", type=Path, default=OUT)
+    args = parser.parse_args()
     try:
-        gold, release = _load_release()
+        gold, release = _load_release(
+            args.selection.expanduser().resolve(),
+            args.labels.expanduser().resolve(),
+            args.label_manifest.expanduser().resolve(),
+        )
     except FileNotFoundError as exc:
         print(json.dumps({"status": "BLOCKED", "reason": str(exc)}))
         return 2
@@ -109,14 +122,17 @@ def main() -> int:
     report.update({
         "protocol_id": "reranker-heldout-v1",
         "label_release_id": release.get("release_id"),
-        "selection_manifest_sha256": _sha(SELECTION),
-        "labels_sha256": _sha(LABELS),
+        "selection_manifest_sha256": _sha(args.selection.expanduser().resolve()),
+        "labels_sha256": _sha(args.labels.expanduser().resolve()),
         "model_sha256": _sha(MODEL),
         "retrieval_dataset_sha": dataset.sha,
     })
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-                   encoding="utf-8")
+    output = args.output.expanduser().resolve()
+    if output.exists():
+        raise FileExistsError(f"immutable output already exists: {output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                      encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report["status"] == "PASS" else 1
 
