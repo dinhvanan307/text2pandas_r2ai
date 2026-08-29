@@ -152,3 +152,17 @@ shasum -a 256 artifacts/handoffs/VAR-submission-hybrid-safe-20260829-v1/submissi
   `SEMANTIC_SOURCE_NOT_PROMOTABLE:BLOCKED`.
 - Các blocker chỉ được gỡ bằng sealed independent evidence và gate result thật,
   không bằng chỉnh manifest thủ công.
+
+## 7. Final verification
+
+Quality gates chạy sau khi hoàn tất code và runbook:
+
+- Ruff: pass.
+- Mypy: pass, 93 source files.
+- Markdown links: 84 files, 0 broken links.
+- Offline suite: 2.179 passed, 42 skipped, 29 deselected.
+- Integration suite: 22 passed, 2.228 deselected.
+- Raw/A6/retrieval snapshot lineage: tất cả checks pass.
+- ZIP integrity: `unzip -t` không có lỗi.
+- ZIP SHA-256 sau cùng vẫn là
+  `bc9bd017c595764c4f370f5c47a55cc5df1da09bae3983f676246dfb8ae587c6`.
