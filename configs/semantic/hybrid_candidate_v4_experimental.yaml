@@ -13,13 +13,14 @@ default_route:
   minimum_consensus: null
   promote_matching_legacy_value: false
 
-# V4 output is replay-verified and disagreement-gated. This policy permits an
-# immutable candidate build for evaluation, but production publication remains
-# blocked by the independent promotion gate in promotion_policy_v3.yaml.
+# V4 output is replay-verified and disagreement-gated. Until sealed-gold
+# calibration exists, the candidate may recover canonical abstentions but must
+# not replace a legacy numeric answer. Production publication remains blocked
+# by the independent promotion gate in promotion_policy_v3.yaml.
 routes:
   metric_ref: &verified_v4
     recover_legacy_abstention: true
-    replace_legacy_value: true
+    replace_legacy_value: false
     minimum_binding_margin: null
     minimum_confidence: 0.62
     minimum_consensus: 1

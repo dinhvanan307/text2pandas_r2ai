@@ -87,6 +87,16 @@ def test_v4_policy_preserves_legacy_record_when_numeric_answer_matches() -> None
     assert matched.kind is HybridDecisionKind.KEEP_LEGACY_MATCHED_VALUE
 
 
+def test_v4_policy_does_not_replace_uncalibrated_legacy_value() -> None:
+    changed = decide_hybrid_record(
+        _legacy(answer=900.0),
+        _semantic(confidence=0.8, consensus=1),
+        _policy(),
+    )
+
+    assert changed.kind is HybridDecisionKind.KEEP_LEGACY_VALUE_CHANGE_BLOCKED
+
+
 def test_v4_hybrid_uses_semantic_output_tables_and_v4_attribution(tmp_path: Path) -> None:
     legacy_stage = tmp_path / "legacy"
     semantic_stage = tmp_path / "semantic"
