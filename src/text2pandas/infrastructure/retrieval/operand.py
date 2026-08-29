@@ -205,6 +205,12 @@ class SqliteOperandRetriever:
                 "unit_rejected": rejected_unit,
                 "matched": len(candidates),
                 "returned": len(selected),
+                "candidate_observation_uids": [
+                    candidate.observation_uid for candidate in selected
+                ],
+                "candidate_table_uids": list(
+                    dict.fromkeys(candidate.table_uid for candidate in selected)
+                ),
                 "truncated_at": self.top_k,
                 "reason": failure_reason,
                 "match_methods": dict(sorted(match_methods.items())),
