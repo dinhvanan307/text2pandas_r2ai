@@ -131,3 +131,34 @@ def test_builder_renames_v3_evidence_and_separates_scorer_refs(tmp_path: Path) -
     assert (tmp_path / "hybrid/data/v3_semantic-table.csv").is_file()
     attribution = json.loads(report.attribution_path.read_text(encoding="utf-8"))
     assert attribution["decision"] == "PROMOTE_V3"
+
+
+def test_builder_accepts_historical_legacy_record_without_question(tmp_path: Path) -> None:
+    legacy_stage = tmp_path / "legacy"
+    semantic_stage = tmp_path / "semantic"
+    (legacy_stage / "data").mkdir(parents=True)
+    (semantic_stage / "data").mkdir(parents=True)
+    legacy = _legacy(answer=None)
+    legacy.pop("question")
+    (legacy_stage / "records.jsonl").write_text(json.dumps(legacy) + "\n", encoding="utf-8")
+    (semantic_stage / "records.jsonl").write_text(
+        json.dumps(_semantic()) + "\n", encoding="utf-8"
+    )
+    (semantic_stage / "data" / "semantic-table.csv").write_text(
+        "observation_uid,value\nobs-1,20\n", encoding="utf-8"
+    )
+
+    report = build_hybrid_candidate(
+        legacy_records_path=legacy_stage / "records.jsonl",
+        semantic_records_path=semantic_stage / "records.jsonl",
+        legacy_data_dir=legacy_stage / "data",
+        semantic_data_dir=semantic_stage / "data",
+        output_dir=tmp_path / "hybrid",
+        policy=_policy(),
+        table_locators={
+            "semantic-table": "VNM_financial_statements_2024_consolidated|3"
+        },
+    )
+
+    record = json.loads(report.records_path.read_text(encoding="utf-8"))
+    assert record["question"] == "Doanh thu VNM năm 2024?"

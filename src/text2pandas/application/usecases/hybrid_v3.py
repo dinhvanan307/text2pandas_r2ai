@@ -208,8 +208,13 @@ def build_hybrid_candidate(
         for qid in sorted(legacy):
             old = legacy[qid]
             new = semantic[qid]
-            if str(old.get("question") or "") != str(new.get("question") or ""):
+            legacy_question = str(old.get("question") or "")
+            semantic_question = str(new.get("question") or "")
+            if legacy_question and semantic_question and legacy_question != semantic_question:
                 raise HybridBuildError(f"question text differs for QID {qid}")
+            question = legacy_question or semantic_question
+            if not question:
+                raise HybridBuildError(f"question text is missing from both runs for QID {qid}")
             decision = decide_hybrid_record(old, new, policy)
             decisions[decision.kind.value] += 1
             if decision.promoted:
@@ -236,7 +241,7 @@ def build_hybrid_candidate(
                 json.dumps(
                     {
                         "qid": qid,
-                        "question": str(old.get("question") or ""),
+                        "question": question,
                         "status": "OK" if result.answer is not None else "ABSTAIN",
                         "answer": result.answer,
                         "relevant_docs": result.relevant_docs,
