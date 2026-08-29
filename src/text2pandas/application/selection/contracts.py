@@ -9,6 +9,66 @@ from text2pandas.domain.semantic import Basis, Dimension, PeriodSemantics
 
 
 @dataclass(frozen=True, slots=True)
+class ResolvedMetricMention:
+    start: int
+    end: int
+    surface: str
+    normalized_surface: str
+    candidate_metric_ids: tuple[str, ...]
+    selected_metric_id: str | None
+    match_method: str
+    confidence: float
+    metric_codes: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "start": self.start,
+            "end": self.end,
+            "surface": self.surface,
+            "normalized_surface": self.normalized_surface,
+            "candidate_metric_ids": list(self.candidate_metric_ids),
+            "selected_metric_id": self.selected_metric_id,
+            "match_method": self.match_method,
+            "confidence": self.confidence,
+            "metric_codes": list(self.metric_codes),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class MetricResolution:
+    status: str
+    selected_metric_id: str | None
+    mentions: tuple[ResolvedMetricMention, ...]
+    candidates: tuple[str, ...]
+    confidence: float
+    resolution_method: str
+    reason: str | None
+    ontology_fingerprint: str
+    resolver_fingerprint: str
+    operation_eligible: bool
+    trace: tuple[dict[str, object], ...] = ()
+
+    @property
+    def resolved(self) -> bool:
+        return self.status == "RESOLVED" and self.selected_metric_id is not None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "selected_metric_id": self.selected_metric_id,
+            "mentions": [mention.to_dict() for mention in self.mentions],
+            "candidates": list(self.candidates),
+            "confidence": self.confidence,
+            "resolution_method": self.resolution_method,
+            "reason": self.reason,
+            "ontology_fingerprint": self.ontology_fingerprint,
+            "resolver_fingerprint": self.resolver_fingerprint,
+            "operation_eligible": self.operation_eligible,
+            "trace": list(self.trace),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class SelectorSpec:
     """All semantic constraints needed to select one physical observation.
 

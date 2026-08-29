@@ -1,0 +1,28 @@
+schema_version: 1
+policy_id: canonical-v2-metric-selector-p0-v1
+
+# Policy only. Metric aliases and semantics remain in metrics_v1.yaml and are
+# loaded through ontology_v3.yaml; this file is not another ontology.
+resolution:
+  exact_confidence: 1.0
+  normalized_confidence: 0.99
+  source_confidence: 0.90
+
+ambiguous_phrases:
+  - doanh thu
+  - loi nhuan
+  - tien
+  - thue tndn
+  - chi phi thue
+
+supported_operations:
+  - lookup
+  - subtract
+  - growth
+  - sum
+  - average
+
+selection:
+  min_guarded_confidence: 0.90
+  max_rebind_candidates: 3
+  ambiguity_margin: 0.05
