@@ -316,14 +316,31 @@ def compile_model_response(
         _compile_entity(question, _required_mapping(item, "entity"))
         for item in _required_sequence(response.get("entities"), "entities")
     ]
-    metrics = [
-        _compile_metric(question, _required_mapping(item, "metric"))
-        for item in _required_sequence(response.get("metrics"), "metrics")
-    ]
+    metrics: list[dict[str, object]] = []
+    normalizations: list[str] = []
+    for item in _required_sequence(response.get("metrics"), "metrics"):
+        raw_metric = _required_mapping(item, "metric")
+        compiled_metric, normalized_other = _compile_metric(question, raw_metric)
+        metrics.append(compiled_metric)
+        if normalized_other:
+            normalizations.append(
+                f"{compiled_metric['metric_ref']}:OTHER_REPORTED_METRIC_FROM_VARIANT"
+            )
     periods = [
         _compile_period(question, _required_mapping(item, "period"))
         for item in _required_sequence(response.get("periods"), "periods")
     ]
+    field_status = dict(_required_mapping(response.get("field_status"), "field_status"))
+    if normalizations and field_status.get("metrics") == "UNRESOLVED" and all(
+        metric.get("concept_status") == "RESOLVED" for metric in metrics
+    ):
+        field_status["metrics"] = "RESOLVED"
+        normalizations.append("field_status.metrics:RECONCILED_TO_RESOLVED")
+    raw_notes = response.get("notes")
+    notes = None if raw_notes is None else str(raw_notes)
+    if normalizations:
+        suffix = "Contract normalization: " + ", ".join(normalizations)
+        notes = f"{notes.rstrip()}\n{suffix}" if notes and notes.strip() else suffix
     draft: dict[str, object] = {
         "schema_version": SCHEMA_VERSION,
         "release_id": RELEASE_ID,
@@ -349,12 +366,12 @@ def compile_model_response(
         "operation_tree": _copy_json_value(response.get("operation_tree")),
         "output": _copy_json_value(response.get("output")),
         "operands": _copy_json_value(response.get("operands")),
-        "field_status": _copy_json_value(response.get("field_status")),
+        "field_status": field_status,
         "source_evidence": _copy_json_value(response.get("source_evidence")),
         "ambiguity_alternatives": _copy_json_value(
             response.get("ambiguity_alternatives")
         ),
-        "notes": response.get("notes"),
+        "notes": notes,
     }
     status = derive_record_status(
         _required_mapping(draft["field_status"], "field_status")
@@ -640,11 +657,26 @@ def _compile_entity(question: str, item: Mapping[str, object]) -> dict[str, obje
     return output
 
 
-def _compile_metric(question: str, item: Mapping[str, object]) -> dict[str, object]:
+def _compile_metric(
+    question: str, item: Mapping[str, object]
+) -> tuple[dict[str, object], bool]:
     output = dict(item)
     text = _required_text(output.pop("phrase_text", None), "metric.phrase_text")
     output["phrase"] = _exact_span(question, text)
-    return output
+    variant = output.get("variant")
+    normalize_other = (
+        output.get("concept_id") is None
+        and output.get("concept_status") == "UNRESOLVED"
+        and isinstance(variant, str)
+        and bool(variant.strip())
+    )
+    if normalize_other:
+        assert isinstance(variant, str)
+        output["concept_id"] = "OTHER_REPORTED_METRIC"
+        output["concept_status"] = "RESOLVED"
+        output["reported_or_derived"] = "REPORTED"
+        output["variant"] = variant.strip()
+    return output, normalize_other
 
 
 def _compile_period(question: str, item: Mapping[str, object]) -> dict[str, object]:

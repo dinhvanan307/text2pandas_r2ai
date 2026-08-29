@@ -246,6 +246,29 @@ def test_unresolved_metric_cannot_use_variant_as_ontology_escape_hatch() -> None
         )
 
 
+def test_compiler_normalizes_model_variant_to_other_reported_metric() -> None:
+    response = _response()
+    metric = response["metrics"][0]
+    metric["concept_id"] = None
+    metric["concept_status"] = "UNRESOLVED"
+    metric["reported_or_derived"] = "UNKNOWN"
+    metric["variant"] = "chi phí nhân công"
+    response["field_status"]["metrics"] = "UNRESOLVED"
+    response["notes"] = "Compact ontology lacks a dedicated concept."
+    record = compile_model_response(_selection(), response, _generation())
+    assert record["metrics"][0]["concept_id"] == "OTHER_REPORTED_METRIC"
+    assert record["metrics"][0]["concept_status"] == "RESOLVED"
+    assert record["metrics"][0]["reported_or_derived"] == "REPORTED"
+    assert record["field_status"]["metrics"] == "RESOLVED"
+    assert "OTHER_REPORTED_METRIC_FROM_VARIANT" in record["notes"]
+    validate_model_gold_record(
+        record,
+        _selection(),
+        metric_concept_ids=_concept_ids(),
+        operation_specs=_operation_specs(),
+    )
+
+
 def test_canonicalization_is_byte_identical_and_removes_provenance() -> None:
     first = canonicalize_record(_record())
     second = canonicalize_record(copy.deepcopy(_record()))

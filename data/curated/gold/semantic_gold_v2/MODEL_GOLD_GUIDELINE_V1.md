@@ -51,6 +51,12 @@ named reported line must not be marked unresolved merely because the compact
 base ontology lacks a dedicated ID; `variant` is used only with
 `OTHER_REPORTED_METRIC`, `RESOLVED`, and `REPORTED`.
 
+The compiler treats a model response containing `concept_id=null`,
+`concept_status=UNRESOLVED`, and a non-empty `variant` as a mechanically
+mis-encoded `OTHER_REPORTED_METRIC`. It normalizes that tuple to
+`OTHER_REPORTED_METRIC`/`RESOLVED`/`REPORTED`, reconciles the metric field status,
+and records the normalization in `notes`. It does not invent a variant.
+
 ## Entity, period, basis, and unit
 
 - Preserve entity direction and distinguish company, subsidiary, investee,

@@ -518,8 +518,9 @@ def generate(args: argparse.Namespace) -> int:
                     response_hash=response_hash,
                     attempt=attempt,
                 )
-                final_record = compile_model_response(row, response_value, generation)
-                _validate_compiled(final_record, row, contracts)
+                candidate_record = compile_model_response(row, response_value, generation)
+                _validate_compiled(candidate_record, row, contracts)
+                final_record = candidate_record
                 break
             except Exception as exc:  # bounded retry captures transport + contract errors
                 feedback = [f"{type(exc).__name__}: {exc}"]
