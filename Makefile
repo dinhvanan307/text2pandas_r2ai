@@ -28,6 +28,8 @@ export LANG           := C.UTF-8
 .PHONY: help paths-check lint typecheck docs-check test-offline test-integration test-historical \
         verify-active-candidate semantic-coverage snapshots-verify \
         semantic-gold-v2-prepare semantic-gold-v2-local-e2e \
+        semantic-failure-review independent-gold-audit semantic-promotion-eval \
+        submission-handoff \
         data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
         dp-rebuild-check dp-package
@@ -84,6 +86,33 @@ semantic-gold-v2-local-e2e: ## Chạy WP3-WP10 local 2 lần; MODE= PACKET= RUN_
 	  tools/evaluation/run_semantic_gold_v2_local_e2e.py \
 	  --packet "$(PACKET)" --run-a "$(RUN_A)" --run-b "$(RUN_B)" \
 	  --report "$(REPORT)" $(if $(INCLUDE_RESERVE),--include-reserve)
+
+semantic-failure-review: ## Tạo diagnostic backlog 300 QID; RECORDS= OUTPUT=
+	@test -n "$(RECORDS)" -a -n "$(OUTPUT)" \
+	  || { echo "LỖI: cần RECORDS=<v3-records.jsonl> OUTPUT=<immutable-dir>" >&2; exit 2; }
+	@$(PY) tools/evaluation/prepare_failure_review.py \
+	  --records "$(RECORDS)" --output "$(OUTPUT)" --target-count 300
+
+independent-gold-audit: ## Audit human review completeness; PACKET= OUTPUT=
+	@test -n "$(PACKET)" -a -n "$(OUTPUT)" \
+	  || { echo "LỖI: cần PACKET=<annotation-packet> OUTPUT=<report.json>" >&2; exit 2; }
+	@$(PY) tools/evaluation/audit_independent_gold.py \
+	  --packet "$(PACKET)" --output "$(OUTPUT)"
+
+semantic-promotion-eval: ## Chấm sealed gold + locked policy; RECORDS= GOLD_RELEASE= SUBMISSION_HANDOFF= OUTPUT=
+	@test -n "$(RECORDS)" -a -n "$(GOLD_RELEASE)" \
+	  -a -n "$(SUBMISSION_HANDOFF)" -a -n "$(OUTPUT)" \
+	  || { echo "LỖI: cần RECORDS= GOLD_RELEASE= SUBMISSION_HANDOFF= OUTPUT=" >&2; exit 2; }
+	@$(PY) tools/evaluation/evaluate_semantic_promotion.py \
+	  --records "$(RECORDS)" --gold-release "$(GOLD_RELEASE)" \
+	  --submission-handoff "$(SUBMISSION_HANDOFF)" --output "$(OUTPUT)" \
+	  $(if $(RERANKER_REPORT),--reranker-report "$(RERANKER_REPORT)")
+
+submission-handoff: ## Verify và materialize manual-upload bundle; RUN_ID= OUTPUT=
+	@test -n "$(RUN_ID)" -a -n "$(OUTPUT)" \
+	  || { echo "LỖI: cần RUN_ID=<hybrid-run-id> OUTPUT=<immutable-dir>" >&2; exit 2; }
+	@$(PY) tools/package_submission_handoff.py \
+	  --candidate-run-id "$(RUN_ID)" --output "$(OUTPUT)"
 
 materialize-h0: ## Tái tạo adjudication ledger + ZIP determinism report; FORCE=1 để ghi đè
 	@$(PY) tools/execution/materialize_h0.py $(if $(FORCE),--force)
