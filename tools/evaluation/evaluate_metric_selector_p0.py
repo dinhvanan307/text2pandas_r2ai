@@ -221,6 +221,19 @@ def _emitted(record: JsonObject) -> bool:
     )
 
 
+def _scorer_view(record: JsonObject, qid: int) -> JsonObject:
+    emitted = _emitted(record)
+    return {
+        "id": qid,
+        "question": record.get("question"),
+        "answer": record.get("answer") if emitted else 0,
+        "relevant_docs": record.get("relevant_docs") or [],
+        "relevant_tables": record.get("relevant_tables") or [],
+        "evidence": record.get("evidence") or [],
+        "pandas_query": record.get("pandas_query") or "",
+    }
+
+
 def _baseline_comparison(
     archive: Path,
     current: dict[int, JsonObject],
@@ -237,13 +250,20 @@ def _baseline_comparison(
     differing_answer = 0
     for qid, before in baseline.items():
         after = current[qid]
-        if before == {key: after.get(key) for key in before}:
+        before_view = _scorer_view(before, qid)
+        after_view = _scorer_view(after, qid)
+        if before_view == after_view:
             exact += 1
         before_emitted = _emitted(before)
         after_emitted = _emitted(after)
         baseline_only += before_emitted and not after_emitted
         current_only += after_emitted and not before_emitted
-        differing_answer += not _close(before.get("answer"), after.get("answer"), tolerance)
+        if before_emitted != after_emitted:
+            differing_answer += 1
+        elif before_emitted and not _close(
+            before.get("answer"), after.get("answer"), tolerance
+        ):
+            differing_answer += 1
     evaluable = len(gold)
     correct = sum(
         _emitted(baseline[qid])
