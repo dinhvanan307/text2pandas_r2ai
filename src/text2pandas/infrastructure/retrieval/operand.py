@@ -429,7 +429,7 @@ class SqliteOperandRetriever:
                 None if collision_class in (None, "") else str(collision_class)
             ),
             source_confidence=(
-                None if readiness_confidence is None else float(str(readiness_confidence))
+                _confidence_value(readiness_confidence)
             ),
         )
 
@@ -516,6 +516,20 @@ def _metric_match(
                 ("row_hierarchy", "generic_total_leaf", "fact_normalized"),
             )
     return None
+
+
+def _confidence_value(value: object) -> float | None:
+    if value is None:
+        return None
+    normalized = str(value).strip().casefold()
+    categorical = {"high": 0.9, "medium": 0.65, "low": 0.35}
+    if normalized in categorical:
+        return categorical[normalized]
+    try:
+        converted = float(normalized)
+    except ValueError:
+        return None
+    return converted if 0.0 <= converted <= 1.0 else None
 
 
 def _prefix(value: str, prefix: str) -> bool:

@@ -107,7 +107,7 @@ def test_recoverable_collision_requires_explicit_retriever_policy() -> None:
             '1.000', 'money', 'VND', 6, 0, 10, 2, 'row-1', 'column-1',
             'missing_row_parent', 'total_assets'
         );
-        INSERT INTO observation_readiness VALUES ('recoverable', 0, 0.72);
+        INSERT INTO observation_readiness VALUES ('recoverable', 0, 'high');
         """
     )
     request = OperandRequest(
@@ -136,4 +136,4 @@ def test_recoverable_collision_requires_explicit_retriever_policy() -> None:
         "recoverable"
     ]
     assert experimental.candidates[0].readiness == "recoverable"
-    assert experimental.candidates[0].source_confidence == 0.72
+    assert experimental.candidates[0].source_confidence == 0.9
