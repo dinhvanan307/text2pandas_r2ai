@@ -34,3 +34,14 @@ class BindingResult:
     def ok(self) -> bool:
         return self.status == "OK"
 
+
+@dataclass(frozen=True, slots=True)
+class BindingSearchResult:
+    status: str
+    candidates: tuple[BoundExecutionPlan, ...] = ()
+    reason: str | None = None
+    trace: tuple[dict[str, object], ...] = field(default_factory=tuple)
+
+    @property
+    def ok(self) -> bool:
+        return self.status == "OK"
