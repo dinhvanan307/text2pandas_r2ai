@@ -149,8 +149,7 @@ def decide_hybrid_record(
         return decision(HybridDecisionKind.KEEP_LEGACY_INVALID_EVIDENCE)
     if (
         route.minimum_binding_margin is not None
-        and margin is not None
-        and margin < route.minimum_binding_margin
+        and (margin is None or margin < route.minimum_binding_margin)
     ):
         return decision(HybridDecisionKind.KEEP_LEGACY_MARGIN_LOW)
 

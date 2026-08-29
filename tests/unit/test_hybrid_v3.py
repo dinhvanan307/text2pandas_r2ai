@@ -84,10 +84,14 @@ def test_lookup_experiment_allows_high_margin_value_change() -> None:
     blocked = decide_hybrid_record(
         _legacy(answer=10), _semantic(margin=0.5), _policy(replace=True)
     )
+    missing_margin = decide_hybrid_record(
+        _legacy(answer=10), _semantic(margin=None), _policy(replace=True)
+    )
 
     assert promoted.kind is HybridDecisionKind.PROMOTE_V3
     assert promoted.value_changed
     assert blocked.kind is HybridDecisionKind.KEEP_LEGACY_MARGIN_LOW
+    assert missing_margin.kind is HybridDecisionKind.KEEP_LEGACY_MARGIN_LOW
 
 
 def test_builder_renames_v3_evidence_and_separates_scorer_refs(tmp_path: Path) -> None:
