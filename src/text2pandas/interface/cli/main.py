@@ -540,6 +540,139 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
     return 0 if not validation.errors and not replay["error"] and not replay_mismatches else 1
 
 
+def cmd_hybrid_v3(args: argparse.Namespace) -> int:
+    """Compose V2 and replay-verified V3 records under a versioned route policy."""
+    from datetime import UTC, datetime
+
+    from text2pandas.application.usecases.hybrid_v3 import (
+        HybridBuildError,
+        build_hybrid_candidate,
+        table_locator_map,
+    )
+    from text2pandas.application.usecases.run_manifest import write_manifest
+    from text2pandas.application.usecases.submission import (
+        SubmissionConfig,
+        build_submission,
+        replay_zip,
+        validate_zip,
+    )
+    from text2pandas.infrastructure.checksums import sha256_file
+    from text2pandas.infrastructure.semantic import load_hybrid_policy
+    from text2pandas.infrastructure.snapshots import verify_active_snapshots
+    from text2pandas.infrastructure.source_identity import git_source_identity
+
+    verification = verify_active_snapshots(PROJECT_PATHS, scope="all")
+    failures = [item for item in verification.items if not item.ok]
+    if failures:
+        detail = "; ".join(f"{item.name}: {item.detail}" for item in failures)
+        raise BuildSafetyError(f"active snapshot preflight failed: {detail}")
+    legacy_stage = PROJECT_PATHS.run_dir("answer", args.legacy_run_id)
+    semantic_stage = PROJECT_PATHS.run_dir("semantic-v3", args.semantic_run_id)
+    policy_path = Path(args.policy).expanduser().resolve()
+    if not policy_path.is_file():
+        raise BuildSafetyError(f"missing hybrid policy: {policy_path}")
+    policy = load_hybrid_policy(policy_path)
+    stage = PROJECT_PATHS.run_dir("answer", args.run_id)
+    table_cards = ACTIVE_SNAPSHOTS.a6_path / "dataframe/csv/table_cards.csv"
+    try:
+        report = build_hybrid_candidate(
+            legacy_records_path=legacy_stage / "records.jsonl",
+            semantic_records_path=semantic_stage / "records.jsonl",
+            legacy_data_dir=legacy_stage / "data",
+            semantic_data_dir=semantic_stage / "data",
+            output_dir=stage,
+            policy=policy,
+            table_locators=table_locator_map(table_cards),
+        )
+    except HybridBuildError as error:
+        raise BuildSafetyError(str(error)) from error
+
+    questions = {
+        int(row["id"]): str(row["question"])
+        for row in (
+            json.loads(line) for line in QUESTIONS.read_text(encoding="utf-8").splitlines() if line
+        )
+    }
+    cfg = SubmissionConfig(doc_id_variant=args.doc_id, locator_base=args.locator_base)
+    zip_path = build_submission(report.results, questions, stage, cfg)
+    validation = validate_zip(zip_path, questions, corpus_root=CORPUS)
+    replay = replay_zip(zip_path, SCRATCH / f"hybrid-replay-{args.run_id}")
+    replay_mismatches = replay["executed"] - replay["matched"]
+    package_ok = not validation.errors and not replay["error"] and not replay_mismatches
+    published = None
+    if package_ok and policy.production_eligible:
+        published = SUBMIT_DIR / f"submission_{args.run_id}.zip"
+        publish_new_file(zip_path, published)
+    manifest_path = stage / "manifest.json"
+    write_manifest(
+        manifest_path,
+        {
+            "schema_version": "1.0",
+            "kind": "text2pandas.semantic_v3_hybrid_candidate",
+            "run_id": args.run_id,
+            "generated_at_utc": datetime.now(UTC).isoformat(),
+            "source": git_source_identity(ROOT),
+            "inputs": {
+                "legacy_run_id": args.legacy_run_id,
+                "legacy_records_sha256": sha256_file(legacy_stage / "records.jsonl"),
+                "semantic_run_id": args.semantic_run_id,
+                "semantic_records_sha256": sha256_file(semantic_stage / "records.jsonl"),
+                "policy": str(policy_path.relative_to(ROOT)),
+                "policy_sha256": sha256_file(policy_path),
+            },
+            "policy": {
+                "policy_id": policy.policy_id,
+                "status": policy.status,
+                "production_eligible": policy.production_eligible,
+                "relevant_refs_mode": policy.relevant_refs_mode,
+                "maximum_relevant_tables": policy.maximum_relevant_tables,
+            },
+            "metrics": {
+                "questions": report.n_questions,
+                "promoted": report.n_promoted,
+                "recovered": report.n_recovered,
+                "value_changed": report.n_value_changed,
+                "decisions": report.decisions,
+                "promoted_routes": report.promoted_routes,
+            },
+            "validation": {
+                "records": validation.n_records,
+                "errors": validation.errors,
+                "warnings": validation.warnings,
+            },
+            "replay": replay,
+            "replay_mismatches": replay_mismatches,
+            "package": {
+                "path": str(zip_path.relative_to(ROOT)),
+                "sha256": sha256_file(zip_path),
+                "published": None if published is None else str(published.relative_to(ROOT)),
+            },
+            "outputs": {
+                "records": str(report.records_path.relative_to(ROOT)),
+                "per_qid_attribution": str(report.attribution_path.relative_to(ROOT)),
+            },
+        },
+    )
+    print("\n╔═══════════ SEMANTIC V3 HYBRID ═══════════╗")
+    print(f"  policy             : {policy.policy_id} ({policy.status})")
+    print(f"  questions          : {report.n_questions:,}")
+    print(f"  promoted V3        : {report.n_promoted:,}")
+    print(f"  recovered abstain  : {report.n_recovered:,}")
+    print(f"  changed values     : {report.n_value_changed:,}")
+    print(f"  validation errors  : {len(validation.errors):,}")
+    print(
+        f"  replay             : {replay['executed']:,} executed · "
+        f"{replay['matched']:,} matched · {replay['error']:,} errors"
+    )
+    print(f"  zip                : {zip_path}")
+    print(f"  attribution        : {report.attribution_path}")
+    if not policy.production_eligible:
+        print("  publish            : BLOCKED — policy requires sealed independent gold")
+    elif published:
+        print(f"  publish            : {published}")
+    return 0 if package_ok else 1
+
+
 def cmd_silver(args: argparse.Namespace) -> int:
     """Bronze -> Silver: đặc trưng bảng + ô định dạng dài."""
     from text2pandas.application.usecases.build_silver import build_silver
@@ -961,6 +1094,20 @@ def main(argv: list[str] | None = None) -> int:
     package_v3.add_argument(
         "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
     )
+    hybrid = sub.add_parser(
+        "hybrid-v3",
+        help="Compose immutable Canonical V2 and Semantic V3 runs under a policy",
+    )
+    hybrid.add_argument("--run-id", required=True)
+    hybrid.add_argument("--legacy-run-id", required=True)
+    hybrid.add_argument("--semantic-run-id", required=True)
+    hybrid.add_argument("--policy", required=True)
+    hybrid.add_argument(
+        "--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped"
+    )
+    hybrid.add_argument(
+        "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
+    )
 
     args = p.parse_args(argv)
     handlers = {
@@ -975,6 +1122,7 @@ def main(argv: list[str] | None = None) -> int:
         "coverage": cmd_coverage,
         "shadow-v3": cmd_shadow_v3,
         "package-v3": cmd_package_v3,
+        "hybrid-v3": cmd_hybrid_v3,
     }
     try:
         return handlers[args.cmd](args)

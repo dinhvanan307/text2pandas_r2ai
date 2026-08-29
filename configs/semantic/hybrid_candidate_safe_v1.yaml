@@ -1,0 +1,46 @@
+schema_version: 1
+policy_id: semantic-v3-hybrid-safe-v1
+status: EXPERIMENTAL_REQUIRES_SEALED_GOLD
+production_eligible: false
+
+# Exact semantic evidence is always first. Legacy scorer refs may extend recall
+# but can never displace an evidence table or exceed the competition cap.
+relevant_refs_mode: semantic_plus_legacy
+maximum_relevant_tables: 10
+
+default_route:
+  recover_legacy_abstention: false
+  replace_legacy_value: false
+  minimum_binding_margin: null
+
+# Safe candidate: recover only V2 abstentions. Existing numeric answers are
+# replaced only when V3 is replay-identical, which creates no answer drift.
+routes:
+  metric_ref:
+    recover_legacy_abstention: true
+    replace_legacy_value: false
+    minimum_binding_margin: 1.0
+  formula_call:
+    recover_legacy_abstention: true
+    replace_legacy_value: false
+    minimum_binding_margin: 1.0
+  arithmetic:
+    recover_legacy_abstention: true
+    replace_legacy_value: false
+    minimum_binding_margin: 1.0
+  aggregate:
+    recover_legacy_abstention: true
+    replace_legacy_value: false
+    minimum_binding_margin: 1.0
+  select_at_arg:
+    recover_legacy_abstention: true
+    replace_legacy_value: false
+    minimum_binding_margin: 1.0
+  rank:
+    recover_legacy_abstention: true
+    replace_legacy_value: false
+    minimum_binding_margin: 1.0
+  filter:
+    recover_legacy_abstention: true
+    replace_legacy_value: false
+    minimum_binding_margin: 1.0
