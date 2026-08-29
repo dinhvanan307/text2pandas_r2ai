@@ -37,6 +37,14 @@ class ObservationCandidate:
     matched_metric_id: str | None = None
     match_method: str | None = None
     match_features: tuple[str, ...] = ()
+    column_uid: str | None = None
+    logical_table_uid: str | None = None
+    section_text: str | None = None
+    row_hierarchy: tuple[str, ...] = ()
+    column_hierarchy: tuple[str, ...] = ()
+    readiness: str = "ready"
+    collision_class: str | None = None
+    source_confidence: float | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -64,6 +72,14 @@ class ObservationCandidate:
             "matched_metric_id": self.matched_metric_id or self.metric_id,
             "match_method": self.match_method,
             "match_features": list(self.match_features),
+            "column_uid": self.column_uid,
+            "logical_table_uid": self.logical_table_uid or self.table_uid,
+            "section_text": self.section_text,
+            "row_hierarchy": list(self.row_hierarchy),
+            "column_hierarchy": list(self.column_hierarchy),
+            "readiness": self.readiness,
+            "collision_class": self.collision_class,
+            "source_confidence": self.source_confidence,
         }
 
 

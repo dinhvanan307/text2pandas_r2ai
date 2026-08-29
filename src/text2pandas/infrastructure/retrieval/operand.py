@@ -10,6 +10,7 @@ from decimal import Decimal, InvalidOperation
 
 from text2pandas.application.planning import OperandRequest
 from text2pandas.application.retrieval import CandidateBatch, ObservationCandidate
+from text2pandas.domain.facts import make_logical_table_uid, split_hierarchy
 from text2pandas.domain.metrics import MetricOntology, normalize_phrase
 from text2pandas.domain.semantic import (
     Basis,
@@ -22,6 +23,7 @@ from text2pandas.domain.semantic import (
 from .fact_label import fact_label_segments, normalize_fact_label
 
 FACT_RETRIEVAL_POLICY_VERSION = "fact-retrieval-v2"
+RECOVERABLE_COLLISION_CLASSES = ("missing_column_group", "missing_row_parent")
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +56,7 @@ class SqliteOperandRetriever:
         hard_allowed_table_uids: tuple[str, ...] = (),
         table_rank_priors: tuple[str, ...] = (),
         source_build_id: str | None = None,
+        include_recoverable_collisions: bool = False,
     ):
         if top_k < 1:
             raise ValueError("top_k must be positive")
@@ -63,6 +66,7 @@ class SqliteOperandRetriever:
         self.hard_allowed_table_uids = hard_allowed_table_uids
         self.table_rank = {uid: index for index, uid in enumerate(table_rank_priors)}
         self.source_build_id = source_build_id
+        self.include_recoverable_collisions = include_recoverable_collisions
         self._metric_patterns = {
             metric_id: _MetricPattern(
                 tuple(dict.fromkeys(normalize_phrase(alias) for alias in metric.aliases)),
@@ -77,9 +81,23 @@ class SqliteOperandRetriever:
         observation_columns = {
             str(row[1]) for row in connection.execute("PRAGMA table_info(observations)")
         }
+        self._has_collision_metadata = "collision_class" in observation_columns
         self._row_uid_expression = "o.row_uid" if "row_uid" in observation_columns else "NULL"
         self._metric_code_expression = (
             "o.metric_code" if "metric_code" in observation_columns else "NULL"
+        )
+        self._column_uid_expression = (
+            "o.column_uid" if "column_uid" in observation_columns else "NULL"
+        )
+        self._collision_expression = (
+            "o.collision_class" if "collision_class" in observation_columns else "NULL"
+        )
+        readiness_columns = {
+            str(row[1])
+            for row in connection.execute("PRAGMA table_info(observation_readiness)")
+        }
+        self._readiness_confidence_expression = (
+            "r.confidence" if "confidence" in readiness_columns else "NULL"
         )
 
     def set_table_rank_priors(self, table_uids: tuple[str, ...]) -> None:
@@ -123,8 +141,18 @@ class SqliteOperandRetriever:
                 (),
                 {"reason": "UNKNOWN_METRIC", "metric_id": request.metric_id},
             )
-        clauses = ["r.execution_ready = 1", "o.value_decimal_text IS NOT NULL"]
+        readiness_clause = "r.execution_ready = 1"
+        if self.include_recoverable_collisions and self._has_collision_metadata:
+            placeholders = ",".join("?" for _ in RECOVERABLE_COLLISION_CLASSES)
+            readiness_clause = (
+                "(r.execution_ready = 1 OR "
+                f"(o.collision_class IN ({placeholders}) "
+                "AND o.row_uid IS NOT NULL AND o.column_uid IS NOT NULL))"
+            )
+        clauses = [readiness_clause, "o.value_decimal_text IS NOT NULL"]
         parameters: list[object] = []
+        if self.include_recoverable_collisions and self._has_collision_metadata:
+            parameters.extend(RECOVERABLE_COLLISION_CLASSES)
         if request.entity:
             clauses.append("o.ticker = ?")
             parameters.append(request.entity)
@@ -144,7 +172,9 @@ class SqliteOperandRetriever:
         rows = self.connection.execute(
             f"""
             SELECT o.observation_uid, {self._row_uid_expression},
-                   {self._metric_code_expression}, o.table_uid, t.directory_doc_id,
+                   {self._metric_code_expression}, {self._column_uid_expression},
+                   {self._collision_expression}, {self._readiness_confidence_expression},
+                   r.execution_ready, o.table_uid, t.directory_doc_id,
                    o.ticker, d.basis, o.statement_type,
                    o.row_path_text, o.metric_label_clean, o.col_path_text,
                    o.period_end, o.period_role, o.value_decimal_text,
@@ -217,6 +247,7 @@ class SqliteOperandRetriever:
                 "retrieval_policy": FACT_RETRIEVAL_POLICY_VERSION,
                 "hard_table_filter": bool(self.hard_allowed_table_uids),
                 "table_prior_count": len(self.table_rank),
+                "recoverable_collisions_enabled": self.include_recoverable_collisions,
                 **({"source_binding": True} if source_binding is not None else {}),
             },
         )
@@ -247,6 +278,10 @@ class SqliteOperandRetriever:
             observation_uid,
             row_uid,
             source_metric_code,
+            column_uid,
+            collision_class,
+            readiness_confidence,
+            execution_ready,
             table_uid,
             document_id,
             entity,
@@ -379,6 +414,23 @@ class SqliteOperandRetriever:
             matched_metric_id=request.metric_id,
             match_method=match.method,
             match_features=match.features,
+            column_uid=None if column_uid is None else str(column_uid),
+            logical_table_uid=make_logical_table_uid(
+                document_id=str(document_id),
+                statement_type=None if statement_type is None else str(statement_type),
+                section_text=None if section_text is None else str(section_text),
+                physical_table_uid=str(table_uid),
+            ),
+            section_text=None if section_text is None else str(section_text),
+            row_hierarchy=split_hierarchy(str(row_path or metric_label or "")),
+            column_hierarchy=split_hierarchy(str(column_path or "")),
+            readiness="ready" if bool(execution_ready) else "recoverable",
+            collision_class=(
+                None if collision_class in (None, "") else str(collision_class)
+            ),
+            source_confidence=(
+                None if readiness_confidence is None else float(str(readiness_confidence))
+            ),
         )
 
 
