@@ -1073,6 +1073,24 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_shadow_v4(args: argparse.Namespace) -> int:
+    from .semantic_v4_commands import cmd_shadow_v4 as run
+
+    return run(args)
+
+
+def cmd_package_v4(args: argparse.Namespace) -> int:
+    from .semantic_v4_commands import cmd_package_v4 as run
+
+    return run(args)
+
+
+def cmd_hybrid_v4(args: argparse.Namespace) -> int:
+    from .semantic_v4_commands import cmd_hybrid_v4 as run
+
+    return run(args)
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="text2pandas")
     p.add_argument("-v", "--verbose", action="store_true")
@@ -1186,6 +1204,47 @@ def main(argv: list[str] | None = None) -> int:
     hybrid.add_argument(
         "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
     )
+    shadow_v4 = sub.add_parser(
+        "shadow-v4",
+        help="Chạy corpus-grounded Semantic V4 ở chế độ shadow",
+    )
+    shadow_v4.add_argument("--run-id", required=True)
+    shadow_v4.add_argument("--limit", type=int, default=0)
+    shadow_v4.add_argument("--offset", type=int, default=0)
+    shadow_v4.add_argument("--legacy-run-id")
+    shadow_v4.add_argument(
+        "--policy",
+        default=str(ROOT / "configs/semantic/search_v4.yaml"),
+    )
+    shadow_v4.add_argument("--canonical-table-priors", action="store_true")
+    package_v4 = sub.add_parser(
+        "package-v4",
+        help="Đóng gói, validate và replay một Semantic V4 shadow run",
+    )
+    package_v4.add_argument("--run-id", required=True)
+    package_v4.add_argument(
+        "--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped"
+    )
+    package_v4.add_argument(
+        "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
+    )
+    hybrid_v4 = sub.add_parser(
+        "hybrid-v4",
+        help="Compose Canonical V2 và Semantic V4 thành candidate có attribution",
+    )
+    hybrid_v4.add_argument("--run-id", required=True)
+    hybrid_v4.add_argument("--legacy-run-id", required=True)
+    hybrid_v4.add_argument("--semantic-run-id", required=True)
+    hybrid_v4.add_argument(
+        "--policy",
+        default=str(ROOT / "configs/semantic/hybrid_candidate_v4_experimental.yaml"),
+    )
+    hybrid_v4.add_argument(
+        "--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped"
+    )
+    hybrid_v4.add_argument(
+        "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
+    )
 
     args = p.parse_args(argv)
     handlers = {
@@ -1201,6 +1260,9 @@ def main(argv: list[str] | None = None) -> int:
         "shadow-v3": cmd_shadow_v3,
         "package-v3": cmd_package_v3,
         "hybrid-v3": cmd_hybrid_v3,
+        "shadow-v4": cmd_shadow_v4,
+        "package-v4": cmd_package_v4,
+        "hybrid-v4": cmd_hybrid_v4,
     }
     try:
         return handlers[args.cmd](args)
