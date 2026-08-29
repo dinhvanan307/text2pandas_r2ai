@@ -1,0 +1,31 @@
+schema_version: 1
+policy_id: semantic-v4-hybrid-experimental-v1
+status: EXPERIMENTAL_REQUIRES_SEALED_GOLD
+production_eligible: false
+relevant_refs_mode: semantic_output
+maximum_relevant_tables: 10
+
+default_route:
+  recover_legacy_abstention: false
+  replace_legacy_value: false
+  minimum_binding_margin: null
+  minimum_confidence: null
+  minimum_consensus: null
+
+# V4 output is replay-verified and disagreement-gated. This policy permits an
+# immutable candidate build for evaluation, but production publication remains
+# blocked by the independent promotion gate in promotion_policy_v3.yaml.
+routes:
+  metric_ref: &verified_v4
+    recover_legacy_abstention: true
+    replace_legacy_value: true
+    minimum_binding_margin: null
+    minimum_confidence: 0.62
+    minimum_consensus: 1
+  formula_call: *verified_v4
+  arithmetic: *verified_v4
+  unary: *verified_v4
+  aggregate: *verified_v4
+  select_at_arg: *verified_v4
+  rank: *verified_v4
+  filter: *verified_v4

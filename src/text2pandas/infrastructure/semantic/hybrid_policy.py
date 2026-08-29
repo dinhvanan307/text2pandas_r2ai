@@ -23,7 +23,12 @@ def load_hybrid_policy(path: str | Path) -> HybridPolicy:
         for name, values in (raw.get("routes") or {}).items()
     }
     refs_mode = str(raw.get("relevant_refs_mode") or "semantic_evidence")
-    if refs_mode not in {"semantic_evidence", "semantic_plus_legacy"}:
+    if refs_mode not in {
+        "semantic_evidence",
+        "semantic_plus_legacy",
+        "semantic_output",
+        "semantic_output_plus_legacy",
+    }:
         raise ValueError(f"invalid relevant_refs_mode: {refs_mode}")
     maximum = int(raw.get("maximum_relevant_tables", 10))
     if maximum < 1 or maximum > 10:
@@ -41,8 +46,14 @@ def load_hybrid_policy(path: str | Path) -> HybridPolicy:
 
 def _route(raw: dict[str, object]) -> HybridRoutePolicy:
     margin = raw.get("minimum_binding_margin")
+    confidence = raw.get("minimum_confidence")
+    consensus = raw.get("minimum_consensus")
     return HybridRoutePolicy(
         recover_legacy_abstention=bool(raw.get("recover_legacy_abstention", False)),
         replace_legacy_value=bool(raw.get("replace_legacy_value", False)),
         minimum_binding_margin=None if margin is None else float(str(margin)),
+        minimum_confidence=(
+            None if confidence is None else float(str(confidence))
+        ),
+        minimum_consensus=None if consensus is None else int(str(consensus)),
     )

@@ -27,6 +27,8 @@ class HybridDecisionKind(StrEnum):
     KEEP_LEGACY_V3_NOT_OK = "KEEP_LEGACY_V3_NOT_OK"
     KEEP_LEGACY_ROUTE_BLOCKED = "KEEP_LEGACY_ROUTE_BLOCKED"
     KEEP_LEGACY_MARGIN_LOW = "KEEP_LEGACY_MARGIN_LOW"
+    KEEP_LEGACY_CONFIDENCE_LOW = "KEEP_LEGACY_CONFIDENCE_LOW"
+    KEEP_LEGACY_CONSENSUS_LOW = "KEEP_LEGACY_CONSENSUS_LOW"
     KEEP_LEGACY_NON_NUMERIC = "KEEP_LEGACY_NON_NUMERIC"
     KEEP_LEGACY_VALUE_CHANGE_BLOCKED = "KEEP_LEGACY_VALUE_CHANGE_BLOCKED"
     KEEP_LEGACY_RECOVERY_BLOCKED = "KEEP_LEGACY_RECOVERY_BLOCKED"
@@ -38,6 +40,8 @@ class HybridRoutePolicy:
     recover_legacy_abstention: bool = False
     replace_legacy_value: bool = False
     minimum_binding_margin: float | None = None
+    minimum_confidence: float | None = None
+    minimum_consensus: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,7 +68,10 @@ class HybridDecision:
     legacy_answer: float | None
     semantic_answer: float | None
     binding_margin: float | None
+    confidence: float | None
+    consensus_size: int | None
     value_changed: bool
+    semantic_label: str = "semantic_v3"
     semantic_stage_failed: str | None = None
     semantic_reason: str | None = None
 
@@ -82,9 +89,12 @@ class HybridDecision:
             "legacy_answer": self.legacy_answer,
             "semantic_answer": self.semantic_answer,
             "binding_margin": self.binding_margin,
+            "confidence": self.confidence,
+            "consensus_size": self.consensus_size,
             "value_changed": self.value_changed,
             "semantic_stage_failed": self.semantic_stage_failed,
             "semantic_reason": self.semantic_reason,
+            "semantic_label": self.semantic_label,
         }
 
 
@@ -147,6 +157,8 @@ def decide_hybrid_record(
     legacy: Mapping[str, object],
     semantic: Mapping[str, object],
     policy: HybridPolicy,
+    *,
+    semantic_label: str = "semantic_v3",
 ) -> HybridDecision:
     qid = _required_int(legacy, "qid")
     legacy_status = str(legacy.get("status") or "ABSTAIN")
@@ -155,6 +167,8 @@ def decide_hybrid_record(
     semantic_answer = _numeric_answer(semantic.get("answer"))
     expression_type = _expression_type(semantic)
     margin = _optional_float(semantic.get("binding_margin"))
+    confidence = _optional_float(semantic.get("confidence"))
+    consensus_size = _optional_int(semantic.get("consensus_size"))
 
     def decision(kind: HybridDecisionKind) -> HybridDecision:
         return HybridDecision(
@@ -166,11 +180,14 @@ def decide_hybrid_record(
             legacy_answer=legacy_answer,
             semantic_answer=semantic_answer,
             binding_margin=margin,
+            confidence=confidence,
+            consensus_size=consensus_size,
             value_changed=(
                 legacy_answer is not None
                 and semantic_answer is not None
                 and not _answers_match(legacy_answer, semantic_answer)
             ),
+            semantic_label=semantic_label,
             semantic_stage_failed=_optional_string(semantic.get("stage_failed")),
             semantic_reason=_optional_string(semantic.get("reason")),
         )
@@ -189,6 +206,16 @@ def decide_hybrid_record(
         and (margin is None or margin < route.minimum_binding_margin)
     ):
         return decision(HybridDecisionKind.KEEP_LEGACY_MARGIN_LOW)
+    if (
+        route.minimum_confidence is not None
+        and (confidence is None or confidence < route.minimum_confidence)
+    ):
+        return decision(HybridDecisionKind.KEEP_LEGACY_CONFIDENCE_LOW)
+    if (
+        route.minimum_consensus is not None
+        and (consensus_size is None or consensus_size < route.minimum_consensus)
+    ):
+        return decision(HybridDecisionKind.KEEP_LEGACY_CONSENSUS_LOW)
 
     legacy_ok = legacy_status == "OK" and legacy_answer is not None
     if not legacy_ok and not route.recover_legacy_abstention:
@@ -212,6 +239,8 @@ def build_hybrid_candidate(
     output_dir: Path,
     policy: HybridPolicy,
     table_locators: Mapping[str, str],
+    semantic_label: str = "semantic_v3",
+    evidence_prefix: str = "v3",
 ) -> HybridBuildReport:
     """Materialize a hybrid run and a complete per-QID attribution artifact."""
     legacy = _load_records(legacy_records_path)
@@ -251,7 +280,12 @@ def build_hybrid_candidate(
             question = legacy_question or semantic_question
             if not question:
                 raise HybridBuildError(f"question text is missing from both runs for QID {qid}")
-            decision = decide_hybrid_record(old, new, policy)
+            decision = decide_hybrid_record(
+                old,
+                new,
+                policy,
+                semantic_label=semantic_label,
+            )
             decisions[decision.kind.value] += 1
             if decision.promoted:
                 assert decision.semantic_answer is not None
@@ -263,6 +297,8 @@ def build_hybrid_candidate(
                     data_dir,
                     table_locators,
                     policy,
+                    semantic_label,
+                    evidence_prefix,
                 )
                 routes[decision.expression_type or "UNKNOWN"] += 1
                 recovered += int(decision.legacy_answer is None)
@@ -286,7 +322,7 @@ def build_hybrid_candidate(
                         "pandas_query": result.pandas_query,
                         "confidence": result.confidence,
                         "reason": result.notes[0] if result.notes else None,
-                        "answer_source": "semantic_v3" if decision.promoted else "canonical_v2",
+                        "answer_source": semantic_label if decision.promoted else "canonical_v2",
                         "hybrid": decision.to_dict(),
                     },
                     ensure_ascii=False,
@@ -324,21 +360,23 @@ def _semantic_result(
     target_data: Path,
     locators: Mapping[str, str],
     policy: HybridPolicy,
+    semantic_label: str,
+    evidence_prefix: str,
 ) -> AnswerResult:
     evidence_items = semantic.get("evidence")
     if not isinstance(evidence_items, Sequence) or isinstance(evidence_items, (str, bytes)):
-        raise HybridBuildError(f"Semantic V3 evidence is invalid for QID {semantic.get('qid')}")
+        raise HybridBuildError(f"semantic evidence is invalid for QID {semantic.get('qid')}")
     evidence: list[dict[str, str]] = []
     table_uids: list[str] = []
     for raw in evidence_items:
         if not isinstance(raw, Mapping):
-            raise HybridBuildError(f"Semantic V3 evidence item is invalid: {raw!r}")
+            raise HybridBuildError(f"semantic evidence item is invalid: {raw!r}")
         table_uid = str(raw.get("table_uid") or "")
         variable = str(raw.get("variable") or "")
         if not table_uid or not variable:
-            raise HybridBuildError(f"Semantic V3 evidence is incomplete: {raw!r}")
+            raise HybridBuildError(f"semantic evidence is incomplete: {raw!r}")
         source = source_data / f"{table_uid}.csv"
-        target_name = f"v3_{table_uid}.csv"
+        target_name = f"{evidence_prefix}_{table_uid}.csv"
         _copy_immutable(source, target_data / target_name)
         evidence.append({"variable": variable, "csv_path": f"data/{target_name}"})
         if table_uid not in table_uids:
@@ -347,13 +385,13 @@ def _semantic_result(
         exact_refs = [locators[value] for value in table_uids]
     except KeyError as error:
         raise HybridBuildError(f"A6 table locator missing: {error.args[0]}") from error
-    tables = _scorer_refs(exact_refs, legacy, policy)
+    tables = _scorer_refs(exact_refs, semantic, legacy, locators, policy)
     documents = list(dict.fromkeys(value.rsplit("|", 1)[0] for value in tables))
     margin = _optional_float(semantic.get("binding_margin"))
     positive_margin = None if margin is None else max(0.0, margin)
-    confidence = (
-        0.5 if positive_margin is None else positive_margin / (1.0 + positive_margin)
-    )
+    confidence = _optional_float(semantic.get("confidence"))
+    if confidence is None:
+        confidence = 0.5 if positive_margin is None else positive_margin / (1.0 + positive_margin)
     return AnswerResult(
         qid=_required_int(semantic, "qid"),
         answer=answer,
@@ -364,7 +402,7 @@ def _semantic_result(
         confidence=confidence,
         csv_name=Path(evidence[0]["csv_path"]).name if evidence else "",
         has_csv=bool(evidence),
-        notes=["PROMOTED_SEMANTIC_V3"],
+        notes=[f"PROMOTED_{semantic_label.upper()}"],
     )
 
 
@@ -400,7 +438,11 @@ def _legacy_result(
 
 
 def _scorer_refs(
-    exact_refs: list[str], legacy: Mapping[str, object], policy: HybridPolicy
+    exact_refs: list[str],
+    semantic: Mapping[str, object],
+    legacy: Mapping[str, object],
+    locators: Mapping[str, str],
+    policy: HybridPolicy,
 ) -> list[str]:
     if policy.relevant_refs_mode == "semantic_evidence":
         values = exact_refs
@@ -408,6 +450,20 @@ def _scorer_refs(
         values = exact_refs + _string_sequence(
             legacy.get("relevant_tables"), "relevant_tables"
         )
+    elif policy.relevant_refs_mode in {
+        "semantic_output",
+        "semantic_output_plus_legacy",
+    }:
+        table_uids = _string_sequence(
+            semantic.get("relevant_tables"), "semantic.relevant_tables"
+        )
+        try:
+            semantic_refs = [locators[value] for value in table_uids]
+        except KeyError as error:
+            raise HybridBuildError(f"A6 table locator missing: {error.args[0]}") from error
+        values = exact_refs + semantic_refs
+        if policy.relevant_refs_mode == "semantic_output_plus_legacy":
+            values += _string_sequence(legacy.get("relevant_tables"), "relevant_tables")
     else:
         raise HybridBuildError(f"unknown relevant_refs_mode: {policy.relevant_refs_mode}")
     return list(dict.fromkeys(values))[: policy.maximum_relevant_tables]
@@ -474,6 +530,15 @@ def _optional_float(value: object) -> float | None:
     except (TypeError, ValueError):
         return None
     return converted if math.isfinite(converted) else None
+
+
+def _optional_int(value: object) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(str(value))
+    except ValueError:
+        return None
 
 
 def _optional_string(value: object) -> str | None:
