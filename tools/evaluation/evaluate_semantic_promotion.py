@@ -71,6 +71,16 @@ def main() -> int:
     reranker_metrics = (
         reranker.get("metrics") if isinstance(reranker.get("metrics"), dict) else {}
     )
+    heldout_records = reranker_metrics.get("heldout_records", reranker.get("n"))
+    f2_delta = reranker_metrics.get("f2_delta", reranker.get("paired_f2_delta"))
+    raw_ci95 = reranker.get("paired_f2_delta_ci95")
+    f2_ci95_low = reranker_metrics.get("f2_delta_ci95_low")
+    if f2_ci95_low is None and isinstance(raw_ci95, list) and raw_ci95:
+        f2_ci95_low = raw_ci95[0]
+    protected_delta = reranker_metrics.get(
+        "protected_slice_min_delta",
+        reranker.get("minimum_protected_slice_delta"),
+    )
     release_id = str(manifest.get("release_id") or "")
     metrics = PromotionMetrics(
         questions=len(_rows(records_path)),
@@ -83,14 +93,10 @@ def main() -> int:
         candidate_recall=evaluation.candidate_recall,
         binding_exact=evaluation.binding_exact,
         answer_accuracy=evaluation.answer_accuracy,
-        reranker_heldout_records=_optional_int(reranker_metrics.get("heldout_records")),
-        reranker_f2_delta=_optional_float(reranker_metrics.get("f2_delta")),
-        reranker_f2_delta_ci95_low=_optional_float(
-            reranker_metrics.get("f2_delta_ci95_low")
-        ),
-        reranker_protected_slice_delta=_optional_float(
-            reranker_metrics.get("protected_slice_min_delta")
-        ),
+        reranker_heldout_records=_optional_int(heldout_records),
+        reranker_f2_delta=_optional_float(f2_delta),
+        reranker_f2_delta_ci95_low=_optional_float(f2_ci95_low),
+        reranker_protected_slice_delta=_optional_float(protected_delta),
         submission_replay_records=_optional_int(replay.get("total")),
         replay_mismatches=_optional_int(replay.get("mismatches")),
         submission_errors=(
