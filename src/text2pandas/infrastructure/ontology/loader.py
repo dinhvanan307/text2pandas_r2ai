@@ -174,7 +174,7 @@ def _metric_definition(raw: dict[str, Any]) -> MetricDefinition:
         "consolidated": Basis.CONSOLIDATED,
         "separate": Basis.SEPARATE,
     }.get(str(raw.get("preferred_scope", "")), Basis.UNSPECIFIED)
-    legal = ("sum", "average", "minimum", "maximum", "growth")
+    legal = ("lookup", "subtract", "growth", "sum", "average")
     return MetricDefinition(
         metric_id=str(raw["metric_id"]),
         aliases=_normalized_tuple(raw.get("aliases", ())),
@@ -186,6 +186,7 @@ def _metric_definition(raw: dict[str, Any]) -> MetricDefinition:
         review_status="reviewed",
         forbidden_prefixes=_normalized_tuple(raw.get("forbidden_aliases", ())),
         forbidden_contains=_normalized_tuple(raw.get("forbidden_contains", ())),
+        required_context_any=_normalized_tuple(raw.get("required_context_any", ())),
         legal_aggregations=legal,
     )
 

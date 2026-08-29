@@ -16,6 +16,7 @@ from text2pandas.domain.semantic import (
     Aggregate,
     Arithmetic,
     Basis,
+    Dimension,
     Filter,
     FormulaCall,
     MetricRef,
@@ -27,6 +28,11 @@ from text2pandas.domain.semantic import (
 )
 from text2pandas.domain.semantic.ast import Expression
 from text2pandas.domain.semantic.types import PeriodSemantics
+
+
+_REVIEWED_STATEMENT_TYPES = frozenset(
+    {"balance_sheet", "income_statement", "cash_flow", "note"}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,7 +47,23 @@ class MetricDefinition:
     review_status: str = "reviewed"
     forbidden_prefixes: tuple[str, ...] = ()
     forbidden_contains: tuple[str, ...] = ()
+    required_context_any: tuple[str, ...] = ()
     legal_aggregations: tuple[str, ...] = ()
+
+    @property
+    def expected_dimension(self) -> Dimension:
+        """Dimension required by a selector for this metric.
+
+        ``MetricDefinition`` is the single source-of-truth MetricSpec.  The
+        property gives P0 selection code the requested vocabulary without
+        duplicating ontology records or policy data.
+        """
+
+        return self.unit.dimension
+
+    @property
+    def preferred_statement_types(self) -> tuple[str, ...]:
+        return self.statement_types
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -55,6 +77,7 @@ class MetricDefinition:
             "review_status": self.review_status,
             "forbidden_prefixes": list(self.forbidden_prefixes),
             "forbidden_contains": list(self.forbidden_contains),
+            "required_context_any": list(self.required_context_any),
             "legal_aggregations": list(self.legal_aggregations),
         }
 
@@ -128,19 +151,63 @@ class MetricOntology:
         for key, metric in self.metrics.items():
             if key != metric.metric_id:
                 issues.append(_error("METRIC_KEY", key, "dictionary key differs from metric_id"))
-            if not metric.aliases:
+            normalized_aliases = tuple(normalize_phrase(alias) for alias in metric.aliases)
+            if not normalized_aliases or any(not alias for alias in normalized_aliases):
                 issues.append(_error("METRIC_ALIASES", key, "metric requires aliases"))
-            if len(set(metric.aliases)) != len(metric.aliases):
+            if len(set(normalized_aliases)) != len(normalized_aliases):
                 issues.append(_error("METRIC_ALIAS_DUPLICATE", key, "aliases must be unique"))
+            if metric.review_status == "reviewed":
+                if metric.unit.dimension.value == "unknown":
+                    issues.append(
+                        _error("METRIC_DIMENSION", key, "reviewed metric requires a dimension")
+                    )
+                if metric.period_semantics == PeriodSemantics.UNKNOWN:
+                    issues.append(
+                        _error(
+                            "METRIC_PERIOD_SEMANTICS",
+                            key,
+                            "reviewed metric requires period semantics",
+                        )
+                    )
+                invalid_statement_types = sorted(
+                    set(metric.statement_types) - _REVIEWED_STATEMENT_TYPES
+                )
+                if not metric.statement_types or invalid_statement_types:
+                    issues.append(
+                        _error(
+                            "METRIC_STATEMENT_TYPES",
+                            key,
+                            f"invalid={invalid_statement_types}",
+                        )
+                    )
+                forbidden_prefixes = tuple(
+                    normalize_phrase(value) for value in metric.forbidden_prefixes
+                )
+                forbidden_contains = tuple(
+                    normalize_phrase(value) for value in metric.forbidden_contains
+                )
+                if normalized_aliases and all(
+                    any(alias.startswith(value) for value in forbidden_prefixes if value)
+                    or any(value in alias for value in forbidden_contains if value)
+                    for alias in normalized_aliases
+                ):
+                    issues.append(
+                        _error(
+                            "METRIC_ALIASES_FORBIDDEN",
+                            key,
+                            "forbidden rules reject every positive alias",
+                        )
+                    )
         metric_alias_owner: dict[str, str] = {}
         for metric in self.metrics.values():
             for alias in metric.aliases:
-                owner = metric_alias_owner.setdefault(alias, metric.metric_id)
+                normalized_alias = normalize_phrase(alias)
+                owner = metric_alias_owner.setdefault(normalized_alias, metric.metric_id)
                 if owner != metric.metric_id:
                     issues.append(
                         _error(
                             "METRIC_ALIAS_COLLISION",
-                            alias,
+                            normalized_alias,
                             f"owned by both {owner} and {metric.metric_id}",
                         )
                     )
