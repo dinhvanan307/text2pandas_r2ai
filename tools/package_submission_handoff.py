@@ -15,6 +15,26 @@ from text2pandas.infrastructure.checksums import sha256_file
 ROOT = Path(__file__).resolve().parents[1]
 QUESTIONS = ROOT / "data/raw/btc/questions/questions.jsonl"
 CORPUS = ROOT / "data/raw/btc/financial_statements"
+RUN_ROOTS = ("answer", "grounded-v5")
+
+
+def _resolve_candidate_stage(run_id: str) -> tuple[Path, Path]:
+    if not run_id or Path(run_id).name != run_id:
+        raise ValueError("candidate run id must be one path-safe name")
+    matches: list[tuple[Path, Path]] = []
+    checked: list[Path] = []
+    for run_kind in RUN_ROOTS:
+        stage = ROOT / "artifacts/runs" / run_kind / run_id
+        source_zip = stage.with_suffix(".zip")
+        checked.append(stage)
+        if source_zip.is_file() and (stage / "manifest.json").is_file():
+            matches.append((stage, source_zip))
+    if not matches:
+        locations = ", ".join(str(path) for path in checked)
+        raise FileNotFoundError(f"candidate run not found under: {locations}")
+    if len(matches) > 1:
+        raise ValueError(f"candidate run id is ambiguous across run roots: {run_id}")
+    return matches[0]
 
 
 def main() -> int:
@@ -22,13 +42,11 @@ def main() -> int:
     parser.add_argument("--candidate-run-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    stage = ROOT / "artifacts/runs/answer" / args.candidate_run_id
-    source_zip = stage.with_suffix(".zip")
+    try:
+        stage, source_zip = _resolve_candidate_stage(args.candidate_run_id)
+    except (FileNotFoundError, ValueError) as error:
+        parser.error(str(error))
     manifest_path = stage / "manifest.json"
-    if not source_zip.is_file():
-        parser.error(f"missing candidate ZIP: {source_zip}")
-    if not manifest_path.is_file():
-        parser.error(f"missing candidate manifest: {manifest_path}")
     output = args.output.expanduser().resolve()
     if output.exists():
         parser.error(f"immutable output already exists: {output}")

@@ -1245,6 +1245,15 @@ def main(argv: list[str] | None = None) -> int:
     hybrid_v4.add_argument(
         "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
     )
+    grounded_v5 = sub.add_parser(
+        "grounded-v5",
+        help="Build scorer-safe candidate with grounded open-weight program synthesis",
+    )
+    from text2pandas.interface.cli.grounded_v5_commands import (
+        configure_grounded_v5_parser,
+    )
+
+    configure_grounded_v5_parser(grounded_v5, ROOT)
 
     args = p.parse_args(argv)
     handlers = {
@@ -1264,6 +1273,23 @@ def main(argv: list[str] | None = None) -> int:
         "package-v4": cmd_package_v4,
         "hybrid-v4": cmd_hybrid_v4,
     }
+    if args.cmd == "grounded-v5":
+        from text2pandas.interface.cli.grounded_v5_commands import cmd_grounded_v5
+
+        try:
+            return cmd_grounded_v5(
+                args,
+                root=ROOT,
+                paths=PROJECT_PATHS,
+                active=ACTIVE_SNAPSHOTS,
+                questions_path=QUESTIONS,
+                corpus=CORPUS,
+                scratch=SCRATCH,
+                verbose=bool(args.verbose),
+            )
+        except BuildSafetyError as error:
+            print(f"LỖI AN TOÀN BUILD: {error}", file=sys.stderr)
+            return 2
     try:
         return handlers[args.cmd](args)
     except BuildSafetyError as error:

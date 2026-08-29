@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import ast
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping
-
 
 _FUNCTIONS = {
     "float": float,
@@ -16,6 +15,7 @@ _FUNCTIONS = {
     "sum": sum,
     "len": len,
     "round": round,
+    "pow": pow,
 }
 _ALLOWED_NODES = (
     ast.Expression,
@@ -89,11 +89,12 @@ def validate_query(
         elif isinstance(node, ast.Attribute):
             if node.attr != "values" or node.attr.startswith("_"):
                 raise QuerySafetyError(f"disallowed attribute: {node.attr}")
-        elif isinstance(node, ast.Constant):
-            if not isinstance(node.value, (str, int, float)):
-                raise QuerySafetyError(
-                    f"disallowed constant type: {type(node.value).__name__}"
-                )
+        elif isinstance(node, ast.Constant) and not isinstance(
+            node.value, (str, int, float)
+        ):
+            raise QuerySafetyError(
+                f"disallowed constant type: {type(node.value).__name__}"
+            )
 
     if require_all_evidence and used != evidence_variables:
         missing = sorted(evidence_variables - used)
@@ -108,7 +109,7 @@ def execute_query(query: str, frames: Mapping[str, object]) -> float:
     contract = validate_query(query, set(frames))
     namespace = dict(_FUNCTIONS)
     namespace.update(frames)
-    value = eval(  # noqa: S307 - AST and namespace are restricted above
+    value = eval(
         compile(contract.tree, "<pandas_query>", "eval"),
         {"__builtins__": {}},
         namespace,
