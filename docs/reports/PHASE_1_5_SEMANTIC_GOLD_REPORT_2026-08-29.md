@@ -28,8 +28,8 @@ Tracked implementation files:
 
 Generated local artifacts:
 
-- `artifacts/runs/evaluation/semantic-gold-v2-local-synthetic-20260829-complete-a`
-- `artifacts/runs/evaluation/semantic-gold-v2-local-synthetic-20260829-complete-b`
+- `artifacts/runs/evaluation/semantic-gold-v2-local-synthetic-20260829-44a3892-a`
+- `artifacts/runs/evaluation/semantic-gold-v2-local-synthetic-20260829-44a3892-b`
 
 No artifact was written to `data/curated/gold/semantic_gold_v2`, and `gold_registry_v1.yaml` was not updated.
 
@@ -176,7 +176,7 @@ Two complete runs were created independently. The following artifact classes wer
 | validation.json | `0ad2f62c53f47de4dd862982bab9401345e562cea1eef610c6b8161c492d6605` | `0ad2f62c53f47de4dd862982bab9401345e562cea1eef610c6b8161c492d6605` | PASS |
 | workflow.json | `1914cb0c58f9f29be910a9f87159be7e349f3073ebf898e0573398ca0d396e38` | `1914cb0c58f9f29be910a9f87159be7e349f3073ebf898e0573398ca0d396e38` | PASS |
 | protected_surface.json | `de6eac34a3b0b53a9cb778935990d7de3153cd5bf92d16524607598facce5feb` | `de6eac34a3b0b53a9cb778935990d7de3153cd5bf92d16524607598facce5feb` | PASS |
-| manifest.json | `34e8d209ef9ab4bafe2b28b4f91b925a2314aa4315fa137bd70f16dfa747714a` | `34e8d209ef9ab4bafe2b28b4f91b925a2314aa4315fa137bd70f16dfa747714a` | PASS |
+| manifest.json | `bf31cba64a106ee2dc8e5f614820a1127f38b6244bd343b68da27066db56d367` | `bf31cba64a106ee2dc8e5f614820a1127f38b6244bd343b68da27066db56d367` | PASS |
 
 `E2E_DETERMINISM=PASS`.
 
