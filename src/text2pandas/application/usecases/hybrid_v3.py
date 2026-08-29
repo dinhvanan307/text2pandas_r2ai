@@ -29,6 +29,7 @@ class HybridDecisionKind(StrEnum):
     KEEP_LEGACY_MARGIN_LOW = "KEEP_LEGACY_MARGIN_LOW"
     KEEP_LEGACY_CONFIDENCE_LOW = "KEEP_LEGACY_CONFIDENCE_LOW"
     KEEP_LEGACY_CONSENSUS_LOW = "KEEP_LEGACY_CONSENSUS_LOW"
+    KEEP_LEGACY_MATCHED_VALUE = "KEEP_LEGACY_MATCHED_VALUE"
     KEEP_LEGACY_NON_NUMERIC = "KEEP_LEGACY_NON_NUMERIC"
     KEEP_LEGACY_VALUE_CHANGE_BLOCKED = "KEEP_LEGACY_VALUE_CHANGE_BLOCKED"
     KEEP_LEGACY_RECOVERY_BLOCKED = "KEEP_LEGACY_RECOVERY_BLOCKED"
@@ -42,6 +43,7 @@ class HybridRoutePolicy:
     minimum_binding_margin: float | None = None
     minimum_confidence: float | None = None
     minimum_consensus: int | None = None
+    promote_matching_legacy_value: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,6 +222,13 @@ def decide_hybrid_record(
     legacy_ok = legacy_status == "OK" and legacy_answer is not None
     if not legacy_ok and not route.recover_legacy_abstention:
         return decision(HybridDecisionKind.KEEP_LEGACY_RECOVERY_BLOCKED)
+    if (
+        legacy_ok
+        and legacy_answer is not None
+        and _answers_match(legacy_answer, semantic_answer)
+        and not route.promote_matching_legacy_value
+    ):
+        return decision(HybridDecisionKind.KEEP_LEGACY_MATCHED_VALUE)
     if (
         legacy_ok
         and legacy_answer is not None

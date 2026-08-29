@@ -56,4 +56,7 @@ def _route(raw: dict[str, object]) -> HybridRoutePolicy:
             None if confidence is None else float(str(confidence))
         ),
         minimum_consensus=None if consensus is None else int(str(consensus)),
+        promote_matching_legacy_value=bool(
+            raw.get("promote_matching_legacy_value", True)
+        ),
     )

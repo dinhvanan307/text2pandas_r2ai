@@ -13,12 +13,12 @@ from text2pandas.infrastructure.semantic import load_hybrid_policy
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def _legacy() -> dict[str, object]:
+def _legacy(*, answer: float | None = None) -> dict[str, object]:
     return {
         "qid": 1,
         "question": "Tổng tài sản VCB năm 2024?",
-        "status": "ABSTAIN",
-        "answer": None,
+        "status": "OK" if answer is not None else "ABSTAIN",
+        "answer": answer,
         "relevant_docs": [],
         "relevant_tables": [],
         "evidence": [],
@@ -77,6 +77,16 @@ def test_v4_policy_requires_confidence_and_consensus() -> None:
     assert promoted.kind is HybridDecisionKind.PROMOTE_V3
 
 
+def test_v4_policy_preserves_legacy_record_when_numeric_answer_matches() -> None:
+    matched = decide_hybrid_record(
+        _legacy(answer=1000.0),
+        _semantic(confidence=0.8, consensus=1),
+        _policy(),
+    )
+
+    assert matched.kind is HybridDecisionKind.KEEP_LEGACY_MATCHED_VALUE
+
+
 def test_v4_hybrid_uses_semantic_output_tables_and_v4_attribution(tmp_path: Path) -> None:
     legacy_stage = tmp_path / "legacy"
     semantic_stage = tmp_path / "semantic"
@@ -110,7 +120,7 @@ def test_v4_hybrid_uses_semantic_output_tables_and_v4_attribution(tmp_path: Path
         evidence_prefix="v4",
     )
 
-    assert report.results[0].relevant_tables == ["VCB-2024|10", "VCB-2024|20"]
+    assert report.results[0].relevant_tables == ["VCB-2024|10"]
     assert report.results[0].evidence == [
         {"variable": "df1", "csv_path": "data/v4_exact-table.csv"}
     ]

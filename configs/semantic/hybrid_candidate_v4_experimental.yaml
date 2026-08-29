@@ -2,7 +2,7 @@ schema_version: 1
 policy_id: semantic-v4-hybrid-experimental-v1
 status: EXPERIMENTAL_REQUIRES_SEALED_GOLD
 production_eligible: false
-relevant_refs_mode: semantic_output
+relevant_refs_mode: semantic_evidence
 maximum_relevant_tables: 10
 
 default_route:
@@ -11,6 +11,7 @@ default_route:
   minimum_binding_margin: null
   minimum_confidence: null
   minimum_consensus: null
+  promote_matching_legacy_value: false
 
 # V4 output is replay-verified and disagreement-gated. This policy permits an
 # immutable candidate build for evaluation, but production publication remains
@@ -22,6 +23,7 @@ routes:
     minimum_binding_margin: null
     minimum_confidence: 0.62
     minimum_consensus: 1
+    promote_matching_legacy_value: false
   formula_call: *verified_v4
   arithmetic: *verified_v4
   unary: *verified_v4
