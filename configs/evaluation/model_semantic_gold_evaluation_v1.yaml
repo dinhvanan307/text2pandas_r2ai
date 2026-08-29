@@ -1,0 +1,41 @@
+schema_version: 1
+contract_id: model-semantic-gold-evaluation-v1
+status: FROZEN_FOR_MODEL_SEMANTIC_GOLD_V1
+scope: semantic_intent_only
+aggregation: record_exact_accuracy
+
+metrics:
+  - id: entity_reference_accuracy
+    label: Entity Reference Accuracy
+  - id: metric_phrase_exact_match
+    label: Metric Phrase Exact Match
+  - id: metric_concept_accuracy
+    label: Metric Concept Accuracy
+  - id: period_exact_match
+    label: Period Exact Match
+  - id: period_role_accuracy
+    label: Period Role Accuracy
+  - id: basis_accuracy
+    label: Basis Accuracy
+  - id: unit_accuracy
+    label: Unit Accuracy
+  - id: operation_accuracy
+    label: Operation Accuracy
+  - id: result_kind_accuracy
+    label: Result Kind Accuracy
+  - id: operand_count_accuracy
+    label: Operand Count Accuracy
+  - id: operand_role_accuracy
+    label: Operand Role Accuracy
+  - id: operand_metric_accuracy
+    label: Operand Metric Accuracy
+  - id: operand_role_metric_accuracy
+    label: Operand Role+Metric Accuracy
+  - id: full_semantic_frame_exact
+    label: Full Semantic Frame Exact
+
+explicitly_not_measured:
+  - retrieval_accuracy
+  - binding_accuracy
+  - numeric_answer_accuracy
+  - execution_accuracy

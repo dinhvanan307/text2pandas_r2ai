@@ -28,6 +28,9 @@ export LANG           := C.UTF-8
 .PHONY: help paths-check lint typecheck docs-check test-offline test-integration test-historical \
         verify-active-candidate semantic-coverage snapshots-verify \
         semantic-gold-v2-prepare semantic-gold-v2-local-e2e \
+        model-semantic-gold-generate model-semantic-gold-validate \
+        model-semantic-gold-canonicalize model-semantic-gold-seal \
+        model-semantic-gold-evaluate \
         data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
         dp-rebuild-check dp-package
@@ -84,6 +87,39 @@ semantic-gold-v2-local-e2e: ## Chạy WP3-WP10 local 2 lần; MODE= PACKET= RUN_
 	  tools/evaluation/run_semantic_gold_v2_local_e2e.py \
 	  --packet "$(PACKET)" --run-a "$(RUN_A)" --run-b "$(RUN_B)" \
 	  --report "$(REPORT)" $(if $(INCLUDE_RESERVE),--include-reserve)
+
+model-semantic-gold-generate: ## Generate model gold; PROTOCOL= WORK_DIR= [ENDPOINT=]
+	@test -n "$(PROTOCOL)" -a -n "$(WORK_DIR)" \
+	  || { echo "LỖI: cần PROTOCOL= WORK_DIR=" >&2; exit 2; }
+	@$(PY) tools/evaluation/generate_model_semantic_gold_v2.py generate \
+	  --protocol "$(PROTOCOL)" --work-dir "$(WORK_DIR)" \
+	  $(if $(ENDPOINT),--endpoint "$(ENDPOINT)")
+
+model-semantic-gold-validate: ## Validate full model gold; PROTOCOL= WORK_DIR=
+	@test -n "$(PROTOCOL)" -a -n "$(WORK_DIR)" \
+	  || { echo "LỖI: cần PROTOCOL= WORK_DIR=" >&2; exit 2; }
+	@$(PY) tools/evaluation/generate_model_semantic_gold_v2.py validate \
+	  --protocol "$(PROTOCOL)" --work-dir "$(WORK_DIR)"
+
+model-semantic-gold-canonicalize: ## Canonicalize model gold; PROTOCOL= WORK_DIR=
+	@test -n "$(PROTOCOL)" -a -n "$(WORK_DIR)" \
+	  || { echo "LỖI: cần PROTOCOL= WORK_DIR=" >&2; exit 2; }
+	@$(PY) tools/evaluation/generate_model_semantic_gold_v2.py canonicalize \
+	  --protocol "$(PROTOCOL)" --work-dir "$(WORK_DIR)"
+
+model-semantic-gold-seal: ## Seal immutable model gold; PROTOCOL= WORK_DIR= RELEASE=
+	@test -n "$(PROTOCOL)" -a -n "$(WORK_DIR)" -a -n "$(RELEASE)" \
+	  || { echo "LỖI: cần PROTOCOL= WORK_DIR= RELEASE=" >&2; exit 2; }
+	@$(PY) tools/evaluation/generate_model_semantic_gold_v2.py seal \
+	  --protocol "$(PROTOCOL)" --work-dir "$(WORK_DIR)" --release "$(RELEASE)" \
+	  $(if $(ENDPOINT),--endpoint "$(ENDPOINT)")
+
+model-semantic-gold-evaluate: ## Evaluate canonical predictions; RELEASE= PREDICTIONS= [EVAL_REPORT=]
+	@test -n "$(RELEASE)" -a -n "$(PREDICTIONS)" \
+	  || { echo "LỖI: cần RELEASE= PREDICTIONS=" >&2; exit 2; }
+	@$(PY) tools/evaluation/evaluate_model_semantic_gold_v1.py \
+	  --release "$(RELEASE)" --predictions "$(PREDICTIONS)" \
+	  $(if $(EVAL_REPORT),--output "$(EVAL_REPORT)")
 
 materialize-h0: ## Tái tạo adjudication ledger + ZIP determinism report; FORCE=1 để ghi đè
 	@$(PY) tools/execution/materialize_h0.py $(if $(FORCE),--force)

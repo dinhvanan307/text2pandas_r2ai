@@ -1,0 +1,129 @@
+schema_version: 1
+vocabulary_id: semantic-operation-vocabulary-model-v1
+status: FROZEN_FOR_MODEL_SEMANTIC_GOLD_V1
+
+record_statuses: [RESOLVED, AMBIGUOUS, UNRESOLVED]
+field_statuses: [RESOLVED, AMBIGUOUS, UNRESOLVED, NOT_APPLICABLE]
+bases: [CONSOLIDATED, SEPARATE, UNSPECIFIED]
+period_points: [PERIOD, OPENING, CLOSING, INSTANT, UNKNOWN]
+period_roles: [VALUE, CURRENT, PREVIOUS, START, END, RANK_DOMAIN, FILTER_DOMAIN]
+output_shapes: [SCALAR, ENTITY, PERIOD, COUNT, TABLE, SET, BOOLEAN, OTHER]
+unit_dimensions: [MONEY, PERCENT, PERCENT_POINT, RATIO, COUNT, SHARES, UNKNOWN]
+entity_types: [COMPANY, SUBSIDIARY, INVESTEE, PERSON, INDUSTRY, SEGMENT, GROUP, OTHER]
+entity_roles:
+  - REPORTING_ENTITY
+  - COMPARISON_ENTITY
+  - GROUP_MEMBER
+  - INVESTEE
+  - SUBSIDIARY
+  - PARENT_ENTITY
+  - POPULATION_MEMBER
+  - FILTER_ENTITY
+  - RANK_ENTITY
+  - OTHER
+
+operand_roles:
+  - VALUE
+  - LEFT
+  - RIGHT
+  - MINUEND
+  - SUBTRAHEND
+  - NUMERATOR
+  - DENOMINATOR
+  - NEW
+  - OLD
+  - SUMMAND
+  - RANK_KEY
+  - PROJECTED_VALUE
+  - FILTER_OPERAND
+  - FILTER_THRESHOLD
+
+operations:
+  LOOKUP:
+    definition: Return one requested semantic value without explicit arithmetic.
+    min_arity: 1
+    max_arity: 1
+    ordered_roles: [VALUE]
+  ADD:
+    definition: Binary A plus B.
+    min_arity: 2
+    max_arity: 2
+    ordered_roles: [LEFT, RIGHT]
+  SUBTRACT:
+    definition: Directional A minus B.
+    min_arity: 2
+    max_arity: 2
+    ordered_roles: [MINUEND, SUBTRAHEND]
+  DIVIDE:
+    definition: Directional A divided by B.
+    min_arity: 2
+    max_arity: 2
+    ordered_roles: [NUMERATOR, DENOMINATOR]
+  GROWTH:
+    definition: Time-ordered growth (NEW minus OLD) divided by OLD.
+    min_arity: 2
+    max_arity: 2
+    ordered_roles: [NEW, OLD]
+  PERCENT_CHANGE:
+    definition: Explicit percent change between two non-time states; use GROWTH for YoY/time growth.
+    min_arity: 2
+    max_arity: 2
+    ordered_roles: [NEW, OLD]
+  SUM:
+    definition: Sum a variadic semantic domain.
+    min_arity: 2
+    max_arity: null
+    repeated_role: SUMMAND
+  AVERAGE:
+    definition: Arithmetic mean of a variadic semantic domain.
+    min_arity: 2
+    max_arity: null
+    repeated_role: SUMMAND
+  COUNT:
+    definition: Count members of a represented domain or filtered node.
+    min_arity: 1
+    max_arity: 1
+    ordered_roles: [FILTER_OPERAND]
+  MINIMUM:
+    definition: Return the minimum value, not its entity or period.
+    min_arity: 1
+    max_arity: null
+    repeated_role: VALUE
+  MAXIMUM:
+    definition: Return the maximum value, not its entity or period.
+    min_arity: 1
+    max_arity: null
+    repeated_role: VALUE
+  ARGMIN:
+    definition: Return the entity or period attaining the minimum rank key.
+    min_arity: 1
+    max_arity: null
+    repeated_role: RANK_KEY
+  ARGMAX:
+    definition: Return the entity or period attaining the maximum rank key.
+    min_arity: 1
+    max_arity: null
+    repeated_role: RANK_KEY
+  SELECT_AT_ARG:
+    definition: Return a projected value at the entity or period selected by a rank key.
+    min_arity: 2
+    max_arity: 2
+    ordered_roles: [RANK_KEY, PROJECTED_VALUE]
+  FILTER:
+    definition: Restrict a domain/value by a comparator and threshold.
+    min_arity: 2
+    max_arity: 2
+    ordered_roles: [FILTER_OPERAND, FILTER_THRESHOLD]
+  MEDIAN:
+    definition: Return the median of a semantic domain.
+    min_arity: 1
+    max_arity: null
+    repeated_role: VALUE
+  OTHER:
+    definition: Representable semantic operation outside the frozen operation set; must be UNRESOLVED.
+    min_arity: 0
+    max_arity: null
+    repeated_role: VALUE
+
+unsupported_operations:
+  - MULTIPLY
