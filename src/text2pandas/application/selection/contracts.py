@@ -131,6 +131,28 @@ class SelectorSpec:
         if not self.ontology_fingerprint:
             raise ValueError("SelectorSpec requires ontology_fingerprint")
 
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "metric_id": self.metric_id,
+            "aliases": list(self.aliases),
+            "expected_dimension": self.expected_dimension.value,
+            "allowed_statement_types": list(self.allowed_statement_types),
+            "preferred_basis": self.preferred_basis.value,
+            "period_semantics": self.period_semantics.value,
+            "forbidden_prefixes": list(self.forbidden_prefixes),
+            "forbidden_contains": list(self.forbidden_contains),
+            "required_context_any": list(self.required_context_any),
+            "entity": self.entity,
+            "period": self.period,
+            "requested_period_role": self.requested_period_role,
+            "requested_basis": self.requested_basis.value,
+            "metric_codes": list(self.metric_codes),
+            "resolution_confidence": self.resolution_confidence,
+            "resolution_method": self.resolution_method,
+            "ontology_fingerprint": self.ontology_fingerprint,
+            "operand_role": self.operand_role,
+        }
+
     @classmethod
     def from_metric(
         cls,

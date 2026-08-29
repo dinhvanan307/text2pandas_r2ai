@@ -7,11 +7,13 @@ import unicodedata
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from text2pandas.application.selection import SelectorSpec
+from text2pandas.application.parsing import QuestionAnnotations
+from text2pandas.application.selection import MetricResolution, SelectorSpec
+from text2pandas.domain.metrics import MetricOntology
 from text2pandas.domain.semantic import Basis, Dimension, PeriodSemantics
 
 from .binding import CandidateCell, Selector
-from .ir import OperandSlot
+from .ir import OperandSlot, OperationIR
 from .units import PERCENT, RATIO, UNKNOWN
 
 _AGGREGATE_PREFIXES = ("tong cong ", "tong ", "cong ")
@@ -29,7 +31,7 @@ class MetricAwareSelector(Selector):
 
     def __init__(
         self,
-        specs_by_role: Mapping[str, SelectorSpec],
+        specs_by_role: Mapping[object, SelectorSpec],
         *,
         ambiguity_margin: float = 0.05,
     ):
@@ -41,7 +43,11 @@ class MetricAwareSelector(Selector):
         self.ambiguity_margin = ambiguity_margin
 
     def spec_for(self, slot: OperandSlot) -> SelectorSpec | None:
-        return self.specs_by_role.get(slot.role) or self.specs_by_role.get("*")
+        return (
+            self.specs_by_role.get(slot.key())
+            or self.specs_by_role.get(slot.role)
+            or self.specs_by_role.get("*")
+        )
 
     def inspect(self, slot: OperandSlot, cell: CandidateCell) -> CandidateSelectionTrace:
         spec = self.spec_for(slot)
@@ -107,7 +113,7 @@ class MetricAwareSelector(Selector):
         )
         return CandidateSelectionTrace(True, (), score)
 
-    def score(self, slot: OperandSlot, cell: CandidateCell) -> tuple:
+    def score(self, slot: OperandSlot, cell: CandidateCell) -> tuple[float, ...]:
         inspected = self.inspect(slot, cell)
         return inspected.semantic_score if inspected.accepted else ()
 
@@ -142,6 +148,41 @@ class MetricAwareSelector(Selector):
             if inspected.accepted:
                 accepted.append((inspected.semantic_score, _stable_uid(cell), cell))
         return accepted
+
+
+def build_selector_specs(
+    resolution: MetricResolution,
+    ontology: MetricOntology,
+    annotations: QuestionAnnotations,
+    ir: OperationIR,
+    *,
+    requested_period_role: str | None,
+) -> dict[object, SelectorSpec]:
+    """Project one reviewed metric into one immutable spec per IR operand."""
+
+    if not resolution.resolved or resolution.selected_metric_id is None:
+        return {}
+    metric = ontology.metrics.get(resolution.selected_metric_id)
+    if metric is None or metric.review_status != "reviewed":
+        return {}
+    metric_codes = tuple(
+        sorted({code for mention in resolution.mentions for code in mention.metric_codes})
+    )
+    specs: dict[object, SelectorSpec] = {}
+    for slot in ir.slots:
+        specs[slot.key()] = SelectorSpec.from_metric(
+            metric,
+            ontology_fingerprint=resolution.ontology_fingerprint,
+            entity=slot.entity or (annotations.entities[0] if len(annotations.entities) == 1 else None),
+            period=slot.period,
+            requested_period_role=requested_period_role,
+            requested_basis=annotations.basis,
+            metric_codes=metric_codes,
+            resolution_confidence=resolution.confidence,
+            resolution_method=resolution.resolution_method,
+            operand_role=slot.role,
+        )
+    return specs
 
 
 def _metric_match(spec: SelectorSpec, leaf: str) -> int:

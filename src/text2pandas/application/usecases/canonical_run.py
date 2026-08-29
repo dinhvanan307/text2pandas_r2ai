@@ -14,16 +14,31 @@ import sqlite3
 import time
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
 
 import pandas as pd
 
 from text2pandas.application.usecases.answer import AnswerResult
+from text2pandas.application.parsing import OperationKind, QuestionAnnotations
+from text2pandas.application.selection import (
+    MetricResolution,
+    MetricSelectorPolicy,
+    ReviewedMetricResolver,
+    SelectorSpec,
+)
+from text2pandas.domain.metrics import MetricOntology
 from text2pandas.domain.units.lexicon import MONEY as LEXICON_MONEY
 from text2pandas.domain.units.lexicon import scan_unit
+from text2pandas.infrastructure.ontology import load_ontology
 from text2pandas.infrastructure.retrieval.index import tokenize
+from text2pandas.infrastructure.semantic import (
+    A6MetricMentionResolver,
+    LegacyVietnameseAnnotator,
+    load_metric_resolver_policy,
+    load_metric_selector_policy,
+)
 from text2pandas.pipelines.answering import (
     DIVIDE,
     LOOKUP,
@@ -45,6 +60,12 @@ from text2pandas.pipelines.answering.entity_sum import (
 )
 from text2pandas.pipelines.answering.formula_engine import answer_formula_question
 from text2pandas.pipelines.answering.ir import OperandSlot
+from text2pandas.pipelines.answering.metric_selector import (
+    MetricAwareSelector,
+    build_selector_specs,
+)
+from text2pandas.pipelines.answering.frame import parse_question
+from text2pandas.pipelines.answering.router import route
 from text2pandas.pipelines.answering.units import MONEY, PERCENT, SHARES, UNKNOWN
 from text2pandas.pipelines.retrieval.alias_store import load_aliases
 from text2pandas.pipelines.retrieval.metric_hint import metric_codes_hint
@@ -87,6 +108,7 @@ _GENERIC = frozenset(
         "tai",
     }
 )
+_METRIC_SELECTOR_MODES = frozenset({"off", "shadow", "guarded"})
 
 
 @dataclass(slots=True)
@@ -100,6 +122,9 @@ class CanonicalPipelineReport:
     seconds: float
     abstain_reasons: dict[str, int]
     results: list[AnswerResult]
+    metric_selector_mode: str = "off"
+    metric_resolution_status: dict[str, int] = field(default_factory=dict)
+    metric_differential_counts: dict[str, int] = field(default_factory=dict)
 
 
 class _PipelineAnswer(Protocol):
@@ -524,6 +549,109 @@ def _write_evidence_frames(
             frame.to_csv(target, index=False)
 
 
+def _metric_guard_eligible(
+    resolution: MetricResolution,
+    annotations: QuestionAnnotations,
+    policy: MetricSelectorPolicy,
+) -> bool:
+    if (
+        not resolution.resolved
+        or not resolution.operation_eligible
+        or resolution.confidence < policy.min_guarded_confidence
+        or len(annotations.entities) != 1
+    ):
+        return False
+    periods = len(annotations.periods)
+    if annotations.operation == OperationKind.LOOKUP:
+        return periods == 1
+    if annotations.operation in {OperationKind.SUBTRACT, OperationKind.GROWTH}:
+        return periods == 2
+    if annotations.operation in {OperationKind.SUM, OperationKind.AVERAGE}:
+        return periods >= 2
+    return False
+
+
+def _run_metric_candidate(
+    question: str,
+    pool: Sequence[CandidateCell],
+    frames: dict[str, pd.DataFrame],
+    *,
+    qid: int,
+    entity: str,
+    requested_unit: Unit,
+    requested_period_role: str | None,
+    resolution: MetricResolution,
+    annotations: QuestionAnnotations,
+    ontology: MetricOntology,
+    policy: MetricSelectorPolicy,
+) -> tuple[_PipelineAnswer | None, tuple[SelectorSpec, ...]]:
+    metric_id = resolution.selected_metric_id
+    if metric_id is None:
+        return None, ()
+    frame = parse_question(
+        question,
+        qid=qid,
+        metric_id=metric_id,
+        requested_unit=requested_unit,
+        resolved_entity=entity,
+    )
+    routed = route(frame)
+    if not routed.ok or routed.ir is None:
+        return None, ()
+    specs_by_slot = build_selector_specs(
+        resolution,
+        ontology,
+        annotations,
+        routed.ir,
+        requested_period_role=requested_period_role,
+    )
+    if len(specs_by_slot) != routed.ir.arity:
+        return None, ()
+    selector = MetricAwareSelector(
+        specs_by_slot,
+        ambiguity_margin=policy.ambiguity_margin,
+    )
+    candidate = answer_question(
+        question,
+        pool,
+        frames,
+        qid=qid,
+        metric_id=metric_id,
+        requested_unit=requested_unit,
+        selector=selector,
+        resolved_entity=entity,
+        max_bind_attempts=policy.max_rebind_candidates,
+    )
+    ordered_specs = tuple(specs_by_slot[slot.key()] for slot in routed.ir.slots)
+    return candidate, ordered_specs
+
+
+def _pipeline_differential(
+    legacy: _PipelineAnswer,
+    candidate: _PipelineAnswer,
+) -> str:
+    if legacy.ok and not candidate.ok:
+        return "LEGACY_ONLY"
+    if candidate.ok and not legacy.ok:
+        return "P0_ONLY"
+    if not legacy.ok and not candidate.ok:
+        return "BOTH_ABSTAIN"
+    assert legacy.answer is not None and candidate.answer is not None
+    if not math.isclose(legacy.answer, candidate.answer, rel_tol=1e-12, abs_tol=1e-9):
+        return "BOTH_DIFFERENT_ANSWER"
+    legacy_evidence = tuple(
+        sorted((item["variable"], item["csv_path"]) for item in legacy.evidence)
+    )
+    candidate_evidence = tuple(
+        sorted((item["variable"], item["csv_path"]) for item in candidate.evidence)
+    )
+    return (
+        "BOTH_SAME_ANSWER_SAME_EVIDENCE"
+        if legacy_evidence == candidate_evidence
+        else "BOTH_SAME_ANSWER_DIFFERENT_EVIDENCE"
+    )
+
+
 def run_canonical_pipeline(
     a6_db: Path,
     retrieval_db: Path,
@@ -539,10 +667,18 @@ def run_canonical_pipeline(
     retrieval_primary_boost: float = 0.0,
     prefer_retrieval_output_in_binding: bool = False,
     enable_direct_interest_average: bool = False,
+    metric_selector_mode: str = "off",
+    p0_source_build_id: str | None = None,
     progress: Callable[[int, int], None] | None = None,
 ) -> CanonicalPipelineReport:
     """Run retrieval and fail-closed answer generation for a question slice."""
 
+    if metric_selector_mode not in _METRIC_SELECTOR_MODES:
+        raise ValueError(
+            f"metric_selector_mode must be one of {sorted(_METRIC_SELECTOR_MODES)}"
+        )
+    if metric_selector_mode != "off" and not p0_source_build_id:
+        raise ValueError("p0_source_build_id is required for shadow/guarded mode")
     output_dir.mkdir(parents=True, exist_ok=False)
     data_dir = output_dir / "data"
     data_dir.mkdir()
@@ -589,14 +725,54 @@ def run_canonical_pipeline(
     a6_conn = sqlite3.connect(f"file:{a6_db.resolve()}?mode=ro&immutable=1", uri=True)
     results: list[AnswerResult] = []
     reasons: dict[str, int] = defaultdict(int)
+    metric_resolution_status: dict[str, int] = defaultdict(int)
+    metric_differential_counts: dict[str, int] = defaultdict(int)
     n_entity = n_year = n_retrieved = n_answered = 0
     started = time.time()
+    metric_ontology: MetricOntology | None = None
+    metric_annotator: LegacyVietnameseAnnotator | None = None
+    metric_resolver: ReviewedMetricResolver | None = None
+    metric_selector_policy: MetricSelectorPolicy | None = None
     try:
+        if metric_selector_mode != "off":
+            metric_ontology = load_ontology()
+            metric_annotator = LegacyVietnameseAnnotator(aliases)
+            source_resolver = A6MetricMentionResolver(
+                a6_conn,
+                source_build_id=str(p0_source_build_id),
+                entity_aliases=aliases,
+            )
+            metric_resolver = ReviewedMetricResolver(
+                metric_ontology,
+                load_metric_resolver_policy(),
+                source_resolver,
+            )
+            metric_selector_policy = load_metric_selector_policy()
         with records_path.open("x", encoding="utf-8") as handle:
             for index, question in enumerate(questions, 1):
                 qid = int(question["id"])
                 text = str(question["question"])
                 intent = parse_intent(text, aliases)
+                metric_annotations: QuestionAnnotations | None = None
+                metric_resolution: MetricResolution | None = None
+                metric_specs: tuple[SelectorSpec, ...] = ()
+                metric_candidate: _PipelineAnswer | None = None
+                metric_eligible = False
+                metric_selected = False
+                metric_differential = "MODE_OFF"
+                if metric_resolver is not None and metric_annotator is not None:
+                    metric_annotations = metric_annotator.annotate(text)
+                    metric_resolution = metric_resolver.resolve(text, metric_annotations)
+                    metric_resolution_status[metric_resolution.status] += 1
+                    assert metric_selector_policy is not None
+                    metric_eligible = _metric_guard_eligible(
+                        metric_resolution,
+                        metric_annotations,
+                        metric_selector_policy,
+                    )
+                    metric_differential = (
+                        "ELIGIBLE_NOT_RUN" if metric_eligible else "NOT_ELIGIBLE"
+                    )
                 n_entity += bool(intent.tickers)
                 n_year += bool(intent.years)
                 refs = retrieval.refs_for(ret_conn, qid, text)
@@ -735,7 +911,7 @@ def run_canonical_pipeline(
                             if operation_kind == DIVIDE:
                                 reason = "DIVIDE_REQUIRES_REVIEWED_FORMULA"
                             else:
-                                pipeline_result = answer_question(
+                                legacy_result = answer_question(
                                     text,
                                     pool,
                                     frames,
@@ -744,8 +920,42 @@ def run_canonical_pipeline(
                                     selector=selector,
                                     resolved_entity=intent.targets[0],
                                 )
+                                pipeline_result = legacy_result
+                                if (
+                                    metric_eligible
+                                    and metric_resolution is not None
+                                    and metric_annotations is not None
+                                    and metric_ontology is not None
+                                    and metric_selector_policy is not None
+                                ):
+                                    metric_candidate, metric_specs = _run_metric_candidate(
+                                        text,
+                                        pool,
+                                        frames,
+                                        qid=qid,
+                                        entity=intent.targets[0],
+                                        requested_unit=requested_unit,
+                                        requested_period_role=selector.requested_period_role,
+                                        resolution=metric_resolution,
+                                        annotations=metric_annotations,
+                                        ontology=metric_ontology,
+                                        policy=metric_selector_policy,
+                                    )
+                                    if metric_candidate is None:
+                                        metric_differential = "P0_ROUTE_BUILD_FAILED"
+                                    else:
+                                        metric_differential = _pipeline_differential(
+                                            legacy_result,
+                                            metric_candidate,
+                                        )
+                                        if metric_selector_mode == "guarded":
+                                            pipeline_result = metric_candidate
+                                            metric_selected = True
                     if pipeline_result is not None and not pipeline_result.ok:
                         reason = f"{pipeline_result.stage_failed}:{pipeline_result.reason}"
+
+                if metric_selector_mode != "off":
+                    metric_differential_counts[metric_differential] += 1
 
                 if pipeline_result is not None and pipeline_result.ok:
                     evidence = pipeline_result.evidence
@@ -802,27 +1012,42 @@ def run_canonical_pipeline(
                     "selected_evidence_table_ids": evidence_uids,
                 }
                 results.append(result)
+                record_payload: dict[str, object] = {
+                    "qid": qid,
+                    "question": text,
+                    "status": "OK" if result.answer is not None else "ABSTAIN",
+                    "answer": result.answer,
+                    "relevant_docs": result.relevant_docs,
+                    "relevant_tables": result.relevant_tables,
+                    "evidence": result.evidence,
+                    "pandas_query": result.pandas_query,
+                    "confidence": result.confidence,
+                    "reason": reason,
+                    "trace": pipeline_result.to_dict() if pipeline_result else None,
+                    "retrieval": refs.trace,
+                    "binding": binding_trace,
+                    "final": {
+                        "relevant_tables": result.relevant_tables,
+                        "relevant_docs": result.relevant_docs,
+                    },
+                }
+                if metric_selector_mode != "off":
+                    record_payload["metric_p0"] = {
+                        "mode": metric_selector_mode,
+                        "eligible": metric_eligible,
+                        "selected_for_output": metric_selected,
+                        "differential": metric_differential,
+                        "resolution": (
+                            metric_resolution.to_dict() if metric_resolution else None
+                        ),
+                        "selector_specs": [spec.to_dict() for spec in metric_specs],
+                        "candidate_trace": (
+                            metric_candidate.to_dict() if metric_candidate else None
+                        ),
+                    }
                 handle.write(
                     json.dumps(
-                        {
-                            "qid": qid,
-                            "question": text,
-                            "status": "OK" if result.answer is not None else "ABSTAIN",
-                            "answer": result.answer,
-                            "relevant_docs": result.relevant_docs,
-                            "relevant_tables": result.relevant_tables,
-                            "evidence": result.evidence,
-                            "pandas_query": result.pandas_query,
-                            "confidence": result.confidence,
-                            "reason": reason,
-                            "trace": pipeline_result.to_dict() if pipeline_result else None,
-                            "retrieval": refs.trace,
-                            "binding": binding_trace,
-                            "final": {
-                                "relevant_tables": result.relevant_tables,
-                                "relevant_docs": result.relevant_docs,
-                            },
-                        },
+                        record_payload,
                         ensure_ascii=False,
                     )
                     + "\n"
@@ -843,4 +1068,7 @@ def run_canonical_pipeline(
         seconds=round(time.time() - started, 2),
         abstain_reasons=dict(sorted(reasons.items(), key=lambda item: (-item[1], item[0]))),
         results=results,
+        metric_selector_mode=metric_selector_mode,
+        metric_resolution_status=dict(sorted(metric_resolution_status.items())),
+        metric_differential_counts=dict(sorted(metric_differential_counts.items())),
     )
