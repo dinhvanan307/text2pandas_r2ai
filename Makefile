@@ -30,6 +30,7 @@ export LANG           := C.UTF-8
         semantic-gold-v2-prepare semantic-gold-v2-local-e2e \
         semantic-failure-review independent-gold-audit semantic-promotion-eval \
         reranker-review-prepare reranker-review-seal reranker-heldout-eval \
+        competition-proxy-eval \
         submission-handoff \
         data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
@@ -124,6 +125,14 @@ reranker-heldout-eval: ## Chạy one-shot paired A/B trên sealed labels; LABELS
 	  --selection "$(or $(SELECTION),configs/evaluation/reranker_heldout_v1.json)" \
 	  --labels "$(LABELS)" --label-manifest "$(LABEL_MANIFEST)" \
 	  --output "$(OUTPUT)"
+
+competition-proxy-eval: ## Chấm đúng 10 metric BTC trên local governed gold; CANDIDATE= OUTPUT= [BASELINE=]
+	@test -n "$(CANDIDATE)" -a -n "$(OUTPUT)" \
+	  || { echo "LỖI: cần CANDIDATE=<submission.zip> OUTPUT=<immutable-report.json>" >&2; exit 2; }
+	@$(PY) tools/evaluation/evaluate_competition_proxy.py \
+	  --candidate "$(CANDIDATE)" --output "$(OUTPUT)" \
+	  $(if $(BASELINE),--baseline "$(BASELINE)") \
+	  $(if $(TOLERANCE),--tolerance "$(TOLERANCE)")
 
 semantic-promotion-eval: ## Chấm sealed gold + locked policy; RECORDS= GOLD_RELEASE= SUBMISSION_HANDOFF= OUTPUT=
 	@test -n "$(RECORDS)" -a -n "$(GOLD_RELEASE)" \
