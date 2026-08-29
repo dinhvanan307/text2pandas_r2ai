@@ -194,6 +194,7 @@ class SqliteOperandRetriever:
         rejected_metric = 0
         rejected_unit = 0
         match_methods: Counter[str] = Counter()
+        local_currency_overrides = 0
         for row in rows:
             scanned += 1
             candidate = self._candidate(
@@ -211,6 +212,9 @@ class SqliteOperandRetriever:
                 continue
             candidates.append(candidate)
             match_methods[candidate.match_method or "unknown"] += 1
+            local_currency_overrides += int(
+                "local_currency_override" in candidate.score_reasons
+            )
         candidates.sort(key=lambda value: (-value.score, value.observation_uid))
         selected = tuple(candidates[: self.top_k])
         failure_reason = None
@@ -248,6 +252,7 @@ class SqliteOperandRetriever:
                 "hard_table_filter": bool(self.hard_allowed_table_uids),
                 "table_prior_count": len(self.table_rank),
                 "recoverable_collisions_enabled": self.include_recoverable_collisions,
+                "local_currency_overrides": local_currency_overrides,
                 **({"source_binding": True} if source_binding is not None else {}),
             },
         )
@@ -321,7 +326,17 @@ class SqliteOperandRetriever:
         )
         if match is None:
             return "metric"
-        unit = _unit(str(unit_kind or "unknown"), scale, currency)
+        local_currency = _local_currency(str(row_path or ""), str(column_path or ""))
+        unit = _unit(
+            str(unit_kind or "unknown"),
+            scale,
+            local_currency if local_currency is not None else currency,
+        )
+        currency_overridden = (
+            unit.dimension == Dimension.MONEY
+            and local_currency is not None
+            and str(currency or "") != local_currency
+        )
         if not _dimension_compatible(request.expected_unit.dimension, unit.dimension):
             return "unit"
         try:
@@ -349,6 +364,8 @@ class SqliteOperandRetriever:
                 1: "metric:aggregate_prefix",
             }[direct]
         ]
+        if currency_overridden:
+            reasons.append("local_currency_override")
         if statement_type and str(statement_type) in request.statement_types:
             score += 3.0
             reasons.append("statement")
@@ -608,6 +625,34 @@ def _unit(kind: str, scale: object, currency: object) -> UnitSpec:
         str(currency) if currency is not None and dimension == Dimension.MONEY else None
     )
     return UnitSpec(dimension, exponent, currency_value)
+
+
+_LOCAL_CURRENCY_CODE = re.compile(
+    r"(?<![^\W\d_])(?:VND|VNĐ|USD|EUR|JPY)(?![^\W\d_])",
+    re.IGNORECASE,
+)
+_LOCAL_VND_DECLARATION = re.compile(
+    r"\bdon\s+vi(?:\s+tinh)?\s+(?:dong|viet\s+nam\s+dong)\b"
+)
+
+
+def _local_currency(row_path: str, column_path: str) -> str | None:
+    """Resolve one unambiguous currency from observation-local evidence.
+
+    A6 may inherit a document-level currency from unrelated prose. Explicit
+    ISO/Vietnamese unit tokens attached to the row or column are closer to the
+    value and therefore take precedence. Conflicting local tokens abstain from
+    overriding the stored value.
+    """
+
+    local = f"{row_path} {column_path}"
+    currencies = {
+        "VND" if value.upper() == "VNĐ" else value.upper()
+        for value in _LOCAL_CURRENCY_CODE.findall(local)
+    }
+    if _LOCAL_VND_DECLARATION.search(normalize_phrase(local)) is not None:
+        currencies.add("VND")
+    return next(iter(currencies)) if len(currencies) == 1 else None
 
 
 def _basis(value: str) -> Basis:

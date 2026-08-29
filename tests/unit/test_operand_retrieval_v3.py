@@ -460,3 +460,60 @@ def test_question_scoped_table_priors_are_replaceable_and_clearable() -> None:
     retriever.set_table_rank_priors(())
 
     assert retriever.table_rank == {}
+
+
+def test_local_currency_declaration_overrides_wrong_document_currency() -> None:
+    connection = _database()
+    connection.execute(
+        "UPDATE observations SET row_path_text = "
+        "'Đơn vị: VND › TỔNG CỘNG TÀI SẢN', currency = 'JPY' "
+        "WHERE observation_uid = 'good'"
+    )
+    request = OperandRequest(
+        request_id="operand:local-currency",
+        metric_id="total_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    batch = SqliteOperandRetriever(connection, load_ontology()).retrieve(request)
+
+    assert batch.candidates[0].unit.currency == "VND"
+    assert "local_currency_override" in batch.candidates[0].score_reasons
+    assert batch.trace["local_currency_overrides"] == 1
+
+
+def test_non_unit_word_dong_does_not_override_stored_currency() -> None:
+    connection = _database()
+    connection.execute(
+        "UPDATE observations SET row_path_text = "
+        "'Hợp đồng › TỔNG CỘNG TÀI SẢN', currency = 'USD' "
+        "WHERE observation_uid = 'good'"
+    )
+    request = OperandRequest(
+        request_id="operand:currency-hard-negative",
+        metric_id="total_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    candidate = SqliteOperandRetriever(
+        connection, load_ontology()
+    ).retrieve(request).candidates[0]
+
+    assert candidate.unit.currency == "USD"
+    assert "local_currency_override" not in candidate.score_reasons
