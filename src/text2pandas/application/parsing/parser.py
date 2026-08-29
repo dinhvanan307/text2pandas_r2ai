@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import itertools
+import json
 import re
 from dataclasses import dataclass, replace
 
@@ -45,6 +48,7 @@ from .contracts import (
     MetricHypothesis,
     MetricMentionResolver,
     OperationKind,
+    ParseCandidate,
     ParseResult,
     QuestionAnnotations,
     QuestionAnnotator,
@@ -70,6 +74,18 @@ class FormulaMention:
     formula: FormulaDefinition
 
 
+@dataclass(frozen=True, slots=True)
+class _PreparedParse:
+    annotations: QuestionAnnotations
+    formula: FormulaDefinition | None
+    exact_mentions: tuple[MetricMention, ...]
+    mentions: tuple[MetricMention, ...]
+    formula_mentions: tuple[FormulaMention, ...]
+    source_hypotheses: tuple[MetricHypothesis, ...]
+    unresolved_reason: str | None
+    trace: tuple[dict[str, object], ...]
+
+
 class SemanticParser:
     """Question -> validated `QuestionAST`, or a named abstention.
 
@@ -89,10 +105,122 @@ class SemanticParser:
         self.resolver = resolver
 
     def parse(self, question: str, *, qid: int | None = None) -> ParseResult:
+        prepared = self._prepare(question)
+        result = self._compile(
+            question,
+            prepared.annotations,
+            prepared.formula,
+            prepared.mentions,
+            prepared.formula_mentions,
+            unresolved_reason=prepared.unresolved_reason,
+            qid=qid,
+        )
+        return ParseResult(
+            result.status,
+            result.ast,
+            result.reason,
+            prepared.trace + result.trace,
+        )
+
+    def parse_candidates(
+        self,
+        question: str,
+        *,
+        qid: int | None = None,
+        max_candidates: int = 8,
+    ) -> tuple[ParseCandidate, ...]:
+        """Compile an N-best semantic set without changing canonical V3 parsing."""
+        if max_candidates < 1:
+            raise ValueError("max_candidates must be positive")
+        prepared = self._prepare(question)
+        primary_compiled = self._compile(
+            question,
+            prepared.annotations,
+            prepared.formula,
+            prepared.mentions,
+            prepared.formula_mentions,
+            unresolved_reason=prepared.unresolved_reason,
+            qid=qid,
+        )
+        primary = ParseResult(
+            primary_compiled.status,
+            primary_compiled.ast,
+            primary_compiled.reason,
+            prepared.trace + primary_compiled.trace,
+        )
+        output = [
+            ParseCandidate(
+                _parse_candidate_id(primary),
+                primary,
+                "canonical_v3",
+                1.0 if primary.ok else 0.0,
+                _source_metric_ids(prepared.mentions),
+            )
+        ]
+        seen = {_parse_candidate_key(primary)}
+        if prepared.formula is not None or not prepared.source_hypotheses:
+            return tuple(output)
+        for rank, hypotheses in enumerate(
+            _hypothesis_combinations(prepared.source_hypotheses, max_candidates * 3),
+            start=1,
+        ):
+            source_mentions = tuple(_source_metric_mention(value) for value in hypotheses)
+            source_mentions = tuple(
+                value
+                for value in source_mentions
+                if not any(
+                    value.start < exact.end and exact.start < value.end
+                    for exact in prepared.exact_mentions
+                )
+            )
+            mentions = tuple(
+                sorted(
+                    (*prepared.exact_mentions, *source_mentions),
+                    key=lambda value: (value.start, value.end, value.metric.metric_id),
+                )
+            )
+            if not mentions:
+                continue
+            compiled = self._compile(
+                question,
+                prepared.annotations,
+                prepared.formula,
+                mentions,
+                prepared.formula_mentions,
+                unresolved_reason=None,
+                qid=qid,
+            )
+            trace = prepared.trace + (
+                {
+                    "stage": "V4_SEMANTIC_HYPOTHESIS",
+                    "rank": rank,
+                    "source_metric_ids": [value.source_metric_id for value in hypotheses],
+                },
+            ) + compiled.trace
+            result = ParseResult(compiled.status, compiled.ast, compiled.reason, trace)
+            key = _parse_candidate_key(result)
+            if key in seen:
+                continue
+            seen.add(key)
+            output.append(
+                ParseCandidate(
+                    _parse_candidate_id(result),
+                    result,
+                    "source_nbest",
+                    max(0.25, 0.95 - 0.05 * (rank - 1)),
+                    tuple(value.source_metric_id for value in hypotheses),
+                )
+            )
+            if len(output) >= max_candidates:
+                break
+        return tuple(output)
+
+    def _prepare(self, question: str) -> _PreparedParse:
         annotations = _expand_aggregate_period_range(question, self.annotator.annotate(question))
         normalized = normalize_phrase(question)
         formula = self.ontology.match_formula(normalized)
-        mentions = self._metric_mentions(normalized)
+        exact_mentions = self._metric_mentions(normalized)
+        mentions = exact_mentions
         formula_mentions = self._formula_mentions(normalized)
         role_fallback = _needs_source_role_fallback(normalized, annotations, formula, mentions)
         trace: list[dict[str, object]] = [
@@ -114,8 +242,10 @@ class SemanticParser:
             },
         ]
         unresolved_reason: str | None = None
+        source_hypotheses: tuple[MetricHypothesis, ...] = ()
         if formula is None and self.resolver is not None and (not mentions or role_fallback):
             resolved = self.resolver.resolve(question, annotations)
+            source_hypotheses = resolved.hypotheses
             trace.extend(resolved.trace)
             use_selected = resolved.status == "RESOLVED" or (
                 role_fallback and bool(resolved.selected)
@@ -154,16 +284,16 @@ class SemanticParser:
                         "return_mode": ReturnMode.SELECT_AT_ARG.value,
                     }
                 )
-        result = self._compile(
-            question,
+        return _PreparedParse(
             annotations,
             formula,
+            exact_mentions,
             mentions,
             formula_mentions,
-            unresolved_reason=unresolved_reason,
-            qid=qid,
+            source_hypotheses,
+            unresolved_reason,
+            tuple(trace),
         )
-        return ParseResult(result.status, result.ast, result.reason, tuple(trace) + result.trace)
 
     def _compile(
         self,
@@ -548,6 +678,84 @@ def _source_metric_mention(hypothesis: MetricHypothesis) -> MetricMention:
         binding,
         hypothesis.score,
     )
+
+
+def _hypothesis_combinations(
+    hypotheses: tuple[MetricHypothesis, ...],
+    limit: int,
+) -> tuple[tuple[MetricHypothesis, ...], ...]:
+    by_span: dict[tuple[int, int], list[MetricHypothesis]] = {}
+    for hypothesis in hypotheses:
+        span = (hypothesis.mention.start, hypothesis.mention.end)
+        by_span.setdefault(span, []).append(hypothesis)
+    groups = tuple(
+        tuple(
+            sorted(
+                values,
+                key=lambda value: (
+                    tuple(-part for part in value.score),
+                    -value.supporting_observations,
+                    value.source_metric_id,
+                ),
+            )[:3]
+        )
+        for _, values in sorted(by_span.items())
+    )
+    output: list[tuple[MetricHypothesis, ...]] = []
+    seen: set[tuple[tuple[int, int, str], ...]] = set()
+    for size in range(len(groups), 0, -1):
+        for selected_groups in itertools.combinations(groups, size):
+            for values in itertools.product(*selected_groups):
+                ordered = tuple(
+                    sorted(values, key=lambda value: (value.mention.start, value.mention.end))
+                )
+                if any(
+                    left.mention.start < right.mention.end
+                    and right.mention.start < left.mention.end
+                    for index, left in enumerate(ordered)
+                    for right in ordered[index + 1 :]
+                ):
+                    continue
+                key = tuple(
+                    (
+                        value.mention.start,
+                        value.mention.end,
+                        value.source_metric_id,
+                    )
+                    for value in ordered
+                )
+                if key in seen:
+                    continue
+                seen.add(key)
+                output.append(ordered)
+                if len(output) >= limit:
+                    return tuple(output)
+    return tuple(output)
+
+
+def _source_metric_ids(mentions: tuple[MetricMention, ...]) -> tuple[str, ...]:
+    return tuple(
+        value.source_binding.source_metric_id
+        for value in mentions
+        if value.source_binding is not None
+    )
+
+
+def _parse_candidate_key(result: ParseResult) -> str:
+    payload: object
+    if result.ast is None:
+        payload = {"status": result.status, "reason": result.reason}
+    else:
+        payload = {
+            "expression": result.ast.to_dict()["expression"],
+            "output": result.ast.output.to_dict(),
+        }
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _parse_candidate_id(result: ParseResult) -> str:
+    digest = hashlib.sha256(_parse_candidate_key(result).encode("utf-8")).hexdigest()[:16]
+    return f"semantic-program:{digest}"
 
 
 def _metric_ref(

@@ -128,3 +128,26 @@ class ParseResult:
     @property
     def ok(self) -> bool:
         return self.status == "OK"
+
+
+@dataclass(frozen=True, slots=True)
+class ParseCandidate:
+    """One deterministic semantic-program hypothesis and its provenance."""
+
+    candidate_id: str
+    result: ParseResult
+    source: str
+    semantic_score: float
+    metric_hypothesis_ids: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "candidate_id": self.candidate_id,
+            "status": self.result.status,
+            "reason": self.result.reason,
+            "ast": None if self.result.ast is None else self.result.ast.to_dict(),
+            "source": self.source,
+            "semantic_score": self.semantic_score,
+            "metric_hypothesis_ids": list(self.metric_hypothesis_ids),
+            "trace": list(self.result.trace),
+        }
