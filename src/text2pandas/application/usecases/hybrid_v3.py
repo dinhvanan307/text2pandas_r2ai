@@ -473,6 +473,9 @@ def _scorer_refs(
         values = exact_refs + semantic_refs
         if policy.relevant_refs_mode == "semantic_output_plus_legacy":
             values += _string_sequence(legacy.get("relevant_tables"), "relevant_tables")
+    elif policy.relevant_refs_mode == "preserve_legacy_refs":
+        legacy_refs = _string_sequence(legacy.get("relevant_tables"), "relevant_tables")
+        values = legacy_refs or exact_refs
     else:
         raise HybridBuildError(f"unknown relevant_refs_mode: {policy.relevant_refs_mode}")
     return list(dict.fromkeys(values))[: policy.maximum_relevant_tables]

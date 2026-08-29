@@ -127,3 +127,44 @@ def test_v4_hybrid_uses_semantic_output_tables_and_v4_attribution(tmp_path: Path
     record = json.loads(report.records_path.read_text(encoding="utf-8"))
     assert record["answer_source"] == "semantic_v4"
     assert record["hybrid"]["semantic_label"] == "semantic_v4"
+
+
+def test_v4_hybrid_preserves_canonical_retrieval_refs_when_available(
+    tmp_path: Path,
+) -> None:
+    legacy_stage = tmp_path / "legacy"
+    semantic_stage = tmp_path / "semantic"
+    (legacy_stage / "data").mkdir(parents=True)
+    (semantic_stage / "data").mkdir(parents=True)
+    legacy = _legacy()
+    legacy["relevant_tables"] = ["VCB-2024|30"]
+    legacy["relevant_docs"] = ["VCB-2024"]
+    (legacy_stage / "records.jsonl").write_text(
+        json.dumps(legacy) + "\n",
+        encoding="utf-8",
+    )
+    (semantic_stage / "records.jsonl").write_text(
+        json.dumps(_semantic(confidence=0.8, consensus=1)) + "\n",
+        encoding="utf-8",
+    )
+    (semantic_stage / "data/exact-table.csv").write_text(
+        "observation_uid,value\nobs-1,1000\n",
+        encoding="utf-8",
+    )
+
+    report = build_hybrid_candidate(
+        legacy_records_path=legacy_stage / "records.jsonl",
+        semantic_records_path=semantic_stage / "records.jsonl",
+        legacy_data_dir=legacy_stage / "data",
+        semantic_data_dir=semantic_stage / "data",
+        output_dir=tmp_path / "hybrid",
+        policy=_policy(),
+        table_locators={
+            "exact-table": "VCB-2024|10",
+            "candidate-table": "VCB-2024|20",
+        },
+        semantic_label="semantic_v4",
+        evidence_prefix="v4",
+    )
+
+    assert report.results[0].relevant_tables == ["VCB-2024|30"]

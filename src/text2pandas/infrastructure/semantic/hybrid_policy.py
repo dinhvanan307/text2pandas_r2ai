@@ -28,6 +28,7 @@ def load_hybrid_policy(path: str | Path) -> HybridPolicy:
         "semantic_plus_legacy",
         "semantic_output",
         "semantic_output_plus_legacy",
+        "preserve_legacy_refs",
     }:
         raise ValueError(f"invalid relevant_refs_mode: {refs_mode}")
     maximum = int(raw.get("maximum_relevant_tables", 10))

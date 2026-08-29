@@ -2,7 +2,7 @@ schema_version: 1
 policy_id: semantic-v4-hybrid-experimental-v1
 status: EXPERIMENTAL_REQUIRES_SEALED_GOLD
 production_eligible: false
-relevant_refs_mode: semantic_evidence
+relevant_refs_mode: preserve_legacy_refs
 maximum_relevant_tables: 10
 
 default_route:
