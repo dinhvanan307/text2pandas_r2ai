@@ -1,0 +1,46 @@
+schema_version: 1
+mode: LOCAL_SYNTHETIC
+
+provenance:
+  gold_mode: LOCAL_SYNTHETIC
+  annotation_source: AUTOMATED
+  independent_review: false
+  human_adjudication: false
+  official_submission_ready: false
+
+scope:
+  purpose: LOCAL_END_TO_END_PIPELINE_VALIDATION
+  active_cohorts: [HEADLINE_CORE, DIAGNOSTIC_SUPPLEMENT]
+  reserve_supported: true
+  official_release_allowed: false
+  official_registry_update_allowed: false
+
+synthetic_reference:
+  metric_label_authority: frozen_ontology_exact_inclusion_examples_only
+  unmatched_policy: UNRESOLVED
+  approximate_metric_matching_allowed: false
+  invented_labels_allowed: false
+
+prediction:
+  view: EFFECTIVE_PUBLIC_PREBIND
+  metric_codes_are_concepts: false
+  retrieval_binding_allowed: false
+  answer_evidence_allowed: false
+  semantic_v3_allowed: false
+
+local_gates:
+  schema_valid: true
+  deterministic: true
+  provenance_declared: true
+  production_surface_unchanged: true
+
+human_only_gates_not_applicable:
+  - independent_annotator_a
+  - independent_annotator_b
+  - distinct_adjudicator_c
+  - human_inter_annotator_agreement
+  - human_adjudication
+
+forbidden_output_roots:
+  - data/curated/gold/semantic_gold_v2
+  - configs/evaluation/gold_registry_v1.yaml

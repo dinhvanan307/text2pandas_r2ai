@@ -27,7 +27,7 @@ export LANG           := C.UTF-8
 
 .PHONY: help paths-check lint typecheck docs-check test-offline test-integration test-historical \
         verify-active-candidate semantic-coverage snapshots-verify \
-        semantic-gold-v2-prepare \
+        semantic-gold-v2-prepare semantic-gold-v2-local-e2e \
         data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
         dp-rebuild-check dp-package
@@ -74,6 +74,16 @@ semantic-gold-v2-prepare: ## Tạo packet Phase 1.5 prediction-blind; PROTOCOL= 
 	  || { echo "LỖI: cần PROTOCOL=<path> PACKET=<artifacts/path>" >&2; exit 2; }
 	@$(PY) tools/evaluation/prepare_semantic_gold_v2.py \
 	  --protocol "$(PROTOCOL)" --output "$(PACKET)"
+
+semantic-gold-v2-local-e2e: ## Chạy WP3-WP10 local 2 lần; MODE= PACKET= RUN_A= RUN_B= REPORT=
+	@test "$(MODE)" = "LOCAL_SYNTHETIC" \
+	  || { echo "LỖI: MODE phải là LOCAL_SYNTHETIC" >&2; exit 2; }
+	@test -n "$(PACKET)" -a -n "$(RUN_A)" -a -n "$(RUN_B)" -a -n "$(REPORT)" \
+	  || { echo "LỖI: cần PACKET= RUN_A= RUN_B= REPORT=" >&2; exit 2; }
+	@SEMANTIC_GOLD_V2_MODE="$(MODE)" $(PY) \
+	  tools/evaluation/run_semantic_gold_v2_local_e2e.py \
+	  --packet "$(PACKET)" --run-a "$(RUN_A)" --run-b "$(RUN_B)" \
+	  --report "$(REPORT)" $(if $(INCLUDE_RESERVE),--include-reserve)
 
 materialize-h0: ## Tái tạo adjudication ledger + ZIP determinism report; FORCE=1 để ghi đè
 	@$(PY) tools/execution/materialize_h0.py $(if $(FORCE),--force)
