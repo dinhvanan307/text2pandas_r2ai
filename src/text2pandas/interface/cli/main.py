@@ -547,6 +547,7 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
     from text2pandas.application.usecases.hybrid_v3 import (
         HybridBuildError,
         build_hybrid_candidate,
+        hybrid_publication_eligibility,
         table_locator_map,
     )
     from text2pandas.application.usecases.run_manifest import write_manifest
@@ -572,6 +573,20 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
     if not policy_path.is_file():
         raise BuildSafetyError(f"missing hybrid policy: {policy_path}")
     policy = load_hybrid_policy(policy_path)
+    semantic_manifest_path = semantic_stage / "manifest.json"
+    if not semantic_manifest_path.is_file():
+        raise BuildSafetyError(f"missing semantic source manifest: {semantic_manifest_path}")
+    semantic_manifest = json.loads(semantic_manifest_path.read_text(encoding="utf-8"))
+    semantic_promotion = semantic_manifest.get("promotion")
+    semantic_promotion_status = (
+        str(semantic_promotion.get("status"))
+        if isinstance(semantic_promotion, dict) and semantic_promotion.get("status")
+        else None
+    )
+    publication_eligible, publication_blockers = hybrid_publication_eligibility(
+        policy,
+        semantic_promotion_status,
+    )
     stage = PROJECT_PATHS.run_dir("answer", args.run_id)
     table_cards = ACTIVE_SNAPSHOTS.a6_path / "dataframe/csv/table_cards.csv"
     try:
@@ -600,7 +615,7 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
     replay_mismatches = replay["executed"] - replay["matched"]
     package_ok = not validation.errors and not replay["error"] and not replay_mismatches
     published = None
-    if package_ok and policy.production_eligible:
+    if package_ok and publication_eligible:
         published = SUBMIT_DIR / f"submission_{args.run_id}.zip"
         publish_new_file(zip_path, published)
     manifest_path = stage / "manifest.json"
@@ -624,6 +639,9 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
                 "policy_id": policy.policy_id,
                 "status": policy.status,
                 "production_eligible": policy.production_eligible,
+                "semantic_promotion_status": semantic_promotion_status,
+                "publication_eligible": publication_eligible,
+                "publication_blockers": list(publication_blockers),
                 "relevant_refs_mode": policy.relevant_refs_mode,
                 "maximum_relevant_tables": policy.maximum_relevant_tables,
             },
@@ -666,8 +684,8 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
     )
     print(f"  zip                : {zip_path}")
     print(f"  attribution        : {report.attribution_path}")
-    if not policy.production_eligible:
-        print("  publish            : BLOCKED — policy requires sealed independent gold")
+    if not publication_eligible:
+        print(f"  publish            : BLOCKED — {', '.join(publication_blockers)}")
     elif published:
         print(f"  publish            : {published}")
     return 0 if package_ok else 1

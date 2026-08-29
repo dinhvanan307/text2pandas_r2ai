@@ -106,6 +106,22 @@ class HybridBuildError(ValueError):
     """Raised when immutable source runs cannot be composed safely."""
 
 
+def hybrid_publication_eligibility(
+    policy: HybridPolicy,
+    semantic_promotion_status: str | None,
+) -> tuple[bool, tuple[str, ...]]:
+    """Require both route authorization and the locked Semantic promotion gate."""
+    blockers: list[str] = []
+    if not policy.production_eligible:
+        blockers.append("POLICY_NOT_PRODUCTION_ELIGIBLE")
+    if semantic_promotion_status != "PROMOTABLE":
+        blockers.append(
+            "SEMANTIC_SOURCE_NOT_PROMOTABLE:"
+            f"{semantic_promotion_status or 'NOT_MEASURED'}"
+        )
+    return not blockers, tuple(blockers)
+
+
 def decide_hybrid_record(
     legacy: Mapping[str, object],
     semantic: Mapping[str, object],

@@ -9,6 +9,7 @@ from text2pandas.application.usecases.hybrid_v3 import (
     HybridRoutePolicy,
     build_hybrid_candidate,
     decide_hybrid_record,
+    hybrid_publication_eligibility,
 )
 
 
@@ -92,6 +93,29 @@ def test_lookup_experiment_allows_high_margin_value_change() -> None:
     assert promoted.value_changed
     assert blocked.kind is HybridDecisionKind.KEEP_LEGACY_MARGIN_LOW
     assert missing_margin.kind is HybridDecisionKind.KEEP_LEGACY_MARGIN_LOW
+
+
+def test_publication_requires_policy_and_locked_semantic_gate() -> None:
+    experimental = _policy()
+    production = HybridPolicy(
+        policy_id="production-fixture",
+        status="APPROVED",
+        production_eligible=True,
+        relevant_refs_mode="semantic_evidence",
+        maximum_relevant_tables=10,
+        default_route=HybridRoutePolicy(),
+        routes=experimental.routes,
+    )
+
+    assert hybrid_publication_eligibility(experimental, "PROMOTABLE") == (
+        False,
+        ("POLICY_NOT_PRODUCTION_ELIGIBLE",),
+    )
+    assert hybrid_publication_eligibility(production, "BLOCKED") == (
+        False,
+        ("SEMANTIC_SOURCE_NOT_PROMOTABLE:BLOCKED",),
+    )
+    assert hybrid_publication_eligibility(production, "PROMOTABLE") == (True, ())
 
 
 def test_builder_renames_v3_evidence_and_separates_scorer_refs(tmp_path: Path) -> None:
