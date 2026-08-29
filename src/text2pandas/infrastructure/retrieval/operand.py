@@ -82,6 +82,12 @@ class SqliteOperandRetriever:
             "o.metric_code" if "metric_code" in observation_columns else "NULL"
         )
 
+    def set_table_rank_priors(self, table_uids: tuple[str, ...]) -> None:
+        """Replace question-scoped soft table priors without leaking prior state."""
+        self.table_rank = {
+            uid: index for index, uid in enumerate(dict.fromkeys(table_uids))
+        }
+
     def retrieve(self, request: OperandRequest) -> CandidateBatch:
         metric = self.ontology.metrics.get(request.metric_id)
         source_binding = request.source_binding

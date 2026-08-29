@@ -448,3 +448,15 @@ def test_empty_batch_reports_scope_and_metric_failures_separately() -> None:
 
     assert metric_empty.trace["reason"] == "METRIC_REJECT_ALL"
     assert scope_empty.trace["reason"] == "SCOPE_EMPTY"
+
+
+def test_question_scoped_table_priors_are_replaceable_and_clearable() -> None:
+    retriever = SqliteOperandRetriever(_database(), load_ontology())
+
+    retriever.set_table_rank_priors(("table-b", "table-a", "table-b"))
+
+    assert retriever.table_rank == {"table-b": 0, "table-a": 1}
+
+    retriever.set_table_rank_priors(())
+
+    assert retriever.table_rank == {}

@@ -810,7 +810,8 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     from text2pandas.infrastructure.source_identity import git_source_identity
     from text2pandas.pipelines.retrieval.alias_store import load_aliases
 
-    verification = verify_active_snapshots(PROJECT_PATHS, scope="a6")
+    verification_scope = "all" if args.canonical_table_priors else "a6"
+    verification = verify_active_snapshots(PROJECT_PATHS, scope=verification_scope)
     if not verification.ok:
         detail = "; ".join(item.detail for item in verification.items if not item.ok)
         raise BuildSafetyError(f"active A6 snapshot preflight failed: {detail}")
@@ -845,6 +846,21 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
         f"file:{(ACTIVE_SNAPSHOTS.a6_path / 'silver.db').resolve()}?mode=ro&immutable=1",
         uri=True,
     )
+    retrieval_connection: sqlite3.Connection | None = None
+    table_retriever = None
+    if args.canonical_table_priors:
+        from text2pandas.pipelines.retrieval.submission_adapter import RetrievalToSubmission
+
+        retrieval_connection = sqlite3.connect(
+            f"file:{(ACTIVE_SNAPSHOTS.retrieval_path / 'retrieval.db').resolve()}"
+            "?mode=ro&immutable=1",
+            uri=True,
+        )
+        table_retriever = RetrievalToSubmission(
+            aliases,
+            top_k_rank=50,
+            top_k_rerank=50,
+        )
     resolver = A6MetricMentionResolver(
         connection,
         source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
@@ -855,14 +871,15 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
         LegacyVietnameseAnnotator(aliases),
         resolver,
     )
+    operand_retriever = SqliteOperandRetriever(
+        connection,
+        ontology,
+        top_k=args.operand_k,
+        source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
+    )
     engine = SemanticV3Engine(
         parser,
-        SqliteOperandRetriever(
-            connection,
-            ontology,
-            top_k=args.operand_k,
-            source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
-        ),
+        operand_retriever,
         PandasSandboxReplay(),
     )
     statuses: Counter[str] = Counter()
@@ -875,6 +892,17 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
             for index, item in enumerate(questions, 1):
                 qid = int(item["id"])
                 question = str(item["question"])
+                if table_retriever is not None and retrieval_connection is not None:
+                    upstream = table_retriever.refs_for(
+                        retrieval_connection,
+                        qid,
+                        question,
+                    )
+                    operand_retriever.set_table_rank_priors(
+                        tuple(upstream.ranked_table_uids)
+                    )
+                else:
+                    operand_retriever.set_table_rank_priors(())
                 result = engine.answer(question, qid=qid)
                 differential = classify_differential(legacy.get(qid), result)
                 statuses[result.status] += 1
@@ -920,6 +948,8 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                 writer.writerows(sorted(values.items()))
     finally:
         connection.close()
+        if retrieval_connection is not None:
+            retrieval_connection.close()
     seconds = round(time.time() - started, 3)
     peak_rss_raw = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     peak_rss_bytes = int(peak_rss_raw if platform.system() == "Darwin" else peak_rss_raw * 1024)
@@ -956,6 +986,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                 "limit": args.limit,
                 "operand_k": args.operand_k,
                 "legacy_run_id": args.legacy_run_id,
+                "canonical_table_priors": args.canonical_table_priors,
             },
             "metrics": {
                 "questions": len(questions),
@@ -1084,6 +1115,11 @@ def main(argv: list[str] | None = None) -> int:
     shadow.add_argument("--offset", type=int, default=0)
     shadow.add_argument("--operand-k", type=int, default=20)
     shadow.add_argument("--legacy-run-id")
+    shadow.add_argument(
+        "--canonical-table-priors",
+        action="store_true",
+        help="Use Canonical retrieval table order as a question-scoped V3 soft prior",
+    )
     package_v3 = sub.add_parser(
         "package-v3", help="Đóng gói, validate và replay một Semantic V3 shadow run"
     )
