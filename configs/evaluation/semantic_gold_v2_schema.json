@@ -47,6 +47,7 @@
         "independent_of_model_development",
         "blind_to_model_outputs",
         "source_evidence_reviewed",
+        "guideline_version",
         "guideline_sha256",
         "metric_vocabulary_sha256",
         "operation_vocabulary_sha256"
@@ -55,6 +56,7 @@
         "independent_of_model_development": {"type": ["boolean", "null"]},
         "blind_to_model_outputs": {"type": ["boolean", "null"]},
         "source_evidence_reviewed": {"type": ["boolean", "null"]},
+        "guideline_version": {"type": "string", "minLength": 1},
         "guideline_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "metric_vocabulary_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "operation_vocabulary_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
@@ -66,7 +68,7 @@
     "periods": {"type": "array", "items": {"$ref": "#/$defs/period"}},
     "basis": {"anyOf": [{"$ref": "#/$defs/basis"}, {"type": "null"}]},
     "unit": {"anyOf": [{"$ref": "#/$defs/unit"}, {"type": "null"}]},
-    "operation_tree": {"type": ["object", "null"]},
+    "operation_tree": {"anyOf": [{"$ref": "#/$defs/operation_tree"}, {"type": "null"}]},
     "output": {"anyOf": [{"$ref": "#/$defs/output"}, {"type": "null"}]},
     "operands": {"type": "array", "items": {"$ref": "#/$defs/operand"}},
     "field_status": {
@@ -104,13 +106,14 @@
     "metric": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["metric_ref", "phrase", "concept_id", "concept_status", "reported_or_derived"],
+      "required": ["metric_ref", "phrase", "concept_id", "concept_status", "reported_or_derived", "definition_version"],
       "properties": {
         "metric_ref": {"type": "string", "pattern": "^m[1-9][0-9]*$"},
         "phrase": {"$ref": "#/$defs/span"},
         "concept_id": {"type": ["string", "null"]},
         "concept_status": {"enum": ["RESOLVED", "AMBIGUOUS", "UNRESOLVED"]},
         "reported_or_derived": {"enum": ["REPORTED", "DERIVED", "UNKNOWN"]},
+        "definition_version": {"const": "semantic-metric-concepts-v1"},
         "variant": {"type": ["string", "null"]}
       }
     },
@@ -134,7 +137,17 @@
       "properties": {
         "value": {"enum": ["CONSOLIDATED", "SEPARATE", "UNSPECIFIED"]},
         "explicit": {"type": "boolean"}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"explicit": {"const": false}}, "required": ["explicit"]},
+          "then": {"properties": {"value": {"const": "UNSPECIFIED"}}}
+        },
+        {
+          "if": {"properties": {"explicit": {"const": true}}, "required": ["explicit"]},
+          "then": {"properties": {"value": {"enum": ["CONSOLIDATED", "SEPARATE"]}}}
+        }
+      ]
     },
     "unit": {
       "type": "object",
@@ -145,7 +158,14 @@
         "scale_exponent": {"type": ["integer", "null"], "enum": [null, 0, 3, 6, 9, 12]},
         "currency": {"type": ["string", "null"]},
         "explicit": {"type": "boolean"}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"dimension": {"const": "MONEY"}}, "required": ["dimension"]},
+          "then": {"properties": {"scale_exponent": {"enum": [0, 3, 6, 9, 12]}}},
+          "else": {"properties": {"scale_exponent": {"const": null}}}
+        }
+      ]
     },
     "output": {
       "type": "object",
@@ -161,12 +181,29 @@
       "required": ["operand_ref", "role", "metric_ref", "entity_ref", "period_ref", "basis", "unit"],
       "properties": {
         "operand_ref": {"type": "string", "pattern": "^o[1-9][0-9]*$"},
-        "role": {"type": "string", "minLength": 1},
+        "role": {"enum": ["VALUE", "LEFT", "RIGHT", "MINUEND", "SUBTRAHEND", "NUMERATOR", "DENOMINATOR", "NEW", "OLD", "SUMMAND", "RANK_KEY", "PROJECTED_VALUE", "FILTER_OPERAND", "FILTER_THRESHOLD"]},
         "metric_ref": {"type": ["string", "null"]},
         "entity_ref": {"type": ["string", "null"]},
         "period_ref": {"type": ["string", "null"]},
         "basis": {"anyOf": [{"$ref": "#/$defs/basis"}, {"type": "null"}]},
         "unit": {"anyOf": [{"$ref": "#/$defs/unit"}, {"type": "null"}]}
+      }
+    },
+    "operation_tree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node", "operands"],
+      "properties": {
+        "node": {"enum": ["LOOKUP", "ADD", "SUBTRACT", "DIVIDE", "GROWTH", "PERCENT_CHANGE", "SUM", "AVERAGE", "COUNT", "MINIMUM", "MAXIMUM", "ARGMIN", "ARGMAX", "SELECT_AT_ARG", "FILTER", "MEDIAN", "OTHER"]},
+        "operands": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^o[1-9][0-9]*$"},
+          "uniqueItems": true
+        },
+        "children": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/operation_tree"}
+        }
       }
     },
     "evidence": {

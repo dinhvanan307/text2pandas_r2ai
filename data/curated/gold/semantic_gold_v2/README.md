@@ -170,7 +170,26 @@ Do not copy a runtime's selected evidence. Do not include numeric source values
 in semantic gold. Use `NOT_LOCATED` when reasonable review cannot locate an
 appropriate source phrase.
 
-## 11. Independent review workflow
+## 11. Canonical full frame
+
+Annotators must not enter, copy or maintain a second `full_frame`. They edit
+only the component fields in the schema. Sealing infrastructure derives the
+canonical frame deterministically from those components.
+
+Canonicalization:
+
+- normalizes strings to Unicode NFC and enums to uppercase;
+- sorts entity, metric and period membership by their stable refs;
+- preserves operand order and operation-tree child order;
+- preserves every applicable semantic component;
+- excludes fields marked `NOT_APPLICABLE`;
+- excludes reviewer identity, attestations, notes, adjudication metadata and
+  source-evidence locators.
+
+An applicable field that is missing is an error. A supplied full frame that
+does not equal the derived frame is also an error.
+
+## 12. Independent review workflow
 
 1. Annotator A completes a private packet and locks it.
 2. Annotator B independently completes a separate private packet and locks it.
@@ -185,3 +204,30 @@ Annotators A, B and adjudicator C must be three distinct people who did not
 develop the parser being measured. Until those roles are assigned, the packet
 must remain `OPEN_FOR_INDEPENDENT_REVIEW` and parser metrics remain
 `NOT_MEASURED`.
+
+Each reviewer must attest all of the following against the fixed packet:
+
+```text
+independent_of_model_development = true
+blind_to_model_outputs           = true
+source_evidence_reviewed         = true
+guideline_version                = fixed packet value
+guideline_sha256                 = fixed packet value
+metric_vocabulary_sha256         = fixed packet value
+operation_vocabulary_sha256      = fixed packet value
+```
+
+Before the final 120 records, A and B independently annotate a 12–15 QID pilot
+that is excluded from headline, diagnostic and reserve cohorts. C classifies
+disagreement as guideline defect or genuine ambiguity. Any guideline, schema
+or vocabulary change must bump its version/checksum before final A/B work.
+
+## 13. Reserve and denominator policy
+
+The 30 reserve QIDs are preselected and checksummed with the packet. Activation
+requires a manifest amendment made before viewing predictions and one of these
+reasons: corrupt source record, duplicate source record, fewer than 100 final
+resolved records, or missing critical semantic family.
+
+Activation never deletes an unresolved original QID, never silently changes
+the original headline denominator and never raises the release above 150 QIDs.

@@ -35,6 +35,8 @@ contamination_sources:
     reason: manual_gold_pool
   - path: data/curated/evaluation/legacy/fact_candidates_gold45_v12.jsonl
     reason: fact_candidate_gold
+  - path: configs/evaluation/semantic_gold_v2_known_development_qids.jsonl
+    reason: known_parser_retrieval_and_adjudication_development_qids
 
 protected_surface:
   - configs/datasets/active_snapshot.yaml
@@ -50,6 +52,7 @@ protected_surface:
   - src/text2pandas/pipelines/answering/pipeline.py
 
 review:
+  guideline_version: semantic-gold-v2-guideline-draft-1
   minimum_independent_annotators: 2
   require_distinct_adjudicator: true
   require_source_evidence_review: true

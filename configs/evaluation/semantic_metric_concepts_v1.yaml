@@ -11,79 +11,157 @@ policy:
 concepts:
   - id: REVENUE
     definition_vi: Doanh thu nói chung khi câu hỏi không giới hạn thành doanh thu thuần.
+    inclusion_examples_vi: [doanh thu, tổng doanh thu]
+    exclusion_examples_vi: [doanh thu thuần]
   - id: NET_REVENUE
     definition_vi: Doanh thu thuần sau các khoản giảm trừ doanh thu.
+    inclusion_examples_vi: [doanh thu thuần]
+    exclusion_examples_vi: [doanh thu hoạt động tài chính]
   - id: GROSS_PROFIT
     definition_vi: Lợi nhuận gộp từ hoạt động bán hàng hoặc cung cấp dịch vụ.
+    inclusion_examples_vi: [lợi nhuận gộp]
+    exclusion_examples_vi: [lợi nhuận sau thuế]
   - id: OPERATING_PROFIT
     definition_vi: Lợi nhuận từ hoạt động kinh doanh theo đúng nghĩa được câu hỏi nêu.
+    inclusion_examples_vi: [lợi nhuận từ hoạt động kinh doanh]
+    exclusion_examples_vi: [lợi nhuận kế toán trước thuế]
   - id: PROFIT_BEFORE_TAX
     definition_vi: Lợi nhuận kế toán trước thuế.
+    inclusion_examples_vi: [lợi nhuận trước thuế, tổng lợi nhuận kế toán trước thuế]
+    exclusion_examples_vi: [lợi nhuận sau thuế]
   - id: PROFIT_AFTER_TAX
     definition_vi: Lợi nhuận sau thuế, không mặc định là phần thuộc cổ đông công ty mẹ.
+    inclusion_examples_vi: [lợi nhuận sau thuế]
+    exclusion_examples_vi: [lợi nhuận sau thuế của cổ đông công ty mẹ]
   - id: CASH_AND_EQUIVALENTS
     definition_vi: Tiền và các khoản tương đương tiền.
+    inclusion_examples_vi: [tiền và các khoản tương đương tiền]
+    exclusion_examples_vi: [tiền gửi có kỳ hạn]
   - id: INVENTORY
     definition_vi: Hàng tồn kho theo giá trị được báo cáo.
+    inclusion_examples_vi: [hàng tồn kho, tổng giá trị hàng tồn kho]
+    exclusion_examples_vi: [dự phòng giảm giá hàng tồn kho]
   - id: RECEIVABLES
     definition_vi: Các khoản phải thu khi câu hỏi không nêu subtype cụ thể.
+    inclusion_examples_vi: [các khoản phải thu, tổng phải thu]
+    exclusion_examples_vi: [phải thu khách hàng ngắn hạn]
   - id: CURRENT_ASSETS
     definition_vi: Tổng tài sản ngắn hạn.
+    inclusion_examples_vi: [tài sản ngắn hạn, tổng tài sản ngắn hạn]
+    exclusion_examples_vi: [tổng tài sản]
   - id: TOTAL_ASSETS
     definition_vi: Tổng cộng tài sản.
+    inclusion_examples_vi: [tổng tài sản, tổng cộng tài sản]
+    exclusion_examples_vi: [tài sản ngắn hạn]
   - id: CURRENT_LIABILITIES
     definition_vi: Tổng nợ ngắn hạn.
+    inclusion_examples_vi: [nợ ngắn hạn, tổng nợ ngắn hạn]
+    exclusion_examples_vi: [tổng nợ phải trả]
   - id: TOTAL_LIABILITIES
     definition_vi: Tổng nợ phải trả, không gồm vốn chủ sở hữu.
+    inclusion_examples_vi: [nợ phải trả, tổng nợ phải trả]
+    exclusion_examples_vi: [tổng nguồn vốn]
   - id: EQUITY
     definition_vi: Vốn chủ sở hữu.
+    inclusion_examples_vi: [vốn chủ sở hữu, tổng cộng vốn chủ sở hữu]
+    exclusion_examples_vi: [vốn điều lệ]
   - id: CHARTER_CAPITAL
     definition_vi: Vốn điều lệ hoặc vốn góp của chủ sở hữu khi câu hỏi dùng đúng khái niệm đó.
+    inclusion_examples_vi: [vốn điều lệ, vốn góp của chủ sở hữu]
+    exclusion_examples_vi: [vốn chủ sở hữu]
   - id: COST_OF_GOODS_SOLD
     definition_vi: Giá vốn hàng bán hoặc giá vốn dịch vụ.
+    inclusion_examples_vi: [giá vốn hàng bán, giá vốn dịch vụ đã cung cấp]
+    exclusion_examples_vi: [chi phí bán hàng]
   - id: FINANCIAL_INCOME
     definition_vi: Doanh thu hoạt động tài chính.
+    inclusion_examples_vi: [doanh thu hoạt động tài chính]
+    exclusion_examples_vi: [lãi tiền gửi]
   - id: INTEREST_EXPENSE
     definition_vi: Chi phí lãi vay hoặc chi phí lãi theo ngữ cảnh câu hỏi.
+    inclusion_examples_vi: [chi phí lãi vay, chi phí lãi]
+    exclusion_examples_vi: [doanh thu tiền lãi]
   - id: SELLING_EXPENSE
     definition_vi: Chi phí bán hàng.
+    inclusion_examples_vi: [chi phí bán hàng]
+    exclusion_examples_vi: [chi phí quản lý doanh nghiệp]
   - id: ADMIN_EXPENSE
     definition_vi: Chi phí quản lý doanh nghiệp.
+    inclusion_examples_vi: [chi phí quản lý doanh nghiệp]
+    exclusion_examples_vi: [chi phí bán hàng]
   - id: TAX_EXPENSE
     definition_vi: Chi phí thuế thu nhập doanh nghiệp.
+    inclusion_examples_vi: [chi phí thuế thu nhập doanh nghiệp]
+    exclusion_examples_vi: [thuế thu nhập doanh nghiệp phải nộp]
   - id: CFO
     definition_vi: Lưu chuyển tiền thuần từ hoạt động kinh doanh.
+    inclusion_examples_vi: [lưu chuyển tiền thuần từ hoạt động kinh doanh, CFO]
+    exclusion_examples_vi: [dòng tiền từ hoạt động đầu tư]
   - id: CFI
     definition_vi: Lưu chuyển tiền thuần từ hoạt động đầu tư.
+    inclusion_examples_vi: [lưu chuyển tiền thuần từ hoạt động đầu tư, CFI]
+    exclusion_examples_vi: [dòng tiền từ hoạt động kinh doanh]
   - id: CFF
     definition_vi: Lưu chuyển tiền thuần từ hoạt động tài chính.
+    inclusion_examples_vi: [lưu chuyển tiền thuần từ hoạt động tài chính, CFF]
+    exclusion_examples_vi: [doanh thu hoạt động tài chính]
   - id: CAPEX
     definition_vi: Chi đầu tư hoặc mua sắm tài sản dài hạn theo định nghĩa câu hỏi.
+    inclusion_examples_vi: [chi đầu tư tài sản cố định, CAPEX]
+    exclusion_examples_vi: [giá trị còn lại của tài sản cố định]
   - id: EPS
     definition_vi: Lãi cơ bản trên cổ phiếu được báo cáo.
+    inclusion_examples_vi: [lãi cơ bản trên cổ phiếu, EPS]
+    exclusion_examples_vi: [số cổ phiếu đang lưu hành]
   - id: ROE
     definition_vi: Tỷ suất sinh lời trên vốn chủ sở hữu; variant mẫu số phải được ghi riêng nếu câu hỏi spell out.
+    inclusion_examples_vi: [ROE, tỷ suất sinh lời trên vốn chủ sở hữu]
+    exclusion_examples_vi: [lợi nhuận sau thuế trên tổng tài sản]
   - id: ROA
     definition_vi: Tỷ suất sinh lời trên tài sản; variant mẫu số phải được ghi riêng nếu câu hỏi spell out.
+    inclusion_examples_vi: [ROA, tỷ suất sinh lời trên tài sản]
+    exclusion_examples_vi: [lợi nhuận sau thuế trên vốn chủ sở hữu]
   - id: GROSS_MARGIN
     definition_vi: Lợi nhuận gộp chia doanh thu thuần, khi được nêu như một metric có tên.
+    inclusion_examples_vi: [biên lợi nhuận gộp, tỷ suất lợi nhuận gộp]
+    exclusion_examples_vi: [lợi nhuận gộp chia cho doanh thu thuần]
   - id: NET_MARGIN
     definition_vi: Lợi nhuận sau thuế chia doanh thu thuần, khi được nêu như một metric có tên.
+    inclusion_examples_vi: [biên lợi nhuận ròng]
+    exclusion_examples_vi: [lợi nhuận sau thuế chia cho doanh thu thuần]
   - id: DEBT_TO_EQUITY
     definition_vi: Nợ phải trả trên vốn chủ sở hữu, khi được nêu như một metric có tên.
+    inclusion_examples_vi: [hệ số nợ trên vốn chủ sở hữu, D/E]
+    exclusion_examples_vi: [nợ phải trả chia cho vốn chủ sở hữu]
   - id: BAD_DEBT
     definition_vi: Nợ xấu theo giá trị tuyệt đối.
+    inclusion_examples_vi: [nợ xấu, tổng nợ xấu]
+    exclusion_examples_vi: [tỷ lệ nợ xấu]
   - id: BAD_DEBT_RATIO
     definition_vi: Tỷ lệ nợ xấu được nêu như một metric báo cáo.
+    inclusion_examples_vi: [tỷ lệ nợ xấu]
+    exclusion_examples_vi: [nợ xấu trên tổng dư nợ]
   - id: TOTAL_LOANS
     definition_vi: Tổng dư nợ hoặc cho vay khách hàng theo phạm vi câu hỏi.
+    inclusion_examples_vi: [tổng dư nợ, cho vay khách hàng]
+    exclusion_examples_vi: [nợ xấu]
   - id: CUSTOMER_DEPOSITS
     definition_vi: Tiền gửi của khách hàng.
+    inclusion_examples_vi: [tiền gửi khách hàng, tiền gửi của khách hàng]
+    exclusion_examples_vi: [tiền gửi tại Ngân hàng Nhà nước]
   - id: PROVISION_EXPENSE
     definition_vi: Chi phí dự phòng theo subtype được câu hỏi nêu.
+    inclusion_examples_vi: [chi phí dự phòng]
+    exclusion_examples_vi: [dự phòng giảm giá hàng tồn kho cuối kỳ]
   - id: GOODWILL
     definition_vi: Lợi thế thương mại.
+    inclusion_examples_vi: [lợi thế thương mại]
+    exclusion_examples_vi: [tài sản vô hình]
   - id: OUTSTANDING_SHARES
     definition_vi: Số cổ phiếu đang lưu hành.
+    inclusion_examples_vi: [số cổ phiếu đang lưu hành]
+    exclusion_examples_vi: [số cổ phiếu phổ thông bình quân gia quyền]
   - id: OTHER_REPORTED_METRIC
     definition_vi: Metric báo cáo cụ thể đã hiểu rõ nhưng chưa có ID riêng; phải ghi proposed definition và đưa qua calibration review.
+    inclusion_examples_vi: [metric báo cáo chưa có ID nhưng có định nghĩa nguồn rõ ràng]
+    exclusion_examples_vi: [Silver row, VAS code, table ID, observation UID]

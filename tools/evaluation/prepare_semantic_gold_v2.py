@@ -17,6 +17,8 @@ from text2pandas.application.usecases.semantic_gold_v2 import (
     build_contamination_ledger,
     canonical_packet_jsonl,
     select_semantic_questions,
+    validate_annotation_record,
+    validate_phase1_5_sampling_contract,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -25,10 +27,7 @@ ARTIFACT_ROOT = ROOT / "artifacts"
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--protocol",
-        default="configs/evaluation/semantic_gold_v2_protocol.yaml",
-    )
+    parser.add_argument("--protocol", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
@@ -63,6 +62,7 @@ def main() -> int:
         name: _sha256(path.read_bytes()) for name, path in contract_paths.items()
     }
     sampling = _yaml_mapping(contract_paths["sampling"])
+    validate_phase1_5_sampling_contract(sampling)
 
     contamination_configs = protocol.get("contamination_sources")
     if not isinstance(contamination_configs, Sequence) or isinstance(
@@ -78,7 +78,9 @@ def main() -> int:
         path = _repo_path(relative)
         contamination_sources[relative] = _jsonl(path)
         contamination_reasons[relative] = reason
-    ledger_rows = build_contamination_ledger(contamination_sources)
+    ledger_rows = build_contamination_ledger(
+        contamination_sources, contamination_reasons
+    )
     contaminated_qids = frozenset(
         _as_int(row["qid"], "contamination qid") for row in ledger_rows
     )
@@ -91,16 +93,21 @@ def main() -> int:
     active_selection = selection.active
 
     annotation_hashes = {
+        "guideline_version": _required_text(
+            _mapping(protocol.get("review"), "review").get("guideline_version"),
+            "guideline version",
+        ),
         "guideline_sha256": contract_hashes["guideline"],
         "metric_vocabulary_sha256": contract_hashes["metric_vocabulary"],
         "operation_vocabulary_sha256": contract_hashes["operation_vocabulary"],
     }
-    protected = _protected_surface(protocol)
+    protected = _protected_surface(protocol, target_parser)
     _validate_protected_target(target_parser, protected)
     protected_bytes = _canonical_json(protected)
     contamination_document = {
         "schema_version": 1,
-        "records": len(ledger_rows),
+        "contaminated_qids": len(contaminated_qids),
+        "ledger_entries": len(ledger_rows),
         "sources": [
             {
                 "path": path,
@@ -114,6 +121,29 @@ def main() -> int:
     }
     coverage_document = {
         **selection.coverage,
+        "activated_reserve_records": 0,
+        "activated_reserve_reasons": [],
+        "adjudicated_secondary_category_counts": {},
+        "annotation_status": {
+            "HEADLINE_CORE": {
+                "status": "NOT_ANNOTATED",
+                "resolved": 0,
+                "ambiguous": 0,
+                "unresolved": 0,
+            },
+            "DIAGNOSTIC_SUPPLEMENT": {
+                "status": "NOT_ANNOTATED",
+                "resolved": 0,
+                "ambiguous": 0,
+                "unresolved": 0,
+            },
+            "RESERVE": {
+                "status": "NOT_ACTIVATED",
+                "resolved": 0,
+                "ambiguous": 0,
+                "unresolved": 0,
+            },
+        },
         "headline_core_qids": [
             _as_int(row["qid"], "headline qid") for row in selection.core
         ],
@@ -124,6 +154,25 @@ def main() -> int:
             _as_int(row["qid"], "reserve qid") for row in selection.reserve
         ],
     }
+
+    templates = {
+        "annotator_a.jsonl": annotation_templates(
+            active_selection,
+            reviewer_slot="A",
+            contract_hashes=annotation_hashes,
+        ),
+        "annotator_b.jsonl": annotation_templates(
+            active_selection,
+            reviewer_slot="B",
+            contract_hashes=annotation_hashes,
+        ),
+        "adjudication.jsonl": annotation_templates(
+            active_selection,
+            reviewer_slot="C",
+            contract_hashes=annotation_hashes,
+        ),
+    }
+    _validate_templates(contract_paths["schema"], templates)
 
     assets: dict[str, tuple[bytes, int | None]] = {
         "selection_core.jsonl": (
@@ -139,33 +188,15 @@ def main() -> int:
             len(selection.reserve),
         ),
         "annotator_a.jsonl": (
-            canonical_packet_jsonl(
-                annotation_templates(
-                    active_selection,
-                    reviewer_slot="A",
-                    contract_hashes=annotation_hashes,
-                )
-            ),
+            canonical_packet_jsonl(templates["annotator_a.jsonl"]),
             len(active_selection),
         ),
         "annotator_b.jsonl": (
-            canonical_packet_jsonl(
-                annotation_templates(
-                    active_selection,
-                    reviewer_slot="B",
-                    contract_hashes=annotation_hashes,
-                )
-            ),
+            canonical_packet_jsonl(templates["annotator_b.jsonl"]),
             len(active_selection),
         ),
         "adjudication.jsonl": (
-            canonical_packet_jsonl(
-                annotation_templates(
-                    active_selection,
-                    reviewer_slot="C",
-                    contract_hashes=annotation_hashes,
-                )
-            ),
+            canonical_packet_jsonl(templates["adjudication.jsonl"]),
             len(active_selection),
         ),
         "access_log.jsonl": (b"", 0),
@@ -181,6 +212,7 @@ def main() -> int:
         "kind": "text2pandas.semantic_gold_v2_annotation_packet",
         "protocol_id": _required_text(protocol.get("protocol_id"), "protocol id"),
         "status": "OPEN_FOR_INDEPENDENT_REVIEW",
+        "measurement_status": "NOT_MEASURED_UNTIL_GOLD_IS_SEALED",
         "model_outputs_included": False,
         "question_source": {
             "path": str(question_config["path"]),
@@ -201,6 +233,8 @@ def main() -> int:
             "reserve_records": len(selection.reserve),
             "contaminated_records": len(contaminated_qids),
             "selection_uses_predictions": False,
+            "model_outputs_included": False,
+            "authority": selection.coverage["authority"],
         },
         "review": {
             "annotator_a": "UNASSIGNED",
@@ -210,6 +244,11 @@ def main() -> int:
             "require_distinct_adjudicator": True,
         },
         "protected_surface_sha256": _sha256(protected_bytes),
+        "protected_surface_result": {
+            "before_authority": str(target_parser["source_commit"]),
+            "after_authority": "packet_preparation_worktree",
+            "byte_identical": protected["byte_identical"],
+        },
         "assets": {
             name: {
                 "sha256": _sha256(content),
@@ -221,7 +260,6 @@ def main() -> int:
             "INDEPENDENT_ANNOTATOR_A_UNASSIGNED",
             "INDEPENDENT_ANNOTATOR_B_UNASSIGNED",
             "DISTINCT_ADJUDICATOR_C_UNASSIGNED",
-            "SEMANTIC_METRICS_NOT_MEASURED_UNTIL_GOLD_IS_SEALED",
         ],
     }
 
@@ -230,8 +268,7 @@ def main() -> int:
         output.relative_to(ARTIFACT_ROOT.resolve())
     except ValueError as error:
         raise ValueError(f"packet output must be under {ARTIFACT_ROOT}") from error
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.mkdir(parents=False, exist_ok=False)
+    _create_immutable_output(output)
     for name, (content, _records) in assets.items():
         (output / name).write_bytes(content)
     (output / "manifest.json").write_bytes(_canonical_json(manifest))
@@ -239,21 +276,30 @@ def main() -> int:
     return 0
 
 
-def _protected_surface(protocol: Mapping[str, object]) -> dict[str, object]:
+def _protected_surface(
+    protocol: Mapping[str, object], target: Mapping[str, object]
+) -> dict[str, object]:
     raw_paths = protocol.get("protected_surface")
     if not isinstance(raw_paths, Sequence) or isinstance(raw_paths, (str, bytes)):
         raise TypeError("protected_surface must be a list")
-    assets = []
+    commit = _required_text(target.get("source_commit"), "target parser source commit")
+    before_assets = []
+    after_assets = []
     for raw in raw_paths:
         relative = _required_text(raw, "protected surface path")
         path = _repo_path(relative)
-        assets.append(
-            {"path": relative, "sha256": _sha256(path.read_bytes())}
-        )
+        before_content = _git_file(commit, relative)
+        after_content = path.read_bytes()
+        before_assets.append(_fingerprint(relative, before_content))
+        after_assets.append(_fingerprint(relative, after_content))
+    before_assets.sort(key=lambda item: str(item["path"]))
+    after_assets.sort(key=lambda item: str(item["path"]))
     return {
         "schema_version": 1,
-        "policy": "must_match_after_phase1.5_measurement",
-        "assets": sorted(assets, key=lambda item: str(item["path"])),
+        "policy": "before_and_after_must_be_byte_identical",
+        "before": {"authority": commit, "assets": before_assets},
+        "after": {"authority": "packet_preparation_worktree", "assets": after_assets},
+        "byte_identical": before_assets == after_assets,
     }
 
 
@@ -293,7 +339,8 @@ def _validate_protected_target(
     target: Mapping[str, object], protected: Mapping[str, object]
 ) -> None:
     commit = _required_text(target.get("source_commit"), "target parser source commit")
-    raw_assets = protected.get("assets")
+    after = _mapping(protected.get("after"), "protected after")
+    raw_assets = after.get("assets")
     if not isinstance(raw_assets, Sequence) or isinstance(raw_assets, (str, bytes)):
         raise TypeError("protected assets must be a list")
     paths = [str(_mapping(item, "protected asset")["path"]) for item in raw_assets]
@@ -312,6 +359,59 @@ def _validate_protected_target(
         raise ValueError(
             "protected production surface differs from target parser commit"
         )
+    if protected.get("byte_identical") is not True:
+        raise ValueError(
+            "protected production surface before/after fingerprints differ"
+        )
+
+
+def _create_immutable_output(output: Path) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=False, exist_ok=False)
+
+
+def _validate_templates(
+    schema_path: Path,
+    templates: Mapping[str, Sequence[Mapping[str, object]]],
+) -> None:
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    required = set(_string_sequence(schema.get("required"), "schema required"))
+    properties = set(
+        _mapping(schema.get("properties"), "schema properties")
+    )
+    for name, rows in templates.items():
+        for row in rows:
+            fields = set(row)
+            if not required <= fields:
+                raise ValueError(
+                    f"invalid annotation template {name}: missing "
+                    f"{sorted(required - fields)}"
+                )
+            if not fields <= properties:
+                raise ValueError(
+                    f"invalid annotation template {name}: unknown "
+                    f"{sorted(fields - properties)}"
+                )
+            validate_annotation_record(row)
+
+
+def _string_sequence(value: object, label: str) -> tuple[str, ...]:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        raise TypeError(f"{label} must be a list")
+    return tuple(_required_text(item, label) for item in value)
+
+
+def _fingerprint(relative: str, content: bytes) -> dict[str, object]:
+    return {"path": relative, "sha256": _sha256(content), "size": len(content)}
+
+
+def _git_file(commit: str, relative: str) -> bytes:
+    return subprocess.run(
+        ["git", "show", f"{commit}:{relative}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    ).stdout
 
 
 def _jsonl(path: Path) -> list[dict[str, object]]:
