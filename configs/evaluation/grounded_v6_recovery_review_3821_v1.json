@@ -1,0 +1,452 @@
+{
+  "schema_version": "1.0",
+  "kind": "text2pandas.source_adjudicated_recovery_review",
+  "baseline": {
+    "submission_id": 3821,
+    "zip_path": "artifacts/official/submission-3821/submission.zip",
+    "zip_sha256": "91089cec71f0aa409b8543e5c0201c17ce7b1482b8d73f8c86f62004737ab918",
+    "executable_records": 712,
+    "unresolved_records": 300
+  },
+  "source_run": {
+    "run_id": "grounded-v6-downloaded-replace-trusted-20260830-r1",
+    "records_path": "artifacts/runs/grounded-v5/grounded-v6-downloaded-replace-trusted-20260830-r1/records.jsonl",
+    "records_sha256": "164390e1f1d5ea5505cd43629c199c3a2f8716d574689633b5f5f21729d64091"
+  },
+  "policy": {
+    "scope": "Only abstentions in the exact submission 3821 artifact may be filled.",
+    "promotion_requirements": [
+      "metric",
+      "entity",
+      "period",
+      "basis",
+      "operation",
+      "unit",
+      "source"
+    ],
+    "protected_layers": [
+      "All 712 baseline answer/query/evidence tuples",
+      "All 1012 baseline relevant_tables/relevant_docs lists",
+      "All baseline CSV payloads"
+    ],
+    "official_correctness": "NOT_MEASURED",
+    "independent_gold": "NOT_AVAILABLE",
+    "runtime_model_gold": false
+  },
+  "reviews": [
+    {
+      "qid": 99,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 948.30352897,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Direct NKG cash balance at 2022 year-end; VND is converted to VND billions."
+    },
+    {
+      "qid": 151,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "REJECT",
+      "observed_answer": 10410868.0,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Selected row is VND demand deposits inside customer deposits, not VND savings deposits."
+    },
+    {
+      "qid": 363,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 3.319357071984094,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Complete KBC 2016-2020 D/E ranking followed by same-year interest-coverage calculation."
+    },
+    {
+      "qid": 369,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 1.7469585693461782,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Quick-ratio median filter leaves HSG/MSR; HSG wins gross-margin change and its 2023 interest coverage is returned."
+    },
+    {
+      "qid": 370,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 8.11456002879663,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Three-year positive CFO gate, 2022-2024 net-revenue CAGR ranking and 2024 net margin are complete."
+    },
+    {
+      "qid": 371,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 5.472919380965644,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Positive-CFO filter excludes BSR; PVT wins 2024 gross margin and the matching interest coverage is returned."
+    },
+    {
+      "qid": 375,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 24.942106960461924,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "All four 2021 D/E and interest-coverage inputs are present and the two subgroup means are differenced."
+    },
+    {
+      "qid": 379,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "REJECT",
+      "observed_answer": 2.4642741734107836,
+      "checks": {"metric": true, "entity": true, "period": false, "basis": true, "operation": false, "unit": true, "source": true},
+      "reason": "Plan omits 2024-to-2025 revenue growth and the above-median growth filter."
+    },
+    {
+      "qid": 380,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 3.0,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Complete eight-company revenue ranking, top-five restriction, quick-ratio and D/E filters, then count."
+    },
+    {
+      "qid": 386,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 0.5087084026749977,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "MSN 2020-2024 positive-PAT CFO/PAT argmin selects 2022; current assets, inventory and current liabilities match that year."
+    },
+    {
+      "qid": 387,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 6.986594767228611,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "HPG positive-PAT CFO/PAT argmin and same-period PBT plus interest expense are complete, including prior-column period semantics."
+    },
+    {
+      "qid": 395,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 41.49593481310099,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "KBC 2022-2025 revenue series identifies the deepest decline in 2024 and uses 2024 CFO/revenue."
+    },
+    {
+      "qid": 400,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 17.85205157409383,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "HPG 2020-2024 revenue growth argmax selects the highest positive-growth year and returns matching CFO/revenue."
+    },
+    {
+      "qid": 407,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "REJECT",
+      "observed_answer": 1.219802879523527,
+      "checks": {"metric": true, "entity": true, "period": false, "basis": true, "operation": false, "unit": true, "source": true},
+      "reason": "Question requires current ratio at the next year-end; plan selects the same key and performs no year shift."
+    },
+    {
+      "qid": 439,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 8.785944003245652,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "HPG seven-year median gross-margin filter and CFO/revenue ranking select 2022; ROE uses 2022 PAT over ending equity."
+    },
+    {
+      "qid": 447,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "REJECT",
+      "observed_answer": 2.4642741734107836,
+      "checks": {"metric": true, "entity": true, "period": false, "basis": true, "operation": false, "unit": true, "source": true},
+      "reason": "Plan omits 2024-to-2025 revenue growth and the above-median growth subgroup."
+    },
+    {
+      "qid": 448,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "REJECT",
+      "observed_answer": 4.799093334590817,
+      "checks": {"metric": true, "entity": true, "period": false, "basis": true, "operation": false, "unit": true, "source": true},
+      "reason": "Plan omits 2024-to-2025 revenue growth and the above-median growth subgroup."
+    },
+    {
+      "qid": 475,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": -8.734821956918825,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Complete opening/closing inventory and COGS inputs select the largest 2021-2022 inventory-days increase, then compute gross-margin point change."
+    },
+    {
+      "qid": 479,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": -0.2648050337359836,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Complete opening/closing inventory and COGS inputs select the largest 2022-2023 inventory-days increase, then compute gross-margin point change."
+    },
+    {
+      "qid": 523,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 2.055255183,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "DCM parent-only accrued term-deposit interest ranking selects 2023 and returns the separate cash balance in VND billions."
+    },
+    {
+      "qid": 570,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": -8.734821956918825,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Semantic duplicate of Q475 with complete 2021-2022 inventory-days ranking and gross-margin point change."
+    },
+    {
+      "qid": 695,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 10.422920513603698,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "DCM 2017 ROE uses 2017 PAT over ending equity, consistent with the repository's reviewed legacy gold note."
+    },
+    {
+      "qid": 917,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "REJECT",
+      "observed_answer": 115693.613555,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "VSC input resolves total liabilities instead of short-term trade payables, invalidating the three-company average."
+    },
+    {
+      "qid": 942,
+      "cohort": "trusted",
+      "source_status": "PROMOTED_RECOVERY",
+      "decision": "REJECT",
+      "observed_answer": -167056.0,
+      "checks": {"metric": true, "entity": false, "period": true, "basis": true, "operation": false, "unit": true, "source": true},
+      "reason": "Only the VPB foreign-exchange fact is selected; EIB and HDB are missing from the requested average."
+    },
+    {
+      "qid": 267,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": -15.228631,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Selected disclosure is an off-balance-sheet foreign-currency status, not parent-bank term deposits in foreign currency."
+    },
+    {
+      "qid": 412,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 1.493709752521132,
+      "checks": {"metric": true, "entity": false, "period": true, "basis": true, "operation": false, "unit": true, "source": true},
+      "reason": "MSN is absent and the candidate population contains only OGC and VNM."
+    },
+    {
+      "qid": 465,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 8.138020523057806,
+      "checks": {"metric": true, "entity": true, "period": false, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "PVT D/E uses an opening-year balance while the question and peer facts require 2019 year-end values."
+    },
+    {
+      "qid": 494,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 2.4664951502807497,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Complete positive-operating-profit filter, CFO/operating-profit argmin across BSR/PLX/PVT and PLX PAT/revenue output."
+    },
+    {
+      "qid": 495,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 25.614144,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": false, "unit": true, "source": true},
+      "reason": "Output is land rent payable and the rank input is total other receivables, not non-cancellable operating-lease minimum payments and related-party receivables."
+    },
+    {
+      "qid": 520,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 26.977273170028,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Four-company 2022 short-term borrowing ranking selects MCH and returns MCH consolidated segment net revenue in VND trillions."
+    },
+    {
+      "qid": 525,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "AMBIGUOUS",
+      "observed_answer": -0.7247358524,
+      "checks": {"metric": true, "entity": true, "period": false, "basis": true, "operation": true, "unit": false, "source": true},
+      "reason": "The tax ranking includes negative signed values and the loan-loss provision output sign/balance convention is not independently resolved."
+    },
+    {
+      "qid": 530,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 131.188339,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "NAB 2021-2025 construction-in-progress ranking selects 2025 and returns the matching standard loan balance in VND trillions."
+    },
+    {
+      "qid": 545,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 2.545047237875866,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Complete 2017 positive-operating-profit filter, CFO/operating-profit argmin and selected-company PAT/revenue output."
+    },
+    {
+      "qid": 590,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 844.844378231,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Selected values are borrowing balances, not total short-term credit limits."
+    },
+    {
+      "qid": 652,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 613.450882667,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "One selected input is profit after tax rather than corporate-income-tax payable."
+    },
+    {
+      "qid": 700,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 1.7770202550730656,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Numerator is interest expense, not interest payable at 2015 year-end."
+    },
+    {
+      "qid": 724,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 567.4092125640483,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Denominator resolves a related-party revenue disclosure instead of parent-company total revenue."
+    },
+    {
+      "qid": 816,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 14.383448,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "MSN 2017, 2020 and 2022 year-end short-term borrowing balances are averaged with scale-aware conversion to VND trillions."
+    },
+    {
+      "qid": 826,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 2016.0,
+      "checks": {"metric": true, "entity": true, "period": false, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "The 2019 numerator comes from a prior-year column, making the four-year ratio comparison period-inconsistent."
+    },
+    {
+      "qid": 883,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 2023.0,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "The 2025 fact is a risk provision for trading securities, not debt trading securities outstanding."
+    },
+    {
+      "qid": 949,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 4.0,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "ACB and EIB selections are foreign-exchange income components, not net foreign-exchange trading results."
+    },
+    {
+      "qid": 952,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 11.63771753125,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": false, "operation": true, "unit": true, "source": true},
+      "reason": "2022-2023 should use parent-only reports but consolidated sources and mismatched other-receivable rows are selected."
+    },
+    {
+      "qid": 967,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": -11349782.0,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": false, "unit": true, "source": true},
+      "reason": "Signed negative provisions are ranked by numeric maximum; the question asks for the highest balance, which requires an independently resolved magnitude convention."
+    },
+    {
+      "qid": 975,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "PASS_SOURCE_PROVEN",
+      "expected_answer": 1261.80261206275,
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "Four complete 2024 current-income-tax-expense facts are averaged with per-source scale normalization to VND billions."
+    },
+    {
+      "qid": 979,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 71.67432585285175,
+      "checks": {"metric": true, "entity": false, "period": true, "basis": true, "operation": false, "unit": true, "source": true},
+      "reason": "Only POW facts are selected; GAS, DTK and GEG are absent from the requested four-company result."
+    },
+    {
+      "qid": 999,
+      "cohort": "shadow",
+      "source_status": "SHADOW_OK",
+      "decision": "REJECT",
+      "observed_answer": 2016.0,
+      "checks": {"metric": false, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "reason": "2020 and 2025 selections are cash-flow changes from issuance, not year-end total issued valuable papers."
+    }
+  ]
+}
