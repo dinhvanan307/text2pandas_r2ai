@@ -7,7 +7,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
 from text2pandas.application.parsing import SemanticParser
-from text2pandas.domain.metrics import MetricOntology, normalize_phrase
+from text2pandas.domain.metrics import (
+    FormulaDefinition,
+    MetricOntology,
+    iter_phrase_spans,
+    normalize_phrase,
+)
 from text2pandas.domain.semantic import (
     Basis,
     MetricBindingHint,
@@ -144,19 +149,21 @@ class GroundedQueryExpander:
             (
                 ontology_formula,
                 alias,
-                normalized.find(alias),
-                normalized.find(alias) + len(alias),
+                match_start,
+                match_end,
             )
             for ontology_formula in self.ontology.formulas.values()
             for alias in ontology_formula.aliases
-            if alias and alias in normalized
+            for match_start, match_end in iter_phrase_spans(normalized, alias)
         ]
         for ontology_formula, matched_alias, match_start, match_end in formula_matches:
             if any(
                 ontology_formula.formula_id != other_formula.formula_id
                 and len(other_alias) > len(matched_alias)
-                and match_start < other_end
-                and other_start < match_end
+                and (
+                    ontology_formula.leaves == other_formula.leaves
+                    or (match_start < other_end and other_start < match_end)
+                )
                 for other_formula, other_alias, other_start, other_end in formula_matches
             ):
                 continue
@@ -165,18 +172,19 @@ class GroundedQueryExpander:
                 for formula in formulas
             ):
                 metric_ids.extend(ontology_formula.leaves)
-                formula_payload = ontology_formula.to_dict()
-                expression = formula_payload["expression"]
-                if not isinstance(expression, Mapping):  # pragma: no cover - domain contract
-                    raise TypeError("formula expression must be a mapping")
+                semantic_start = min(
+                    (
+                        other_start
+                        for other_formula, _other_alias, other_start, _other_end in formula_matches
+                        if other_formula.leaves == ontology_formula.leaves
+                    ),
+                    default=match_start,
+                )
                 formulas.append(
-                    GroundedFormulaRequirement(
-                        formula_id=ontology_formula.formula_id,
-                        leaves=ontology_formula.leaves,
-                        expression=dict(expression),
-                        output_dimension=ontology_formula.output_unit.dimension.value,
+                    replace(
+                        _ontology_formula_requirement(ontology_formula),
                         matched_alias=matched_alias,
-                        start=normalized.find(matched_alias),
+                        start=semantic_start,
                     )
                 )
         for cue, leaves in _DERIVED_ALIASES.items():
@@ -214,14 +222,20 @@ class GroundedQueryExpander:
                         start=normalized.find(cue),
                     )
                 )
-        for pattern, manual_formula in _MANUAL_FORMULA_PATTERNS:
+        for pattern, formula_id in _ONTOLOGY_FORMULA_PATTERNS:
             match = pattern.search(normalized)
             if match is None:
                 continue
-            metric_ids.extend(manual_formula.leaves)
+            pattern_formula = self.ontology.formulas.get(formula_id)
+            if pattern_formula is None:  # pragma: no cover - ontology startup contract
+                raise ValueError(
+                    f"formula pattern references unknown ontology formula: {formula_id}"
+                )
+            requirement = _ontology_formula_requirement(pattern_formula)
+            metric_ids.extend(requirement.leaves)
             formulas.append(
                 replace(
-                    manual_formula,
+                    requirement,
                     matched_alias=match.group(0),
                     start=match.start(),
                 )
@@ -328,20 +342,6 @@ class GroundedQueryExpander:
         unique_formulas = tuple(
             {formula.formula_id: formula for formula in formulas}.values()
         )
-        if "von chu so huu binh quan" in normalized or (
-            "roe" in normalized and "binh quan dau va cuoi ky" in normalized
-        ):
-            unique_formulas = tuple(
-                replace(
-                    _ROE_AVERAGE_EQUITY,
-                    matched_alias=formula.matched_alias,
-                    start=formula.start,
-                    role=formula.role,
-                )
-                if formula.formula_id == _ROE.formula_id
-                else formula
-                for formula in unique_formulas
-            )
         return GroundedQueryExpansion(
             tuple(dict.fromkeys(value for value in phrases if value)),
             concepts,
@@ -410,6 +410,7 @@ def _enrich_concepts_with_source_bindings(
     """
 
     enriched = list(concepts)
+    source_only_fallback = not concepts
     for binding in bindings:
         labels = tuple(normalize_phrase(value) for value in binding.labels if value)
         surface = normalize_phrase(binding.question_surface)
@@ -433,6 +434,21 @@ def _enrich_concepts_with_source_bindings(
             if exact or contained or surface_match:
                 ranked.append(((exact, contained, surface_match), index))
         if not ranked:
+            # Source-specific note metrics are intentionally absent from the
+            # reviewed global ontology.  The parser can identify such a
+            # physical source while abstaining on the surrounding expression;
+            # dropping that binding here guarantees an empty retrieval.  Keep
+            # it as a scoped governed concept backed by A6 labels and codes.
+            if source_only_fallback and labels and binding.source_metric_id:
+                enriched.append(
+                    GroundedQueryConcept(
+                        metric_id=binding.source_metric_id,
+                        aliases=labels,
+                        preferred_basis=binding.preferred_basis,
+                        query_surfaces=labels,
+                        metric_codes=binding.metric_codes,
+                    )
+                )
             continue
         _score, winner = max(ranked, key=lambda value: (value[0], -value[1]))
         concept = enriched[winner]
@@ -624,6 +640,22 @@ _MANUAL_CONCEPTS: dict[str, GroundedQueryConcept] = {
 }
 
 
+def _ontology_formula_requirement(
+    formula: FormulaDefinition,
+) -> GroundedFormulaRequirement:
+    """Adapt the shared ontology contract to the grounded planner protocol."""
+
+    expression = formula.to_dict()["expression"]
+    if not isinstance(expression, Mapping):  # pragma: no cover - domain contract
+        raise TypeError("formula expression must be a mapping")
+    return GroundedFormulaRequirement(
+        formula_id=formula.formula_id,
+        leaves=formula.leaves,
+        expression=dict(expression),
+        output_dimension=formula.output_unit.dimension.value,
+    )
+
+
 def _ratio_requirement(
     formula_id: str,
     numerator: str,
@@ -644,66 +676,10 @@ def _ratio_requirement(
     )
 
 
-_ROE = _ratio_requirement(
-    "roe_end_equity",
-    "profit_after_tax",
-    "equity",
-    output_dimension="percent",
-)
-_ROE_AVERAGE_EQUITY = GroundedFormulaRequirement(
-    formula_id="roe_average_equity",
-    leaves=("profit_after_tax", "equity"),
-    expression={
-        "type": "average_balance_ratio",
-        "numerator_metric_id": "profit_after_tax",
-        "denominator_metric_id": "equity",
-    },
-    output_dimension="percent",
-)
-_ROA = _ratio_requirement(
-    "roa_end_assets",
-    "profit_after_tax",
-    "total_assets",
-    output_dimension="percent",
-)
-_CFO_TO_REVENUE = _ratio_requirement(
-    "cash_flow_from_operations_to_net_revenue",
-    "cash_flow_from_operations",
-    "net_revenue",
-    output_dimension="ratio",
-)
-_CFO_TO_CURRENT_LIABILITIES = _ratio_requirement(
-    "cash_flow_from_operations_to_current_liabilities",
-    "cash_flow_from_operations",
-    "current_liabilities",
-    output_dimension="ratio",
-)
 _CFO_TO_OPERATING_PROFIT = _ratio_requirement(
     "cash_flow_from_operations_to_operating_profit",
     "cash_flow_from_operations",
     "reported_5dafdc9a37317139",
-    output_dimension="ratio",
-)
-_LONG_TERM_ASSETS_TO_ASSETS = _ratio_requirement(
-    "long_term_assets_to_total_assets",
-    "reported_d58548b4a183bb85",
-    "total_assets",
-    output_dimension="percent",
-)
-_DEBT_TO_EQUITY = _ratio_requirement(
-    "total_liabilities_to_equity",
-    "total_liabilities",
-    "equity",
-    output_dimension="ratio",
-)
-_ASSET_TURNOVER_AVERAGE = GroundedFormulaRequirement(
-    formula_id="asset_turnover_average_assets",
-    leaves=("net_revenue", "total_assets"),
-    expression={
-        "type": "average_balance_ratio",
-        "numerator_metric_id": "net_revenue",
-        "denominator_metric_id": "total_assets",
-    },
     output_dimension="ratio",
 )
 _OPERATING_PROFIT_BEFORE_PROVISION_TO_ASSETS = _ratio_requirement(
@@ -712,102 +688,21 @@ _OPERATING_PROFIT_BEFORE_PROVISION_TO_ASSETS = _ratio_requirement(
     "total_assets",
     output_dimension="percent",
 )
-_CFO_TO_PROFIT_AFTER_TAX = _ratio_requirement(
-    "cash_flow_from_operations_to_profit_after_tax",
-    "cash_flow_from_operations",
-    "profit_after_tax",
-    output_dimension="ratio",
-)
-_CURRENT_RATIO = _ratio_requirement(
-    "current_ratio",
-    "current_assets",
-    "current_liabilities",
-    output_dimension="ratio",
-)
-_QUICK_RATIO = GroundedFormulaRequirement(
-    formula_id="quick_ratio",
-    leaves=("current_assets", "inventory", "current_liabilities"),
-    expression={
-        "type": "arithmetic",
-        "operator": "divide",
-        "left": {
-            "type": "arithmetic",
-            "operator": "subtract",
-            "left": {"type": "metric_ref", "metric_id": "current_assets"},
-            "right": {"type": "metric_ref", "metric_id": "inventory"},
-        },
-        "right": {"type": "metric_ref", "metric_id": "current_liabilities"},
-    },
-    output_dimension="ratio",
-)
-_INTEREST_COVERAGE = GroundedFormulaRequirement(
-    formula_id="interest_coverage",
-    leaves=("profit_before_tax", "interest_expense"),
-    expression={
-        "type": "arithmetic",
-        "operator": "divide",
-        "left": {
-            "type": "arithmetic",
-            "operator": "add",
-            "left": {"type": "metric_ref", "metric_id": "profit_before_tax"},
-            "right": {
-                "type": "unary",
-                "operator": "absolute",
-                "expression": {
-                    "type": "metric_ref",
-                    "metric_id": "interest_expense",
-                },
-            },
-        },
-        "right": {
-            "type": "unary",
-            "operator": "absolute",
-            "expression": {
-                "type": "metric_ref",
-                "metric_id": "interest_expense",
-            },
-        },
-    },
-    output_dimension="ratio",
-)
-
 _MANUAL_FORMULAS: dict[str, GroundedFormulaRequirement] = {
-    "roe": _ROE,
-    "ty suat sinh loi tren von chu so huu": _ROE,
-    "roa": _ROA,
-    "ty suat sinh loi tren tai san": _ROA,
-    "ty so dong tien hoat dong tren doanh thu thuan": _CFO_TO_REVENUE,
-    "dong tien thuan tu hoat dong kinh doanh tren doanh thu thuan": _CFO_TO_REVENUE,
-    "dong tien tu hoat dong kinh doanh tren doanh thu thuan": _CFO_TO_REVENUE,
-    "cfo tren doanh thu thuan": _CFO_TO_REVENUE,
-    "ty so cfo tren doanh thu thuan": _CFO_TO_REVENUE,
-    "cfo margin": _CFO_TO_REVENUE,
-    "he so dong tien hoat dong tren no ngan han": _CFO_TO_CURRENT_LIABILITIES,
-    "dong tien hoat dong tren no ngan han": _CFO_TO_CURRENT_LIABILITIES,
     "ty le luu chuyen tien thuan tu hoat dong kinh doanh tren loi nhuan thuan tu hoat dong kinh doanh": _CFO_TO_OPERATING_PROFIT,
     "luu chuyen tien thuan tu hoat dong kinh doanh tren loi nhuan thuan tu hoat dong kinh doanh": _CFO_TO_OPERATING_PROFIT,
-    "ty trong tai san dai han tren tong tai san": _LONG_TERM_ASSETS_TO_ASSETS,
-    "vong quay tong tai san": _ASSET_TURNOVER_AVERAGE,
     "loi nhuan thuan tu hoat dong kinh doanh truoc chi phi du phong rui ro tin dung": _OPERATING_PROFIT_BEFORE_PROVISION_TO_ASSETS,
-    "cfo tren loi nhuan sau thue": _CFO_TO_PROFIT_AFTER_TAX,
-    "luu chuyen tien thuan tu hoat dong kinh doanh tren loi nhuan sau thue": _CFO_TO_PROFIT_AFTER_TAX,
-    "dong tien thuan tu hoat dong kinh doanh tren loi nhuan sau thue": _CFO_TO_PROFIT_AFTER_TAX,
-    "ti so thanh toan hien hanh": _CURRENT_RATIO,
-    "he so thanh toan hien hanh": _CURRENT_RATIO,
-    "ti so thanh toan nhanh": _QUICK_RATIO,
-    "he so kha nang thanh toan lai vay": _INTEREST_COVERAGE,
-    "he so thanh toan lai vay": _INTEREST_COVERAGE,
 }
 
-_MANUAL_FORMULA_PATTERNS: tuple[
-    tuple[re.Pattern[str], GroundedFormulaRequirement], ...
+_ONTOLOGY_FORMULA_PATTERNS: tuple[
+    tuple[re.Pattern[str], str], ...
 ] = (
     (
         re.compile(
             r"(?:dong tien|luu chuyen tien)[^?]{0,80}"
             r"(?:\(cfo\)|cfo)[^?]{0,20}tren loi nhuan sau thue"
         ),
-        _CFO_TO_PROFIT_AFTER_TAX,
+        "cash_flow_from_operations_to_profit_after_tax",
     ),
 )
 

@@ -79,6 +79,7 @@ def configure_grounded_v5_parser(parser: argparse.ArgumentParser, root: Path) ->
     )
     parser.add_argument("--minimum-confidence", type=float, default=0.7)
     parser.add_argument("--fact-limit", type=int, default=100)
+    parser.add_argument("--maximum-relevant-tables", type=int, default=10)
     parser.add_argument("--model", default="qwen3:8b")
     parser.add_argument("--ollama-endpoint", default="http://127.0.0.1:11434")
     parser.add_argument(
@@ -164,6 +165,7 @@ def cmd_grounded_v5(
         promotion_mode=str(args.promotion_mode),  # type: ignore[arg-type]
         minimum_confidence=float(args.minimum_confidence),
         fact_limit=int(args.fact_limit),
+        maximum_relevant_tables=int(args.maximum_relevant_tables),
         selected_qids=selected or None,
     )
 
@@ -252,7 +254,8 @@ def cmd_grounded_v5(
             "promotion_mode": args.promotion_mode,
             "minimum_confidence": args.minimum_confidence,
             "fact_limit": args.fact_limit,
-            "preserve_baseline_scorer_refs": True,
+            "reference_policy": "grounded_provenance_then_retrieval_union",
+            "maximum_relevant_tables": args.maximum_relevant_tables,
             "selected_qids": sorted(selected),
             "deterministic_only": bool(args.deterministic_only),
             "plan_cache": str(Path(args.plan_cache).resolve()),

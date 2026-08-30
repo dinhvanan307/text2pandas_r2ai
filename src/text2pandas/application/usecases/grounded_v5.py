@@ -3,7 +3,7 @@
 V5 deliberately separates three concerns which previous hybrid experiments
 coupled together:
 
-* scorer-facing retrieval references come from an already measured baseline;
+* scorer-facing references rank executed provenance before measured retrieval refs;
 * an open-weight model may select facts and a closed operation, but no values;
 * a deterministic executor validates and computes every promoted answer.
 
@@ -68,6 +68,7 @@ class GroundedV5Config:
     promotion_mode: PromotionMode = "recover_only"
     minimum_confidence: float = 0.7
     fact_limit: int = 100
+    maximum_relevant_tables: int = 10
     selected_qids: frozenset[int] | None = None
 
     def __post_init__(self) -> None:
@@ -82,6 +83,8 @@ class GroundedV5Config:
             raise GroundedV5BuildError("minimum_confidence must be in [0, 1]")
         if self.fact_limit < 1:
             raise GroundedV5BuildError("fact_limit must be positive")
+        if not 1 <= self.maximum_relevant_tables <= 20:
+            raise GroundedV5BuildError("maximum_relevant_tables must be in [1, 20]")
 
 
 @dataclass(frozen=True, slots=True)
@@ -369,6 +372,7 @@ def build_grounded_v5_candidate(
                                     data_dir=data_dir,
                                     scorer_tables=_scorer_tables(baseline_row, seed_row),
                                     locator_by_table=locator_by_table,
+                                    maximum_relevant_tables=config.maximum_relevant_tables,
                                 )
                                 promoted += 1
                                 recovered += int(not seed_ok)
@@ -667,6 +671,7 @@ def _materialize_synthesized_result(
     data_dir: Path,
     scorer_tables: list[str],
     locator_by_table: Mapping[str, str],
+    maximum_relevant_tables: int,
 ) -> AnswerResult:
     target_name = f"v5_q{qid:04d}.csv"
     target = data_dir / target_name
@@ -701,15 +706,12 @@ def _materialize_synthesized_result(
                     fact.column_path,
                 ]
             )
-    tables = list(dict.fromkeys(scorer_tables))
-    if not tables:
-        tables = list(
-            dict.fromkeys(
-                locator_by_table[fact.table_uid]
-                for fact in execution.facts
-                if fact.table_uid in locator_by_table
-            )
-        )
+    tables = _grounded_scorer_tables(
+        execution,
+        scorer_tables,
+        locator_by_table,
+        maximum_relevant_tables=maximum_relevant_tables,
+    )
     documents = list(dict.fromkeys(value.rsplit("|", 1)[0] for value in tables))
     confidence = execution.plan.confidence or 0.0
     return AnswerResult(
@@ -724,6 +726,31 @@ def _materialize_synthesized_result(
         has_csv=True,
         notes=["grounded_v5"],
     )
+
+
+def _grounded_scorer_tables(
+    execution: GroundedExecution,
+    retrieval_tables: Sequence[str],
+    locator_by_table: Mapping[str, str],
+    *,
+    maximum_relevant_tables: int,
+) -> list[str]:
+    """Rank exact execution provenance first, then preserve retrieval recall.
+
+    Bound-only references regressed official F2 recall, while retrieval-only
+    references frequently put a table unrelated to the emitted query at rank 1.
+    The union keeps both signals, makes MRR provenance-aware and remains bounded.
+    """
+
+    missing = sorted(
+        {fact.table_uid for fact in execution.facts if fact.table_uid not in locator_by_table}
+    )
+    if missing:
+        raise GroundedV5BuildError(
+            f"execution facts have no scorer locator: {missing[:5]}"
+        )
+    provenance = [locator_by_table[fact.table_uid] for fact in execution.facts]
+    return list(dict.fromkeys((*provenance, *retrieval_tables)))[:maximum_relevant_tables]
 
 
 def _annotation_hints(annotation: QuestionAnnotations) -> dict[str, object]:
@@ -892,10 +919,16 @@ def _validate_plan_context(
             allow_leading_period_gap=(
                 isinstance(plan, GroundedProgram)
                 and {
-                    ProgramOperation.ROLLING_GROWTH,
                     ProgramOperation.SELECT_AT_KEY,
                 }
                 <= {node.operation for node in plan.nodes}
+                and bool(
+                    {
+                        ProgramOperation.ROLLING_GROWTH,
+                        ProgramOperation.ROLLING_GROWTH_BY_ENTITY,
+                    }
+                    & {node.operation for node in plan.nodes}
+                )
             ),
             partial_entity_metrics=partial_output_metrics,
         )
@@ -1037,6 +1070,7 @@ _TRUSTED_REPLACEMENT_COMPOSITION = frozenset(
         ProgramOperation.LOGICAL_OR,
         ProgramOperation.GROWTH_BY_ENTITY,
         ProgramOperation.ROLLING_GROWTH,
+        ProgramOperation.ROLLING_GROWTH_BY_ENTITY,
         ProgramOperation.ROLLING_CHANGE,
         ProgramOperation.CHANGE_BY_ENTITY,
         ProgramOperation.EARLIEST_BY_ENTITY,
@@ -1280,6 +1314,7 @@ def _validate_program_shape(
                 ProgramOperation.GROWTH,
                 ProgramOperation.GROWTH_BY_ENTITY,
                 ProgramOperation.ROLLING_GROWTH,
+                ProgramOperation.ROLLING_GROWTH_BY_ENTITY,
                 ProgramOperation.CAGR_BY_ENTITY,
             }
         ):
@@ -1421,13 +1456,23 @@ def _validate_required_formula_operations(
             node.operation
             in {
                 ProgramOperation.ABSOLUTE,
+                ProgramOperation.ROLLING_AVERAGE,
                 ProgramOperation.ROLLING_AVERAGE_BY_ENTITY,
             }
             and len(node.input_ids) == 1
         ):
             child = actual_signature(node.input_ids[0])
             if child is not None:
-                signature = (node.operation.value, child)
+                signature = (
+                    "rolling_average"
+                    if node.operation
+                    in {
+                        ProgramOperation.ROLLING_AVERAGE,
+                        ProgramOperation.ROLLING_AVERAGE_BY_ENTITY,
+                    }
+                    else node.operation.value,
+                    child,
+                )
         signatures[node_id] = signature
         return signature
 
@@ -1473,6 +1518,13 @@ def _formula_expression_signature(
         if not isinstance(child, Mapping):
             raise GroundedPlanError("formula absolute operand must be an expression")
         return ("absolute", _formula_expression_signature(child))
+    if expression_type == "rolling_average":
+        child = expression.get("expression")
+        if not isinstance(child, Mapping):
+            raise GroundedPlanError("formula rolling average operand must be an expression")
+        if int(str(expression.get("window") or 2)) != 2:
+            raise GroundedPlanError("formula rolling average supports window=2 only")
+        return ("rolling_average", _formula_expression_signature(child))
     if expression_type == "average_balance_ratio":
         numerator = str(expression.get("numerator_metric_id") or "")
         denominator = str(expression.get("denominator_metric_id") or "")
@@ -1481,7 +1533,7 @@ def _formula_expression_signature(
         return (
             "divide",
             ("metric", numerator),
-            ("rolling_average_by_entity", ("metric", denominator)),
+            ("rolling_average", ("metric", denominator)),
         )
     raise GroundedPlanError(f"unsupported formula expression type: {expression_type}")
 
@@ -1507,6 +1559,10 @@ def _collect_formula_operations(
     elif expression_type == "unary":
         if str(expression.get("operator") or "") == "absolute":
             output[ProgramOperation.ABSOLUTE] += 1
+        child = expression.get("expression")
+        if isinstance(child, Mapping):
+            _collect_formula_operations(child, output)
+    elif expression_type == "rolling_average":
         child = expression.get("expression")
         if isinstance(child, Mapping):
             _collect_formula_operations(child, output)

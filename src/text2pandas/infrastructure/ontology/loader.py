@@ -24,6 +24,8 @@ from text2pandas.domain.semantic import (
     Literal,
     MetricRef,
     PeriodSemantics,
+    RollingAverage,
+    RollingGrowth,
     Unary,
     UnaryOperator,
     UnitSpec,
@@ -246,6 +248,18 @@ def _formula_expression(raw: dict[str, Any]) -> Expression:
         return Literal(float(raw["value"]), UnitSpec(Dimension.RATIO))
     if node == "Abs":
         return Unary(UnaryOperator.ABSOLUTE, _formula_expression(_dict(raw["child"], "Abs child")))
+    if node == "RollingAverage":
+        window = int(raw.get("window", 2))
+        if window != 2:
+            raise OntologySourceError("RollingAverage currently supports window=2 only")
+        return RollingAverage(
+            _formula_expression(_dict(raw["child"], "RollingAverage child")),
+            window,
+        )
+    if node == "RollingGrowth":
+        return RollingGrowth(
+            _formula_expression(_dict(raw["child"], "RollingGrowth child"))
+        )
     binary = {
         "Add": (ArithmeticOperator.ADD, "left", "right"),
         "Subtract": (ArithmeticOperator.SUBTRACT, "left", "right"),

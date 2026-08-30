@@ -22,6 +22,7 @@ from text2pandas.application.usecases.grounded_v5 import (
     GroundedV5BuildError,
     _coherent_basis_candidates,
     _expand_period_range_annotations,
+    _grounded_scorer_tables,
     _is_trusted_recovery,
     _is_trusted_replacement,
     _questions,
@@ -316,6 +317,58 @@ def test_trusted_replacement_accepts_high_margin_resolved_direct_fact() -> None:
     )
 
     assert _is_trusted_replacement(program, execute_grounded(program, (fact,)))
+
+
+def test_grounded_scorer_refs_rank_provenance_then_preserve_retrieval_recall() -> None:
+    facts = (
+        _basis_fact(
+            "revenue-2023",
+            metric="net_revenue",
+            year=2023,
+            basis=Basis.CONSOLIDATED,
+            score=100,
+        ),
+        _basis_fact(
+            "revenue-2024",
+            metric="net_revenue",
+            year=2024,
+            basis=Basis.CONSOLIDATED,
+            score=100,
+        ),
+    )
+    program = GroundedProgram(
+        nodes=(
+            ProgramNode(
+                "revenue",
+                ProgramOperation.FACTS,
+                fact_uids=tuple(fact.observation_uid for fact in facts),
+                axis="period",
+            ),
+            ProgramNode("answer", ProgramOperation.MAXIMUM, input_ids=("revenue",)),
+        ),
+        output_node_id="answer",
+        output_dimension=Dimension.MONEY,
+        output_scale_exponent=0,
+        confidence=0.96,
+    )
+    execution = execute_grounded(program, facts)
+
+    refs = _grounded_scorer_tables(
+        execution,
+        ("stale-doc|10", "exact-doc-2024|20", "recall-doc|30"),
+        {
+            facts[0].table_uid: "exact-doc-2023|19",
+            facts[1].table_uid: "exact-doc-2024|20",
+        },
+        maximum_relevant_tables=4,
+    )
+
+    assert refs == [
+        "exact-doc-2023|19",
+        "exact-doc-2024|20",
+        "stale-doc|10",
+        "recall-doc|30",
+    ]
 
 
 def test_trusted_replacement_rejects_ambiguous_reported_direct_fact() -> None:

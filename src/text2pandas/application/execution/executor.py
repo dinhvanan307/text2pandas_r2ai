@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from itertools import pairwise
 from statistics import median
 from types import MappingProxyType
 
@@ -25,6 +26,8 @@ from text2pandas.domain.semantic import (
     PredicateQuantifier,
     QuantifiedPredicate,
     Rank,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     Unary,
 )
@@ -110,6 +113,18 @@ class TypedExecutor:
                     for scope, value in child.values.items()
                 }
             )
+        if isinstance(expression, RollingAverage):
+            if expression.window != 2:
+                raise ExecutionError("ROLLING_AVERAGE_WINDOW_UNSUPPORTED")
+            child = _numeric(
+                self._evaluate(expression.expression, f"{path}.expression", bound)
+            )
+            return _rolling_average(child)
+        if isinstance(expression, RollingGrowth):
+            child = _numeric(
+                self._evaluate(expression.expression, f"{path}.expression", bound)
+            )
+            return _rolling_growth(child)
         if isinstance(expression, FormulaCall):
             return self._evaluate(expression.expression, f"{path}.expression", bound)
         if isinstance(expression, Aggregate):
@@ -190,6 +205,55 @@ def _combine_series(
     return _series(
         {scope: arithmetic_quantity(operator, a, b) for scope, a, b in _align(left, right)}
     )
+
+
+def _rolling_average(series: SeriesValue) -> SeriesValue:
+    grouped: dict[str, list[tuple[int, Scope, QuantityValue]]] = {}
+    for scope, value in series.values.items():
+        if scope.entity is None or scope.period is None:
+            raise ExecutionError("ROLLING_AVERAGE_REQUIRES_ENTITY_PERIOD_SCOPE")
+        try:
+            period = int(scope.period[:4])
+        except ValueError as error:
+            raise ExecutionError("ROLLING_AVERAGE_PERIOD_INVALID") from error
+        grouped.setdefault(scope.entity, []).append((period, scope, value))
+    output: dict[Scope, QuantityValue] = {}
+    for values in grouped.values():
+        ordered = sorted(values)
+        if len(ordered) < 2:
+            raise ExecutionError("ROLLING_AVERAGE_REQUIRES_TWO_PERIODS")
+        for previous, current in pairwise(ordered):
+            combined = arithmetic_quantity(
+                ArithmeticOperator.ADD,
+                previous[2],
+                current[2],
+            )
+            output[current[1]] = QuantityValue(combined.value / Decimal(2), combined.unit)
+    return _series(output)
+
+
+def _rolling_growth(series: SeriesValue) -> SeriesValue:
+    grouped: dict[str, list[tuple[int, Scope, QuantityValue]]] = {}
+    for scope, value in series.values.items():
+        if scope.entity is None or scope.period is None:
+            raise ExecutionError("ROLLING_GROWTH_REQUIRES_ENTITY_PERIOD_SCOPE")
+        try:
+            period = int(scope.period[:4])
+        except ValueError as error:
+            raise ExecutionError("ROLLING_GROWTH_PERIOD_INVALID") from error
+        grouped.setdefault(scope.entity, []).append((period, scope, value))
+    output: dict[Scope, QuantityValue] = {}
+    for values in grouped.values():
+        ordered = sorted(values)
+        if len(ordered) < 2:
+            raise ExecutionError("ROLLING_GROWTH_REQUIRES_TWO_PERIODS")
+        for previous, current in pairwise(ordered):
+            output[current[1]] = arithmetic_quantity(
+                ArithmeticOperator.GROWTH,
+                current[2],
+                previous[2],
+            )
+    return _series(output)
 
 
 def _align(

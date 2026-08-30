@@ -21,6 +21,8 @@ from .ast import (
     QuantifiedPredicate,
     QuestionAST,
     Rank,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     Unary,
 )
@@ -81,6 +83,16 @@ def _validate_expression(expression: Expression, path: str, issues: list[Semanti
         _validate_expression(expression.right, f"{path}.right", issues)
         return
     if isinstance(expression, Unary):
+        _validate_expression(expression.expression, f"{path}.expression", issues)
+        return
+    if isinstance(expression, RollingAverage):
+        if expression.window != 2:
+            issues.append(
+                _issue(path, "ROLLING_WINDOW", "rolling average currently requires window=2")
+            )
+        _validate_expression(expression.expression, f"{path}.expression", issues)
+        return
+    if isinstance(expression, RollingGrowth):
         _validate_expression(expression.expression, f"{path}.expression", issues)
         return
     if isinstance(expression, FormulaCall):
@@ -151,6 +163,10 @@ def _references_axis(expression: Expression, axis: Axis) -> bool:
     if isinstance(expression, Arithmetic):
         return _references_axis(expression.left, axis) or _references_axis(expression.right, axis)
     if isinstance(expression, Unary):
+        return _references_axis(expression.expression, axis)
+    if isinstance(expression, RollingAverage):
+        return _references_axis(expression.expression, axis)
+    if isinstance(expression, RollingGrowth):
         return _references_axis(expression.expression, axis)
     if isinstance(expression, FormulaCall):
         return _references_axis(expression.expression, axis)

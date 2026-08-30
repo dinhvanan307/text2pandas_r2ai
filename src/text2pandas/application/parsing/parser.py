@@ -12,6 +12,7 @@ from text2pandas.domain.metrics import (
     FormulaDefinition,
     MetricDefinition,
     MetricOntology,
+    iter_phrase_spans,
     normalize_phrase,
 )
 from text2pandas.domain.semantic import (
@@ -38,6 +39,8 @@ from text2pandas.domain.semantic import (
     Rank,
     RankDirection,
     ResultKind,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     Unary,
     UnaryOperator,
@@ -258,7 +261,13 @@ class SemanticParser:
         exact_mentions = self._metric_mentions(normalized)
         mentions = exact_mentions
         formula_mentions = self._formula_mentions(normalized)
-        role_fallback = _needs_source_role_fallback(normalized, annotations, formula, mentions)
+        role_fallback = _needs_source_role_fallback(
+            normalized,
+            annotations,
+            formula,
+            mentions,
+            formula_mentions,
+        )
         trace: list[dict[str, object]] = [
             {
                 "stage": "ANNOTATE",
@@ -560,7 +569,12 @@ class SemanticParser:
             assert axis is not None
             return (
                 SelectAtArg(
-                    Rank(axis, members, rank_expression, direction),
+                    Rank(
+                        axis,
+                        _rank_members(axis, members, rank_expression),
+                        rank_expression,
+                        direction,
+                    ),
                     selected_expression,
                 ),
                 ResultKind.SCALAR,
@@ -702,7 +716,13 @@ class SemanticParser:
                 rank_expression, selected_expression = roles
                 return (
                     SelectAtArg(
-                        Rank(axis, members, rank_expression, direction), selected_expression
+                        Rank(
+                            axis,
+                            _rank_members(axis, members, rank_expression),
+                            rank_expression,
+                            direction,
+                        ),
+                        selected_expression,
                     ),
                     ResultKind.SCALAR,
                 )
@@ -802,15 +822,22 @@ class SemanticParser:
         raw: list[FormulaMention] = []
         for formula in self.ontology.formulas.values():
             for alias in formula.aliases:
-                start = normalized.find(alias)
-                while start >= 0:
-                    raw.append(FormulaMention(start, start + len(alias), alias, formula))
-                    start = normalized.find(alias, start + 1)
+                raw.extend(
+                    FormulaMention(start, end, alias, formula)
+                    for start, end in iter_phrase_spans(normalized, alias)
+                )
         selected: list[FormulaMention] = []
         for mention in sorted(
             raw,
             key=lambda value: (-len(value.alias), value.start, value.formula.formula_id),
         ):
+            if any(
+                other.formula.formula_id != mention.formula.formula_id
+                and other.formula.leaves == mention.formula.leaves
+                and len(other.alias) > len(mention.alias)
+                for other in raw
+            ):
+                continue
             if any(mention.start >= other.start and mention.end <= other.end for other in selected):
                 continue
             selected.append(mention)
@@ -1233,6 +1260,26 @@ def _scope_expression(expression: Expression, annotations: QuestionAnnotations) 
         )
     if isinstance(expression, Unary):
         return Unary(expression.operator, _scope_expression(expression.expression, annotations))
+    if isinstance(expression, RollingAverage):
+        periods = tuple(
+            sorted(
+                {
+                    value
+                    for period in annotations.periods
+                    for value in (
+                        str(int(period) - 1) if re.fullmatch(r"(?:19|20)\d{2}", period) else period,
+                        period,
+                    )
+                }
+            )
+        )
+        rolling_scope = replace(annotations, periods=periods)
+        return RollingAverage(
+            _scope_expression(expression.expression, rolling_scope),
+            expression.window,
+        )
+    if isinstance(expression, RollingGrowth):
+        return RollingGrowth(_scope_expression(expression.expression, annotations))
     if isinstance(expression, FormulaCall):
         return FormulaCall(
             expression.formula_id,
@@ -1263,6 +1310,18 @@ def _operation_axis(annotations: QuestionAnnotations) -> tuple[Axis | None, tupl
     return None, ()
 
 
+def _rank_members(
+    axis: Axis,
+    members: tuple[str, ...],
+    expression: Expression,
+) -> tuple[str, ...]:
+    """Align a rank domain with temporal transforms that drop the first point."""
+
+    if axis is Axis.PERIOD and isinstance(expression, (RollingAverage, RollingGrowth)):
+        return tuple(sorted(members)[1:])
+    return members
+
+
 def _unit_dimensions_compatible(source: Dimension, requested: Dimension) -> bool:
     if source == Dimension.UNKNOWN or requested == Dimension.UNKNOWN:
         return True
@@ -1284,6 +1343,10 @@ _SUPERLATIVE = re.compile(r"\b(?:cao nhat|thap nhat|lon nhat|nho nhat)\b")
 _RANK_CLAUSE = re.compile(
     r"\b(?:tai nam co|trong nam co|o nam co|nam co|tai nam|cong ty co|doanh nghiep co|ngan hang co)\b"
 )
+_ROLLING_GROWTH_RANK_CUE = re.compile(
+    r"\b(?:toc do tang|tang truong)\b[^?]{0,120}"
+    r"\b(?:so voi nam lien truoc|so voi nam truoc(?: do)?)\b"
+)
 
 _SOURCE_ROLE_FALLBACK_CLAUSE = re.compile(
     r"\bngan hang co\b[^?]{0,240}\b(?:cao nhat|thap nhat|lon nhat|nho nhat)\b"
@@ -1295,6 +1358,7 @@ def _needs_source_role_fallback(
     annotations: QuestionAnnotations,
     formula: FormulaDefinition | None,
     mentions: tuple[MetricMention, ...],
+    formula_mentions: tuple[FormulaMention, ...],
 ) -> bool:
     """Open a V3-only role fallback when exact parsing has one missing role.
 
@@ -1303,13 +1367,31 @@ def _needs_source_role_fallback(
     never replace an exact mention or mutate the shared V2 lexical frame.
     """
 
-    return (
+    entity_has_missing_role = (
         formula is None
         and annotations.operation == OperationKind.EXTREMUM
         and annotations.return_mode == ReturnMode.VALUE
         and len(mentions) == 1
         and _SOURCE_ROLE_FALLBACK_CLAUSE.search(normalized_question) is not None
     )
+    if entity_has_missing_role:
+        return True
+    if (
+        annotations.operation != OperationKind.EXTREMUM
+        or annotations.return_mode != ReturnMode.SELECT_AT_ARG
+    ):
+        return False
+    roles = _select_at_arg_roles(
+        normalized_question,
+        annotations,
+        mentions,
+        formula_mentions,
+    )
+    return isinstance(roles, str) and roles in {
+        "SELECT_AT_ARG_RANK_EXPRESSION_UNRESOLVED",
+        "SELECT_AT_ARG_RANK_FORMULA_UNRESOLVED",
+        "SELECT_AT_ARG_SELECTED_EXPRESSION_UNRESOLVED",
+    }
 
 
 def _select_at_arg_roles(
@@ -1348,6 +1430,13 @@ def _select_at_arg_roles(
     rank_surface = normalized[rank.start : rank.end]
     if re.search(r"\btren\b", rank_clause) and not re.search(r"\btren\b", rank_surface):
         return "SELECT_AT_ARG_RANK_FORMULA_UNRESOLVED"
+    rank_expression = rank.expression
+    if (
+        len(annotations.entities) == 1
+        and len(annotations.periods) >= 2
+        and _ROLLING_GROWTH_RANK_CUE.search(rank_clause) is not None
+    ):
+        rank_expression = RollingGrowth(rank_expression)
 
     requested = annotations.requested_unit.dimension
     prefix = [
@@ -1374,9 +1463,19 @@ def _select_at_arg_roles(
     ]
     if re.search(r"\bchi phi\b[^,?]{0,80}\bva\s+chi phi\b", selected_clause):
         return "SELECT_AT_ARG_SELECTED_COMPOSITE_UNRESOLVED"
-    return rank.expression, _apply_selected_output_unit(
+    selected_expression = _apply_selected_output_unit(
         selected.expression, annotations.requested_unit
     )
+    if (
+        len(annotations.entities) == 1
+        and len(annotations.periods) >= 2
+        and isinstance(rank_expression, (RollingAverage, RollingGrowth))
+    ):
+        selected_expression = _scope_expression(
+            selected_expression,
+            replace(annotations, periods=tuple(sorted(annotations.periods)[1:])),
+        )
+    return rank_expression, selected_expression
 
 
 def _selected_dimension_compatible(source: Dimension, requested: Dimension) -> bool:
@@ -1435,11 +1534,21 @@ def _expression_mentions(
                 formula.output_unit.dimension,
             )
         )
+    explicit_relations = _explicit_share_expression_mentions(
+        normalized_question,
+        annotations,
+        metric_mentions,
+    )
+    output.extend(explicit_relations)
     for metric_mention in metric_mentions:
         if any(
             metric_mention.start >= formula_mention.start
             and metric_mention.end <= formula_mention.end
             for formula_mention in formula_mentions
+        ) or any(
+            metric_mention.start >= relation.start
+            and metric_mention.end <= relation.end
+            for relation in explicit_relations
         ):
             continue
         reference = _metric_ref(
@@ -1471,6 +1580,54 @@ def _expression_mentions(
             )
         )
     return tuple(sorted(output, key=lambda value: (value.start, value.end)))
+
+
+_EXPLICIT_SHARE = re.compile(
+    r"\bchiem\s+(?:bao\s+nhieu\s+)?(?:phan\s+tram|%)\b"
+)
+
+
+def _explicit_share_expression_mentions(
+    normalized_question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+) -> tuple[_ExpressionMention, ...]:
+    """Compose ``A chiếm bao nhiêu phần trăm B`` as one semantic expression."""
+
+    output: list[_ExpressionMention] = []
+    for marker in _EXPLICIT_SHARE.finditer(normalized_question):
+        before = [value for value in metric_mentions if value.end <= marker.start()]
+        after = [value for value in metric_mentions if value.start >= marker.end()]
+        if not before or not after:
+            continue
+        numerator = max(before, key=lambda value: (value.end, value.end - value.start))
+        denominator = min(after, key=lambda value: (value.start, -(value.end - value.start)))
+        if marker.start() - numerator.end > 80 or denominator.start - marker.end() > 80:
+            continue
+        numerator_expression = _metric_ref_with_context(
+            numerator,
+            annotations,
+            normalized_question,
+        )
+        denominator_expression = _metric_ref_with_context(
+            denominator,
+            annotations,
+            normalized_question,
+        )
+        output.append(
+            _ExpressionMention(
+                numerator.start,
+                denominator.end,
+                f"explicit_share:{numerator.metric.metric_id}:{denominator.metric.metric_id}",
+                Arithmetic(
+                    ArithmeticOperator.DIVIDE,
+                    numerator_expression,
+                    denominator_expression,
+                ),
+                Dimension.PERCENT,
+            )
+        )
+    return tuple(output)
 
 
 _QUALIFIER_STOPWORDS = frozenset(
@@ -1590,9 +1747,42 @@ def _count_predicate_role(
         single_sign_role = _single_count_sign_predicate_role(normalized, candidates)
         if single_sign_role is not None:
             return single_sign_role
+    if len(threshold_matches) > 1:
+        if not any(cue in normalized for cue in ("dong thoi", "vua", " va ")):
+            return "COUNT_PREDICATE_REQUIRED"
+        resolved_many = tuple(
+            _threshold_comparison(normalized, threshold, candidates)
+            for threshold in threshold_matches
+        )
+        first_error = next(
+            (value for value in resolved_many if isinstance(value, str)),
+            None,
+        )
+        if first_error is not None:
+            return first_error
+        comparisons = tuple(
+            value for value in resolved_many if not isinstance(value, str)
+        )
+        return (
+            LogicalPredicate(
+                LogicalOperator.AND,
+                tuple(value[0] for value in comparisons),
+            ),
+            comparisons[-1][1],
+        )
     if len(threshold_matches) != 1:
         return "COUNT_PREDICATE_REQUIRED"
-    threshold = threshold_matches[0]
+    resolved_one = _threshold_comparison(normalized, threshold_matches[0], candidates)
+    if isinstance(resolved_one, str):
+        return resolved_one
+    return resolved_one
+
+
+def _threshold_comparison(
+    normalized: str,
+    threshold: re.Match[str],
+    candidates: tuple[_ExpressionMention, ...],
+) -> tuple[Comparison, Expression] | str:
     preceding = [value for value in candidates if value.end <= threshold.start()]
     if not preceding:
         return "COUNT_PREDICATE_EXPRESSION_UNRESOLVED"

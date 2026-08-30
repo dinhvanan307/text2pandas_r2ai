@@ -47,6 +47,8 @@ from text2pandas.domain.semantic import (
     Rank,
     RankDirection,
     ResultKind,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     Unary,
     UnaryOperator,
@@ -138,27 +140,7 @@ class _GroundedAstCompilation:
 
     def _expression(self, expression: Expression) -> _Compiled:
         if isinstance(expression, MetricRef):
-            selected_facts = self._select_facts(expression)
-            axis = _fact_axis(selected_facts)
-            fact_keys = tuple(_fact_key(fact, axis) for fact in selected_facts)
-            has_components = len(fact_keys) != len(set(fact_keys))
-            node_id = self._append(
-                f"facts_{expression.metric_id}",
-                ProgramOperation.FACTS,
-                fact_uids=tuple(fact.observation_uid for fact in selected_facts),
-                axis=("entity_period_observation" if has_components else axis),
-            )
-            if has_components:
-                node_id = self._append(
-                    f"components_{expression.metric_id}",
-                    ProgramOperation.SUM_BY_SCOPE,
-                    input_ids=(node_id,),
-                    axis=axis,
-                )
-                fact_keys = tuple(dict.fromkeys(fact_keys))
-            dimensions = {fact.dimension for fact in selected_facts}
-            dimension = dimensions.pop() if len(dimensions) == 1 else Dimension.UNKNOWN
-            return _Compiled(node_id, fact_keys, axis, dimension=dimension)
+            return self._metric_expression(expression)
         if isinstance(expression, Literal):
             node_id = self._append(
                 "literal", ProgramOperation.LITERAL, literal=Decimal(str(expression.value))
@@ -209,6 +191,142 @@ class _GroundedAstCompilation:
                 child.keys,
                 child.axis,
                 dimension=child.dimension,
+            )
+        if isinstance(expression, RollingAverage):
+            if expression.window != 2:
+                raise GroundedAstCompilationUnsupported(
+                    "rolling average currently supports window=2 only"
+                )
+            is_single_entity = (
+                isinstance(expression.expression, MetricRef)
+                and len(expression.expression.entities) == 1
+            )
+            child = self._numeric(
+                self._metric_expression(
+                    expression.expression,
+                    axis=None if is_single_entity else "entity_period",
+                )
+                if isinstance(expression.expression, MetricRef)
+                else self._expression(expression.expression)
+            )
+            expected_axis = "period" if is_single_entity else "entity_period"
+            if child.keys is None or child.axis != expected_axis:
+                raise GroundedAstCompilationUnsupported(
+                    f"rolling average requires a {expected_axis} series"
+                )
+            if is_single_entity:
+                output_keys = tuple(sorted(child.keys, key=int)[1:])
+                node_id = self._append(
+                    "rolling_average",
+                    ProgramOperation.ROLLING_AVERAGE,
+                    input_ids=(child.node_id,),
+                )
+                return _Compiled(
+                    node_id,
+                    output_keys,
+                    "period",
+                    dimension=child.dimension,
+                )
+            average_grouped: dict[str, list[tuple[int, str]]] = {}
+            for key in child.keys:
+                try:
+                    entity, period = key.rsplit("|", 1)
+                    average_grouped.setdefault(entity, []).append((int(period), key))
+                except ValueError as error:
+                    raise GroundedAstCompilationUnsupported(
+                        "rolling average requires integer period keys"
+                    ) from error
+            output_keys = tuple(
+                key
+                for entity in sorted(average_grouped)
+                for _period, key in sorted(average_grouped[entity])[1:]
+            )
+            if not output_keys:
+                raise GroundedAstCompilationUnsupported(
+                    "rolling average requires two periods per entity"
+                )
+            node_id = self._append(
+                "rolling_average",
+                ProgramOperation.ROLLING_AVERAGE_BY_ENTITY,
+                input_ids=(child.node_id,),
+            )
+            if all(len(values) == 2 for values in average_grouped.values()):
+                node_id = self._append(
+                    "rolling_average_by_entity_latest",
+                    ProgramOperation.LATEST_BY_ENTITY,
+                    input_ids=(node_id,),
+                )
+                return _Compiled(
+                    node_id,
+                    tuple(sorted(average_grouped)),
+                    "entity",
+                    dimension=child.dimension,
+                )
+            return _Compiled(
+                node_id,
+                output_keys,
+                child.axis,
+                dimension=child.dimension,
+            )
+        if isinstance(expression, RollingGrowth):
+            is_single_entity = (
+                isinstance(expression.expression, MetricRef)
+                and len(expression.expression.entities) == 1
+            )
+            child = self._numeric(
+                self._metric_expression(
+                    expression.expression,
+                    axis=None if is_single_entity else "entity_period",
+                )
+                if isinstance(expression.expression, MetricRef)
+                else self._expression(expression.expression)
+            )
+            expected_axis = "period" if is_single_entity else "entity_period"
+            if child.keys is None or child.axis != expected_axis:
+                raise GroundedAstCompilationUnsupported(
+                    f"rolling growth requires a {expected_axis} series"
+                )
+            if is_single_entity:
+                output_keys = tuple(sorted(child.keys, key=int)[1:])
+                node_id = self._append(
+                    "rolling_growth",
+                    ProgramOperation.ROLLING_GROWTH,
+                    input_ids=(child.node_id,),
+                )
+                return _Compiled(
+                    node_id,
+                    output_keys,
+                    "period",
+                    dimension=Dimension.PERCENT,
+                )
+            growth_grouped: dict[str, list[tuple[int, str]]] = {}
+            for key in child.keys:
+                try:
+                    entity, period = key.rsplit("|", 1)
+                    growth_grouped.setdefault(entity, []).append((int(period), key))
+                except ValueError as error:
+                    raise GroundedAstCompilationUnsupported(
+                        "rolling growth requires integer period keys"
+                    ) from error
+            output_keys = tuple(
+                key
+                for entity in sorted(growth_grouped)
+                for _period, key in sorted(growth_grouped[entity])[1:]
+            )
+            if not output_keys:
+                raise GroundedAstCompilationUnsupported(
+                    "rolling growth requires two periods per entity"
+                )
+            node_id = self._append(
+                "rolling_growth",
+                ProgramOperation.ROLLING_GROWTH_BY_ENTITY,
+                input_ids=(child.node_id,),
+            )
+            return _Compiled(
+                node_id,
+                output_keys,
+                child.axis,
+                dimension=Dimension.PERCENT,
             )
         if isinstance(expression, Aggregate):
             if expression.function is AggregateFunction.COUNT and isinstance(
@@ -330,6 +448,34 @@ class _GroundedAstCompilation:
         raise GroundedAstCompilationUnsupported(
             f"unsupported semantic expression: {type(expression).__name__}"
         )
+
+    def _metric_expression(
+        self,
+        expression: MetricRef,
+        *,
+        axis: str | None = None,
+    ) -> _Compiled:
+        selected_facts = self._select_facts(expression)
+        selected_axis = axis or _fact_axis(selected_facts)
+        fact_keys = tuple(_fact_key(fact, selected_axis) for fact in selected_facts)
+        has_components = len(fact_keys) != len(set(fact_keys))
+        node_id = self._append(
+            f"facts_{expression.metric_id}",
+            ProgramOperation.FACTS,
+            fact_uids=tuple(fact.observation_uid for fact in selected_facts),
+            axis=("entity_period_observation" if has_components else selected_axis),
+        )
+        if has_components:
+            node_id = self._append(
+                f"components_{expression.metric_id}",
+                ProgramOperation.SUM_BY_SCOPE,
+                input_ids=(node_id,),
+                axis=selected_axis,
+            )
+            fact_keys = tuple(dict.fromkeys(fact_keys))
+        dimensions = {fact.dimension for fact in selected_facts}
+        dimension = dimensions.pop() if len(dimensions) == 1 else Dimension.UNKNOWN
+        return _Compiled(node_id, fact_keys, selected_axis, dimension=dimension)
 
     def _predicate(self, predicate: Predicate) -> _Compiled:
         if isinstance(predicate, Comparison):

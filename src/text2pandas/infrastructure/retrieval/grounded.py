@@ -341,7 +341,7 @@ class GroundedFactRetriever:
             readiness = (
                 "(r.execution_ready = 1 OR o.collision_class IN "
                 "('missing_column_group','missing_row_parent') OR "
-                "(o.collision_class = 'missing_label_or_split' AND "
+                "(o.collision_class IN ('missing_label_or_split','missing_dimension') AND "
                 "COALESCE(o.metric_code, row_meta.metric_code) IS NOT NULL))"
             )
         clauses = [f"({' OR '.join(source_clauses)})", readiness]

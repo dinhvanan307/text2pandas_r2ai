@@ -231,6 +231,44 @@ def test_resolver_rejects_missing_scope_and_hierarchy_only_match(tmp_path: Path)
     assert wrong_entity.selected == ()
 
 
+def test_resolver_accepts_unique_scoped_short_exact_label(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "cash",
+                "AAA",
+                "2024-12-31",
+                "Tiền",
+                "B01-DN › Tiền",
+                "110",
+                "money",
+                "balance_sheet",
+            ),
+            (
+                "cash-equivalents",
+                "AAA",
+                "2024-12-31",
+                "Các khoản tương đương tiền",
+                "B01-DN › Các khoản tương đương tiền",
+                "112",
+                "money",
+                "balance_sheet",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve("Tiền của AAA cuối năm 2024?", _annotations())
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].aliases == ("Tiền",)
+    assert result.selected[0].metric_codes == ("110",)
+
+
 def test_resolver_rejects_corporate_scope_as_metric_mention(tmp_path: Path) -> None:
     connection = _database(
         (

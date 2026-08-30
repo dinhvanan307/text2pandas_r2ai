@@ -21,6 +21,8 @@ from text2pandas.domain.semantic import (
     QuantifiedPredicate,
     QuestionAST,
     Rank,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     Unary,
 )
@@ -177,6 +179,10 @@ def _collect(
             expression.right, f"{path}.right", requests, formula_scopes
         )
     if isinstance(expression, Unary):
+        return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
+    if isinstance(expression, RollingAverage):
+        return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
+    if isinstance(expression, RollingGrowth):
         return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
     if isinstance(expression, FormulaCall):
         keys = _collect(expression.expression, f"{path}.expression", requests, formula_scopes)

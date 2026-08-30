@@ -31,6 +31,8 @@ from text2pandas.domain.semantic import (
     Rank,
     RankDirection,
     ResultKind,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     UnitSpec,
 )
@@ -160,6 +162,56 @@ def test_compiler_executes_two_period_arithmetic(
     )
 
     assert execution.answer == expected
+
+
+def test_compiler_executes_ratio_over_opening_closing_average_balance() -> None:
+    facts = (
+        _fact("net_revenue", "AAA", 2024, "120"),
+        _fact("total_assets", "AAA", 2023, "100"),
+        _fact("total_assets", "AAA", 2024, "140"),
+    )
+    expression = Arithmetic(
+        ArithmeticOperator.DIVIDE,
+        _metric("net_revenue", entities=("AAA",), periods=("2024",)),
+        RollingAverage(
+            _metric("total_assets", entities=("AAA",), periods=("2023", "2024"))
+        ),
+    )
+
+    execution = execute_grounded(
+        GroundedAstCompiler().compile(
+            _ast(expression, UnitSpec(Dimension.RATIO)),
+            facts,
+        ),
+        facts,
+    )
+
+    assert execution.answer == 1.0
+
+
+def test_compiler_ranks_consecutive_period_growth_not_revenue_level() -> None:
+    periods = ("2020", "2021", "2022")
+    facts = (
+        _fact("net_revenue", "HPG", 2020, "100"),
+        _fact("net_revenue", "HPG", 2021, "150"),
+        _fact("net_revenue", "HPG", 2022, "180"),
+    )
+    expression = Aggregate(
+        AggregateFunction.MAXIMUM,
+        Axis.PERIOD,
+        RollingGrowth(_metric("net_revenue", entities=("HPG",), periods=periods)),
+        periods[1:],
+    )
+
+    execution = execute_grounded(
+        GroundedAstCompiler().compile(
+            _ast(expression, UnitSpec(Dimension.PERCENT)),
+            facts,
+        ),
+        facts,
+    )
+
+    assert execution.answer == 50.0
 
 
 def test_compiler_converts_ratio_change_to_percentage_points() -> None:

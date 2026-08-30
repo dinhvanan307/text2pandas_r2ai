@@ -280,6 +280,47 @@ def test_expander_preserves_source_codes_when_parser_abstains_on_composition() -
     assert "loi nhuan thuan tu hoat dong kinh doanh (30=20+21-22)" in concept.aliases
 
 
+def test_expander_projects_source_binding_without_ontology_concept() -> None:
+    binding = MetricBindingHint(
+        source_metric_id="source_board_compensation",
+        source_build_id="c6887fb633374fad",
+        labels=("thu lao cua thanh vien hoi dong quan tri",),
+        metric_codes=("board_compensation",),
+        row_paths=("Thu lao › Hoi dong quan tri",),
+        question_surface="thu lao cua thanh vien hoi dong quan tri",
+        preferred_basis=Basis.SEPARATE,
+    )
+
+    expansion = GroundedQueryExpander(
+        load_ontology(),
+        _AbstainingSourceParser(binding),  # type: ignore[arg-type]
+    ).analyze("Thù lao của thành viên Hội đồng quản trị là bao nhiêu?")
+
+    assert expansion.metric_ids == ("source_board_compensation",)
+    assert expansion.concepts[0].aliases == (
+        "thu lao cua thanh vien hoi dong quan tri",
+    )
+    assert expansion.concepts[0].metric_codes == ("board_compensation",)
+    assert expansion.concepts[0].preferred_basis is Basis.SEPARATE
+
+
+def test_expander_does_not_mix_unmatched_source_binding_into_canonical_domain() -> None:
+    binding = MetricBindingHint(
+        source_metric_id="source_company_name_collision",
+        source_build_id="c6887fb633374fad",
+        labels=("cong ty co phan",),
+        row_paths=("Cong ty con › Cong ty co phan",),
+        question_surface="cong ty co phan",
+    )
+
+    expansion = GroundedQueryExpander(
+        load_ontology(),
+        _AbstainingSourceParser(binding),  # type: ignore[arg-type]
+    ).analyze("Công ty cổ phần có hàng tồn kho năm 2024 là bao nhiêu?")
+
+    assert expansion.metric_ids == ("inventory",)
+
+
 def test_source_contract_drops_adjacent_entity_words_from_question_surface() -> None:
     metric_id = "a6_other_income"
     binding = MetricBindingHint(

@@ -47,7 +47,10 @@ _CORE_METRIC_CODES: dict[str, frozenset[str]] = {
     "interest_expense": frozenset({"23"}),
     "cash_flow_from_operations": frozenset({"20"}),
     "current_assets": frozenset({"100"}),
-    "inventory": frozenset({"140", "141"}),
+    # B01 code 140 is the net balance-sheet inventory used by financial
+    # ratios.  Code 141 is gross inventory before the code-149 provision and
+    # must not compete as the same canonical metric.
+    "inventory": frozenset({"140"}),
     "total_assets": frozenset({"270"}),
     "total_liabilities": frozenset({"300"}),
     "current_liabilities": frozenset({"310"}),
@@ -239,6 +242,49 @@ _GENERIC_SURFACE_TOKENS = frozenset(
         "le",
         "phan",
         "tram",
+    }
+)
+# Only governed physical-source language may become a hard row qualifier.
+# Arbitrary neighbouring words in a natural-language question include entity
+# names and semantic operators (CAGR, rank, subtract, threshold, ...); requiring
+# those words to appear in an accounting row creates systematic false
+# negatives.  This vocabulary captures source distinctions that the physical
+# report can actually express.  Metric aliases themselves are removed later.
+_PHYSICAL_SURFACE_QUALIFIER_TOKENS = frozenset(
+    {
+        "ngan",
+        "dai",
+        "han",
+        "con",
+        "lai",
+        "nguyen",
+        "hao",
+        "mon",
+        "luy",
+        "ke",
+        "nha",
+        "vat",
+        "kien",
+        "truc",
+        "may",
+        "moc",
+        "thiet",
+        "bi",
+        "phuong",
+        "tien",
+        "van",
+        "tai",
+        "phong",
+        "hang",
+        "hoa",
+        "kho",
+        "von",
+        "me",
+        "rieng",
+        "hop",
+        "nhat",
+        "vay",
+        "thue",
     }
 )
 _SOURCE_ALIAS_GLUE_TOKENS = frozenset(
@@ -913,24 +959,43 @@ class LogicalFactResolver:
             retained.sort(key=lambda item: (-item.score, item.observation_uid))
             return tuple(retained)
 
-        by_scope: dict[tuple[str, int | None], list[GroundedFact]] = defaultdict(list)
-        for fact in governed:
-            by_scope[(fact.entity, fact.period_year)].append(fact)
-        per_scope = max(1, limit // max(1, len(by_scope)))
+        # Governed facts form a metric x entity x period coverage matrix.  A
+        # scope-only quota still lets the highest-scoring metric consume every
+        # slot in every scope, which makes otherwise valid formulas fail later
+        # with missing operands.  Allocate the constrained budget using
+        # max-min fairness across both axes, then use score only as the
+        # deterministic tie-breaker.  Source-component facts remain distinct
+        # candidates because each component can be a required operand.
+        remaining = list(governed)
+        metric_counts: dict[str, int] = defaultdict(int)
+        scope_counts: dict[tuple[str, int | None], int] = defaultdict(int)
         selected: list[GroundedFact] = []
-        seen: set[str] = set()
-        for scope in sorted(by_scope, key=lambda value: (value[0], value[1] or 0)):
-            for fact in by_scope[scope][:per_scope]:
-                if len(selected) >= limit:
-                    break
-                selected.append(fact)
-                seen.add(fact.observation_uid)
-        for fact in governed:
-            if len(selected) >= limit:
-                break
-            if fact.observation_uid not in seen:
-                selected.append(fact)
-                seen.add(fact.observation_uid)
+        while remaining and len(selected) < limit:
+            minimum_metric_count = min(
+                metric_counts[fact.retrieval_metric or ""] for fact in remaining
+            )
+            metric_candidates = [
+                fact
+                for fact in remaining
+                if metric_counts[fact.retrieval_metric or ""] == minimum_metric_count
+            ]
+            minimum_scope_count = min(
+                scope_counts[(fact.entity, fact.period_year)]
+                for fact in metric_candidates
+            )
+            scope_candidates = [
+                fact
+                for fact in metric_candidates
+                if scope_counts[(fact.entity, fact.period_year)] == minimum_scope_count
+            ]
+            chosen = min(
+                scope_candidates,
+                key=lambda fact: (-fact.score, fact.observation_uid),
+            )
+            selected.append(chosen)
+            metric_counts[chosen.retrieval_metric or ""] += 1
+            scope_counts[(chosen.entity, chosen.period_year)] += 1
+            remaining.remove(chosen)
         selected.sort(key=lambda item: (-item.score, item.observation_uid))
         return tuple(selected)
 
@@ -1018,7 +1083,7 @@ def has_hard_logical_fact_conflict(fact: GroundedFact) -> bool:
     if fact.collision_class is not None:
         reasons = set(fact.score_reasons)
         governed_recoverable_collision = (
-            fact.collision_class == "missing_label_or_split"
+            fact.collision_class in {"missing_label_or_split", "missing_dimension"}
             and fact.source_confidence is not None
             and fact.source_confidence >= 0.85
             and "metric:governed_code" in reasons
@@ -1132,6 +1197,7 @@ def _surface_qualifiers(surfaces: Sequence[str], aliases: Sequence[str]) -> set[
         if (
             token not in alias_tokens
             and token not in _GENERIC_SURFACE_TOKENS
+            and token in _PHYSICAL_SURFACE_QUALIFIER_TOKENS
             and not token.isdigit()
         )
     }

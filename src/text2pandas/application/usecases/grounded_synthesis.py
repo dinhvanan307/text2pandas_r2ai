@@ -258,6 +258,8 @@ class ProgramOperation(StrEnum):
     GROWTH = "growth"
     GROWTH_BY_ENTITY = "growth_by_entity"
     ROLLING_GROWTH = "rolling_growth"
+    ROLLING_GROWTH_BY_ENTITY = "rolling_growth_by_entity"
+    ROLLING_AVERAGE = "rolling_average"
     CHANGE_BY_ENTITY = "change_by_entity"
     EARLIEST_BY_ENTITY = "earliest_by_entity"
     LATEST_BY_ENTITY = "latest_by_entity"
@@ -632,6 +634,8 @@ def _execute_program_node(
     if operation in {
         ProgramOperation.GROWTH_BY_ENTITY,
         ProgramOperation.ROLLING_GROWTH,
+        ProgramOperation.ROLLING_GROWTH_BY_ENTITY,
+        ProgramOperation.ROLLING_AVERAGE,
         ProgramOperation.ROLLING_CHANGE,
         ProgramOperation.CHANGE_BY_ENTITY,
         ProgramOperation.EARLIEST_BY_ENTITY,
@@ -829,7 +833,11 @@ def _program_binary(
 
 def _program_temporal_growth(operation: ProgramOperation, series: _Series) -> _Series:
     numeric = _numeric_series(series)
-    if operation in {ProgramOperation.ROLLING_GROWTH, ProgramOperation.ROLLING_CHANGE}:
+    if operation in {
+        ProgramOperation.ROLLING_GROWTH,
+        ProgramOperation.ROLLING_AVERAGE,
+        ProgramOperation.ROLLING_CHANGE,
+    }:
         try:
             rolling_ordered = sorted(numeric, key=lambda item: int(item[0]))
         except ValueError as error:
@@ -846,6 +854,17 @@ def _program_temporal_growth(operation: ProgramOperation, series: _Series) -> _S
                         current,
                     )
                     if operation is ProgramOperation.ROLLING_GROWTH
+                    else _Scalar(
+                        (previous.value + current.value) / Decimal(2),
+                        f"(({previous.expression} + {current.expression}) / 2)",
+                        _compatible_numeric_dimension(
+                            previous.dimension,
+                            current.dimension,
+                            ProgramOperation.ADD,
+                        ),
+                        _merge_fact_uids(previous, current),
+                    )
+                    if operation is ProgramOperation.ROLLING_AVERAGE
                     else _scalar_binary(
                         ProgramOperation.SUBTRACT,
                         current,
@@ -874,6 +893,7 @@ def _program_temporal_growth(operation: ProgramOperation, series: _Series) -> _S
             output.extend((f"{entity}|{year}", value) for year, value in entity_ordered[1:])
             continue
         if operation in {
+            ProgramOperation.ROLLING_GROWTH_BY_ENTITY,
             ProgramOperation.ROLLING_AVERAGE_BY_ENTITY,
             ProgramOperation.ROLLING_CHANGE_BY_ENTITY,
         }:
@@ -883,7 +903,9 @@ def _program_temporal_growth(operation: ProgramOperation, series: _Series) -> _S
                 )
             for (previous_year, previous), (current_year, current) in pairwise(entity_ordered):
                 del previous_year
-                if operation is ProgramOperation.ROLLING_AVERAGE_BY_ENTITY:
+                if operation is ProgramOperation.ROLLING_GROWTH_BY_ENTITY:
+                    point = _scalar_binary(ProgramOperation.GROWTH, previous, current)
+                elif operation is ProgramOperation.ROLLING_AVERAGE_BY_ENTITY:
                     point = _Scalar(
                         (previous.value + current.value) / Decimal(2),
                         f"(({previous.expression} + {current.expression}) / 2)",

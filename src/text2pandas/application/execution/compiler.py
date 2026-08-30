@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from decimal import Decimal
+from itertools import pairwise
 
 from text2pandas.application.binding import BoundExecutionPlan
 from text2pandas.domain.semantic import (
@@ -26,6 +27,8 @@ from text2pandas.domain.semantic import (
     QuantifiedPredicate,
     Rank,
     RankDirection,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     Unary,
     UnaryOperator,
@@ -165,6 +168,14 @@ def _render(
                 }
             )
         raise CompilationError(f"UNSUPPORTED_UNARY:{expression.operator}")
+    if isinstance(expression, RollingAverage):
+        if expression.window != 2:
+            raise CompilationError("ROLLING_AVERAGE_WINDOW_UNSUPPORTED")
+        child = _numeric(_render(expression.expression, f"{path}.expression", bound, variables))
+        return _render_rolling_average(child)
+    if isinstance(expression, RollingGrowth):
+        child = _numeric(_render(expression.expression, f"{path}.expression", bound, variables))
+        return _render_rolling_growth(child)
     if isinstance(expression, FormulaCall):
         return _render(expression.expression, f"{path}.expression", bound, variables)
     if isinstance(expression, Aggregate):
@@ -235,6 +246,56 @@ def _arithmetic(
             f"MULTIPLY_DIMENSION_UNSUPPORTED:{left.unit.dimension}:{right.unit.dimension}"
         )
     raise CompilationError(f"UNSUPPORTED_ARITHMETIC:{operator}")
+
+
+def _render_rolling_average(series: _RenderedSeries) -> _RenderedSeries:
+    grouped: dict[str, list[tuple[int, Scope, _RenderedQuantity]]] = {}
+    for scope, value in series.values.items():
+        if scope.entity is None or scope.period is None:
+            raise CompilationError("ROLLING_AVERAGE_REQUIRES_ENTITY_PERIOD_SCOPE")
+        try:
+            period = int(scope.period[:4])
+        except ValueError as error:
+            raise CompilationError("ROLLING_AVERAGE_PERIOD_INVALID") from error
+        grouped.setdefault(scope.entity, []).append((period, scope, value))
+    output: dict[Scope, _RenderedQuantity] = {}
+    for values in grouped.values():
+        ordered = sorted(values)
+        if len(ordered) < 2:
+            raise CompilationError("ROLLING_AVERAGE_REQUIRES_TWO_PERIODS")
+        for previous, current in pairwise(ordered):
+            left, right = _common(previous[2], current[2])
+            output[current[1]] = _RenderedQuantity(
+                f"(({left.expression} + {right.expression}) / 2)",
+                left.unit,
+                _and(left.guard, right.guard),
+            )
+    return _RenderedSeries(output)
+
+
+def _render_rolling_growth(series: _RenderedSeries) -> _RenderedSeries:
+    grouped: dict[str, list[tuple[int, Scope, _RenderedQuantity]]] = {}
+    for scope, value in series.values.items():
+        if scope.entity is None or scope.period is None:
+            raise CompilationError("ROLLING_GROWTH_REQUIRES_ENTITY_PERIOD_SCOPE")
+        try:
+            period = int(scope.period[:4])
+        except ValueError as error:
+            raise CompilationError("ROLLING_GROWTH_PERIOD_INVALID") from error
+        grouped.setdefault(scope.entity, []).append((period, scope, value))
+    output: dict[Scope, _RenderedQuantity] = {}
+    for values in grouped.values():
+        ordered = sorted(values)
+        if len(ordered) < 2:
+            raise CompilationError("ROLLING_GROWTH_REQUIRES_TWO_PERIODS")
+        for previous, current in pairwise(ordered):
+            prior, latest = _common(previous[2], current[2])
+            output[current[1]] = _RenderedQuantity(
+                f"((({latest.expression}) - ({prior.expression})) / abs({prior.expression}))",
+                UnitSpec(Dimension.RATIO),
+                _and(prior.guard, latest.guard),
+            )
+    return _RenderedSeries(output)
 
 
 def _render_aggregate(function: AggregateFunction, series: _RenderedSeries) -> _RenderedSeries:

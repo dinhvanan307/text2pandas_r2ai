@@ -477,7 +477,7 @@ class A6MetricMentionResolver:
         for group in groups.values():
             if _context_free_person_name(group):
                 continue
-            best: tuple[int, int, int, int, int, int, int, str] | None = None
+            best: tuple[int, int, int, int, int, int, int, int, str] | None = None
             # Discovery is label-led. Hierarchy is retained as binding evidence
             # but cannot make an unrelated leaf inherit its parent's meaning.
             for surface in sorted(group.labels):
@@ -498,6 +498,11 @@ class A6MetricMentionResolver:
                 phrase = normalized_question[phrase_start:phrase_end]
                 phrase_values = _semantic_metric_tokens(phrase)
                 source_semantic_values = _semantic_metric_tokens(" ".join(source_values))
+                short_exact_label = (
+                    0 < len(source_semantic_values) <= 2
+                    and source_semantic_values == phrase_values
+                    and normalize_fact_label(surface) == normalize_fact_label(phrase)
+                )
                 if _introduces_unrequested_accounting_qualifier(
                     frozenset(source_values),
                     frozenset(_TOKEN.findall(phrase)),
@@ -528,6 +533,7 @@ class A6MetricMentionResolver:
                     else "a6_scoped_metric_token_set"
                 )
                 candidate = (
+                    int(short_exact_label),
                     query_coverage,
                     source_coverage,
                     overlap,
@@ -537,11 +543,12 @@ class A6MetricMentionResolver:
                     phrase_end,
                     method,
                 )
-                if best is None or candidate[:5] > best[:5]:
+                if best is None or candidate[:6] > best[:6]:
                     best = candidate
             if best is None:
                 continue
             (
+                short_exact_score,
                 query_coverage,
                 source_coverage,
                 overlap,
@@ -557,11 +564,13 @@ class A6MetricMentionResolver:
                 and source_coverage >= 800
                 and evidence_overlap >= self.config.min_token_overlap
             )
-            if not ordered_match and not complete_token_set_match:
+            if not ordered_match and not complete_token_set_match and not short_exact_score:
                 continue
             if (
                 evidence_overlap < self.config.min_token_overlap
-                or source_coverage < self.config.min_source_coverage_milli
+                and not short_exact_score
+            ) or (
+                source_coverage < self.config.min_source_coverage_milli
             ):
                 continue
             surface = normalized_question[phrase_start:phrase_end]

@@ -760,6 +760,55 @@ def test_filter_conjunction_is_not_a_physical_metric_qualifier() -> None:
     assert not has_hard_logical_fact_conflict(resolved[0])
 
 
+def test_semantic_operator_prefix_is_not_a_physical_metric_qualifier() -> None:
+    revenue = _fact(
+        "revenue-cagr",
+        "B02-DN › Doanh thu thuần về bán hàng và cung cấp dịch vụ",
+        "Năm 2024",
+        "100",
+        metric="net_revenue",
+        role="current",
+        metric_code="10",
+        statement="income_statement",
+    )
+    cash_flow = _fact(
+        "continuous-cfo",
+        "B03-DN › Lưu chuyển tiền thuần từ hoạt động kinh doanh",
+        "Năm 2024",
+        "20",
+        metric="cash_flow_from_operations",
+        role="current",
+        metric_code="20",
+        statement="cash_flow",
+    )
+    contracts = (
+        LogicalMetricContract(
+            "net_revenue",
+            aliases=("doanh thu thuan",),
+            query_surfaces=("cagr doanh thu thuan",),
+            period_semantics=PeriodSemantics.FLOW,
+        ),
+        LogicalMetricContract(
+            "cash_flow_from_operations",
+            aliases=("luu chuyen tien thuan tu hoat dong kinh doanh",),
+            query_surfaces=("duy luu chuyen tien thuan tu hoat dong kinh doanh",),
+            period_semantics=PeriodSemantics.FLOW,
+        ),
+    )
+
+    resolved = LogicalFactResolver(
+        "Duy trì CFO dương và có CAGR doanh thu thuần cao nhất?",
+        requested_periods=("2024",),
+        contracts=contracts,
+    ).resolve((revenue, cash_flow), limit=10)
+
+    assert {fact.observation_uid for fact in resolved} == {
+        "revenue-cagr",
+        "continuous-cfo",
+    }
+    assert all(not has_hard_logical_fact_conflict(fact) for fact in resolved)
+
+
 def test_metric_code_221_implies_fixed_asset_carrying_amount() -> None:
     fact = _fact(
         "fixed-asset-balance",
@@ -913,6 +962,53 @@ def test_governed_exact_row_can_recover_missing_label_collision() -> None:
     assert not has_hard_logical_fact_conflict(resolved[0])
 
 
+def test_governed_code_recovers_high_confidence_missing_dimension_collision() -> None:
+    net = replace(
+        _fact(
+            "inventory-net",
+            "B01-DN › Hàng tồn kho",
+            "31/12/2020",
+            "100",
+            metric="inventory",
+            role="closing",
+            metric_code="140",
+            statement="balance_sheet",
+        ),
+        collision_class="missing_dimension",
+    )
+    gross = replace(
+        _fact(
+            "inventory-gross",
+            "B01-DN › Hàng tồn kho",
+            "31/12/2020",
+            "120",
+            metric="inventory",
+            role="closing",
+            metric_code="141",
+            statement="balance_sheet",
+            score=1_000.0,
+        ),
+        collision_class="missing_dimension",
+    )
+    contract = LogicalMetricContract(
+        "inventory",
+        aliases=("hang ton kho",),
+        metric_codes=("140",),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+    )
+
+    resolved = LogicalFactResolver(
+        "Hàng tồn kho cuối năm 2020?",
+        requested_periods=("2020",),
+        contracts=(contract,),
+    ).resolve((gross, net), limit=10)
+
+    assert [fact.observation_uid for fact in resolved] == ["inventory-net"]
+    assert "metric:governed_code" in resolved[0].score_reasons
+    assert "metric:exact_row" in resolved[0].score_reasons
+    assert not has_hard_logical_fact_conflict(resolved[0])
+
+
 def test_low_confidence_collision_remains_a_hard_conflict() -> None:
     fact = replace(
         _fact(
@@ -992,6 +1088,45 @@ def test_fact_limit_preserves_all_governed_operands_before_lexical_fallbacks() -
     ).resolve((*lexical, governed_a, governed_b), limit=2)
 
     assert {fact.observation_uid for fact in resolved} == {"governed-a", "governed-b"}
+
+
+def test_fact_limit_balances_metrics_across_entity_period_scopes() -> None:
+    facts = tuple(
+        replace(
+            _fact(
+                f"{metric}-{year}",
+                f"Chỉ tiêu {metric}",
+                f"Năm {year}",
+                str(index + 1),
+                metric=f"metric_{metric}",
+                role="current",
+                score=score,
+            ),
+            period=f"{year}-12-31",
+            document_year=year,
+        )
+        for year in (2022, 2023, 2024)
+        for index, (metric, score) in enumerate(
+            (("a", 300.0), ("b", 200.0), ("c", 100.0))
+        )
+    )
+    contracts = tuple(
+        LogicalMetricContract(f"metric_{metric}", aliases=(f"chi tieu {metric}",))
+        for metric in ("a", "b", "c")
+    )
+
+    resolved = LogicalFactResolver(
+        "Chỉ tiêu A, B và C giai đoạn 2022-2024?",
+        requested_periods=("2022", "2023", "2024"),
+        contracts=contracts,
+    ).resolve(facts, limit=6)
+
+    metric_counts = {
+        metric: sum(fact.retrieval_metric == metric for fact in resolved)
+        for metric in ("metric_a", "metric_b", "metric_c")
+    }
+    assert metric_counts == {"metric_a": 2, "metric_b": 2, "metric_c": 2}
+    assert {fact.period_year for fact in resolved} == {2022, 2023, 2024}
 
 
 def test_fact_limit_selects_one_complete_statement_basis_bundle() -> None:

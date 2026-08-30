@@ -31,6 +31,7 @@ from text2pandas.domain.semantic import (
     QuantifiedPredicate,
     Rank,
     RankDirection,
+    RollingGrowth,
     SelectAtArg,
     Unary,
     UnaryOperator,
@@ -581,6 +582,27 @@ def test_explicit_simultaneous_sign_predicates_compile_typed_count() -> None:
     assert len(filtered.predicate.predicates) == 2
 
 
+def test_count_compiles_multiple_explicit_formula_thresholds_as_conjunction() -> None:
+    companies = {
+        value: value
+        for value in ("DIG", "HPX", "KBC", "NVL", "SCR", "VIC", "VPI", "VRE")
+    }
+    parser = SemanticParser(load_ontology(), LegacyVietnameseAnnotator(companies))
+    result = parser.parse(
+        "Năm 2024, trong nhóm DIG, HPX, KBC, NVL, SCR, VIC, VPI và VRE, có "
+        "bao nhiêu doanh nghiệp đồng thời có hệ số thanh toán nhanh trên 1 lần "
+        "và hệ số nợ phải trả trên vốn chủ sở hữu dưới 1,5 lần?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+    assert result.ast.expression.function == AggregateFunction.COUNT
+    filtered = result.ast.expression.expression
+    assert isinstance(filtered, Filter)
+    assert isinstance(filtered.predicate, LogicalPredicate)
+    assert len(filtered.predicate.predicates) == 2
+
+
 def test_direct_binary_metric_preserves_explicit_counterparty_selector() -> None:
     parser = SemanticParser(
         load_ontology(),
@@ -859,6 +881,76 @@ def test_select_at_arg_does_not_rank_one_operand_of_unreviewed_ratio() -> None:
 
     assert not result.ok
     assert result.reason == "SELECT_AT_ARG_RANK_FORMULA_UNRESOLVED"
+
+
+def test_select_at_arg_uses_shared_interest_coverage_formula_for_output() -> None:
+    annotations = _annotations(
+        entities=("BSR", "PLX", "PVT"),
+        periods=("2019",),
+        operation=OperationKind.EXTREMUM,
+        requested_unit=UnitSpec(Dimension.RATIO),
+        rank_direction=RankDirection.DESCENDING,
+        return_mode=ReturnMode.SELECT_AT_ARG,
+    )
+    result = _parse(
+        "Năm 2019, trong nhóm BSR, PLX và PVT, công ty có hệ số nợ phải trả "
+        "trên vốn chủ sở hữu cao nhất có hệ số khả năng thanh toán lãi vay là "
+        "bao nhiêu lần?",
+        annotations,
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, SelectAtArg)
+    assert isinstance(result.ast.expression.rank.by, FormulaCall)
+    assert result.ast.expression.rank.by.formula_id == "debt_to_equity"
+    assert isinstance(result.ast.expression.expression, FormulaCall)
+    assert result.ast.expression.expression.formula_id == "interest_coverage"
+
+
+def test_select_at_arg_preserves_average_balance_asset_turnover_output() -> None:
+    annotations = _annotations(
+        entities=("ACV", "HHV", "VSC"),
+        periods=("2024",),
+        operation=OperationKind.EXTREMUM,
+        requested_unit=UnitSpec(Dimension.RATIO),
+        rank_direction=RankDirection.DESCENDING,
+        return_mode=ReturnMode.SELECT_AT_ARG,
+    )
+    result = _parse(
+        "Năm 2024, trong nhóm ACV, HHV và VSC, vòng quay tổng tài sản (tính "
+        "theo tổng tài sản bình quân) của doanh nghiệp có tỷ trọng tài sản dài "
+        "hạn trên tổng tài sản cao nhất là bao nhiêu vòng?",
+        annotations,
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, SelectAtArg)
+    assert isinstance(result.ast.expression.expression, FormulaCall)
+    assert result.ast.expression.expression.formula_id == "asset_turnover_average_assets"
+
+
+def test_period_select_at_arg_ranks_by_consecutive_growth_not_level() -> None:
+    annotations = _annotations(
+        entities=("HPG",),
+        periods=("2020", "2021", "2022", "2023", "2024"),
+        operation=OperationKind.EXTREMUM,
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        rank_direction=RankDirection.DESCENDING,
+        return_mode=ReturnMode.SELECT_AT_ARG,
+    )
+    result = _parse(
+        "Ở năm có tốc độ tăng doanh thu thuần so với năm liền trước cao nhất, "
+        "tỷ lệ lưu chuyển tiền thuần từ hoạt động kinh doanh trên doanh thu "
+        "thuần của năm đó là bao nhiêu phần trăm?",
+        annotations,
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, SelectAtArg)
+    assert isinstance(result.ast.expression.rank.by, RollingGrowth)
+    assert isinstance(result.ast.expression.rank.by.expression, MetricRef)
+    assert result.ast.expression.rank.by.expression.metric_id == "net_revenue"
+    assert result.ast.expression.rank.members == ("2021", "2022", "2023", "2024")
 
 
 def test_filtered_multi_entity_average_supports_distinct_reviewed_formulas() -> None:

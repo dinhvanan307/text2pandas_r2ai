@@ -15,6 +15,8 @@ from text2pandas.domain.semantic import (
     Rank,
     RankDirection,
     ResultKind,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     UnitSpec,
     validate_question_ast,
@@ -94,6 +96,37 @@ def test_ast_expresses_cross_entity_derived_average_without_new_engine() -> None
         output=OutputSpec(ResultKind.SCALAR, UnitSpec(Dimension.PERCENT)),
     )
 
+    assert validate_question_ast(ast) == ()
+
+
+def test_rolling_average_round_trips_as_a_first_class_formula_operand() -> None:
+    expression = Arithmetic(
+        ArithmeticOperator.DIVIDE,
+        MetricRef("net_revenue", entities=("VIC",), periods=("2024",)),
+        RollingAverage(
+            MetricRef("total_assets", entities=("VIC",), periods=("2023", "2024"))
+        ),
+    )
+    ast = QuestionAST(
+        question="Vòng quay tổng tài sản theo tài sản bình quân?",
+        expression=expression,
+        output=OutputSpec(ResultKind.SCALAR, UnitSpec(Dimension.RATIO)),
+    )
+
+    assert QuestionAST.from_dict(ast.to_dict()) == ast
+    assert validate_question_ast(ast) == ()
+
+
+def test_rolling_growth_round_trips_as_a_first_class_temporal_expression() -> None:
+    ast = QuestionAST(
+        question="Năm có tăng trưởng doanh thu cao nhất?",
+        expression=RollingGrowth(
+            MetricRef("net_revenue", entities=("HPG",), periods=("2020", "2021", "2022"))
+        ),
+        output=OutputSpec(ResultKind.SCALAR, UnitSpec(Dimension.PERCENT)),
+    )
+
+    assert QuestionAST.from_dict(ast.to_dict()) == ast
     assert validate_question_ast(ast) == ()
 
 

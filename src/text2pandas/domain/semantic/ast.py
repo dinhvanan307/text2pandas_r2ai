@@ -107,6 +107,21 @@ class Unary:
 
 
 @dataclass(frozen=True, slots=True)
+class RollingAverage:
+    """Average consecutive periods while preserving the current-period key."""
+
+    expression: Expression
+    window: int = 2
+
+
+@dataclass(frozen=True, slots=True)
+class RollingGrowth:
+    """Compute current/prior - 1 while preserving the current-period key."""
+
+    expression: Expression
+
+
+@dataclass(frozen=True, slots=True)
 class FormulaCall:
     formula_id: str
     variant_id: str
@@ -175,7 +190,17 @@ class SelectAtArg:
 
 
 Expression: TypeAlias = (
-    MetricRef | Literal | Arithmetic | Unary | FormulaCall | Aggregate | Filter | Rank | SelectAtArg
+    MetricRef
+    | Literal
+    | Arithmetic
+    | Unary
+    | RollingAverage
+    | RollingGrowth
+    | FormulaCall
+    | Aggregate
+    | Filter
+    | Rank
+    | SelectAtArg
 )
 Predicate: TypeAlias = Comparison | Exists | LogicalPredicate | QuantifiedPredicate
 
@@ -193,6 +218,12 @@ def iter_metric_refs(expression: Expression) -> Iterator[MetricRef]:
         yield from iter_metric_refs(expression.right)
         return
     if isinstance(expression, Unary):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, RollingAverage):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, RollingGrowth):
         yield from iter_metric_refs(expression.expression)
         return
     if isinstance(expression, FormulaCall):
@@ -301,6 +332,17 @@ def expression_to_dict(expression: Expression) -> dict[str, Any]:
         return {
             "type": "unary",
             "operator": expression.operator.value,
+            "expression": expression_to_dict(expression.expression),
+        }
+    if isinstance(expression, RollingAverage):
+        return {
+            "type": "rolling_average",
+            "window": expression.window,
+            "expression": expression_to_dict(expression.expression),
+        }
+    if isinstance(expression, RollingGrowth):
+        return {
+            "type": "rolling_growth",
             "expression": expression_to_dict(expression.expression),
         }
     if isinstance(expression, FormulaCall):
@@ -413,6 +455,13 @@ def expression_from_dict(raw: Mapping[str, Any]) -> Expression:
             UnaryOperator(str(raw["operator"])),
             expression_from_dict(_mapping(raw["expression"])),
         )
+    if kind == "rolling_average":
+        return RollingAverage(
+            expression_from_dict(_mapping(raw["expression"])),
+            int(raw.get("window", 2)),
+        )
+    if kind == "rolling_growth":
+        return RollingGrowth(expression_from_dict(_mapping(raw["expression"])))
     if kind == "formula_call":
         return FormulaCall(
             str(raw["formula_id"]),

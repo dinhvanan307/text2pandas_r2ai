@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -20,6 +21,8 @@ from text2pandas.domain.semantic import (
     FormulaCall,
     MetricRef,
     Rank,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     Unary,
     UnitSpec,
@@ -201,7 +204,7 @@ class MetricOntology:
             (len(alias), formula.formula_id, formula)
             for formula in self.formulas.values()
             for alias in formula.aliases
-            if alias and alias in normalized_text
+            if alias and any(iter_phrase_spans(normalized_text, alias))
         ]
         return max(matches, default=(0, "", None))[2]
 
@@ -212,6 +215,10 @@ def expression_metric_ids(expression: Expression) -> frozenset[str]:
     if isinstance(expression, Arithmetic):
         return expression_metric_ids(expression.left) | expression_metric_ids(expression.right)
     if isinstance(expression, Unary):
+        return expression_metric_ids(expression.expression)
+    if isinstance(expression, RollingAverage):
+        return expression_metric_ids(expression.expression)
+    if isinstance(expression, RollingGrowth):
         return expression_metric_ids(expression.expression)
     if isinstance(expression, FormulaCall):
         return expression_metric_ids(expression.expression)
@@ -233,6 +240,20 @@ def normalize_phrase(value: str) -> str:
         character for character in decomposed if unicodedata.category(character) != "Mn"
     )
     return " ".join(plain.replace("đ", "d").split())
+
+
+def iter_phrase_spans(text: str, phrase: str) -> tuple[tuple[int, int], ...]:
+    """Match semantic aliases with punctuation treated as token separators."""
+
+    tokens = re.findall(r"[a-z0-9]+", phrase)
+    if not tokens:
+        return ()
+    pattern = re.compile(
+        r"(?<![a-z0-9])"
+        + r"[^a-z0-9]+".join(re.escape(token) for token in tokens)
+        + r"(?![a-z0-9])"
+    )
+    return tuple((match.start(), match.end()) for match in pattern.finditer(text))
 
 
 def _error(code: str, subject: str, message: str) -> OntologyIssue:

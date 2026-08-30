@@ -2715,6 +2715,27 @@ def _compile_expression(
             ProgramNode(node_id, ProgramOperation.ABSOLUTE, input_ids=(child_id,))
         )
         return node_id
+    if expression_type == "rolling_average":
+        child = expression.get("expression")
+        if not isinstance(child, Mapping):
+            raise GroundedPlanError("rolling-average formula requires a child")
+        if int(str(expression.get("window") or 2)) != 2:
+            raise GroundedPlanError("rolling-average formula supports window=2 only")
+        child_id = _compile_expression(
+            child,
+            nodes,
+            source_nodes,
+            prefix=f"{prefix}_child",
+        )
+        node_id = _node_id(f"{prefix}_rolling_average", nodes)
+        nodes.append(
+            ProgramNode(
+                node_id,
+                ProgramOperation.ROLLING_AVERAGE_BY_ENTITY,
+                input_ids=(child_id,),
+            )
+        )
+        return node_id
     if expression_type == "average_balance_ratio":
         numerator_metric = str(expression.get("numerator_metric_id") or "")
         denominator_metric = str(expression.get("denominator_metric_id") or "")
