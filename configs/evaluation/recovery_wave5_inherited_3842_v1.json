@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.recovery_wave5_inherited_recovery_set",
+  "baseline_submission_id": 3842,
+  "sources": [
+    {
+      "path": "configs/evaluation/recovery_wave3_review_3830_v1.json",
+      "decision": "PASS_SOURCE_PROVEN",
+      "records": 29
+    },
+    {
+      "path": "configs/evaluation/recovery_wave4_review_3831_v1.json",
+      "decision": "PASS_SOURCE_PROVEN",
+      "records": 6
+    }
+  ],
+  "reviews": [
+    {"qid": 284},
+    {"qid": 319},
+    {"qid": 513},
+    {"qid": 521},
+    {"qid": 537},
+    {"qid": 580},
+    {"qid": 632},
+    {"qid": 658},
+    {"qid": 660},
+    {"qid": 664},
+    {"qid": 669},
+    {"qid": 671},
+    {"qid": 676},
+    {"qid": 677},
+    {"qid": 680},
+    {"qid": 685},
+    {"qid": 692},
+    {"qid": 696},
+    {"qid": 697},
+    {"qid": 711},
+    {"qid": 714},
+    {"qid": 717},
+    {"qid": 729},
+    {"qid": 734},
+    {"qid": 773},
+    {"qid": 781},
+    {"qid": 785},
+    {"qid": 787},
+    {"qid": 799},
+    {"qid": 800},
+    {"qid": 812},
+    {"qid": 827},
+    {"qid": 963},
+    {"qid": 967},
+    {"qid": 987}
+  ]
+}
