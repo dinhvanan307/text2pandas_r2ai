@@ -6,7 +6,16 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
+from text2pandas.application.parsing import SemanticParser
 from text2pandas.domain.metrics import MetricOntology, normalize_phrase
+from text2pandas.domain.semantic import (
+    Basis,
+    MetricBindingHint,
+    MetricRef,
+    PeriodSemantics,
+    QuestionAST,
+    iter_metric_refs,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,6 +25,13 @@ class GroundedQueryConcept:
     metric_id: str
     aliases: tuple[str, ...]
     statement_types: tuple[str, ...] = ()
+    period_semantics: PeriodSemantics = PeriodSemantics.UNKNOWN
+    preferred_basis: Basis = Basis.UNSPECIFIED
+    forbidden_prefixes: tuple[str, ...] = ()
+    forbidden_contains: tuple[str, ...] = ()
+    query_surfaces: tuple[str, ...] = ()
+    required_context_phrases: tuple[str, ...] = ()
+    metric_codes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +64,7 @@ class GroundedQueryExpansion:
     phrases: tuple[str, ...]
     concepts: tuple[GroundedQueryConcept, ...]
     formulas: tuple[GroundedFormulaRequirement, ...]
+    semantic_ast: QuestionAST | None = None
 
     @property
     def metric_ids(self) -> tuple[str, ...]:
@@ -63,14 +80,26 @@ class GroundedQueryExpander:
     sees any candidates.
     """
 
-    def __init__(self, ontology: MetricOntology) -> None:
+    def __init__(
+        self,
+        ontology: MetricOntology,
+        parser: SemanticParser | None = None,
+    ) -> None:
         self.ontology = ontology
+        self.parser = parser
 
     def expand(self, question: str) -> tuple[str, ...]:
         return self.analyze(question).phrases
 
     def analyze(self, question: str) -> GroundedQueryExpansion:
         normalized = normalize_phrase(question)
+        semantic_ast: QuestionAST | None = None
+        source_bindings: tuple[MetricBindingHint, ...] = ()
+        if self.parser is not None:
+            parsed = self.parser.parse(question)
+            source_bindings = parsed.source_bindings
+            if parsed.ok:
+                semantic_ast = parsed.ast
         metric_ids: list[str] = []
         formulas: list[GroundedFormulaRequirement] = []
         manual_concepts: list[GroundedQueryConcept] = []
@@ -201,11 +230,27 @@ class GroundedQueryExpander:
             selected_metric = self.ontology.metrics.get(metric_id)
             if selected_metric is not None:
                 phrases.extend(selected_metric.aliases)
+        query_surfaces_by_metric: dict[str, tuple[str, ...]] = {
+            metric_id: tuple(
+                dict.fromkeys(
+                    surface
+                    for matched_metric, alias in direct_matches
+                    if matched_metric == metric_id
+                    and (surface := _query_metric_surface(normalized, alias))
+                )
+            )
+            for metric_id in dict.fromkeys(metric_ids)
+        }
         ontology_concepts = tuple(
             GroundedQueryConcept(
                 metric_id,
                 tuple(selected_metric.aliases),
                 selected_metric.statement_types,
+                selected_metric.period_semantics,
+                selected_metric.preferred_basis,
+                selected_metric.forbidden_prefixes,
+                selected_metric.forbidden_contains,
+                query_surfaces_by_metric.get(metric_id, ()),
             )
             for metric_id in dict.fromkeys(metric_ids)
             if (selected_metric := self.ontology.metrics.get(metric_id)) is not None
@@ -216,14 +261,332 @@ class GroundedQueryExpander:
                 for concept in (*ontology_concepts, *manual_concepts)
             }.values()
         )
+        concepts = _enrich_concepts_with_source_bindings(concepts, source_bindings)
+        if semantic_ast is not None:
+            semantic_refs = tuple(iter_metric_refs(semantic_ast.expression))
+            semantic_concepts = tuple(
+                _concept_from_metric_ref(reference, self.ontology)
+                for reference in semantic_refs
+            )
+            semantic_concepts = tuple(
+                {
+                    concept.metric_id: concept
+                    for concept in semantic_concepts
+                }.values()
+            )
+            if any(reference.source_binding is not None for reference in semantic_refs):
+                # Source-resolved ASTs are scoped against A6.  Keeping a second
+                # lexical metric interpretation would make retrieval and plan
+                # validation disagree about the same noun phrase.
+                concepts = semantic_concepts
+            else:
+                lexical_concepts = {concept.metric_id: concept for concept in concepts}
+                merged_semantic_concepts = tuple(
+                    replace(
+                        concept,
+                        aliases=tuple(
+                            dict.fromkeys(
+                                (
+                                    *lexical_concepts.get(
+                                        concept.metric_id, concept
+                                    ).aliases,
+                                    *concept.aliases,
+                                )
+                            )
+                        ),
+                        query_surfaces=tuple(
+                            dict.fromkeys(
+                                (
+                                    *lexical_concepts.get(
+                                        concept.metric_id, concept
+                                    ).query_surfaces,
+                                    *concept.query_surfaces,
+                                )
+                            )
+                        ),
+                        required_context_phrases=tuple(
+                            dict.fromkeys(
+                                (
+                                    *lexical_concepts.get(
+                                        concept.metric_id, concept
+                                    ).required_context_phrases,
+                                    *concept.required_context_phrases,
+                                )
+                            )
+                        ),
+                    )
+                    for concept in semantic_concepts
+                )
+                concepts = tuple(
+                    {
+                        concept.metric_id: concept
+                        for concept in (*concepts, *merged_semantic_concepts)
+                    }.values()
+                )
+            for concept in semantic_concepts:
+                phrases.extend(concept.aliases)
         unique_formulas = tuple(
             {formula.formula_id: formula for formula in formulas}.values()
         )
+        if "von chu so huu binh quan" in normalized or (
+            "roe" in normalized and "binh quan dau va cuoi ky" in normalized
+        ):
+            unique_formulas = tuple(
+                replace(
+                    _ROE_AVERAGE_EQUITY,
+                    matched_alias=formula.matched_alias,
+                    start=formula.start,
+                    role=formula.role,
+                )
+                if formula.formula_id == _ROE.formula_id
+                else formula
+                for formula in unique_formulas
+            )
         return GroundedQueryExpansion(
             tuple(dict.fromkeys(value for value in phrases if value)),
             concepts,
             _assign_formula_roles(normalized, unique_formulas),
+            semantic_ast,
         )
+
+
+def _concept_from_metric_ref(
+    reference: MetricRef,
+    ontology: MetricOntology,
+) -> GroundedQueryConcept:
+    source = reference.source_binding
+    metric = ontology.metrics.get(reference.metric_id)
+    aliases = (
+        source.labels
+        if source is not None
+        else (() if metric is None else metric.aliases)
+    )
+    statement_types = (
+        reference.statement_types
+        or (() if metric is None else metric.statement_types)
+    )
+    semantics = reference.period_semantics
+    if semantics is PeriodSemantics.UNKNOWN and metric is not None:
+        semantics = metric.period_semantics
+    preferred_basis = reference.basis
+    if preferred_basis is Basis.UNSPECIFIED:
+        if source is not None:
+            preferred_basis = source.preferred_basis
+        elif metric is not None:
+            preferred_basis = metric.preferred_basis
+    return GroundedQueryConcept(
+        metric_id=reference.metric_id,
+        aliases=tuple(dict.fromkeys(normalize_phrase(value) for value in aliases if value)),
+        statement_types=statement_types,
+        metric_codes=() if source is None else source.metric_codes,
+        period_semantics=semantics,
+        preferred_basis=preferred_basis,
+        forbidden_prefixes=() if metric is None else metric.forbidden_prefixes,
+        forbidden_contains=() if metric is None else metric.forbidden_contains,
+        # A6 already resolved the source identity to physical labels/rows.
+        # Its contiguous n-gram may include an adjacent entity name (for
+        # example ``Sai Gon Thuong Tin, lai thuan ...``); that text is scope,
+        # not a qualifier the physical accounting row must repeat.
+        query_surfaces=(
+            ()
+            if source is None
+            else tuple(dict.fromkeys(normalize_phrase(value) for value in aliases))
+        ),
+        required_context_phrases=reference.required_context_phrases,
+    )
+
+
+def _enrich_concepts_with_source_bindings(
+    concepts: tuple[GroundedQueryConcept, ...],
+    bindings: tuple[MetricBindingHint, ...],
+) -> tuple[GroundedQueryConcept, ...]:
+    """Carry A6 structural identity into lexical fallback contracts.
+
+    A parser may understand every physical metric mention yet abstain on the
+    surrounding composition.  The downstream deterministic compiler can still
+    use those mentions, but retrieval must not discard their statement codes.
+    Bindings are attached only to the best matching lexical concept so evidence
+    for one operand cannot leak into another overlapping metric.
+    """
+
+    enriched = list(concepts)
+    for binding in bindings:
+        labels = tuple(normalize_phrase(value) for value in binding.labels if value)
+        surface = normalize_phrase(binding.question_surface)
+        ranked: list[tuple[tuple[int, int, int], int]] = []
+        for index, concept in enumerate(enriched):
+            aliases = tuple(normalize_phrase(value) for value in concept.aliases if value)
+            exact = sum(alias == label for alias in aliases for label in labels)
+            contained = max(
+                (
+                    min(len(alias), len(label))
+                    for alias in aliases
+                    for label in labels
+                    if alias in label or label in alias
+                ),
+                default=0,
+            )
+            surface_match = max(
+                (len(alias) for alias in aliases if alias and alias in surface),
+                default=0,
+            )
+            if exact or contained or surface_match:
+                ranked.append(((exact, contained, surface_match), index))
+        if not ranked:
+            continue
+        _score, winner = max(ranked, key=lambda value: (value[0], -value[1]))
+        concept = enriched[winner]
+        enriched[winner] = replace(
+            concept,
+            aliases=tuple(dict.fromkeys((*concept.aliases, *labels))),
+            metric_codes=tuple(
+                dict.fromkeys((*concept.metric_codes, *binding.metric_codes))
+            ),
+        )
+    return tuple(enriched)
+
+
+_SURFACE_RIGHT_BOUNDARIES = frozenset(
+    {
+        "cua",
+        "nam",
+        "trong",
+        "den",
+        "tai",
+        "vao",
+        "la",
+        "o",
+        "giai",
+        "giua",
+        "bao",
+        "cuoi",
+        "dau",
+        "cao",
+        "thap",
+        "lon",
+        "nho",
+        "nhat",
+        "hon",
+        "duong",
+        "am",
+        "tang",
+        "giam",
+        "ky",
+    }
+)
+_SURFACE_LEFT_BOUNDARIES = frozenset(
+    {
+        "hay",
+        "tinh",
+        "xac",
+        "dinh",
+        "cho",
+        "biet",
+        "giua",
+        "va",
+        "nhung",
+        "ma",
+        "khi",
+        "neu",
+        "tu",
+        "thay",
+        "doi",
+        "chenh",
+        "lech",
+        "binh",
+        "quan",
+        "trung",
+        "tang",
+        "truong",
+        "bien",
+        "co",
+        "muc",
+        "he",
+        "vong",
+        "quay",
+        "le",
+        "ty",
+        "tren",
+        "duoi",
+        "theo",
+        "nhan",
+        "chia",
+    }
+)
+
+_SURFACE_OUTPUT_BOUNDARIES = frozenset(
+    {
+        "so",
+        "voi",
+        "tinh",
+        "don",
+        "vi",
+        "dong",
+        "trieu",
+        "ty",
+        "nghin",
+        "tram",
+        "phan",
+        "lan",
+        "diem",
+    }
+)
+
+
+def _query_metric_surface(question: str, alias: str) -> str:
+    """Return the local noun phrase that qualified a matched ontology alias.
+
+    Reported aliases are intentionally broad (for example ``hang hoa``).  The
+    complete question may qualify that phrase as ``gia von hang hoa``.  Keeping
+    this local surface lets fact resolution distinguish the accounting concept
+    without creating a question-specific metric ID.
+    """
+
+    question_tokens = re.findall(r"[a-z0-9]+", question)
+    alias_tokens = re.findall(r"[a-z0-9]+", alias)
+    if not alias_tokens:
+        return ""
+    start = next(
+        (
+            index
+            for index in range(len(question_tokens) - len(alias_tokens) + 1)
+            if question_tokens[index : index + len(alias_tokens)] == alias_tokens
+        ),
+        -1,
+    )
+    if start < 0:
+        return alias
+    prefix = " ".join(question_tokens[:start])
+    accounting_scope = re.search(
+        r"\b(gia tri con lai|gia tri hao mon luy ke|nguyen gia) cua$",
+        prefix,
+    )
+    if accounting_scope is not None:
+        return f"{accounting_scope.group(1)} {alias}"
+    left = start
+    while (
+        left > 0
+        and start - left < 3
+        and not question_tokens[left - 1].isdigit()
+        and question_tokens[left - 1] not in _SURFACE_LEFT_BOUNDARIES
+        and question_tokens[left - 1] not in _SURFACE_RIGHT_BOUNDARIES
+    ):
+        left -= 1
+    # ``tổng`` is part of the accounting surface (and may distinguish a total
+    # from a component), but it also starts a fresh operand after an entity
+    # list.  Do not leak the final ticker from that list into the metric
+    # qualifier, e.g. ``..., MSR và NKG, tổng doanh thu thuần``.
+    if start > 0 and question_tokens[start - 1] == "tong":
+        left = start - 1
+    right = start + len(alias_tokens)
+    while (
+        right < len(question_tokens)
+        and right - (start + len(alias_tokens)) < 2
+        and question_tokens[right] not in _SURFACE_RIGHT_BOUNDARIES
+        and question_tokens[right] not in _SURFACE_OUTPUT_BOUNDARIES
+    ):
+        right += 1
+    return " ".join(question_tokens[left:right])
 
 
 # Named ratios intentionally omitted from the reviewed formula registry still
@@ -285,6 +648,16 @@ _ROE = _ratio_requirement(
     "roe_end_equity",
     "profit_after_tax",
     "equity",
+    output_dimension="percent",
+)
+_ROE_AVERAGE_EQUITY = GroundedFormulaRequirement(
+    formula_id="roe_average_equity",
+    leaves=("profit_after_tax", "equity"),
+    expression={
+        "type": "average_balance_ratio",
+        "numerator_metric_id": "profit_after_tax",
+        "denominator_metric_id": "equity",
+    },
     output_dimension="percent",
 )
 _ROA = _ratio_requirement(

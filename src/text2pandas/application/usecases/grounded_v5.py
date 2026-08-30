@@ -35,6 +35,10 @@ from text2pandas.application.parsing.contracts import (
     ReturnMode,
 )
 from text2pandas.application.usecases.answer import AnswerResult
+from text2pandas.application.usecases.grounded_resolution import (
+    has_hard_logical_fact_conflict,
+    is_high_trust_logical_fact,
+)
 from text2pandas.application.usecases.grounded_synthesis import (
     GroundedExecution,
     GroundedFact,
@@ -245,12 +249,14 @@ def build_grounded_v5_candidate(
                         query_concepts: tuple[Any, ...] = ()
                         required_metric_ids: tuple[str, ...] = ()
                         required_formulas: tuple[Any, ...] = ()
+                        semantic_ast: object | None = None
                         if query_expander is not None:
                             expansion = query_expander.analyze(question)
                             query_terms = expansion.phrases
                             query_concepts = expansion.concepts
                             required_metric_ids = expansion.metric_ids
                             required_formulas = expansion.formulas
+                            semantic_ast = expansion.semantic_ast
                         facts = retriever.retrieve(
                             question,
                             document_ids=documents,
@@ -297,6 +303,7 @@ def build_grounded_v5_candidate(
                                     "metric_id": concept.metric_id,
                                     "aliases": list(concept.aliases),
                                     "statement_types": list(concept.statement_types),
+                                    "metric_codes": list(concept.metric_codes),
                                 }
                                 for concept in query_concepts
                             ]
@@ -304,6 +311,8 @@ def build_grounded_v5_candidate(
                                 formula.to_planner_dict()
                                 for formula in required_formulas
                             ]
+                            if semantic_ast is not None:
+                                hints["semantic_ast"] = semantic_ast
                             accepted: tuple[
                                 GroundedPlan | GroundedProgram, GroundedExecution
                             ] | None = None
@@ -356,9 +365,10 @@ def build_grounded_v5_candidate(
                             trusted_replacement = _is_trusted_replacement(
                                 plan, execution
                             )
+                            trusted_recovery = _is_trusted_recovery(plan, execution)
                             will_promote = config.promotion_mode != "shadow" and (
                                 config.promotion_mode == "replace_all"
-                                or not seed_ok
+                                or (not seed_ok and trusted_recovery)
                                 or (
                                     config.promotion_mode == "replace_trusted"
                                     and trusted_replacement
@@ -384,6 +394,8 @@ def build_grounded_v5_candidate(
                                 outcome = "SHADOW_OK"
                             outcomes[outcome] += 1
                             attempt = _attempt_payload(outcome, plan, facts, execution)
+                            attempt["trusted_replacement"] = trusted_replacement
+                            attempt["trusted_recovery"] = trusted_recovery
                             if candidate_failures:
                                 attempt["candidate_failures"] = candidate_failures
                         except GroundedPlanError as error:
@@ -393,6 +405,30 @@ def build_grounded_v5_candidate(
                                 "status": "REJECTED",
                                 "reason": str(error),
                                 "candidate_facts": len(facts),
+                                "required_metric_ids": list(required_metric_ids),
+                                "candidate_metric_counts": dict(
+                                    sorted(
+                                        Counter(
+                                            fact.retrieval_metric or "<unbound>"
+                                            for fact in facts
+                                        ).items()
+                                    )
+                                ),
+                                "candidate_metric_samples": {
+                                    metric_id: [
+                                        {
+                                            "entity": fact.entity,
+                                            "period": fact.period,
+                                            "basis": fact.basis.value,
+                                            "statement_type": fact.statement_type,
+                                            "row": fact.row_path,
+                                            "reasons": list(fact.score_reasons),
+                                        }
+                                        for fact in facts
+                                        if fact.retrieval_metric == metric_id
+                                    ][:10]
+                                    for metric_id in required_metric_ids
+                                },
                                 "candidate_failures": candidate_failures,
                                 "plan": (
                                     None
@@ -1029,6 +1065,28 @@ _TRUSTED_REPLACEMENT_COMPOSITION = frozenset(
         ProgramOperation.FIRST_TRUE_KEY,
         ProgramOperation.LAST_TRUE_KEY,
         ProgramOperation.SHIFT_KEY,
+        ProgramOperation.KEY_TO_NUMBER,
+        ProgramOperation.IS_NONZERO,
+        ProgramOperation.IS_ZERO,
+    }
+)
+
+_TRUSTED_REPLACEMENT_ALGEBRA = frozenset(
+    {
+        ProgramOperation.FACTS,
+        ProgramOperation.LITERAL,
+        ProgramOperation.SUM,
+        ProgramOperation.AVERAGE,
+        ProgramOperation.MEDIAN,
+        ProgramOperation.MINIMUM,
+        ProgramOperation.MAXIMUM,
+        ProgramOperation.ADD,
+        ProgramOperation.SUBTRACT,
+        ProgramOperation.MULTIPLY,
+        ProgramOperation.DIVIDE,
+        ProgramOperation.ABSOLUTE,
+        ProgramOperation.GROWTH,
+        ProgramOperation.TO_PERCENT,
     }
 )
 
@@ -1050,6 +1108,19 @@ def _is_trusted_replacement(
     operations = {
         node.operation for node in _reachable_program_nodes(plan)
     }
+    resolver_trusted = bool(execution.facts) and all(
+        is_high_trust_logical_fact(fact) for fact in execution.facts
+    )
+    if resolver_trusted and (
+        operations & _TRUSTED_REPLACEMENT_COMPOSITION
+        or operations <= _TRUSTED_REPLACEMENT_ALGEBRA
+    ):
+        return True
+    # The historical metric-code fallback predates logical fact resolution.
+    # It must never bypass hard resolver conflicts such as collisions, missing
+    # query qualifiers or period/basis mismatches.
+    if any(has_hard_logical_fact_conflict(fact) for fact in execution.facts):
+        return False
     if not operations & _TRUSTED_REPLACEMENT_COMPOSITION:
         return False
     for fact in execution.facts:
@@ -1067,6 +1138,57 @@ def _is_trusted_replacement(
         ):
             return False
     return bool(execution.facts)
+
+
+def _is_trusted_recovery(
+    plan: GroundedPlan | GroundedProgram,
+    execution: GroundedExecution,
+) -> bool:
+    """Allow recovery only from structurally resolved governed facts.
+
+    A missing seed is not permission to emit the first lexical number.  This
+    gate is broader than replacement (source-resolved note metrics are useful
+    recoveries) while still requiring a named metric, structural row identity,
+    acceptable source quality and a decisive resolver result.
+    """
+
+    if not isinstance(plan, GroundedProgram) or not execution.facts:
+        return False
+    for fact in execution.facts:
+        if has_hard_logical_fact_conflict(fact):
+            return False
+        metric = fact.retrieval_metric or ""
+        governed_metric = (
+            metric in _TRUSTED_REPLACEMENT_METRIC_CODES
+            or metric.startswith(("source_", "reported_"))
+        )
+        if not governed_metric:
+            return False
+        reasons = set(fact.score_reasons)
+        structural_identity = bool(
+            {
+                "metric:governed_code",
+                "metric:exact_row",
+                "metric:prefix_row",
+                "metric:source_context_complete",
+                "metric:query_qualifier_match",
+                "metric:required_context_match",
+                "source:movement_presentation_order_match",
+            }
+            & reasons
+        )
+        if not structural_identity:
+            return False
+        if fact.source_confidence is not None and fact.source_confidence < 0.65:
+            return False
+        if (
+            "metric:governed_code" not in reasons
+            and fact.resolution_margin is not None
+            and fact.resolution_margin < 30.0
+            and fact.corroboration_count < 2
+        ):
+            return False
+    return True
 
 
 def _validate_required_metric_coverage(

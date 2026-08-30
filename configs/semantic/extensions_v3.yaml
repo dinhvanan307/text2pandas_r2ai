@@ -2,7 +2,17 @@ schema_version: 1
 extension_id: semantic-v3-cohort-formulas
 
 # V3-only aliases keep the immutable canonical V2 registries byte-identical.
-metric_aliases: {}
+metric_aliases:
+  # Only the full financial-statement total is canonical COGS.  Bare
+  # "giá vốn hàng hóa" denotes a product component and must be resolved from
+  # its physical disclosure instead of being widened to statement code 11.
+  cogs:
+    - "gia von hang ban va dich vu cung cap"
+  # In expense questions the disclosures commonly shorten "chi phí lãi vay"
+  # to the row label "lãi vay".  Period/source resolution rejects accrued
+  # payable balances, so this alias remains governed as a flow metric.
+  interest_expense:
+    - "lai vay"
 
 formula_aliases:
   current_ratio: ["ty le tai san ngan han tren no ngan han"]

@@ -11,6 +11,9 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
 
+from text2pandas.application.usecases.grounded_resolution import (
+    has_hard_logical_fact_conflict,
+)
 from text2pandas.application.usecases.grounded_synthesis import (
     Comparator,
     GroundedFact,
@@ -34,8 +37,55 @@ class DeterministicProgramComposer:
     """Compile governed formula contracts without exposing values to a model."""
 
     confidence: float = 0.96
+    semantic_generator: GroundedPlanGenerator | None = None
 
     def generate(
+        self,
+        question: str,
+        facts: Sequence[GroundedFact],
+        *,
+        hints: Mapping[str, object],
+    ) -> GroundedProgram:
+        return next(self.generate_candidates(question, facts, hints=hints))
+
+    def generate_candidates(
+        self,
+        question: str,
+        facts: Sequence[GroundedFact],
+        *,
+        hints: Mapping[str, object],
+    ) -> Iterator[GroundedProgram]:
+        """Cascade governed templates into the canonical semantic compiler.
+
+        Each candidate is still checked by the independent context, lineage,
+        type and replay gates.  The semantic compiler is lazy: it runs only
+        after a template cannot be generated or its candidate is rejected.
+        """
+
+        def candidates() -> Iterator[GroundedProgram]:
+            failures: list[str] = []
+            try:
+                yield self._generate_template(question, facts, hints=hints)
+            except GroundedPlanError as error:
+                failures.append(f"template={error}")
+            if self.semantic_generator is not None:
+                try:
+                    candidate = self.semantic_generator.generate(
+                        question, facts, hints=hints
+                    )
+                    if not isinstance(candidate, GroundedProgram):
+                        raise DeterministicCompositionUnsupported(
+                            "semantic compiler returned a legacy plan"
+                        )
+                    yield candidate
+                except GroundedPlanError as error:
+                    failures.append(f"semantic_ast={error}")
+            detail = "; ".join(failures) or "no governed planner is configured"
+            raise DeterministicCompositionUnsupported(detail)
+
+        return candidates()
+
+    def _generate_template(
         self,
         question: str,
         facts: Sequence[GroundedFact],
@@ -168,7 +218,9 @@ class DeterministicProgramComposer:
                 output_formula=formulas[0],
                 confidence=self.confidence,
             )
-        if {"filter", "rank", "output"} <= roles.keys():
+        if {"filter", "rank"} <= roles.keys() and (
+            "output" in roles or str(hints.get("operation") or "") == "extremum"
+        ):
             return self._generate_filtered_rank(question, facts, hints=hints)
         if _is_positive_conditioned_rank_select(question, hints, roles):
             return _generate_positive_conditioned_rank_select(
@@ -246,6 +298,9 @@ class DeterministicProgramComposer:
     ) -> GroundedProgram:
         formulas = _mappings(hints.get("required_formulas"))
         roles = {str(formula.get("role")): formula for formula in formulas}
+        rank_is_output = "output" not in roles
+        if rank_is_output and str(hints.get("operation") or "") == "extremum":
+            roles["output"] = roles["rank"]
         if not {"filter", "rank", "output"} <= roles.keys():
             raise DeterministicCompositionUnsupported(
                 "no deterministic template for semantic shape"
@@ -294,7 +349,11 @@ class DeterministicProgramComposer:
             nodes.append(
                 ProgramNode(
                     starting_filter,
-                    ProgramOperation.EARLIEST_BY_ENTITY,
+                    (
+                        ProgramOperation.LATEST_BY_ENTITY
+                        if rank_is_output
+                        else ProgramOperation.EARLIEST_BY_ENTITY
+                    ),
                     input_ids=(filter_value,),
                 )
             )
@@ -338,7 +397,11 @@ class DeterministicProgramComposer:
             nodes.append(
                 ProgramNode(
                     rank_change,
-                    ProgramOperation.CHANGE_BY_ENTITY,
+                    (
+                        ProgramOperation.LATEST_BY_ENTITY
+                        if rank_is_output
+                        else ProgramOperation.CHANGE_BY_ENTITY
+                    ),
                     input_ids=(rank_value,),
                 )
             )
@@ -551,8 +614,12 @@ class FallbackGroundedGenerator:
 
         def candidates() -> Iterator[GroundedPlan | GroundedProgram]:
             try:
-                yield self.deterministic.generate(question, facts, hints=hints)
-            except DeterministicCompositionUnsupported:
+                cascade = getattr(self.deterministic, "generate_candidates", None)
+                if callable(cascade):
+                    yield from cascade(question, facts, hints=hints)
+                else:  # compatibility with small test/adapter composers
+                    yield self.deterministic.generate(question, facts, hints=hints)
+            except GroundedPlanError:
                 pass
             yield self.fallback.generate(question, facts, hints=hints)
 
@@ -721,9 +788,18 @@ def _generate_simple(
             raise DeterministicCompositionUnsupported(
                 "change template requires exactly two requested periods"
             )
+        ordered_periods = sorted(requested_periods)
+        if operation == "subtract":
+            # A period difference is the current/newer value minus the
+            # comparison/older value.  Retrieval annotations intentionally
+            # store periods as a set-like domain, so input order must be
+            # reconstructed from temporal semantics here.
+            ordered_periods.reverse()
+            if bool(hints.get("reverse_difference")):
+                ordered_periods.reverse()
         nodes: list[ProgramNode] = []
         scalar_ids: list[str] = []
-        for period in requested_periods:
+        for period in ordered_periods:
             fact = by_period[period]
             source_id = _node_id(f"facts_{required_metrics[0]}_{period}", nodes)
             nodes.append(
@@ -932,7 +1008,12 @@ def _generate_lexical_direct(
                 "lexical change requires one entity and exactly two periods"
             )
         scalar_ids: list[str] = []
-        for index, fact in enumerate(sorted(selected, key=_fact_scope_key), 1):
+        ordered_facts = sorted(selected, key=_fact_scope_key)
+        if operation == "subtract":
+            ordered_facts.reverse()
+            if bool(hints.get("reverse_difference")):
+                ordered_facts.reverse()
+        for index, fact in enumerate(ordered_facts, 1):
             source = f"lexical_period_{index}"
             scalar = f"lexical_scalar_{index}"
             nodes.extend(
@@ -3173,7 +3254,7 @@ def _total_target_metric(
 def _group_facts(facts: Sequence[GroundedFact]) -> dict[str, tuple[GroundedFact, ...]]:
     output: dict[str, list[GroundedFact]] = defaultdict(list)
     for fact in facts:
-        if fact.retrieval_metric:
+        if fact.retrieval_metric and not has_hard_logical_fact_conflict(fact):
             output[fact.retrieval_metric].append(fact)
     return {key: tuple(value) for key, value in output.items()}
 

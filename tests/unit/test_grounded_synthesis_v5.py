@@ -91,6 +91,26 @@ def test_flat_plan_supports_competition_hundred_and_thousand_billion_units(
     assert execute_query(execution.pandas_query, {"df1": _frame((fact,))}) == expected
 
 
+def test_flat_plan_treats_missing_share_scale_as_absolute_units() -> None:
+    fact = _fact(
+        "outstanding-shares",
+        "361481878",
+        dimension=Dimension.SHARES,
+        scale=None,
+    )
+    plan = GroundedPlan(
+        operation=GroundedOperation.LOOKUP,
+        operand_uids=(fact.observation_uid,),
+        output_dimension=Dimension.SHARES,
+        output_scale_exponent=0,
+    )
+
+    execution = execute_grounded_plan(plan, (fact,))
+
+    assert execution.answer == 361481878.0
+    assert execute_query(execution.pandas_query, {"df1": _frame((fact,))}) == 361481878.0
+
+
 def test_dag_executes_compound_entity_count() -> None:
     facts = (
         _fact("ca-a", "100", entity="AAA"),
@@ -188,6 +208,13 @@ def test_dag_executes_median_filter_argmax_and_select() -> None:
     execution = execute_grounded(program, facts)
 
     assert execution.answer == 15.0
+    assert {fact.observation_uid for fact in execution.facts} == {
+        "margin-20",
+        "margin-21",
+        "margin-22",
+        "rank-20",
+        "roe-20",
+    }
     assert execute_query(execution.pandas_query, {"df1": _frame(facts)}) == 15.0
 
 

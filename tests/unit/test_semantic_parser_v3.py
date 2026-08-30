@@ -3,11 +3,15 @@ from __future__ import annotations
 from dataclasses import replace
 
 from text2pandas.application.parsing import (
+    MetricHypothesis,
+    MetricResolutionResult,
     OperationKind,
     QuestionAnnotations,
+    QuestionMetricMention,
     ReturnMode,
     SemanticParser,
 )
+from text2pandas.domain.metrics import normalize_phrase
 from text2pandas.domain.semantic import (
     Aggregate,
     AggregateFunction,
@@ -22,8 +26,10 @@ from text2pandas.domain.semantic import (
     Literal,
     LogicalPredicate,
     MetricRef,
+    PeriodSemantics,
     PredicateQuantifier,
     QuantifiedPredicate,
+    Rank,
     RankDirection,
     SelectAtArg,
     Unary,
@@ -42,6 +48,121 @@ class StaticAnnotator:
         return self.annotations
 
 
+class MovementResolver:
+    fingerprint = "movement-fixture"
+
+    def resolve(
+        self,
+        question: str,
+        annotations: QuestionAnnotations,
+    ) -> MetricResolutionResult:
+        normalized = normalize_phrase(question)
+        surface = "chi phi trich lap du phong rui ro cho vay khach hang"
+        start = normalized.index(surface)
+        hypothesis = MetricHypothesis(
+            mention=QuestionMetricMention(
+                start,
+                start + len(surface),
+                surface,
+                surface,
+            ),
+            source_metric_id="source_provision_charge",
+            source_build_id="fixture-build",
+            aliases=("Trích lập dự phòng rủi ro cho vay khách hàng",),
+            metric_codes=(),
+            row_paths=(
+                "Chi phí dự phòng rủi ro › Trích lập dự phòng rủi ro cho vay khách hàng",
+            ),
+            statement_types=("note",),
+            unit=UnitSpec(Dimension.MONEY),
+            period_semantics=PeriodSemantics.FLOW,
+            preferred_basis=Basis.SEPARATE,
+            match_method="fixture",
+            score=(1000, 1000, 9),
+            supporting_observations=2,
+        )
+        return MetricResolutionResult(
+            "RESOLVED",
+            selected=(hypothesis,),
+            hypotheses=(hypothesis,),
+        )
+
+
+class CountSignResolver:
+    fingerprint = "count-sign-fixture"
+
+    def resolve(
+        self,
+        question: str,
+        annotations: QuestionAnnotations,
+    ) -> MetricResolutionResult:
+        normalized = normalize_phrase(question)
+        surface = "luu chuyen tien rong tu hoat dong dau tu am"
+        start = normalized.index(surface)
+        hypothesis = MetricHypothesis(
+            mention=QuestionMetricMention(
+                start,
+                start + len(surface),
+                surface,
+                surface,
+            ),
+            source_metric_id="source_investing_cash_flow",
+            source_build_id="fixture-build",
+            aliases=("Lưu chuyển tiền thuần từ hoạt động đầu tư",),
+            metric_codes=("30",),
+            row_paths=("Lưu chuyển tiền thuần từ hoạt động đầu tư",),
+            statement_types=("cash_flow",),
+            unit=UnitSpec(Dimension.MONEY),
+            period_semantics=PeriodSemantics.FLOW,
+            preferred_basis=Basis.CONSOLIDATED,
+            match_method="fixture",
+            score=(1000, 1000, 8),
+            supporting_observations=3,
+        )
+        return MetricResolutionResult(
+            "RESOLVED",
+            selected=(hypothesis,),
+            hypotheses=(hypothesis,),
+        )
+
+
+class FormulaOperandResolver:
+    fingerprint = "formula-operand-fixture"
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def resolve(
+        self,
+        question: str,
+        annotations: QuestionAnnotations,
+    ) -> MetricResolutionResult:
+        self.calls += 1
+        normalized = normalize_phrase(question)
+        surface = "loi nhuan thuan tu hoat dong kinh doanh"
+        start = normalized.index(surface)
+        hypothesis = MetricHypothesis(
+            mention=QuestionMetricMention(start, start + len(surface), surface, surface),
+            source_metric_id="source_operating_profit",
+            source_build_id="fixture-build",
+            aliases=("Lợi nhuận thuần từ hoạt động kinh doanh (30=20+21-22)",),
+            metric_codes=("30",),
+            row_paths=("Lợi nhuận thuần từ hoạt động kinh doanh (30=20+21-22)",),
+            statement_types=("income_statement",),
+            unit=UnitSpec(Dimension.MONEY),
+            period_semantics=PeriodSemantics.FLOW,
+            preferred_basis=Basis.CONSOLIDATED,
+            match_method="fixture",
+            score=(1000, 1000, 8),
+            supporting_observations=3,
+        )
+        return MetricResolutionResult(
+            "RESOLVED",
+            selected=(hypothesis,),
+            hypotheses=(hypothesis,),
+        )
+
+
 def _annotations(**changes: object) -> QuestionAnnotations:
     base = QuestionAnnotations(
         entities=("VCB",),
@@ -52,6 +173,30 @@ def _annotations(**changes: object) -> QuestionAnnotations:
         mode="single",
     )
     return replace(base, **changes)
+
+
+def test_formula_match_does_not_skip_unreviewed_operand_resolution() -> None:
+    resolver = FormulaOperandResolver()
+    parser = SemanticParser(
+        load_ontology(),
+        StaticAnnotator(
+            _annotations(
+                operation=OperationKind.EXTREMUM,
+                return_mode=ReturnMode.SELECT_AT_ARG,
+                rank_direction=RankDirection.ASCENDING,
+                requested_unit=UnitSpec(Dimension.PERCENT),
+            )
+        ),
+        resolver,
+    )
+
+    result = parser.parse(
+        "Doanh nghiệp có lợi nhuận thuần từ hoạt động kinh doanh thấp nhất "
+        "có biên lợi nhuận ròng là bao nhiêu phần trăm?"
+    )
+
+    assert resolver.calls == 1
+    assert tuple(binding.metric_codes for binding in result.source_bindings) == (("30",),)
 
 
 def _parse(question: str, annotations: QuestionAnnotations):
@@ -67,6 +212,42 @@ def test_direct_metric_compiles_to_canonical_metric_ref() -> None:
     assert result.ast.expression.entities == ("VCB",)
 
 
+def test_reviewed_net_revenue_owns_longer_reported_statement_alias() -> None:
+    result = _parse(
+        "Doanh thu thuần về bán hàng và cung cấp dịch vụ của VCB năm 2024?",
+        _annotations(),
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, MetricRef)
+    assert result.ast.expression.metric_id == "net_revenue"
+
+
+def test_count_sign_survives_source_resolver_absorbing_polarity_token() -> None:
+    question = (
+        "SAB có số năm lưu chuyển tiền ròng từ hoạt động đầu tư âm "
+        "là bao nhiêu trong các năm 2022, 2023 và 2024?"
+    )
+    annotations = _annotations(
+        entities=("SAB",),
+        periods=("2022", "2023", "2024"),
+        requested_unit=UnitSpec(Dimension.COUNT),
+        operation=OperationKind.COUNT,
+    )
+
+    result = SemanticParser(
+        load_ontology(),
+        StaticAnnotator(annotations),
+        CountSignResolver(),
+    ).parse(question)
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+    assert result.ast.expression.function is AggregateFunction.COUNT
+    assert isinstance(result.ast.expression.expression, Filter)
+    assert isinstance(result.ast.expression.expression.predicate, Comparison)
+
+
 def test_difference_across_entities_is_one_generic_arithmetic_tree() -> None:
     annotations = _annotations(
         entities=("VCB", "BID"),
@@ -80,6 +261,32 @@ def test_difference_across_entities_is_one_generic_arithmetic_tree() -> None:
     assert result.ast.expression.operator == ArithmeticOperator.SUBTRACT
     assert result.ast.expression.left.entities == ("VCB",)
     assert result.ast.expression.right.entities == ("BID",)
+
+
+def test_movement_qualifier_rebinds_point_in_time_metric_to_source_flow() -> None:
+    annotations = _annotations(
+        entities=("MBB", "CTG"),
+        periods=("2023",),
+        basis=Basis.SEPARATE,
+        operation=OperationKind.SUBTRACT,
+        mode="compare",
+    )
+    parser = SemanticParser(
+        load_ontology(),
+        StaticAnnotator(annotations),
+        MovementResolver(),
+    )
+
+    result = parser.parse(
+        "Chênh lệch chi phí trích lập dự phòng rủi ro cho vay khách hàng "
+        "năm 2023 giữa MBB và CTG?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Arithmetic)
+    assert result.ast.expression.left.metric_id == "source_provision_charge"
+    assert result.ast.expression.right.metric_id == "source_provision_charge"
+    assert result.ast.expression.left.period_semantics is PeriodSemantics.FLOW
 
 
 def test_absolute_difference_compiles_to_typed_unary_expression() -> None:
@@ -203,6 +410,47 @@ def test_unreviewed_divide_fails_closed() -> None:
 
     assert not result.ok
     assert result.reason == "UNREVIEWED_RELATIONAL_FORMULA"
+
+
+def test_rank_member_compiles_explicit_ratio_operands_by_grammar() -> None:
+    annotations = _annotations(
+        periods=("2022", "2024"),
+        operation=OperationKind.EXTREMUM,
+        rank_direction=RankDirection.DESCENDING,
+        return_mode=ReturnMode.MEMBER,
+    )
+    result = _parse(
+        "Năm nào VCB có tỷ lệ tổng tài sản trên nợ phải trả cao nhất?",
+        annotations,
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Rank)
+    assert isinstance(result.ast.expression.by, Arithmetic)
+    assert result.ast.expression.by.operator == ArithmeticOperator.DIVIDE
+    assert result.ast.expression.by.left.metric_id == "total_assets"
+    assert result.ast.expression.by.right.metric_id == "total_liabilities"
+
+
+def test_rank_share_uses_operand_magnitudes() -> None:
+    annotations = _annotations(
+        periods=("2022", "2024"),
+        operation=OperationKind.EXTREMUM,
+        rank_direction=RankDirection.DESCENDING,
+        return_mode=ReturnMode.MEMBER,
+    )
+    result = _parse(
+        "Năm nào VCB có tỷ trọng tổng tài sản trên nợ phải trả cao nhất?",
+        annotations,
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Rank)
+    assert isinstance(result.ast.expression.by, Arithmetic)
+    assert isinstance(result.ast.expression.by.left, Unary)
+    assert isinstance(result.ast.expression.by.right, Unary)
+    assert result.ast.expression.by.left.operator == UnaryOperator.ABSOLUTE
+    assert result.ast.expression.by.right.operator == UnaryOperator.ABSOLUTE
 
 
 def test_reported_metric_supports_lookup_but_not_unreviewed_derivation() -> None:
@@ -354,6 +602,24 @@ def test_direct_binary_metric_preserves_explicit_counterparty_selector() -> None
     )
     assert result.ast.expression.right.required_context_phrases == (
         "ngan hang tmcp quoc te",
+    )
+
+
+def test_direct_metric_preserves_named_counterparty_without_legal_prefix() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"BVH": "Tập đoàn Bảo Việt"}),
+    )
+
+    result = parser.parse(
+        "Khoản vay ngắn hạn từ Bảo Việt Nhân thọ của công ty mẹ Tập đoàn "
+        "Bảo Việt cuối năm 2024 là bao nhiêu triệu đồng?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, MetricRef)
+    assert result.ast.expression.required_context_phrases == (
+        "bao viet nhan tho",
     )
 
 

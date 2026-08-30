@@ -6,7 +6,7 @@ row or dataframe identifiers; those belong to the bound execution plan.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from typing import Any, TypeAlias
 
@@ -178,6 +178,59 @@ Expression: TypeAlias = (
     MetricRef | Literal | Arithmetic | Unary | FormulaCall | Aggregate | Filter | Rank | SelectAtArg
 )
 Predicate: TypeAlias = Comparison | Exists | LogicalPredicate | QuantifiedPredicate
+
+
+def iter_metric_refs(expression: Expression) -> Iterator[MetricRef]:
+    """Walk metric leaves in deterministic expression order."""
+
+    if isinstance(expression, MetricRef):
+        yield expression
+        return
+    if isinstance(expression, Literal):
+        return
+    if isinstance(expression, Arithmetic):
+        yield from iter_metric_refs(expression.left)
+        yield from iter_metric_refs(expression.right)
+        return
+    if isinstance(expression, Unary):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, FormulaCall):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, Aggregate):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, Filter):
+        yield from _iter_predicate_metric_refs(expression.predicate)
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, Rank):
+        yield from iter_metric_refs(expression.by)
+        return
+    if isinstance(expression, SelectAtArg):
+        yield from iter_metric_refs(expression.rank)
+        yield from iter_metric_refs(expression.expression)
+        return
+    raise TypeError(f"unsupported expression: {type(expression).__name__}")
+
+
+def _iter_predicate_metric_refs(predicate: Predicate) -> Iterator[MetricRef]:
+    if isinstance(predicate, Comparison):
+        yield from iter_metric_refs(predicate.left)
+        yield from iter_metric_refs(predicate.right)
+        return
+    if isinstance(predicate, Exists):
+        yield from iter_metric_refs(predicate.expression)
+        return
+    if isinstance(predicate, LogicalPredicate):
+        for child in predicate.predicates:
+            yield from _iter_predicate_metric_refs(child)
+        return
+    if isinstance(predicate, QuantifiedPredicate):
+        yield from _iter_predicate_metric_refs(predicate.predicate)
+        return
+    raise TypeError(f"unsupported predicate: {type(predicate).__name__}")
 
 
 @dataclass(frozen=True, slots=True)

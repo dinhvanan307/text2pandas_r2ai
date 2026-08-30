@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import math
+import re
 import sqlite3
 from collections import defaultdict
 from collections.abc import Sequence
+from dataclasses import replace
 from decimal import Decimal, InvalidOperation
 
+from text2pandas.application.usecases.grounded_resolution import (
+    LogicalFactResolver,
+    contracts_from_query_concepts,
+)
 from text2pandas.application.usecases.grounded_synthesis import GroundedFact
 from text2pandas.domain.metrics import normalize_phrase
 from text2pandas.domain.semantic import Basis, Dimension
@@ -54,6 +60,13 @@ class GroundedFactRetriever:
     ) -> tuple[GroundedFact, ...]:
         if limit < 1:
             raise ValueError("limit must be positive")
+        # Deterministic execution requires a governed metric contract.  Whole-
+        # question lexical fallback can retrieve a numerically plausible but
+        # semantically unrelated row (for example cash for minimum leases).
+        # Unknown metrics stay on the fail-closed path until source resolution
+        # can name and constrain them.
+        if not query_concepts:
+            return ()
         docs = tuple(dict.fromkeys(str(value) for value in document_ids if value))
         tables = tuple(dict.fromkeys(str(value) for value in table_uids if value))
         if not docs and not tables:
@@ -82,7 +95,21 @@ class GroundedFactRetriever:
             for concept in query_concepts
         )
         concept_statement_types = {
-            concept.metric_id: frozenset(concept.statement_types)
+            concept.metric_id: frozenset(concept.statement_types) for concept in query_concepts
+        }
+        concept_metric_codes = {
+            concept.metric_id: frozenset(concept.metric_codes) for concept in query_concepts
+        }
+        concept_surfaces = {
+            concept.metric_id: tuple(
+                normalize_phrase(value) for value in concept.query_surfaces if value
+            )
+            for concept in query_concepts
+        }
+        concept_context = {
+            concept.metric_id: tuple(
+                normalize_phrase(value) for value in concept.required_context_phrases if value
+            )
             for concept in query_concepts
         }
         aliases_by_metric = dict(concept_aliases)
@@ -99,6 +126,9 @@ class GroundedFactRetriever:
             column_tokens = set(tokenize(fact.column_path))
             normalized_leaf = normalize_fact_label(leaf)
             normalized_leaf_tokens = set(tokenize(normalized_leaf))
+            normalized_context = normalize_phrase(
+                f"{fact.row_path} {fact.section_text} {fact.column_path}"
+            )
             exact_concepts = [
                 metric_id
                 for metric_id, aliases in concept_aliases
@@ -107,23 +137,30 @@ class GroundedFactRetriever:
             contained_concepts = [
                 metric_id
                 for metric_id, aliases in concept_aliases
-                if any(
-                    normalized_leaf in alias or alias in normalized_leaf
-                    for alias in aliases
-                )
+                if any(normalized_leaf in alias or alias in normalized_leaf for alias in aliases)
             ]
             structural_concepts = [
                 metric_id
                 for metric_id, aliases in concept_aliases
                 if fact.metric_code in _METRIC_CODES.get(metric_id, frozenset())
                 and max(
-                    (
-                        len(set(tokenize(alias)) & normalized_leaf_tokens)
-                        for alias in aliases
-                    ),
+                    (len(set(tokenize(alias)) & normalized_leaf_tokens) for alias in aliases),
                     default=0,
                 )
                 >= 2
+            ]
+            contextual_concepts = [
+                metric_id
+                for metric_id, aliases in concept_aliases
+                if any(_contextual_alias_match(alias, normalized_context) for alias in aliases)
+                and _surface_qualifiers_present(
+                    concept_surfaces.get(metric_id, ()),
+                    aliases,
+                    normalized_context,
+                )
+                and all(
+                    phrase in normalized_context for phrase in concept_context.get(metric_id, ())
+                )
             ]
             exact_matching_terms = [
                 term for term in normalized_terms if term and normalized_leaf == term
@@ -141,15 +178,19 @@ class GroundedFactRetriever:
                     structural_concepts[0]
                     if structural_concepts
                     else (
-                        contained_concepts[0]
-                        if contained_concepts
+                        contextual_concepts[0]
+                        if contextual_concepts
                         else (
-                            min(exact_matching_terms, key=len)
-                            if exact_matching_terms
+                            contained_concepts[0]
+                            if contained_concepts
                             else (
-                                min(contained_matching_terms, key=len)
-                                if contained_matching_terms
-                                else None
+                                min(exact_matching_terms, key=len)
+                                if exact_matching_terms
+                                else (
+                                    min(contained_matching_terms, key=len)
+                                    if contained_matching_terms
+                                    else None
+                                )
                             )
                         )
                     )
@@ -188,8 +229,7 @@ class GroundedFactRetriever:
                 ]
                 alias_precision = max(
                     (
-                        len(alias_tokens & normalized_leaf_tokens)
-                        / len(normalized_leaf_tokens)
+                        len(alias_tokens & normalized_leaf_tokens) / len(normalized_leaf_tokens)
                         for alias_tokens in alias_token_sets
                     ),
                     default=0.0,
@@ -208,28 +248,23 @@ class GroundedFactRetriever:
             prior = 2.5 / (1 + prior_index) if prior_index is not None else 0.0
             document_prior = 25.0 if fact.document_id in docs else 0.0
             basis_prior = (
-                25.0
-                if basis is Basis.UNSPECIFIED and fact.basis is Basis.CONSOLIDATED
-                else 0.0
+                25.0 if basis is Basis.UNSPECIFIED and fact.basis is Basis.CONSOLIDATED else 0.0
             )
             expected_statement_types = concept_statement_types.get(
                 retrieval_metric or "", frozenset()
             )
             statement_prior = (
                 18.0
-                if expected_statement_types
-                and fact.statement_type in expected_statement_types
+                if expected_statement_types and fact.statement_type in expected_statement_types
                 else (-8.0 if expected_statement_types else 0.0)
             )
-            expected_codes = _METRIC_CODES.get(retrieval_metric or "", frozenset())
+            expected_codes = concept_metric_codes.get(
+                retrieval_metric or "", frozenset()
+            ) or _METRIC_CODES.get(retrieval_metric or "", frozenset())
             metric_code_prior = (
                 60.0
                 if expected_codes and fact.metric_code in expected_codes
-                else (
-                    -15.0
-                    if expected_codes and fact.metric_code is not None
-                    else 0.0
-                )
+                else (-15.0 if expected_codes and fact.metric_code is not None else 0.0)
             )
             normalized_row = normalize_phrase(fact.row_path)
             banking_statement_prior = 0.0
@@ -241,20 +276,8 @@ class GroundedFactRetriever:
             specificity = math.log1p(len(leaf_tokens)) / 5.0
             dimension_prior = _dimension_prior(fact.dimension, preferred_dimension)
             scored.append(
-                GroundedFact(
-                    observation_uid=fact.observation_uid,
-                    table_uid=fact.table_uid,
-                    document_id=fact.document_id,
-                    entity=fact.entity,
-                    period=fact.period,
-                    basis=fact.basis,
-                    row_path=fact.row_path,
-                    column_path=fact.column_path,
-                    section_text=fact.section_text,
-                    value=fact.value,
-                    dimension=fact.dimension,
-                    scale_exponent=fact.scale_exponent,
-                    metric_code=fact.metric_code,
+                replace(
+                    fact,
                     retrieval_metric=retrieval_metric,
                     score=(
                         lexical
@@ -270,21 +293,12 @@ class GroundedFactRetriever:
                 )
             )
         scored.sort(key=lambda item: (-item.score, item.observation_uid))
-        deduplicated: list[GroundedFact] = []
-        seen_scope_metric: set[tuple[str, str | None, Basis, str]] = set()
-        for fact in scored:
-            leaf = normalize_fact_label(_metric_leaf(fact))
-            key = (
-                fact.entity,
-                fact.period[:4] if fact.period else None,
-                fact.basis,
-                fact.retrieval_metric or leaf,
-            )
-            if key in seen_scope_metric:
-                continue
-            seen_scope_metric.add(key)
-            deduplicated.append(fact)
-        return self._diversified(deduplicated, limit)
+        return LogicalFactResolver(
+            question,
+            requested_periods=periods,
+            requested_basis=basis,
+            contracts=contracts_from_query_concepts(query_concepts),
+        ).resolve(scored, limit=limit)
 
     def _rows(
         self,
@@ -315,9 +329,7 @@ class GroundedFactRetriever:
             if periods:
                 document_years = tuple(
                     dict.fromkeys(
-                        year
-                        for period in periods
-                        for year in (period, str(int(period) + 1))
+                        year for period in periods for year in (period, str(int(period) + 1))
                     )
                 )
                 year_placeholders = ",".join("?" for _ in document_years)
@@ -349,9 +361,13 @@ class GroundedFactRetriever:
             SELECT o.observation_uid, o.table_uid, t.directory_doc_id,
                    o.ticker, o.period_end, d.basis, o.row_path_text,
                    o.col_path_text, t.section_text, o.value_decimal_text,
-                   o.unit_kind, o.scale_exponent
-                   , COALESCE(o.metric_code, row_meta.metric_code), t.statement_type
-                   , previous_row.row_path_text, o.collision_class
+                   o.unit_kind, o.scale_exponent,
+                   COALESCE(o.metric_code, row_meta.metric_code), t.statement_type,
+                   previous_row.row_path_text, row_meta.is_generic_label,
+                   parent_section.row_path_text, o.collision_class,
+                   t.doc_year, o.period_role, o.is_restated, o.currency,
+                   o.grid_row_idx, o.grid_col_idx, o.row_uid, o.column_uid,
+                   r.confidence
             FROM observations o
             JOIN observation_readiness r USING(observation_uid)
             JOIN tables t USING(table_uid)
@@ -362,7 +378,16 @@ class GroundedFactRetriever:
             LEFT JOIN rows previous_row
               ON previous_row.table_uid = o.table_uid
              AND previous_row.grid_row_idx = o.grid_row_idx - 1
-            WHERE {' AND '.join(clauses)}
+            LEFT JOIN rows parent_section
+              ON parent_section.table_uid = o.table_uid
+             AND parent_section.grid_row_idx = (
+                    SELECT MAX(section_row.grid_row_idx)
+                    FROM rows section_row
+                    WHERE section_row.table_uid = o.table_uid
+                      AND section_row.grid_row_idx < o.grid_row_idx
+                      AND section_row.row_role = 'section'
+                 )
+            WHERE {" AND ".join(clauses)}
               AND o.value_decimal_text IS NOT NULL
             ORDER BY o.table_uid, o.grid_row_idx, o.grid_col_idx, o.observation_uid
             LIMIT ?
@@ -398,7 +423,18 @@ class GroundedFactRetriever:
             metric_code,
             statement_type,
             previous_row_path,
+            is_generic_label,
+            parent_section_path,
             collision_class,
+            document_year,
+            period_role,
+            is_restated,
+            currency,
+            grid_row,
+            grid_column,
+            row_uid,
+            column_uid,
+            source_confidence,
         ) = row
         try:
             value = Decimal(str(value_raw))
@@ -423,6 +459,11 @@ class GroundedFactRetriever:
             previous = str(previous_row_path)
             if previous and previous != raw_row_path:
                 raw_row_path = f"{previous} › {raw_row_path.rsplit('›', 1)[-1].strip()}"
+        raw_row_path = _restore_section_parent(
+            raw_row_path,
+            None if parent_section_path is None else str(parent_section_path),
+            is_generic=bool(is_generic_label),
+        )
         effective_row_path = _effective_row_path(
             raw_row_path, None if metric_code is None else str(metric_code)
         )
@@ -442,6 +483,16 @@ class GroundedFactRetriever:
             metric_code=None if metric_code is None else str(metric_code),
             statement_type=None if statement_type is None else str(statement_type),
             retrieval_metric=None,
+            document_year=(None if document_year is None else int(str(document_year))),
+            period_role=None if period_role is None else str(period_role),
+            is_restated=bool(is_restated),
+            currency=None if currency is None else str(currency),
+            grid_row=None if grid_row is None else int(str(grid_row)),
+            grid_column=None if grid_column is None else int(str(grid_column)),
+            row_uid=None if row_uid is None else str(row_uid),
+            column_uid=None if column_uid is None else str(column_uid),
+            collision_class=(None if collision_class in (None, "") else str(collision_class)),
+            source_confidence=_confidence(source_confidence),
         )
 
     @staticmethod
@@ -467,6 +518,30 @@ class GroundedFactRetriever:
                 seen.add(fact.observation_uid)
         selected.sort(key=lambda item: (-item.score, item.observation_uid))
         return tuple(selected[:limit])
+
+
+def _restore_section_parent(
+    row_path: str,
+    parent_section_path: str | None,
+    *,
+    is_generic: bool,
+) -> str:
+    """Restore a section node omitted from flattened child row paths.
+
+    ``rows.row_role='section'`` is a structural parent, not merely visual
+    decoration.  Limiting restoration to generic labels loses the identity of
+    ordinary children such as ``Chứng khoán ...`` under ``Số trích lập trong
+    năm`` and turns movements into indistinguishable closing balances.
+    """
+
+    leaf = row_path.rsplit("›", 1)[-1].strip()
+    _ = is_generic  # retained for API compatibility and diagnostic callers
+    if not parent_section_path:
+        return row_path
+    parent_leaf = parent_section_path.rsplit("›", 1)[-1].strip()
+    if not parent_leaf or normalize_phrase(parent_leaf) in normalize_phrase(row_path):
+        return row_path
+    return f"{parent_section_path} › {leaf}"
 
 
 def _dimension(unit_kind: str, local_text: str) -> Dimension:
@@ -509,6 +584,109 @@ def _dimension_prior(actual: Dimension, preferred: Dimension) -> float:
     return -100.0
 
 
+def _confidence(value: object) -> float | None:
+    if value is None:
+        return None
+    normalized = str(value).strip().casefold()
+    categorical = {"high": 0.9, "medium": 0.65, "low": 0.35}
+    if normalized in categorical:
+        return categorical[normalized]
+    try:
+        converted = float(normalized)
+    except ValueError:
+        return None
+    return converted if 0.0 <= converted <= 1.0 else None
+
+
+_GENERIC_QUERY_SURFACE_TOKENS = frozenset(
+    {
+        "bao",
+        "nhieu",
+        "tong",
+        "cong",
+        "gia",
+        "tri",
+        "tien",
+        "so",
+        "du",
+        "no",
+        "cua",
+        "tai",
+        "nam",
+        "vnd",
+        "usd",
+        "bang",
+        "chi",
+        "phi",
+        "cac",
+        "khoan",
+        "muc",
+        "goc",
+        "vong",
+        "quay",
+    }
+)
+_GENERIC_CONTEXT_ALIAS_TOKENS = frozenset(
+    {"cac", "khoan", "tong", "cong", "gia", "tri", "so", "du"}
+)
+
+
+def _contextual_alias_match(alias: str, context: str) -> bool:
+    if f" {alias} " in f" {context} ":
+        return True
+    alias_tokens = _metric_identity_tokens(alias)
+    semantic_tokens = alias_tokens - _GENERIC_CONTEXT_ALIAS_TOKENS
+    context_tokens = _metric_identity_tokens(context)
+    return len(semantic_tokens) >= 2 and semantic_tokens <= context_tokens
+
+
+def _surface_qualifiers_present(
+    surfaces: Sequence[str], aliases: Sequence[str], context: str
+) -> bool:
+    alias_tokens = {token for alias in aliases for token in alias.split()}
+    local_surfaces: list[str] = []
+    for surface in surfaces:
+        clauses = tuple(
+            value.strip()
+            for value in re.split(r"\b(?:va|tren|so voi|chia cho)\b", surface)
+            if value.strip()
+        )
+        matching_clauses = tuple(
+            clause
+            for clause in clauses
+            if any(
+                set(alias.split()) <= set(re.findall(r"[a-z0-9]+", clause))
+                for alias in aliases
+                if alias
+            )
+        )
+        local_surfaces.extend(matching_clauses or (surface,))
+    qualifiers = {
+        token
+        for surface in local_surfaces
+        for token in re.findall(r"[a-z0-9]+", surface)
+        if token not in alias_tokens and token not in _GENERIC_QUERY_SURFACE_TOKENS
+    }
+    return not qualifiers or qualifiers <= set(re.findall(r"[a-z0-9]+", context))
+
+
+def _metric_identity_tokens(value: str) -> set[str]:
+    tokens = set(re.findall(r"[a-z0-9]+", normalize_phrase(value)))
+    if {"hu", "u"} <= tokens:
+        tokens -= {"hu", "u"}
+        tokens.add("huu")
+    if {"du", "phong"} <= tokens and (
+        {"giam", "gia"} <= tokens
+        or {"rui", "ro"} <= tokens
+        or "chung" in tokens
+        or "cu" in tokens
+        and "the" in tokens
+    ):
+        tokens -= {"giam", "gia", "rui", "ro"}
+        tokens.add("impairment")
+    return tokens
+
+
 def _metric_leaf(fact: GroundedFact) -> str:
     raw_leaf = fact.row_path.rsplit("›", 1)[-1].strip()
     normalized = normalize_fact_label(raw_leaf)
@@ -545,6 +723,7 @@ _METRIC_CODES: dict[str, frozenset[str]] = {
     "total_assets": frozenset({"270"}),
     "total_liabilities": frozenset({"300"}),
     "equity": frozenset({"400", "410"}),
+    "short_term_borrowings": frozenset({"320"}),
 }
 
 

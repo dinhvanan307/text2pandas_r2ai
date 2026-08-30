@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 from collections.abc import Mapping
 from pathlib import Path
 
+from text2pandas.application.parsing import SemanticParser
+from text2pandas.application.usecases.grounded_ast_compiler import GroundedAstGenerator
 from text2pandas.application.usecases.grounded_composer import (
     DeterministicProgramComposer,
     FallbackGroundedGenerator,
@@ -29,6 +32,9 @@ from text2pandas.infrastructure.llm.ollama import OllamaSemanticProgramGenerator
 from text2pandas.infrastructure.ontology import load_ontology
 from text2pandas.infrastructure.paths import ProjectPaths
 from text2pandas.infrastructure.retrieval.grounded_query import GroundedQueryExpander
+from text2pandas.infrastructure.semantic.a6_metric_resolver import (
+    A6MetricMentionResolver,
+)
 from text2pandas.infrastructure.semantic.legacy_annotator import (
     LegacyVietnameseAnnotator,
 )
@@ -107,7 +113,24 @@ def cmd_grounded_v5(
         raise BuildSafetyError(f"active snapshot preflight failed: {detail}")
     stage = paths.run_dir("grounded-v5", str(args.run_id))
     aliases = load_aliases("a6")
-    deterministic = DeterministicProgramComposer()
+    ontology = load_ontology()
+    annotator = LegacyVietnameseAnnotator(aliases)
+    resolver_connection = sqlite3.connect(
+        f"file:{(active.a6_path / 'silver.db').resolve()}?mode=ro&immutable=1",
+        uri=True,
+    )
+    semantic_parser = SemanticParser(
+        ontology,
+        annotator,
+        A6MetricMentionResolver(
+            resolver_connection,
+            source_build_id=active.a6_build_id,
+            entity_aliases=aliases,
+        ),
+    )
+    deterministic = DeterministicProgramComposer(
+        semantic_generator=GroundedAstGenerator(semantic_parser)
+    )
     generator = (
         deterministic
         if args.deterministic_only
@@ -142,23 +165,26 @@ def cmd_grounded_v5(
             )
 
     try:
-        report = build_grounded_v5_candidate(
-            baseline_zip=Path(args.baseline_zip),
-            secondary_zip=Path(args.secondary_zip) if args.secondary_zip else None,
-            questions_path=questions_path,
-            a6_db=active.a6_path / "silver.db",
-            output_dir=stage,
-            generator=generator,
-            annotator=LegacyVietnameseAnnotator(aliases),
-            config=config,
-            semantic_records_path=(
-                Path(args.semantic_records) if args.semantic_records else None
-            ),
-            query_expander=GroundedQueryExpander(load_ontology()),
-            progress=progress,
-        )
-    except GroundedV5BuildError as error:
-        raise BuildSafetyError(str(error)) from error
+        try:
+            report = build_grounded_v5_candidate(
+                baseline_zip=Path(args.baseline_zip),
+                secondary_zip=Path(args.secondary_zip) if args.secondary_zip else None,
+                questions_path=questions_path,
+                a6_db=active.a6_path / "silver.db",
+                output_dir=stage,
+                generator=generator,
+                annotator=annotator,
+                config=config,
+                semantic_records_path=(
+                    Path(args.semantic_records) if args.semantic_records else None
+                ),
+                query_expander=GroundedQueryExpander(ontology, semantic_parser),
+                progress=progress,
+            )
+        except GroundedV5BuildError as error:
+            raise BuildSafetyError(str(error)) from error
+    finally:
+        resolver_connection.close()
     questions = {
         int(row["id"]): str(row["question"])
         for row in (

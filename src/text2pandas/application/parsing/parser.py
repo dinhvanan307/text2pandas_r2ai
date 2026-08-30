@@ -31,6 +31,7 @@ from text2pandas.domain.semantic import (
     MetricBindingHint,
     MetricRef,
     OutputSpec,
+    PeriodSemantics,
     PredicateQuantifier,
     QuantifiedPredicate,
     QuestionAST,
@@ -55,6 +56,31 @@ from .contracts import (
     QuestionAnnotations,
     QuestionAnnotator,
     ReturnMode,
+)
+
+# Reviewed primary-statement concepts own overlapping unreviewed/reported
+# aliases.  A longer physical spelling such as ``doanh thu thuần về bán hàng
+# và cung cấp dịch vụ`` is still canonical net revenue; allowing the reported
+# alias to shadow it removes governed metric codes and can bind sibling rows
+# such as cost of sales under one dynamic source ID.
+_CANONICAL_STATEMENT_METRICS = frozenset(
+    {
+        "net_revenue",
+        "cogs",
+        "gross_profit",
+        "profit_before_tax",
+        "profit_after_tax",
+        "interest_expense",
+        "cash_flow_from_operations",
+        "current_assets",
+        "inventory",
+        "total_assets",
+        "total_liabilities",
+        "current_liabilities",
+        "equity",
+        "tangible_fixed_assets",
+        "short_term_borrowings",
+    }
 )
 
 
@@ -122,6 +148,7 @@ class SemanticParser:
             result.ast,
             result.reason,
             prepared.trace + result.trace,
+            _source_bindings(prepared.mentions),
         )
 
     def parse_candidates(
@@ -149,6 +176,7 @@ class SemanticParser:
             primary_compiled.ast,
             primary_compiled.reason,
             prepared.trace + primary_compiled.trace,
+            _source_bindings(prepared.mentions),
         )
         output = [
             ParseCandidate(
@@ -199,7 +227,13 @@ class SemanticParser:
                     "source_metric_ids": [value.source_metric_id for value in hypotheses],
                 },
             ) + compiled.trace
-            result = ParseResult(compiled.status, compiled.ast, compiled.reason, trace)
+            result = ParseResult(
+                compiled.status,
+                compiled.ast,
+                compiled.reason,
+                trace,
+                _source_bindings(mentions),
+            )
             key = _parse_candidate_key(result)
             if key in seen:
                 continue
@@ -245,7 +279,30 @@ class SemanticParser:
         ]
         unresolved_reason: str | None = None
         source_hypotheses: tuple[MetricHypothesis, ...] = ()
-        if formula is None and self.resolver is not None and (not mentions or role_fallback):
+        source_validation = any(
+            mention.metric.review_status != "reviewed" for mention in mentions
+        )
+        coherent_phrase_validation = (
+            annotations.operation in {OperationKind.SUM, OperationKind.AVERAGE}
+            and len({mention.metric.metric_id for mention in mentions}) > 1
+        )
+        relational_role_fallback = _needs_explicit_ratio_source_role(
+            normalized,
+            annotations,
+            mentions,
+        )
+        movement_source_validation = _requires_source_movement_resolution(
+            normalized,
+            mentions,
+        )
+        if self.resolver is not None and (
+            (formula is None and not mentions)
+            or role_fallback
+            or source_validation
+            or coherent_phrase_validation
+            or relational_role_fallback
+            or movement_source_validation
+        ):
             resolved = self.resolver.resolve(question, annotations)
             source_hypotheses = resolved.hypotheses
             trace.extend(resolved.trace)
@@ -256,7 +313,42 @@ class SemanticParser:
                 source_mentions = tuple(
                     _source_metric_mention(value) for value in resolved.selected
                 )
-                if mentions:
+                if movement_source_validation:
+                    movement_sources = tuple(
+                        source
+                        for source in source_mentions
+                        if any(
+                            source.start < exact.end and exact.start < source.end
+                            for exact in mentions
+                            if exact.metric.period_semantics
+                            is PeriodSemantics.POINT_IN_TIME
+                        )
+                    )
+                    retained_exact = tuple(
+                        exact
+                        for exact in mentions
+                        if not any(
+                            source.start < exact.end and exact.start < source.end
+                            for source in movement_sources
+                        )
+                    )
+                    mentions = tuple(
+                        sorted(
+                            (*retained_exact, *movement_sources),
+                            key=lambda value: (
+                                value.start,
+                                value.end,
+                                value.metric.metric_id,
+                            ),
+                        )
+                    )
+                elif mentions and (source_validation or coherent_phrase_validation):
+                    mentions = _merge_source_metric_mentions(
+                        mentions,
+                        source_mentions,
+                        operation=annotations.operation,
+                    )
+                elif mentions:
                     # Exact ontology mentions retain precedence. Source evidence
                     # may only fill a missing, non-overlapping semantic role.
                     source_mentions = tuple(
@@ -382,18 +474,10 @@ class SemanticParser:
             if source_mentions
             else mentions[-1]
         )
-        reference = _metric_ref(mention.metric, annotations, source_binding=mention.source_binding)
-        return MetricRef(
-            reference.metric_id,
-            reference.entities,
-            reference.periods,
-            reference.basis,
-            reference.statement_types,
-            reference.expected_unit,
-            reference.period_semantics,
-            reference.qualifiers,
-            _required_context_phrases(normalized_question, mention.start, mention.end),
-            reference.source_binding,
+        return _metric_ref_with_context(
+            mention,
+            annotations,
+            normalized_question,
         )
 
     def _compose(
@@ -409,6 +493,19 @@ class SemanticParser:
     ) -> tuple[Expression, ResultKind] | str:
         operation = annotations.operation
         axis, members = _operation_axis(annotations)
+        explicit_ratio: Expression | None = None
+        if operation == OperationKind.DIVIDE or (
+            operation == OperationKind.EXTREMUM
+            and annotations.return_mode in {ReturnMode.MEMBER, ReturnMode.VALUE}
+        ):
+            ratio_result = _explicit_ratio_expression(
+                normalize_phrase(question), annotations, mentions
+            )
+            if isinstance(ratio_result, str):
+                return ratio_result
+            explicit_ratio = ratio_result
+            if explicit_ratio is not None:
+                base = explicit_ratio
         if operation == OperationKind.LOOKUP and (
             len(annotations.entities) != 1 or len(annotations.periods) != 1
         ):
@@ -438,11 +535,9 @@ class SemanticParser:
         if (
             not isinstance(base, FormulaCall)
             and any(mention.metric.review_status != "reviewed" for mention in mentions)
-            and operation
-            not in (
-                OperationKind.LOOKUP,
-                OperationKind.COUNT,
-                OperationKind.EXTREMUM,
+            and not all(
+                _reported_operation_allowed(mention, operation)
+                for mention in mentions
             )
         ):
             return "REPORTED_METRIC_REQUIRES_REVIEW_FOR_DERIVED_OPERATION"
@@ -471,7 +566,11 @@ class SemanticParser:
                 ResultKind.SCALAR,
             )
         if operation in (OperationKind.LOOKUP, OperationKind.DIVIDE):
-            if operation == OperationKind.DIVIDE and not isinstance(base, FormulaCall):
+            if (
+                operation == OperationKind.DIVIDE
+                and explicit_ratio is None
+                and not isinstance(base, FormulaCall)
+            ):
                 return "UNREVIEWED_RELATIONAL_FORMULA"
             return base, ResultKind.SCALAR
 
@@ -533,9 +632,19 @@ class SemanticParser:
                         ),
                         ResultKind.SCALAR,
                     )
+            if (
+                not isinstance(base, FormulaCall)
+                and len({mention.metric.metric_id for mention in mentions}) != 1
+            ):
+                return "DIRECT_OPERATION_METRIC_AMBIGUOUS"
             return Aggregate(function, axis, base, members), ResultKind.SCALAR
 
         if operation in (OperationKind.SUBTRACT, OperationKind.GROWTH):
+            if (
+                not isinstance(base, FormulaCall)
+                and len({mention.metric.metric_id for mention in mentions}) != 1
+            ):
+                return "DIRECT_OPERATION_METRIC_AMBIGUOUS"
             scoped = _binary_scopes(annotations)
             assert scoped is not None
             left_scope, right_scope = scoped
@@ -637,13 +746,54 @@ class SemanticParser:
                 while start >= 0:
                     raw.append(MetricMention(start, start + len(alias), alias, metric))
                     start = normalized.find(alias, start + 1)
+        canonical_components: list[tuple[int, int]] = []
+        reported = tuple(
+            mention
+            for mention in raw
+            if mention.metric.metric_id.startswith("reported_")
+        )
+        for anchor in raw:
+            if anchor.metric.metric_id not in _CANONICAL_STATEMENT_METRICS:
+                continue
+            component_start = anchor.start
+            component_end = anchor.end
+            expanded = True
+            while expanded:
+                expanded = False
+                for candidate in reported:
+                    if (
+                        candidate.start < component_end
+                        and component_start < candidate.end
+                        and (
+                            candidate.start < component_start
+                            or candidate.end > component_end
+                        )
+                    ):
+                        component_start = min(component_start, candidate.start)
+                        component_end = max(component_end, candidate.end)
+                        expanded = True
+            canonical_components.append((component_start, component_end))
         # Longest span owns nested aliases.  This is ontology resolution, not a
         # list of metric-specific exceptions.
         selected: list[MetricMention] = []
         for mention in sorted(
-            raw, key=lambda value: (-len(value.alias), value.start, value.metric.metric_id)
+            raw,
+            key=lambda value: (
+                value.metric.metric_id not in _CANONICAL_STATEMENT_METRICS,
+                -len(value.alias),
+                value.start,
+                value.metric.metric_id,
+            ),
         ):
-            if any(mention.start >= other.start and mention.end <= other.end for other in selected):
+            if mention.metric.metric_id.startswith("reported_") and any(
+                mention.start < end and start < mention.end
+                for start, end in canonical_components
+            ):
+                continue
+            if any(
+                mention.start >= other.start and mention.end <= other.end
+                for other in selected
+            ):
                 continue
             selected.append(mention)
         return tuple(sorted(selected, key=lambda value: (value.start, value.end)))
@@ -689,7 +839,16 @@ def _source_metric_mention(hypothesis: MetricHypothesis) -> MetricMention:
         sign_policy="signed_as_reported",
         preferred_basis=hypothesis.preferred_basis,
         review_status="source",
-        legal_aggregations=("lookup", "count", "minimum", "maximum"),
+        legal_aggregations=(
+            "lookup",
+            "count",
+            "minimum",
+            "maximum",
+            "sum",
+            "average",
+            "subtract",
+            "growth",
+        ),
     )
     return MetricMention(
         hypothesis.mention.start,
@@ -698,6 +857,85 @@ def _source_metric_mention(hypothesis: MetricHypothesis) -> MetricMention:
         metric,
         binding,
         hypothesis.score,
+    )
+
+
+def _merge_source_metric_mentions(
+    exact_mentions: tuple[MetricMention, ...],
+    source_mentions: tuple[MetricMention, ...],
+    *,
+    operation: OperationKind,
+) -> tuple[MetricMention, ...]:
+    """Let reviewed ontology own overlaps and source evidence replace catalog rows.
+
+    The reported registry contains physical dimension members such as
+    ``Bằng VND`` and ``Bất động sản``. Once scoped A6 resolution succeeds, its
+    unique label hypotheses are authoritative for unreviewed spans; otherwise
+    those members can be misread as an independent financial metric.
+    """
+
+    reviewed = tuple(
+        mention
+        for mention in exact_mentions
+        if mention.metric.review_status == "reviewed"
+    )
+    coherent_sources = tuple(
+        source
+        for source in source_mentions
+        if operation in {OperationKind.SUM, OperationKind.AVERAGE}
+        and source.resolution_score[0] >= 800
+        and source.resolution_score[1] >= 900
+        and sum(
+            source.start < exact.end and exact.start < source.end
+            for exact in reviewed
+        )
+        >= 2
+    )
+    retained_reviewed = tuple(
+        exact
+        for exact in reviewed
+        if not any(
+            source.start <= exact.start and exact.end <= source.end
+            for source in coherent_sources
+        )
+    )
+    supplemental = tuple(
+        source
+        for source in source_mentions
+        if source in coherent_sources
+        or not any(
+            source.start < exact.end and exact.start < source.end
+            for exact in retained_reviewed
+        )
+    )
+    return tuple(
+        sorted(
+            (*retained_reviewed, *supplemental),
+            key=lambda value: (value.start, value.end, value.metric.metric_id),
+        )
+    )
+
+
+def _reported_operation_allowed(
+    mention: MetricMention, operation: OperationKind
+) -> bool:
+    if mention.metric.review_status == "reviewed":
+        return True
+    if mention.metric.review_status == "reported":
+        return operation in {
+            OperationKind.LOOKUP,
+            OperationKind.COUNT,
+            OperationKind.EXTREMUM,
+        }
+    operation_name = {
+        OperationKind.EXTREMUM: (
+            "minimum",
+            "maximum",
+        ),
+        OperationKind.COUNT: ("count",),
+    }.get(operation, (operation.value,))
+    return any(
+        value in mention.metric.legal_aggregations for value in operation_name
     )
 
 
@@ -762,6 +1000,49 @@ def _source_metric_ids(mentions: tuple[MetricMention, ...]) -> tuple[str, ...]:
     )
 
 
+def _source_bindings(
+    mentions: tuple[MetricMention, ...],
+) -> tuple[MetricBindingHint, ...]:
+    """Expose structural source evidence independently of AST compilation.
+
+    Retrieval still needs governed row/code contracts when composition must
+    abstain and a deterministic downstream compiler handles the expression.
+    """
+
+    return tuple(
+        dict.fromkeys(
+            mention.source_binding
+            for mention in mentions
+            if mention.source_binding is not None
+        )
+    )
+
+
+_SOURCE_MOVEMENT_CUE = re.compile(
+    r"\b(?:trich lap|hoan nhap|phat sinh trong nam|tang trong nam|giam trong nam)\b"
+)
+
+
+def _requires_source_movement_resolution(
+    normalized_question: str,
+    mentions: tuple[MetricMention, ...],
+) -> bool:
+    """Detect a movement request wrapped around a point-in-time metric alias."""
+
+    return any(
+        mention.metric.period_semantics is PeriodSemantics.POINT_IN_TIME
+        and _SOURCE_MOVEMENT_CUE.search(
+            normalized_question[
+                max(0, mention.start - 50) : min(
+                    len(normalized_question), mention.end + 50
+                )
+            ]
+        )
+        is not None
+        for mention in mentions
+    )
+
+
 def _parse_candidate_key(result: ParseResult) -> str:
     payload: object
     if result.ast is None:
@@ -794,6 +1075,137 @@ def _metric_ref(
         expected_unit=metric.unit,
         period_semantics=metric.period_semantics,
         source_binding=source_binding,
+    )
+
+
+def _metric_ref_with_context(
+    mention: MetricMention,
+    annotations: QuestionAnnotations,
+    normalized_question: str,
+) -> MetricRef:
+    reference = _metric_ref(
+        mention.metric,
+        annotations,
+        source_binding=mention.source_binding,
+    )
+    return MetricRef(
+        reference.metric_id,
+        reference.entities,
+        reference.periods,
+        reference.basis,
+        reference.statement_types,
+        reference.expected_unit,
+        reference.period_semantics,
+        reference.qualifiers,
+        _required_context_phrases(
+            normalized_question,
+            mention.start,
+            mention.end,
+        ),
+        reference.source_binding,
+    )
+
+
+def _explicit_ratio_expression(
+    normalized_question: str,
+    annotations: QuestionAnnotations,
+    mentions: tuple[MetricMention, ...],
+) -> Expression | str | None:
+    """Compile explicit ``tỷ trọng/tỷ lệ A trên B`` operand roles.
+
+    The grammatical operator owns the roles. Source resolution only binds the
+    two noun phrases, so confidence/support ordering can never swap numerator
+    and denominator.
+    """
+
+    marker = re.search(r"\b(?:ty trong|ty le)\b", normalized_question)
+    if marker is None:
+        return None
+    operator = re.search(r"\btren\b", normalized_question[marker.end() :])
+    if operator is None:
+        return None
+    operator_start = marker.end() + operator.start()
+    operator_end = marker.end() + operator.end()
+    numerator = tuple(
+        mention
+        for mention in mentions
+        if mention.start >= marker.end() and mention.end <= operator_start
+    )
+    denominator = tuple(
+        mention for mention in mentions if mention.start >= operator_end
+    )
+    numerator = _deduplicate_role_mentions(numerator)
+    denominator = _deduplicate_role_mentions(denominator)
+    if not numerator or not denominator:
+        return "EXPLICIT_RATIO_OPERAND_UNRESOLVED"
+    if len(numerator) != 1 or len(denominator) != 1:
+        return "EXPLICIT_RATIO_OPERAND_AMBIGUOUS"
+    numerator_expression: Expression = _metric_ref_with_context(
+        numerator[0], annotations, normalized_question
+    )
+    denominator_expression: Expression = _metric_ref_with_context(
+        denominator[0], annotations, normalized_question
+    )
+    if marker.group(0) == "ty trong":
+        numerator_expression = Unary(
+            UnaryOperator.ABSOLUTE,
+            numerator_expression,
+        )
+        denominator_expression = Unary(
+            UnaryOperator.ABSOLUTE,
+            denominator_expression,
+        )
+    return Arithmetic(
+        ArithmeticOperator.DIVIDE,
+        numerator_expression,
+        denominator_expression,
+    )
+
+
+def _needs_explicit_ratio_source_role(
+    normalized_question: str,
+    annotations: QuestionAnnotations,
+    mentions: tuple[MetricMention, ...],
+) -> bool:
+    if annotations.operation not in {OperationKind.DIVIDE, OperationKind.EXTREMUM}:
+        return False
+    marker = re.search(r"\b(?:ty trong|ty le)\b", normalized_question)
+    if marker is None:
+        return False
+    operator = re.search(r"\btren\b", normalized_question[marker.end() :])
+    if operator is None:
+        return False
+    operator_start = marker.end() + operator.start()
+    operator_end = marker.end() + operator.end()
+    has_numerator = any(
+        mention.start >= marker.end() and mention.end <= operator_start
+        for mention in mentions
+    )
+    has_denominator = any(mention.start >= operator_end for mention in mentions)
+    return not (has_numerator and has_denominator)
+
+
+def _deduplicate_role_mentions(
+    mentions: tuple[MetricMention, ...],
+) -> tuple[MetricMention, ...]:
+    by_metric: dict[str, MetricMention] = {}
+    for mention in mentions:
+        current = by_metric.get(mention.metric.metric_id)
+        if current is None or (
+            mention.resolution_score,
+            mention.end - mention.start,
+            -mention.start,
+        ) > (
+            current.resolution_score,
+            current.end - current.start,
+            -current.start,
+        ):
+            by_metric[mention.metric.metric_id] = mention
+    return tuple(
+        sorted(
+            by_metric.values(),
+            key=lambda value: (value.start, value.end, value.metric.metric_id),
+        )
     )
 
 
@@ -1112,6 +1524,10 @@ _COUNTERPARTY_RELATION = re.compile(
     r"(?:ctcp|tnhh|ngan hang|cong ty)\s+[a-z0-9 -]{2,100}?)\s+"
     r"cua\s+(?:tap doan|tong cong ty|cong ty|ctcp|ngan hang)\b"
 )
+_NAMED_COUNTERPARTY_RELATION = re.compile(
+    r"\btu\s+(?P<name>[a-z0-9][a-z0-9 -]{2,100}?)\s+"
+    r"cua\s+(?:cong ty me|tap doan|tong cong ty|cong ty|ctcp|ngan hang)\b"
+)
 
 
 def _required_context_phrases(
@@ -1119,10 +1535,15 @@ def _required_context_phrases(
 ) -> tuple[str, ...]:
     """Extract an explicit nested-counterparty selector, never an inferred name."""
     phrases = []
-    for match in _COUNTERPARTY_RELATION.finditer(normalized_question):
+    matches = (
+        *_COUNTERPARTY_RELATION.finditer(normalized_question),
+        *_NAMED_COUNTERPARTY_RELATION.finditer(normalized_question),
+    )
+    for match in sorted(matches, key=lambda value: value.span()):
         if mention_end > match.start() or match.start() - mention_end > 80:
             continue
         phrase = " ".join(match.group("name").split())
+        phrase = re.sub(r"^cong ty\s+", "", phrase)
         if len(phrase.split()) >= 2:
             phrases.append(phrase)
     return tuple(dict.fromkeys(phrases))
@@ -1229,11 +1650,14 @@ def _single_count_sign_predicate_role(
     if len(candidates) != 1:
         return None
     candidate = candidates[0]
-    clause = normalized_question[candidate.end : candidate.end + 80]
-    signs = re.findall(r"\b(am|duong)\b", clause)
-    if len(signs) != 1:
+    sign = _candidate_polarity(
+        normalized_question,
+        candidate,
+        clause_end=len(normalized_question),
+    )
+    if sign is None:
         return None
-    operator = ComparisonOperator.LT if signs[0] == "am" else ComparisonOperator.GT
+    operator = ComparisonOperator.LT if sign == "am" else ComparisonOperator.GT
     predicate = Comparison(
         operator,
         candidate.expression,
@@ -1262,11 +1686,14 @@ def _count_sign_predicate_role(
         clause_end = (
             ordered[index + 1].start if index + 1 < len(ordered) else len(normalized_question)
         )
-        clause = normalized_question[candidate.end : min(clause_end, candidate.end + 80)]
-        signs = re.findall(r"\b(am|duong)\b", clause)
-        if len(signs) != 1:
+        sign = _candidate_polarity(
+            normalized_question,
+            candidate,
+            clause_end=clause_end,
+        )
+        if sign is None:
             continue
-        operator = ComparisonOperator.LT if signs[0] == "am" else ComparisonOperator.GT
+        operator = ComparisonOperator.LT if sign == "am" else ComparisonOperator.GT
         predicates.append(
             Comparison(
                 operator,
@@ -1278,6 +1705,31 @@ def _count_sign_predicate_role(
     if len(predicates) < 2 or len({value.identity for value in used}) != len(used):
         return None
     return LogicalPredicate(LogicalOperator.AND, tuple(predicates)), used[0].expression
+
+
+def _candidate_polarity(
+    normalized_question: str,
+    candidate: _ExpressionMention,
+    *,
+    clause_end: int,
+) -> str | None:
+    """Read a sign cue even when a source resolver absorbs it into the span.
+
+    A6 source resolution may extend a valid metric n-gram through the trailing
+    ``âm/dương`` token.  Polarity belongs to grammar, not to metric identity,
+    so accept either one sign immediately after the span or one terminal sign
+    inside it.  Multiple signs remain ambiguous and fail closed.
+    """
+
+    trailing = normalized_question[candidate.end : min(clause_end, candidate.end + 80)]
+    signs = re.findall(r"\b(am|duong)\b", trailing)
+    if len(signs) == 1:
+        return str(signs[0])
+    if signs:
+        return None
+    covered = normalized_question[candidate.start : candidate.end]
+    terminal = re.search(r"\b(am|duong)\b\s*$", covered)
+    return str(terminal.group(1)) if terminal is not None else None
 
 
 def _filtered_aggregate_roles(

@@ -10,8 +10,54 @@ matching:
   min_source_coverage_milli: 600
   max_hypotheses: 20
   require_unique_winner_per_span: true
+  # Corporate-scope boilerplate can appear as a numeric row label in ownership
+  # notes. It is entity/basis context, never a financial metric mention.
+  blocked_scope_tokens:
+    - cua
+    - cong
+    - ty
+    - co
+    - phan
+    - me
+    - tap
+    - doan
+    - tong
+    - ngan
+    - hang
+    - thuong
+    - mai
+    - trach
+    - nhiem
+    - huu
+    - han
+    - ctcp
+    - cp
+    - tmcp
+    # Structural/dimensional row members are qualifiers, not standalone
+    # financial metrics. A longer label such as "Mua nợ bằng VND" remains
+    # eligible because its token set is not contained by this vocabulary.
+    - so
+    - du
+    - dau
+    - cuoi
+    - ky
+    - nam
+    - ngay
+    - tai
+    - vnd
+    - bang
+    - gia
+    - tri
 
 abbreviation_rules:
+  - rule_id: usd_currency_name_v1
+    phrase: usd
+    replacement: do la my usd
+    evidence_qids: [213]
+    negative_examples:
+      - doanh thu bán hàng
+      - chi phí dịch vụ mua ngoài
+    scope: metric_label
   - rule_id: corporate_income_tax_tndn_v1
     phrase: chi phi thue thu nhap hien hanh
     replacement: chi phi thue tndn hien hanh

@@ -43,6 +43,7 @@ class Comparator(StrEnum):
     LT = "lt"
     LTE = "lte"
     EQ = "eq"
+    NE = "ne"
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +64,19 @@ class GroundedFact:
     statement_type: str | None = None
     retrieval_metric: str | None = None
     score: float = 0.0
+    document_year: int | None = None
+    period_role: str | None = None
+    is_restated: bool = False
+    currency: str | None = None
+    grid_row: int | None = None
+    grid_column: int | None = None
+    row_uid: str | None = None
+    column_uid: str | None = None
+    collision_class: str | None = None
+    source_confidence: float | None = None
+    resolution_margin: float | None = None
+    corroboration_count: int = 1
+    score_reasons: tuple[str, ...] = ()
 
     @property
     def period_year(self) -> int | None:
@@ -74,12 +88,17 @@ class GroundedFact:
             return None
 
     def canonical_value(self) -> Decimal:
-        if self.dimension in {Dimension.MONEY, Dimension.SHARES}:
+        if self.dimension is Dimension.MONEY:
             if self.scale_exponent is None:
                 raise GroundedPlanError(
                     f"scale is unknown for {self.dimension.value} fact {self.observation_uid}"
                 )
             return self.value * (Decimal(10) ** self.scale_exponent)
+        if self.dimension is Dimension.SHARES:
+            # A6 stores an absolute share count as ``shares`` with no monetary
+            # scale metadata.  Missing means units (10^0), while an explicit
+            # exponent still supports disclosures in thousand/million shares.
+            return self.value * (Decimal(10) ** (self.scale_exponent or 0))
         return self.value
 
     def to_prompt_dict(self) -> dict[str, object]:
@@ -104,6 +123,15 @@ class GroundedFact:
             "metric_code": self.metric_code,
             "statement_type": self.statement_type,
             "retrieval_metric": self.retrieval_metric,
+            "document_year": self.document_year,
+            "period_role": self.period_role,
+            "is_restated": self.is_restated,
+            "currency": self.currency,
+            "collision_class": self.collision_class,
+            "source_confidence": self.source_confidence,
+            "resolution_margin": self.resolution_margin,
+            "corroboration_count": self.corroboration_count,
+            "score_reasons": list(self.score_reasons),
         }
 
     def to_planner_dict(self) -> dict[str, object]:
@@ -122,6 +150,14 @@ class GroundedFact:
             "metric_code": self.metric_code,
             "statement_type": self.statement_type,
             "retrieval_metric": self.retrieval_metric,
+            "document_year": self.document_year,
+            "period_role": self.period_role,
+            "is_restated": self.is_restated,
+            "currency": self.currency,
+            "collision_class": self.collision_class,
+            "source_confidence": self.source_confidence,
+            "resolution_margin": self.resolution_margin,
+            "corroboration_count": self.corroboration_count,
         }
 
 
@@ -157,9 +193,7 @@ class GroundedPlan:
             raise GroundedPlanError(f"invalid comparator: {comparator_raw!r}") from error
         threshold_raw = raw.get("threshold")
         try:
-            threshold = (
-                None if threshold_raw in (None, "") else Decimal(str(threshold_raw))
-            )
+            threshold = None if threshold_raw in (None, "") else Decimal(str(threshold_raw))
         except InvalidOperation as error:
             raise GroundedPlanError(f"invalid threshold: {threshold_raw!r}") from error
         scale_raw = raw.get("output_scale_exponent")
@@ -168,14 +202,10 @@ class GroundedPlan:
         except ValueError as error:
             raise GroundedPlanError(f"invalid output scale: {scale_raw!r}") from error
         if scale is not None and scale not in {0, 3, 6, 9, 11, 12}:
-            raise GroundedPlanError(
-                f"output scale must be one of 0/3/6/9/11/12, received {scale}"
-            )
+            raise GroundedPlanError(f"output scale must be one of 0/3/6/9/11/12, received {scale}")
         confidence_raw = raw.get("confidence")
         try:
-            confidence = (
-                None if confidence_raw in (None, "") else float(str(confidence_raw))
-            )
+            confidence = None if confidence_raw in (None, "") else float(str(confidence_raw))
         except ValueError as error:
             raise GroundedPlanError(f"invalid confidence: {confidence_raw!r}") from error
         if confidence is not None and (not math.isfinite(confidence) or not 0 <= confidence <= 1):
@@ -237,12 +267,14 @@ class ProgramOperation(StrEnum):
     ANY_BY_ENTITY = "any_by_entity"
     AVERAGE_BY_ENTITY = "average_by_entity"
     SUM_BY_ENTITY = "sum_by_entity"
+    SUM_BY_SCOPE = "sum_by_scope"
     CAGR_BY_ENTITY = "cagr_by_entity"
     DROP_FIRST_BY_ENTITY = "drop_first_by_entity"
     ROLLING_CHANGE = "rolling_change"
     TOP_K_MASK = "top_k_mask"
     BOTTOM_K_MASK = "bottom_k_mask"
     SHIFT_KEY = "shift_key"
+    KEY_TO_NUMBER = "key_to_number"
     FIRST_TRUE_KEY = "first_true_key"
     LAST_TRUE_KEY = "last_true_key"
     TO_PERCENT = "to_percent"
@@ -253,6 +285,8 @@ class ProgramOperation(StrEnum):
     MINIMUM = "minimum"
     MAXIMUM = "maximum"
     COMPARE = "compare"
+    IS_NONZERO = "is_nonzero"
+    IS_ZERO = "is_zero"
     LOGICAL_AND = "logical_and"
     LOGICAL_OR = "logical_or"
     FILTER = "filter"
@@ -290,11 +324,7 @@ class ProgramNode:
             raise GroundedPlanError("program literal must be finite")
         comparator_raw = raw.get("comparator")
         try:
-            comparator = (
-                None
-                if comparator_raw in (None, "")
-                else Comparator(str(comparator_raw))
-            )
+            comparator = None if comparator_raw in (None, "") else Comparator(str(comparator_raw))
         except ValueError as error:
             raise GroundedPlanError(f"invalid program comparator: {comparator_raw!r}") from error
         input_ids = _string_tuple(raw.get("input_ids"), "input_ids")
@@ -330,9 +360,7 @@ class GroundedProgram:
         if not isinstance(nodes_raw, Sequence) or isinstance(nodes_raw, (str, bytes)):
             raise GroundedPlanError("program nodes must be a list")
         nodes = tuple(
-            ProgramNode.from_mapping(item)
-            for item in nodes_raw
-            if isinstance(item, Mapping)
+            ProgramNode.from_mapping(item) for item in nodes_raw if isinstance(item, Mapping)
         )
         if len(nodes) != len(nodes_raw) or not nodes:
             raise GroundedPlanError("every program node must be an object")
@@ -367,8 +395,10 @@ class GroundedProgram:
                 ),
                 reverse=True,
             )
-            if ranked and ranked[0][0] >= 0.94 and (
-                len(ranked) == 1 or ranked[0][0] - ranked[1][0] >= 0.03
+            if (
+                ranked
+                and ranked[0][0] >= 0.94
+                and (len(ranked) == 1 or ranked[0][0] - ranked[1][0] >= 0.03)
             ):
                 return ranked[0][1]
             return value
@@ -407,9 +437,7 @@ class GroundedProgram:
         if output_dimension not in {Dimension.MONEY, Dimension.SHARES}:
             scale = None
         if scale is not None and scale not in {0, 3, 6, 9, 11, 12}:
-            raise GroundedPlanError(
-                "program output scale must be one of 0/3/6/9/11/12"
-            )
+            raise GroundedPlanError("program output scale must be one of 0/3/6/9/11/12")
         confidence_raw = raw.get("confidence")
         try:
             confidence = None if confidence_raw is None else float(str(confidence_raw))
@@ -425,12 +453,14 @@ class _Scalar:
     value: Decimal
     expression: str
     dimension: Dimension
+    fact_uids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class _Boolean:
     value: bool
     expression: str
+    fact_uids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -445,9 +475,20 @@ class _Series:
 class _Key:
     value: str
     grounding_expression: str
+    fact_uids: tuple[str, ...] = ()
 
 
 _ProgramValue = _Scalar | _Boolean | _Series | _Key
+
+
+def _merge_fact_uids(
+    *values: _Scalar | _Boolean | _Key | tuple[str, ...],
+) -> tuple[str, ...]:
+    merged: list[str] = []
+    for value in values:
+        uids = value if isinstance(value, tuple) else value.fact_uids
+        merged.extend(uids)
+    return tuple(dict.fromkeys(merged))
 
 
 def execute_grounded_program(
@@ -504,7 +545,7 @@ def execute_grounded_program(
     answer = float(converted)
     if not math.isfinite(answer):
         raise GroundedPlanError("program result is not finite")
-    selected = tuple(facts_by_uid[uid] for uid in dict.fromkeys(used_uids))
+    selected = tuple(facts_by_uid[uid] for uid in output.fact_uids)
     if not selected:
         raise GroundedPlanError("program is not grounded in any A6 observation")
     return GroundedExecution(answer, f"float({expression})", selected, adapter)
@@ -517,9 +558,7 @@ def execute_grounded(
     dataframe_variable: str = "df1",
 ) -> GroundedExecution:
     if isinstance(plan, GroundedProgram):
-        return execute_grounded_program(
-            plan, candidates, dataframe_variable=dataframe_variable
-        )
+        return execute_grounded_program(plan, candidates, dataframe_variable=dataframe_variable)
     return execute_grounded_plan(plan, candidates, dataframe_variable=dataframe_variable)
 
 
@@ -532,7 +571,17 @@ def _execute_program_node(
 ) -> _ProgramValue:
     operation = node.operation
     if operation is ProgramOperation.FACTS:
-        if inputs or not node.fact_uids or node.axis not in {"entity", "period", "entity_period"}:
+        if (
+            inputs
+            or not node.fact_uids
+            or node.axis
+            not in {
+                "entity",
+                "period",
+                "entity_period",
+                "entity_period_observation",
+            }
+        ):
             raise GroundedPlanError(
                 f"facts node {node.node_id} requires fact_uids, an axis and no inputs"
             )
@@ -550,16 +599,18 @@ def _execute_program_node(
                 key = fact.entity
             elif node.axis == "period":
                 key = str(fact.period_year) if fact.period_year is not None else ""
-            else:
+            elif node.axis == "entity_period":
                 year = str(fact.period_year) if fact.period_year is not None else ""
                 key = f"{fact.entity}|{year}"
+            else:
+                year = str(fact.period_year) if fact.period_year is not None else ""
+                key = f"{fact.entity}|{year}|{fact.observation_uid}"
             if not key:
                 raise GroundedPlanError(f"fact {uid} has no {node.axis} key")
-            points.append((key, _Scalar(value, expression, dimension)))
+            points.append((key, _Scalar(value, expression, dimension, (uid,))))
         if len(retrieval_metrics) > 1:
             raise GroundedPlanError(
-                f"facts node {node.node_id} mixes retrieval metrics: "
-                f"{sorted(retrieval_metrics)}"
+                f"facts node {node.node_id} mixes retrieval metrics: {sorted(retrieval_metrics)}"
             )
         if len({key for key, _value in points}) != len(points):
             raise GroundedPlanError(f"facts node {node.node_id} has duplicate axis keys")
@@ -595,6 +646,14 @@ def _execute_program_node(
         if len(inputs) != 1 or not isinstance(inputs[0], _Series):
             raise GroundedPlanError(f"{operation.value} requires one numeric series")
         return _program_temporal_growth(operation, inputs[0])
+    if operation is ProgramOperation.SUM_BY_SCOPE:
+        if len(inputs) != 1 or not isinstance(inputs[0], _Series):
+            raise GroundedPlanError("sum_by_scope requires one numeric series")
+        if node.axis not in {"entity", "period", "entity_period"}:
+            raise GroundedPlanError(
+                "sum_by_scope requires entity, period or entity_period target axis"
+            )
+        return _program_sum_by_scope(inputs[0], node.axis)
     if operation in {ProgramOperation.ALL_BY_ENTITY, ProgramOperation.ANY_BY_ENTITY}:
         if len(inputs) != 1 or not isinstance(inputs[0], _Series):
             raise GroundedPlanError(f"{operation.value} requires one boolean series")
@@ -607,6 +666,19 @@ def _execute_program_node(
         if len(inputs) != 1 or not isinstance(inputs[0], _Key):
             raise GroundedPlanError("shift_key requires one key input")
         return _program_shift_key(inputs[0], node.literal)
+    if operation is ProgramOperation.KEY_TO_NUMBER:
+        if len(inputs) != 1 or not isinstance(inputs[0], _Key):
+            raise GroundedPlanError("key_to_number requires one key input")
+        try:
+            numeric_key = Decimal(inputs[0].value)
+        except InvalidOperation as error:
+            raise GroundedPlanError("key_to_number requires a numeric period key") from error
+        return _Scalar(
+            numeric_key,
+            f"({inputs[0].value} + {inputs[0].grounding_expression})",
+            Dimension.PERIOD,
+            inputs[0].fact_uids,
+        )
     if operation in {ProgramOperation.FIRST_TRUE_KEY, ProgramOperation.LAST_TRUE_KEY}:
         if len(inputs) != 1 or not isinstance(inputs[0], _Series):
             raise GroundedPlanError(f"{operation.value} requires one boolean series")
@@ -615,7 +687,13 @@ def _execute_program_node(
         if len(inputs) != 1:
             raise GroundedPlanError("absolute node requires one input")
         return _program_unary_numeric(
-            inputs[0], lambda item: _Scalar(abs(item.value), f"abs({item.expression})", item.dimension)
+            inputs[0],
+            lambda item: _Scalar(
+                abs(item.value),
+                f"abs({item.expression})",
+                item.dimension,
+                item.fact_uids,
+            ),
         )
     if operation is ProgramOperation.TO_PERCENT:
         if len(inputs) != 1:
@@ -626,6 +704,7 @@ def _execute_program_node(
                 item.value * Decimal(100),
                 f"({item.expression} * 100)",
                 Dimension.PERCENT,
+                item.fact_uids,
             ),
         )
     if operation in {
@@ -642,23 +721,40 @@ def _execute_program_node(
         if len(inputs) != 2 or node.comparator is None:
             raise GroundedPlanError("compare node requires two inputs and comparator")
         return _program_compare(node.comparator, inputs[0], inputs[1])
+    if operation in {ProgramOperation.IS_NONZERO, ProgramOperation.IS_ZERO}:
+        if len(inputs) != 1:
+            raise GroundedPlanError(f"{operation.value} requires one numeric input")
+        return _program_numeric_presence(operation, inputs[0])
     if operation in {ProgramOperation.LOGICAL_AND, ProgramOperation.LOGICAL_OR}:
         if len(inputs) != 2:
             raise GroundedPlanError(f"{operation.value} node requires two inputs")
         return _program_logical(operation, inputs[0], inputs[1])
     if operation is ProgramOperation.FILTER:
-        if len(inputs) != 2 or not isinstance(inputs[0], _Series) or not isinstance(
-            inputs[1], _Series
+        if (
+            len(inputs) != 2
+            or not isinstance(inputs[0], _Series)
+            or not isinstance(inputs[1], _Series)
         ):
             raise GroundedPlanError("filter node requires value and boolean series")
         predicates = inputs[1].mapping()
+        decision_uids = _merge_fact_uids(
+            *(item for _key, item in _boolean_series(inputs[1]))
+        )
         filtered_points: list[tuple[str, _Scalar | _Boolean]] = []
         for key, point_value in inputs[0].values:
             predicate = predicates.get(key)
             if not isinstance(predicate, _Boolean):
                 raise GroundedPlanError(f"filter predicate missing key {key}")
             if predicate.value:
-                filtered_points.append((key, point_value))
+                filtered_points.append(
+                    (
+                        key,
+                        replace(
+                            point_value,
+                            fact_uids=_merge_fact_uids(point_value, decision_uids),
+                        ),
+                    )
+                )
         if not filtered_points:
             raise GroundedPlanError("filter removes every candidate")
         return _Series(tuple(filtered_points))
@@ -674,7 +770,11 @@ def _execute_program_node(
             else min(numeric, key=lambda item: (item[1].value, item[0]))
         )
         grounding = " + ".join(f"0 * ({item.expression})" for _key, item in numeric)
-        return _Key(chosen[0], grounding)
+        return _Key(
+            chosen[0],
+            grounding,
+            _merge_fact_uids(*(item for _key, item in numeric)),
+        )
     if operation is ProgramOperation.SELECT_AT_KEY:
         if (
             len(inputs) != 2
@@ -689,6 +789,7 @@ def _execute_program_node(
             chosen_value.value,
             f"({chosen_value.expression} + {inputs[1].grounding_expression})",
             chosen_value.dimension,
+            _merge_fact_uids(chosen_value, inputs[1]),
         )
     if operation is ProgramOperation.COUNT_TRUE:
         if not inputs:
@@ -704,15 +805,12 @@ def _execute_program_node(
         keys = [key for key, _item in boolean_points]
         if len(keys) != len(set(keys)):
             raise GroundedPlanError("count_true inputs contain duplicate keys")
-        expression = (
-            "("
-            + " + ".join(f"({item.expression})" for _key, item in boolean_points)
-            + ")"
-        )
+        expression = "(" + " + ".join(f"({item.expression})" for _key, item in boolean_points) + ")"
         return _Scalar(
             Decimal(sum(item.value for _key, item in boolean_points)),
             expression,
             Dimension.COUNT,
+            _merge_fact_uids(*(item for _key, item in boolean_points)),
         )
     raise GroundedPlanError(f"unsupported program node operation: {operation.value}")
 
@@ -729,9 +827,7 @@ def _program_binary(
     return _scalar_binary(operation, left, right)
 
 
-def _program_temporal_growth(
-    operation: ProgramOperation, series: _Series
-) -> _Series:
+def _program_temporal_growth(operation: ProgramOperation, series: _Series) -> _Series:
     numeric = _numeric_series(series)
     if operation in {ProgramOperation.ROLLING_GROWTH, ProgramOperation.ROLLING_CHANGE}:
         try:
@@ -756,9 +852,7 @@ def _program_temporal_growth(
                         previous,
                     ),
                 )
-                for (_previous_key, previous), (current_key, current) in pairwise(
-                    rolling_ordered
-                )
+                for (_previous_key, previous), (current_key, current) in pairwise(rolling_ordered)
             )
         )
     grouped: dict[str, list[tuple[int, _Scalar]]] = {}
@@ -767,9 +861,7 @@ def _program_temporal_growth(
             entity, year_raw = key.rsplit("|", 1)
             year = int(year_raw)
         except ValueError as error:
-            raise GroundedPlanError(
-                "growth_by_entity requires entity_period-axis keys"
-            ) from error
+            raise GroundedPlanError("growth_by_entity requires entity_period-axis keys") from error
         grouped.setdefault(entity, []).append((year, value))
     output: list[tuple[str, _Scalar | _Boolean]] = []
     for entity, values in sorted(grouped.items()):
@@ -779,10 +871,7 @@ def _program_temporal_growth(
                 raise GroundedPlanError(
                     f"drop_first_by_entity requires at least two periods for {entity}"
                 )
-            output.extend(
-                (f"{entity}|{year}", value)
-                for year, value in entity_ordered[1:]
-            )
+            output.extend((f"{entity}|{year}", value) for year, value in entity_ordered[1:])
             continue
         if operation in {
             ProgramOperation.ROLLING_AVERAGE_BY_ENTITY,
@@ -792,9 +881,7 @@ def _program_temporal_growth(
                 raise GroundedPlanError(
                     f"{operation.value} requires at least two periods for {entity}"
                 )
-            for (previous_year, previous), (current_year, current) in pairwise(
-                entity_ordered
-            ):
+            for (previous_year, previous), (current_year, current) in pairwise(entity_ordered):
                 del previous_year
                 if operation is ProgramOperation.ROLLING_AVERAGE_BY_ENTITY:
                     point = _Scalar(
@@ -805,11 +892,10 @@ def _program_temporal_growth(
                             current.dimension,
                             ProgramOperation.ADD,
                         ),
+                        _merge_fact_uids(previous, current),
                     )
                 else:
-                    point = _scalar_binary(
-                        ProgramOperation.SUBTRACT, current, previous
-                    )
+                    point = _scalar_binary(ProgramOperation.SUBTRACT, current, previous)
                 output.append((f"{entity}|{current_year}", point))
             continue
         if operation in {
@@ -826,13 +912,16 @@ def _program_temporal_growth(
                 )
             else:
                 result = total
-                expression = "(" + " + ".join(
-                    value.expression for value in values_only
-                ) + ")"
+                expression = "(" + " + ".join(value.expression for value in values_only) + ")"
             output.append(
                 (
                     entity,
-                    _Scalar(result, expression, values_only[0].dimension),
+                    _Scalar(
+                        result,
+                        expression,
+                        values_only[0].dimension,
+                        _merge_fact_uids(*values_only),
+                    ),
                 )
             )
             continue
@@ -849,13 +938,8 @@ def _program_temporal_growth(
                 )
             intervals = entity_ordered[-1][0] - entity_ordered[0][0]
             if intervals <= 0:
-                raise GroundedPlanError(
-                    f"cagr_by_entity has no positive interval for {entity}"
-                )
-            cagr = (
-                (float(last.value / first.value) ** (1.0 / intervals) - 1.0)
-                * 100.0
-            )
+                raise GroundedPlanError(f"cagr_by_entity has no positive interval for {entity}")
+            cagr = (float(last.value / first.value) ** (1.0 / intervals) - 1.0) * 100.0
             output.append(
                 (
                     entity,
@@ -864,17 +948,20 @@ def _program_temporal_growth(
                         f"((pow((({last.expression}) / ({first.expression})), "
                         f"(1 / {intervals})) - 1) * 100)",
                         Dimension.PERCENT,
+                        _merge_fact_uids(first, last),
                     ),
                 )
             )
             continue
-        if operation in {
-            ProgramOperation.GROWTH_BY_ENTITY,
-            ProgramOperation.CHANGE_BY_ENTITY,
-        } and len(entity_ordered) < 2:
-            raise GroundedPlanError(
-                f"{operation.value} requires at least two periods for {entity}"
-            )
+        if (
+            operation
+            in {
+                ProgramOperation.GROWTH_BY_ENTITY,
+                ProgramOperation.CHANGE_BY_ENTITY,
+            }
+            and len(entity_ordered) < 2
+        ):
+            raise GroundedPlanError(f"{operation.value} requires at least two periods for {entity}")
         if operation is ProgramOperation.EARLIEST_BY_ENTITY:
             output.append((entity, entity_ordered[0][1]))
             continue
@@ -905,9 +992,33 @@ def _program_temporal_growth(
     return _Series(tuple(output))
 
 
-def _program_boolean_by_entity(
-    operation: ProgramOperation, series: _Series
-) -> _Series:
+def _program_sum_by_scope(series: _Series, target_axis: str) -> _Series:
+    """Reduce physical component observations to one logical scope value."""
+
+    grouped: dict[str, list[_Scalar]] = {}
+    for observation_key, value in _numeric_series(series):
+        parts = observation_key.split("|", 2)
+        if len(parts) != 3 or not parts[0] or not parts[1] or not parts[2]:
+            raise GroundedPlanError("sum_by_scope requires entity_period_observation-axis keys")
+        entity, period, _observation_uid = parts
+        if target_axis == "entity":
+            key = entity
+        elif target_axis == "period":
+            key = period
+        else:
+            key = f"{entity}|{period}"
+        grouped.setdefault(key, []).append(value)
+
+    output: list[tuple[str, _Scalar | _Boolean]] = []
+    for key, values in sorted(grouped.items()):
+        total = values[0]
+        for value in values[1:]:
+            total = _scalar_binary(ProgramOperation.ADD, total, value)
+        output.append((key, total))
+    return _Series(tuple(output))
+
+
+def _program_boolean_by_entity(operation: ProgramOperation, series: _Series) -> _Series:
     grouped: dict[str, list[_Boolean]] = {}
     for key, value in _boolean_series(series):
         try:
@@ -923,15 +1034,13 @@ def _program_boolean_by_entity(
             raise GroundedPlanError(f"{operation.value} has no values for {entity}")
         if operation is ProgramOperation.ALL_BY_ENTITY:
             result = all(value.value for value in values)
-            expression = "(" + " and ".join(
-                f"({value.expression})" for value in values
-            ) + ")"
+            expression = "(" + " and ".join(f"({value.expression})" for value in values) + ")"
         else:
             result = any(value.value for value in values)
-            expression = "(" + " or ".join(
-                f"({value.expression})" for value in values
-            ) + ")"
-        output.append((entity, _Boolean(result, expression)))
+            expression = "(" + " or ".join(f"({value.expression})" for value in values) + ")"
+        output.append(
+            (entity, _Boolean(result, expression, _merge_fact_uids(*values)))
+        )
     return _Series(tuple(output))
 
 
@@ -945,9 +1054,7 @@ def _program_top_k_mask(
     numeric = _numeric_series(series)
     k = int(literal)
     if k > len(numeric):
-        raise GroundedPlanError(
-            f"{operation.value} requests {k} keys from {len(numeric)} values"
-        )
+        raise GroundedPlanError(f"{operation.value} requests {k} keys from {len(numeric)} values")
     reverse = operation is ProgramOperation.TOP_K_MASK
     ordered = sorted(
         numeric,
@@ -956,6 +1063,7 @@ def _program_top_k_mask(
     )
     selected = {key for key, _value in ordered[:k]}
     grounding = " + ".join(f"0 * ({value.expression})" for _key, value in numeric)
+    ranking_uids = _merge_fact_uids(*(value for _key, value in numeric))
     return _Series(
         tuple(
             (
@@ -963,6 +1071,7 @@ def _program_top_k_mask(
                 _Boolean(
                     key in selected,
                     f"(({1 if key in selected else 0} + {grounding}) > 0)",
+                    ranking_uids,
                 ),
             )
             for key, _value in numeric
@@ -977,7 +1086,7 @@ def _program_shift_key(key: _Key, literal: Decimal | None) -> _Key:
         shifted = str(int(key.value) + int(literal))
     except ValueError as error:
         raise GroundedPlanError("shift_key requires a numeric period key") from error
-    return _Key(shifted, key.grounding_expression)
+    return _Key(shifted, key.grounding_expression, key.fact_uids)
 
 
 def _program_true_key(operation: ProgramOperation, series: _Series) -> _Key:
@@ -993,10 +1102,12 @@ def _program_true_key(operation: ProgramOperation, series: _Series) -> _Key:
         )
     except ValueError as error:
         raise GroundedPlanError(f"{operation.value} requires numeric period keys") from error
-    grounding = " + ".join(
-        f"0 * ({item.expression})" for _key, item in boolean
+    grounding = " + ".join(f"0 * ({item.expression})" for _key, item in boolean)
+    return _Key(
+        chosen[0],
+        grounding,
+        _merge_fact_uids(*(item for _key, item in boolean)),
     )
-    return _Key(chosen[0], grounding)
 
 
 def _series_binary(
@@ -1040,11 +1151,7 @@ def _scalar_binary(
     elif operation is ProgramOperation.DIVIDE:
         if right.value == 0:
             raise GroundedPlanError("program division denominator is zero")
-        dimension = (
-            Dimension.RATIO
-            if left.dimension == right.dimension
-            else left.dimension
-        )
+        dimension = Dimension.RATIO if left.dimension == right.dimension else left.dimension
     else:
         if left.dimension is not Dimension.UNKNOWN and right.dimension is not Dimension.UNKNOWN:
             raise GroundedPlanError("multiplication requires one dimensionless input")
@@ -1059,11 +1166,13 @@ def _scalar_binary(
         if left.value == 0:
             raise GroundedPlanError("program growth denominator is zero")
         value = (right.value - left.value) / abs(left.value) * Decimal(100)
-        expression = (
-            f"(({right.expression} - {left.expression}) / "
-            f"abs({left.expression}) * 100)"
+        expression = f"(({right.expression} - {left.expression}) / abs({left.expression}) * 100)"
+        return _Scalar(
+            value,
+            expression,
+            Dimension.PERCENT,
+            _merge_fact_uids(left, right),
         )
-        return _Scalar(value, expression, Dimension.PERCENT)
     if operation is ProgramOperation.ADD:
         value = left.value + right.value
     elif operation is ProgramOperation.SUBTRACT:
@@ -1076,6 +1185,7 @@ def _scalar_binary(
         value,
         f"({left.expression} {operators[operation]} {right.expression})",
         dimension,
+        _merge_fact_uids(left, right),
     )
 
 
@@ -1122,28 +1232,36 @@ def _program_aggregate(operation: ProgramOperation, value: _ProgramValue) -> _Sc
     values = [item.value for _key, item in numeric]
     expressions = [item.expression for _key, item in numeric]
     dimension = numeric[0][1].dimension
+    fact_uids = _merge_fact_uids(*(item for _key, item in numeric))
     if operation is ProgramOperation.SUM:
-        return _Scalar(sum(values, Decimal(0)), "(" + " + ".join(expressions) + ")", dimension)
+        return _Scalar(
+            sum(values, Decimal(0)),
+            "(" + " + ".join(expressions) + ")",
+            dimension,
+            fact_uids,
+        )
     if operation is ProgramOperation.AVERAGE:
         return _Scalar(
             sum(values, Decimal(0)) / len(values),
             "((" + " + ".join(expressions) + f") / {len(values)})",
             dimension,
+            fact_uids,
         )
     ordered = sorted(zip(values, expressions, strict=True), key=lambda item: item[0])
     if operation is ProgramOperation.MINIMUM:
         expression = expressions[0] if len(expressions) == 1 else f"min({', '.join(expressions)})"
-        return _Scalar(ordered[0][0], expression, dimension)
+        return _Scalar(ordered[0][0], expression, dimension, fact_uids)
     if operation is ProgramOperation.MAXIMUM:
         expression = expressions[0] if len(expressions) == 1 else f"max({', '.join(expressions)})"
-        return _Scalar(ordered[-1][0], expression, dimension)
+        return _Scalar(ordered[-1][0], expression, dimension, fact_uids)
     middle = len(ordered) // 2
     if len(ordered) % 2:
-        return _Scalar(ordered[middle][0], ordered[middle][1], dimension)
+        return _Scalar(ordered[middle][0], ordered[middle][1], dimension, fact_uids)
     return _Scalar(
         (ordered[middle - 1][0] + ordered[middle][0]) / 2,
         f"(({ordered[middle - 1][1]} + {ordered[middle][1]}) / 2)",
         dimension,
+        fact_uids,
     )
 
 
@@ -1191,6 +1309,7 @@ def _compare_scalars(
         Comparator.LT: "<",
         Comparator.LTE: "<=",
         Comparator.EQ: "==",
+        Comparator.NE: "!=",
     }
     comparisons = {
         Comparator.GT: left.value > right.value,
@@ -1198,11 +1317,32 @@ def _compare_scalars(
         Comparator.LT: left.value < right.value,
         Comparator.LTE: left.value <= right.value,
         Comparator.EQ: left.value == right.value,
+        Comparator.NE: left.value != right.value,
     }
     return _Boolean(
         comparisons[comparator],
         f"({left.expression} {operators[comparator]} {right.expression})",
+        _merge_fact_uids(left, right),
     )
+
+
+def _program_numeric_presence(operation: ProgramOperation, value: _ProgramValue) -> _ProgramValue:
+    def predicate(item: _Scalar) -> _Boolean:
+        is_present = item.value != 0
+        if operation is ProgramOperation.IS_ZERO:
+            is_present = not is_present
+        operator = "==" if operation is ProgramOperation.IS_ZERO else "!="
+        return _Boolean(
+            is_present,
+            f"({item.expression} {operator} 0)",
+            item.fact_uids,
+        )
+
+    if isinstance(value, _Scalar):
+        return predicate(value)
+    if isinstance(value, _Series):
+        return _Series(tuple((key, predicate(item)) for key, item in _numeric_series(value)))
+    raise GroundedPlanError(f"{operation.value} requires a numeric input")
 
 
 def _program_logical(
@@ -1234,10 +1374,12 @@ def _logical_scalars(
         return _Boolean(
             left.value and right.value,
             f"({left.expression} and {right.expression})",
+            _merge_fact_uids(left, right),
         )
     return _Boolean(
         left.value or right.value,
         f"({left.expression} or {right.expression})",
+        _merge_fact_uids(left, right),
     )
 
 
@@ -1293,9 +1435,7 @@ def execute_grounded_plan(
     elif operation is GroundedOperation.DIFFERENCE:
         _require_count(operands, exact=2, operation=operation)
         left, left_expression, dimension = _fact_value(operands[0], dataframe_variable)
-        right, right_expression, right_dimension = _fact_value(
-            operands[1], dataframe_variable
-        )
+        right, right_expression, right_dimension = _fact_value(operands[1], dataframe_variable)
         _require_same_dimension(dimension, right_dimension, operation)
         value = left - right
         expression = f"({left_expression} - {right_expression})"
@@ -1314,9 +1454,7 @@ def execute_grounded_plan(
         dimension = Dimension.PERCENT
     elif operation is GroundedOperation.RATIO:
         _require_count(operands, exact=2, operation=operation)
-        numerator, numerator_expression, dimension = _fact_value(
-            operands[0], dataframe_variable
-        )
+        numerator, numerator_expression, dimension = _fact_value(operands[0], dataframe_variable)
         denominator, denominator_expression, denominator_dimension = _fact_value(
             operands[1], dataframe_variable
         )
@@ -1492,11 +1630,13 @@ def _fact_value(fact: GroundedFact, variable: str) -> tuple[Decimal, str, Dimens
     )
     expression = raw
     if fact.dimension in {Dimension.MONEY, Dimension.SHARES}:
-        assert fact.scale_exponent is not None
-        if fact.scale_exponent > 0:
-            expression = f"({raw} * {10 ** fact.scale_exponent})"
-        elif fact.scale_exponent < 0:
-            expression = f"({raw} / {10 ** (-fact.scale_exponent)})"
+        if fact.dimension is Dimension.MONEY:
+            assert fact.scale_exponent is not None
+        exponent = fact.scale_exponent or 0
+        if exponent > 0:
+            expression = f"({raw} * {10**exponent})"
+        elif exponent < 0:
+            expression = f"({raw} / {10 ** (-exponent)})"
     return value, expression, fact.dimension
 
 
@@ -1524,7 +1664,7 @@ def _convert_output(
             raise GroundedPlanError(f"{target.value} output requires scale_exponent")
         scale = Decimal(10) ** plan.output_scale_exponent
         if scale != 1:
-            divisor = 10 ** plan.output_scale_exponent
+            divisor = 10**plan.output_scale_exponent
             return value / scale, f"({expression} / {divisor})"
     return value, expression
 

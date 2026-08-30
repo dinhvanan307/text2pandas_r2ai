@@ -8,6 +8,7 @@ from typing import Protocol
 
 from text2pandas.domain.semantic import (
     Basis,
+    MetricBindingHint,
     PeriodSemantics,
     QuestionAST,
     RankDirection,
@@ -124,6 +125,7 @@ class ParseResult:
     ast: QuestionAST | None = None
     reason: str | None = None
     trace: tuple[dict[str, object], ...] = field(default_factory=tuple)
+    source_bindings: tuple[MetricBindingHint, ...] = field(default_factory=tuple)
 
     @property
     def ok(self) -> bool:

@@ -156,6 +156,57 @@ def test_composer_executes_simple_growth_without_model() -> None:
     assert execution.answer == 25.0
 
 
+def test_composer_executes_period_difference_as_newer_minus_older() -> None:
+    facts = (
+        _fact("net_revenue", 2022, "100"),
+        _fact("net_revenue", 2024, "125"),
+    )
+    hints = {
+        "operation": "subtract",
+        "entities": ["HPG"],
+        # Annotation order is not a calculation contract.
+        "periods": ["2022", "2024"],
+        "requested_unit": {"dimension": "money", "scale_exponent": 0},
+        "required_metric_ids": ["net_revenue"],
+        "required_formulas": [],
+        "reverse_difference": False,
+        "absolute_difference": False,
+    }
+
+    program = DeterministicProgramComposer().generate(
+        "Chênh lệch doanh thu thuần năm 2024 so với 2022?",
+        facts,
+        hints=hints,
+    )
+
+    assert execute_grounded(program, facts).answer == 25.0
+
+
+def test_composer_honors_explicit_reverse_period_difference() -> None:
+    facts = (
+        _fact("net_revenue", 2022, "100"),
+        _fact("net_revenue", 2024, "125"),
+    )
+    hints = {
+        "operation": "subtract",
+        "entities": ["HPG"],
+        "periods": ["2022", "2024"],
+        "requested_unit": {"dimension": "money", "scale_exponent": 0},
+        "required_metric_ids": ["net_revenue"],
+        "required_formulas": [],
+        "reverse_difference": True,
+        "absolute_difference": False,
+    }
+
+    program = DeterministicProgramComposer().generate(
+        "Doanh thu 2024 thấp hơn 2022 bao nhiêu?",
+        facts,
+        hints=hints,
+    )
+
+    assert execute_grounded(program, facts).answer == -25.0
+
+
 def test_composer_executes_simple_direct_ratio_in_metric_order() -> None:
     facts = (
         _fact("cash_flow_from_operations", 2024, "20"),
@@ -367,6 +418,47 @@ def test_composer_filters_by_median_formula_then_averages_output_formula() -> No
     execution = execute_grounded(program, facts)
 
     assert {formula.role for formula in expansion.formulas} == {"filter", "output"}
+    assert execution.answer == 10.0
+
+
+def test_composer_filters_by_median_then_returns_extreme_average_balance_roe() -> None:
+    question = (
+        "Năm 2024, trong nhóm AAA, BBB và CCC, ROE cao nhất của các công ty có "
+        "hệ số nợ phải trả trên vốn chủ sở hữu thấp hơn trung vị của nhóm là "
+        "bao nhiêu phần trăm? ROE được tính bằng lợi nhuận sau thuế chia cho "
+        "vốn chủ sở hữu bình quân đầu và cuối kỳ."
+    )
+    values = {
+        "AAA": {"liabilities": "90", "equity": ("100", "100"), "profit": "8"},
+        "BBB": {"liabilities": "60", "equity": ("100", "120"), "profit": "11"},
+        "CCC": {"liabilities": "150", "equity": ("100", "100"), "profit": "20"},
+    }
+    facts = tuple(
+        fact
+        for entity, entity_values in values.items()
+        for fact in (
+            _entity_fact("total_liabilities", entity, 2024, entity_values["liabilities"]),
+            _entity_fact("equity", entity, 2023, entity_values["equity"][0]),
+            _entity_fact("equity", entity, 2024, entity_values["equity"][1]),
+            _entity_fact("profit_after_tax", entity, 2024, entity_values["profit"]),
+        )
+    )
+    expansion = GroundedQueryExpander(load_ontology()).analyze(question)
+    hints = {
+        "operation": "extremum",
+        "entities": list(values),
+        "periods": ["2024"],
+        "requested_unit": {"dimension": "percent", "scale_exponent": None},
+        "required_metric_ids": list(expansion.metric_ids),
+        "required_formulas": [
+            formula.to_planner_dict() for formula in expansion.formulas
+        ],
+    }
+
+    program = DeterministicProgramComposer().generate(question, facts, hints=hints)
+    execution = execute_grounded(program, facts)
+
+    assert {formula.role for formula in expansion.formulas} == {"filter", "rank"}
     assert execution.answer == 10.0
 
 

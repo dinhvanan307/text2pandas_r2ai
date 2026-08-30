@@ -22,6 +22,7 @@ from .ast import (
     Unary,
     expression_from_dict,
     expression_to_dict,
+    iter_metric_refs,
 )
 from .types import (
     AggregateFunction,
@@ -74,5 +75,6 @@ __all__ = [
     "UnitSpec",
     "expression_from_dict",
     "expression_to_dict",
+    "iter_metric_refs",
     "validate_question_ast",
 ]

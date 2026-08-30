@@ -1,3 +1,4 @@
+from dataclasses import replace
 from decimal import Decimal
 
 from text2pandas.application.parsing.contracts import (
@@ -15,6 +16,7 @@ from text2pandas.application.usecases.grounded_synthesis import (
 from text2pandas.application.usecases.grounded_v5 import (
     _coherent_basis_candidates,
     _expand_period_range_annotations,
+    _is_trusted_recovery,
     _is_trusted_replacement,
 )
 from text2pandas.domain.semantic import Basis, Dimension, RankDirection, UnitSpec
@@ -227,3 +229,140 @@ def test_trusted_replacement_requires_composition_and_governed_metric_codes() ->
     )
     segmented_execution = execute_grounded(program, segmented_facts)
     assert not _is_trusted_replacement(program, segmented_execution)
+
+
+def test_trusted_replacement_accepts_high_margin_resolved_direct_fact() -> None:
+    fact = replace(
+        _basis_fact(
+            "tax-payable",
+            metric="reported_tax_payable",
+            year=2024,
+            basis=Basis.CONSOLIDATED,
+            score=400,
+            row_path="Thuế TNDN",
+        ),
+        source_confidence=0.65,
+        resolution_margin=107.0,
+        corroboration_count=3,
+        score_reasons=(
+            "metric:exact_row",
+            "period:closing_match",
+            "quality:no_collision",
+        ),
+    )
+    program = GroundedProgram(
+        nodes=(
+            ProgramNode(
+                "tax",
+                ProgramOperation.FACTS,
+                fact_uids=(fact.observation_uid,),
+                axis="entity_period",
+            ),
+            ProgramNode("answer", ProgramOperation.SUM, input_ids=("tax",)),
+        ),
+        output_node_id="answer",
+        output_dimension=Dimension.MONEY,
+        output_scale_exponent=0,
+        confidence=0.96,
+    )
+
+    assert _is_trusted_replacement(program, execute_grounded(program, (fact,)))
+
+
+def test_trusted_replacement_rejects_ambiguous_reported_direct_fact() -> None:
+    fact = replace(
+        _basis_fact(
+            "service-expense",
+            metric="reported_service_expense",
+            year=2024,
+            basis=Basis.CONSOLIDATED,
+            score=400,
+            row_path="Chi phí dịch vụ mua ngoài",
+        ),
+        source_confidence=0.9,
+        resolution_margin=0.4,
+        corroboration_count=2,
+        score_reasons=("metric:exact_row", "quality:no_collision"),
+    )
+    program = GroundedProgram(
+        nodes=(
+            ProgramNode(
+                "expense",
+                ProgramOperation.FACTS,
+                fact_uids=(fact.observation_uid,),
+                axis="entity_period",
+            ),
+            ProgramNode("answer", ProgramOperation.SUM, input_ids=("expense",)),
+        ),
+        output_node_id="answer",
+        output_dimension=Dimension.MONEY,
+        output_scale_exponent=0,
+        confidence=0.96,
+    )
+
+    assert not _is_trusted_replacement(program, execute_grounded(program, (fact,)))
+
+
+def test_trusted_recovery_accepts_resolved_source_metric() -> None:
+    fact = replace(
+        _basis_fact(
+            "source-expense",
+            metric="source_expense",
+            year=2024,
+            basis=Basis.CONSOLIDATED,
+            score=400,
+            row_path="Chi phí hoạt động › Chi phí đặc thù",
+        ),
+        source_confidence=0.65,
+        resolution_margin=80.0,
+        score_reasons=("metric:source_context_complete", "quality:no_collision"),
+    )
+    program = GroundedProgram(
+        nodes=(
+            ProgramNode(
+                "expense",
+                ProgramOperation.FACTS,
+                fact_uids=(fact.observation_uid,),
+                axis="entity_period",
+            ),
+            ProgramNode("answer", ProgramOperation.SUM, input_ids=("expense",)),
+        ),
+        output_node_id="answer",
+        output_dimension=Dimension.MONEY,
+        output_scale_exponent=0,
+        confidence=0.96,
+    )
+
+    assert _is_trusted_recovery(program, execute_grounded(program, (fact,)))
+
+
+def test_trusted_recovery_rejects_unnamed_lexical_metric() -> None:
+    fact = replace(
+        _basis_fact(
+            "lexical",
+            metric="question text used as a metric",
+            year=2024,
+            basis=Basis.CONSOLIDATED,
+            score=400,
+        ),
+        source_confidence=0.9,
+        resolution_margin=100.0,
+        score_reasons=("metric:exact_row", "quality:no_collision"),
+    )
+    program = GroundedProgram(
+        nodes=(
+            ProgramNode(
+                "lexical",
+                ProgramOperation.FACTS,
+                fact_uids=(fact.observation_uid,),
+                axis="entity_period",
+            ),
+            ProgramNode("answer", ProgramOperation.SUM, input_ids=("lexical",)),
+        ),
+        output_node_id="answer",
+        output_dimension=Dimension.MONEY,
+        output_scale_exponent=0,
+        confidence=0.96,
+    )
+
+    assert not _is_trusted_recovery(program, execute_grounded(program, (fact,)))
