@@ -27,10 +27,16 @@ class _SearchOutcome:
 
 
 class JointBinder:
-    def __init__(self, *, beam_width: int = 64):
+    def __init__(
+        self,
+        *,
+        beam_width: int = 64,
+        strict_observation_equivalence: bool = False,
+    ):
         if beam_width < 2:
             raise ValueError("beam_width must be at least 2 to expose an assignment margin")
         self.beam_width = beam_width
+        self.strict_observation_equivalence = strict_observation_equivalence
 
     def bind(
         self,
@@ -47,7 +53,7 @@ class JointBinder:
         winner = states[0]
         margin = winner.score - states[1].score if len(states) > 1 else None
         tied = [state for state in states[1:] if state.score == winner.score]
-        if any(not _semantically_equivalent(winner, contender) for contender in tied):
+        if any(not self._semantically_equivalent(winner, contender) for contender in tied):
             return _abstain(
                 "BINDING_TIE",
                 trace=(
@@ -94,7 +100,7 @@ class JointBinder:
             )
         selected: list[_State] = []
         for state in search.states:
-            if any(_semantically_equivalent(state, existing) for existing in selected):
+            if any(self._semantically_equivalent(state, existing) for existing in selected):
                 continue
             selected.append(state)
             if len(selected) >= limit:
@@ -103,9 +109,7 @@ class JointBinder:
             _bound_plan(
                 plan,
                 state,
-                state.score - selected[index + 1].score
-                if index + 1 < len(selected)
-                else None,
+                state.score - selected[index + 1].score if index + 1 < len(selected) else None,
             )
             for index, state in enumerate(selected)
         )
@@ -123,17 +127,30 @@ class JointBinder:
             ),
         )
 
+    def _semantically_equivalent(self, left: _State, right: _State) -> bool:
+        return _semantically_equivalent(
+            left,
+            right,
+            strict_observation_equivalence=self.strict_observation_equivalence,
+        )
+
     def _search(
         self,
         plan: ExecutionPlan,
         batches: dict[str, CandidateBatch],
     ) -> _SearchOutcome:
-        missing_batches = [request.request_id for request in plan.requests if request.request_id not in batches]
+        missing_batches = [
+            request.request_id for request in plan.requests if request.request_id not in batches
+        ]
         if missing_batches:
             return _SearchOutcome(
                 reason=f"MISSING_CANDIDATE_BATCH:{','.join(sorted(missing_batches))}"
             )
-        empty = [request.request_id for request in plan.requests if not batches[request.request_id].candidates]
+        empty = [
+            request.request_id
+            for request in plan.requests
+            if not batches[request.request_id].candidates
+        ]
         if empty:
             reasons = {
                 str(batches[request_id].trace.get("reason") or "CANDIDATE_EMPTY")
@@ -154,7 +171,9 @@ class JointBinder:
             for state in states:
                 for candidate in batches[request.request_id].candidates:
                     expanded += 1
-                    if not _compatible_request(request.expected_unit.dimension, candidate.unit.dimension):
+                    if not _compatible_request(
+                        request.expected_unit.dimension, candidate.unit.dimension
+                    ):
                         rejected += 1
                         continue
                     assignments = {**state.assignments, request.request_id: candidate}
@@ -188,9 +207,7 @@ def _bound_plan(
     return BoundExecutionPlan(plan, MappingProxyType(bound), state.score, margin)
 
 
-def _constraints_hold(
-    plan: ExecutionPlan, assignments: dict[str, ObservationCandidate]
-) -> bool:
+def _constraints_hold(plan: ExecutionPlan, assignments: dict[str, ObservationCandidate]) -> bool:
     for constraint in plan.constraints:
         selected = [assignments[value] for value in constraint.request_ids if value in assignments]
         if len(selected) < 2:
@@ -232,14 +249,22 @@ def _state_sort_key(state: _State) -> tuple[float, tuple[tuple[str, str], ...]]:
     return -state.score, stable
 
 
-def _semantically_equivalent(left: _State, right: _State) -> bool:
+def _semantically_equivalent(
+    left: _State,
+    right: _State,
+    *,
+    strict_observation_equivalence: bool,
+) -> bool:
     if set(left.assignments) != set(right.assignments):
         return False
     for request_id, left_candidate in left.assignments.items():
         right_candidate = right.assignments[request_id]
-        if _candidate_semantic_key(left_candidate) != _candidate_semantic_key(
-            right_candidate
-        ):
+        key = (
+            _candidate_semantic_key
+            if strict_observation_equivalence
+            else _legacy_candidate_semantic_key
+        )
+        if key(left_candidate) != key(right_candidate):
             return False
     return True
 
@@ -266,6 +291,17 @@ def _candidate_semantic_key(candidate: ObservationCandidate) -> tuple[object, ..
         candidate.scale_source,
         candidate.value,
         candidate.unit,
+        candidate.is_restated,
+    )
+
+
+def _legacy_candidate_semantic_key(candidate: ObservationCandidate) -> tuple[object, ...]:
+    return (
+        candidate.value,
+        candidate.unit,
+        candidate.basis,
+        candidate.entity,
+        candidate.period,
         candidate.is_restated,
     )
 

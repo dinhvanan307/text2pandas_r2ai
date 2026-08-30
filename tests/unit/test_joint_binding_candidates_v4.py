@@ -167,7 +167,7 @@ def test_same_number_different_row_role_remains_semantically_distinct() -> None:
         row_role=ObservationRowRole.ALLOWANCE,
     )
 
-    result = JointBinder().bind_candidates(
+    result = JointBinder(strict_observation_equivalence=True).bind_candidates(
         scoped,
         {request.request_id: CandidateBatch(request.request_id, (total, allowance), {})},
         limit=3,
@@ -190,7 +190,7 @@ def test_physical_duplicate_with_same_semantic_identity_is_collapsed() -> None:
     )
     duplicate = replace(first, observation_uid="physical-b", table_uid="table:other")
 
-    result = JointBinder().bind_candidates(
+    result = JointBinder(strict_observation_equivalence=True).bind_candidates(
         scoped,
         {request.request_id: CandidateBatch(request.request_id, (first, duplicate), {})},
         limit=3,

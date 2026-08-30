@@ -66,9 +66,14 @@ class ProgramVerifier:
         family_trace: dict[str, object] = {"family": "disabled"}
         if self.policy.enforce_family_completeness:
             family = validate_family_completeness(bound_plan)
-            hard_failures.extend(family.failures)
+            enforced = (
+                not self.policy.enforced_families or family.family in self.policy.enforced_families
+            )
+            if enforced:
+                hard_failures.extend(family.failures)
             family_trace = {
                 "family": family.family,
+                "enforced": enforced,
                 "expected_members": list(family.expected_members),
                 "bound_members": list(family.bound_members),
                 "failures": list(family.failures),

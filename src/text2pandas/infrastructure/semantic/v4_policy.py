@@ -40,15 +40,9 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
     operand_pool_k = _int(physical.get("operand_pool_k", 64))
     if operand_pool_k < 1:
         raise ValueError("operand_pool_k must be positive")
-    include_recoverable = bool(
-        physical.get("include_recoverable_collisions", False)
-    )
-    enforce_observation_roles = bool(
-        physical.get("enforce_observation_roles", False)
-    )
-    allow_recoverable = bool(
-        verification.get("allow_recoverable_collisions", False)
-    )
+    include_recoverable = bool(physical.get("include_recoverable_collisions", False))
+    enforce_observation_roles = bool(physical.get("enforce_observation_roles", False))
+    allow_recoverable = bool(verification.get("allow_recoverable_collisions", False))
     if include_recoverable != allow_recoverable:
         raise ValueError("retrieval and verification recoverable-collision flags must match")
     production_eligible = bool(raw.get("production_eligible", False))
@@ -62,9 +56,7 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         hierarchy_bonus=_float(hierarchy.get("hierarchy_bonus", 0.12)),
         statement_bonus=_float(hierarchy.get("statement_bonus", 0.4)),
         period_role_bonus=_float(hierarchy.get("period_role_bonus", 0.5)),
-        component_context_penalty=_float(
-            hierarchy.get("component_context_penalty", 2.5)
-        ),
+        component_context_penalty=_float(hierarchy.get("component_context_penalty", 2.5)),
         recoverable_penalty=_float(hierarchy.get("recoverable_penalty", 2.5)),
         collision_penalty=_float(hierarchy.get("collision_penalty", 1.0)),
     )
@@ -76,9 +68,9 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         require_answer_consensus=bool(search.get("require_answer_consensus", False)),
         maximum_relevant_tables=_int(search.get("maximum_relevant_tables", 10)),
         infer_observation_roles=bool(search.get("infer_observation_roles", False)),
-        require_selection_key_consensus=bool(
-            search.get("require_selection_key_consensus", False)
-        ),
+        strict_observation_equivalence=bool(search.get("strict_observation_equivalence", False)),
+        enforce_rank_semantic_gates=bool(search.get("enforce_rank_semantic_gates", False)),
+        require_selection_key_consensus=bool(search.get("require_selection_key_consensus", False)),
     )
     verification_policy = VerificationPolicy(
         allow_recoverable_collisions=allow_recoverable,
@@ -91,9 +83,8 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         minimum_recoverable_confidence=_float(
             verification.get("minimum_recoverable_confidence", 0.75)
         ),
-        enforce_family_completeness=bool(
-            verification.get("enforce_family_completeness", False)
-        ),
+        enforce_family_completeness=bool(verification.get("enforce_family_completeness", False)),
+        enforced_families=_strings(verification.get("enforced_families", ())),
     )
     return SemanticV4RuntimePolicy(
         policy_id=str(raw["policy_id"]),

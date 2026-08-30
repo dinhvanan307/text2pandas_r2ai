@@ -39,6 +39,8 @@ class SemanticV4Config:
     require_answer_consensus: bool = False
     maximum_relevant_tables: int = 10
     infer_observation_roles: bool = False
+    strict_observation_equivalence: bool = False
+    enforce_rank_semantic_gates: bool = False
     require_selection_key_consensus: bool = False
 
     def __post_init__(self) -> None:
@@ -159,10 +161,14 @@ class SemanticV4Engine:
         self.parser = parser
         self.retriever = retriever
         self.replay = replay
-        self.binder = binder or JointBinder()
-        self.executor = executor or TypedExecutor()
-        self.verifier = verifier or ProgramVerifier()
         self.config = config or SemanticV4Config()
+        self.binder = binder or JointBinder(
+            strict_observation_equivalence=(self.config.strict_observation_equivalence)
+        )
+        self.executor = executor or TypedExecutor(
+            enforce_rank_semantic_gates=self.config.enforce_rank_semantic_gates
+        )
+        self.verifier = verifier or ProgramVerifier()
 
     def answer(self, question: str, *, qid: int | None = None) -> SemanticV4Result:
         parse_candidates = self.parser.parse_candidates(
@@ -233,9 +239,8 @@ class SemanticV4Engine:
         ranked_groups = sorted(groups, key=_group_sort_key)
         winning_group = ranked_groups[0]
         selected = max(winning_group, key=_alternative_sort_key)
-        if (
-            self.config.require_selection_key_consensus
-            and _selection_signatures_disagree(alternatives)
+        if self.config.require_selection_key_consensus and _selection_signatures_disagree(
+            alternatives
         ):
             return self._abstain_after_search(
                 qid,
@@ -255,9 +260,7 @@ class SemanticV4Engine:
                 search_trace,
             )
         competing_score = (
-            max(value.joint_score for value in ranked_groups[1])
-            if len(ranked_groups) > 1
-            else None
+            max(value.joint_score for value in ranked_groups[1]) if len(ranked_groups) > 1 else None
         )
         if (
             competing_score is not None
@@ -341,9 +344,7 @@ class SemanticV4Engine:
         if not verified.ok:
             return None, "VERIFY:" + ",".join(verified.reasons)
         evidence_tables = tuple(item.table_uid for item in compiled.program.evidence)
-        documents = tuple(
-            dict.fromkeys(item.document_id for item in compiled.program.evidence)
-        )
+        documents = tuple(dict.fromkeys(item.document_id for item in compiled.program.evidence))
         evidence = tuple(
             {
                 "variable": item.variable,

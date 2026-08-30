@@ -49,6 +49,9 @@ class ExecutionError(ValueError):
 
 
 class TypedExecutor:
+    def __init__(self, *, enforce_rank_semantic_gates: bool = False) -> None:
+        self.enforce_rank_semantic_gates = enforce_rank_semantic_gates
+
     def execute(self, bound: BoundExecutionPlan) -> ExecutionResult:
         try:
             value = self._evaluate(bound.plan.ast.expression, "$.expression", bound)
@@ -129,14 +132,10 @@ class TypedExecutor:
         if isinstance(expression, RollingAverage):
             if expression.window != 2:
                 raise ExecutionError("ROLLING_AVERAGE_WINDOW_UNSUPPORTED")
-            child = _numeric(
-                self._evaluate(expression.expression, f"{path}.expression", bound)
-            )
+            child = _numeric(self._evaluate(expression.expression, f"{path}.expression", bound))
             return _rolling_average(child)
         if isinstance(expression, RollingGrowth):
-            child = _numeric(
-                self._evaluate(expression.expression, f"{path}.expression", bound)
-            )
+            child = _numeric(self._evaluate(expression.expression, f"{path}.expression", bound))
             return _rolling_growth(child)
         if isinstance(expression, FormulaCall):
             return self._evaluate(expression.expression, f"{path}.expression", bound)
@@ -145,16 +144,23 @@ class TypedExecutor:
             return _aggregate(expression.function, child)
         if isinstance(expression, Rank):
             child = _numeric(self._evaluate(expression.by, f"{path}.by", bound))
-            return _rank(expression, child)
-        if isinstance(expression, SelectAtArg):
-            rank_values = _numeric(
-                self._evaluate(expression.rank.by, f"{path}.rank.by", bound)
+            return _rank(
+                expression,
+                child,
+                enforce_semantic_gates=self.enforce_rank_semantic_gates,
             )
-            ranked = _rank(expression.rank, rank_values)
+        if isinstance(expression, SelectAtArg):
+            rank_values = _numeric(self._evaluate(expression.rank.by, f"{path}.rank.by", bound))
+            ranked = _rank(
+                expression.rank,
+                rank_values,
+                enforce_semantic_gates=self.enforce_rank_semantic_gates,
+            )
             selected_values = _numeric(
                 self._evaluate(expression.expression, f"{path}.expression", bound)
             )
-            _validate_projected_domain(expression, selected_values)
+            if self.enforce_rank_semantic_gates:
+                _validate_projected_domain(expression, selected_values)
             selected = {
                 scope: value
                 for scope, value in selected_values.values.items()
@@ -184,14 +190,17 @@ class TypedExecutor:
     ) -> tuple[dict[str, object], ...]:
         signatures: list[dict[str, object]] = []
         for select_path, select in _iter_select_at_arg(expression, path):
-            rank_values = _numeric(
-                self._evaluate(select.rank.by, f"{select_path}.rank.by", bound)
+            rank_values = _numeric(self._evaluate(select.rank.by, f"{select_path}.rank.by", bound))
+            ranked = _rank(
+                select.rank,
+                rank_values,
+                enforce_semantic_gates=self.enforce_rank_semantic_gates,
             )
-            ranked = _rank(select.rank, rank_values)
             selected_values = _numeric(
                 self._evaluate(select.expression, f"{select_path}.expression", bound)
             )
-            _validate_projected_domain(select, selected_values)
+            if self.enforce_rank_semantic_gates:
+                _validate_projected_domain(select, selected_values)
             bound_rank_keys = _series_members(rank_values, select.rank.axis)
             projected_keys = _series_members(selected_values, select.rank.axis)
             expected_rank_keys = (
@@ -355,11 +364,7 @@ def _align_on_shared_axis(
         for key in sorted(left_by_key):
             left_scope, left_value = left_by_key[key]
             right_scope, right_value = right_by_key[key]
-            scope = (
-                Scope(entity=key)
-                if attribute == "entity"
-                else Scope(period=key)
-            )
+            scope = Scope(entity=key) if attribute == "entity" else Scope(period=key)
             other_left = left_scope.period if attribute == "entity" else left_scope.entity
             other_right = right_scope.period if attribute == "entity" else right_scope.entity
             if other_left == other_right:
@@ -406,7 +411,12 @@ def _aggregate(function: AggregateFunction, series: SeriesValue) -> SeriesValue:
     return _series({Scope(): extreme_value})
 
 
-def _rank(expression: Rank, series: SeriesValue) -> MemberValue:
+def _rank(
+    expression: Rank,
+    series: SeriesValue,
+    *,
+    enforce_semantic_gates: bool = False,
+) -> MemberValue:
     ranked: list[tuple[Decimal, str]] = []
     for scope, value in series.values.items():
         member = scope.member(expression.axis)
@@ -414,10 +424,11 @@ def _rank(expression: Rank, series: SeriesValue) -> MemberValue:
             raise ExecutionError(f"RANK_SCOPE_MISSING:{expression.axis}")
         ranked.append((comparable(value).value, member))
     bound_members = tuple(member for _, member in ranked)
-    if len(bound_members) != len(set(bound_members)):
+    if enforce_semantic_gates and len(bound_members) != len(set(bound_members)):
         raise ExecutionError("RANK_DOMAIN_DUPLICATE_KEY")
     if (
-        expression.members
+        enforce_semantic_gates
+        and expression.members
         and not isinstance(expression.by, Filter)
         and set(bound_members) != set(expression.members)
     ):
@@ -426,14 +437,17 @@ def _rank(expression: Rank, series: SeriesValue) -> MemberValue:
         ranked.sort(key=lambda item: (-item[0], item[1]))
     else:
         ranked.sort(key=lambda item: (item[0], item[1]))
-    if expression.limit == 1 and len(ranked) > 1 and ranked[0][0] == ranked[1][0]:
+    if (
+        enforce_semantic_gates
+        and expression.limit == 1
+        and len(ranked) > 1
+        and ranked[0][0] == ranked[1][0]
+    ):
         raise ExecutionError("RANK_KEY_TIE")
     return MemberValue(expression.axis, tuple(member for _, member in ranked[: expression.limit]))
 
 
-def _validate_projected_domain(
-    expression: SelectAtArg, selected_values: SeriesValue
-) -> None:
+def _validate_projected_domain(expression: SelectAtArg, selected_values: SeriesValue) -> None:
     projected = _series_members(selected_values, expression.rank.axis)
     if expression.rank.members and set(projected) != set(expression.rank.members):
         raise ExecutionError("PROJECTED_DOMAIN_MISMATCH")
@@ -449,9 +463,7 @@ def _series_members(series: SeriesValue, axis: Axis) -> tuple[str, ...]:
     return tuple(sorted(members))
 
 
-def _iter_select_at_arg(
-    expression: Expression, path: str
-) -> list[tuple[str, SelectAtArg]]:
+def _iter_select_at_arg(expression: Expression, path: str) -> list[tuple[str, SelectAtArg]]:
     if isinstance(expression, (MetricRef, Literal)):
         return []
     if isinstance(expression, Arithmetic):
@@ -477,9 +489,7 @@ def _iter_select_at_arg(
     raise ExecutionError(f"UNSUPPORTED_EXPRESSION:{type(expression).__name__}")
 
 
-def _iter_predicate_select_at_arg(
-    predicate: Predicate, path: str
-) -> list[tuple[str, SelectAtArg]]:
+def _iter_predicate_select_at_arg(predicate: Predicate, path: str) -> list[tuple[str, SelectAtArg]]:
     if isinstance(predicate, Comparison):
         return [
             *_iter_select_at_arg(predicate.left, f"{path}.left"),
@@ -491,14 +501,10 @@ def _iter_predicate_select_at_arg(
         return [
             item
             for index, child in enumerate(predicate.predicates)
-            for item in _iter_predicate_select_at_arg(
-                child, f"{path}.predicates[{index}]"
-            )
+            for item in _iter_predicate_select_at_arg(child, f"{path}.predicates[{index}]")
         ]
     if isinstance(predicate, QuantifiedPredicate):
-        return _iter_predicate_select_at_arg(
-            predicate.predicate, f"{path}.predicate"
-        )
+        return _iter_predicate_select_at_arg(predicate.predicate, f"{path}.predicate")
     raise ExecutionError(f"UNSUPPORTED_PREDICATE:{type(predicate).__name__}")
 
 

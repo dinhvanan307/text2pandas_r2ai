@@ -1,5 +1,5 @@
 schema_version: 1
-policy_id: semantic-v4-wave5-riska-search-v1
+policy_id: semantic-v4-wave5-s3-binding-v1
 status: SHADOW_UNCALIBRATED
 production_eligible: false
 
@@ -29,18 +29,13 @@ program_search:
   maximum_relevant_tables: 10
   infer_observation_roles: true
   strict_observation_equivalence: true
-  enforce_rank_semantic_gates: true
-  require_selection_key_consensus: true
+  enforce_rank_semantic_gates: false
+  require_selection_key_consensus: false
 
 verification:
   allow_recoverable_collisions: false
-  enforce_family_completeness: true
-  enforced_families:
-    - direct_lookup
-    - direct_ratio
-    - two_period_difference
-    - single_metric_sum
-    - single_metric_average
+  enforce_family_completeness: false
+  enforced_families: []
   recoverable_collision_classes:
     - missing_column_group
     - missing_row_parent

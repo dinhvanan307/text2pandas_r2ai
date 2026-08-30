@@ -232,13 +232,14 @@ def test_rank_requires_complete_domain_and_unique_selected_key() -> None:
     binding = JointBinder().bind(plan, batches)
     assert binding.ok and binding.bound_plan is not None
 
-    tied = TypedExecutor().execute(binding.bound_plan)
+    executor = TypedExecutor(enforce_rank_semantic_gates=True)
+    tied = executor.execute(binding.bound_plan)
     one_request_id = next(iter(binding.bound_plan.operands))
     incomplete_bound = replace(
         binding.bound_plan,
         operands={one_request_id: binding.bound_plan.operands[one_request_id]},
     )
-    incomplete = TypedExecutor().execute(incomplete_bound)
+    incomplete = executor.execute(incomplete_bound)
 
     assert not tied.ok and tied.reason == "RANK_KEY_TIE"
     assert not incomplete.ok and incomplete.reason == "RANK_DOMAIN_INCOMPLETE"
