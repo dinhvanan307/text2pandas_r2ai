@@ -19,7 +19,7 @@ from text2pandas.infrastructure.checksums import sha256_file
 ROOT = Path(__file__).resolve().parents[1]
 QUESTIONS = ROOT / "data/raw/btc/questions/questions.jsonl"
 CORPUS = ROOT / "data/raw/btc/financial_statements"
-RUN_ROOTS = ("answer", "grounded-v5", "safe-recovery")
+RUN_ROOTS = ("answer", "grounded-v5", "safe-recovery", "recovery-wave2")
 
 
 def _resolve_candidate_stage(run_id: str) -> tuple[Path, Path]:
@@ -153,9 +153,7 @@ def main() -> int:
         f"{sha256_file(output / 'candidate_manifest.json')}  candidate_manifest.json\n",
         encoding="utf-8",
     )
-    policy_blocker_text = ", ".join(
-        str(value) for value in handoff["publication_blockers"]
-    )
+    policy_blocker_text = ", ".join(str(value) for value in handoff["publication_blockers"])
     (output / "README.md").write_text(
         "# Text2Pandas leaderboard submission handoff\n\n"
         "Upload `submission.zip` directly to the competition leaderboard.\n\n"

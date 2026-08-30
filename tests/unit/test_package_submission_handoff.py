@@ -25,6 +25,19 @@ def test_resolve_candidate_stage_supports_grounded_v5(
     assert source_zip == stage.with_suffix(".zip")
 
 
+def test_resolve_candidate_stage_supports_recovery_wave2(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_id = "recovery-wave2-release-r1"
+    _materialize_run(tmp_path, "recovery-wave2", run_id)
+    monkeypatch.setattr(package_submission_handoff, "ROOT", tmp_path)
+
+    stage, source_zip = package_submission_handoff._resolve_candidate_stage(run_id)
+
+    assert stage == tmp_path / "artifacts/runs/recovery-wave2" / run_id
+    assert source_zip == stage.with_suffix(".zip")
+
+
 def test_resolve_candidate_stage_rejects_path_traversal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
