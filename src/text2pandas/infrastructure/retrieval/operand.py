@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import sqlite3
 from collections import Counter
@@ -26,7 +28,7 @@ from .observation_roles import (
     load_observation_role_policy,
 )
 
-FACT_RETRIEVAL_POLICY_VERSION = "fact-retrieval-v3"
+FACT_RETRIEVAL_POLICY_VERSION = "fact-retrieval-v4-observation-roles"
 RECOVERABLE_COLLISION_CLASSES = ("missing_column_group", "missing_row_parent")
 
 
@@ -62,6 +64,7 @@ class SqliteOperandRetriever:
         source_build_id: str | None = None,
         include_recoverable_collisions: bool = False,
         observation_role_policy: ObservationRolePolicy | None = None,
+        enforce_observation_roles: bool = False,
     ):
         if top_k < 1:
             raise ValueError("top_k must be positive")
@@ -75,6 +78,7 @@ class SqliteOperandRetriever:
         self.observation_role_policy = (
             observation_role_policy or load_observation_role_policy()
         )
+        self.enforce_observation_roles = enforce_observation_roles
         self._metric_patterns = {
             metric_id: _MetricPattern(
                 tuple(dict.fromkeys(normalize_phrase(alias) for alias in metric.aliases)),
@@ -206,6 +210,7 @@ class SqliteOperandRetriever:
         rejected_metric = 0
         rejected_unit = 0
         match_methods: Counter[str] = Counter()
+        role_rejections: Counter[str] = Counter()
         local_currency_overrides = 0
         for row in rows:
             scanned += 1
@@ -222,6 +227,11 @@ class SqliteOperandRetriever:
                 else:
                     rejected_unit += 1
                 continue
+            if self.enforce_observation_roles:
+                role_rejection = _observation_role_rejection(request, candidate)
+                if role_rejection is not None:
+                    role_rejections[role_rejection] += 1
+                    continue
             candidates.append(candidate)
             match_methods[candidate.match_method or "unknown"] += 1
             local_currency_overrides += int(
@@ -238,7 +248,15 @@ class SqliteOperandRetriever:
             elif rejected_unit == scanned:
                 failure_reason = "UNIT_REJECT_ALL"
             else:
-                failure_reason = "CANDIDATE_EMPTY"
+                role_rejection_total = sum(role_rejections.values())
+                if role_rejection_total and role_rejection_total + rejected_metric + rejected_unit == scanned:
+                    failure_reason = (
+                        next(iter(role_rejections))
+                        if len(role_rejections) == 1
+                        else "ROLE_REJECT_ALL"
+                    )
+                else:
+                    failure_reason = "CANDIDATE_EMPTY"
         return CandidateBatch(
             request.request_id,
             selected,
@@ -265,8 +283,16 @@ class SqliteOperandRetriever:
                 "table_prior_count": len(self.table_rank),
                 "recoverable_collisions_enabled": self.include_recoverable_collisions,
                 "local_currency_overrides": local_currency_overrides,
+                "role_rejected": sum(role_rejections.values()),
+                "role_rejection_reasons": dict(sorted(role_rejections.items())),
+                "enforce_observation_roles": self.enforce_observation_roles,
                 "observation_role_policy": self.observation_role_policy.policy_id,
                 "observation_role_fingerprint": self.observation_role_policy.fingerprint,
+                **(
+                    {"observation_role_spec_fingerprint": _role_spec_fingerprint(request)}
+                    if request.observation_role is not None
+                    else {}
+                ),
                 **({"source_binding": True} if source_binding is not None else {}),
             },
         )
@@ -553,6 +579,67 @@ def _metric_match(
                 ("row_hierarchy", "generic_total_leaf", "fact_normalized"),
             )
     return None
+
+
+def _observation_role_rejection(
+    request: OperandRequest, candidate: ObservationCandidate
+) -> str | None:
+    spec = request.observation_role
+    if spec is None:
+        return "ROLE_SPEC_MISSING"
+    if spec.source_metric_id is not None and spec.source_metric_id != request.metric_id:
+        return "SOURCE_METRIC_MISMATCH"
+    if spec.accepted_source_metric_codes and (
+        candidate.source_metric_code not in spec.accepted_source_metric_codes
+    ):
+        return "SOURCE_METRIC_MISMATCH"
+    if spec.exact_row_labels:
+        actual_segments = fact_label_segments(candidate.row_path)
+        expected_segments = {
+            fact_label_segments(value) for value in spec.exact_row_labels
+        }
+        if actual_segments not in expected_segments:
+            return "ROW_LABEL_MISMATCH"
+    row_context = normalize_phrase(candidate.row_path)
+    if any(
+        not _contains_phrase(row_context, normalize_phrase(token))
+        for token in spec.required_row_path_tokens
+    ):
+        return "ROW_LABEL_MISMATCH"
+    if any(
+        _contains_phrase(row_context, normalize_phrase(token))
+        for token in spec.forbidden_row_path_tokens
+    ):
+        return "ROW_LABEL_MISMATCH"
+    if spec.allowed_row_roles and candidate.row_role not in spec.allowed_row_roles:
+        return "ROW_ROLE_MISMATCH"
+    if (
+        spec.allowed_column_roles
+        and candidate.column_role not in spec.allowed_column_roles
+    ):
+        return "COLUMN_ROLE_MISMATCH"
+    if spec.allowed_period_roles and (
+        candidate.period_role not in spec.allowed_period_roles
+    ):
+        return "PERIOD_ROLE_MISMATCH"
+    if spec.allowed_scale_sources and (
+        candidate.scale_source not in spec.allowed_scale_sources
+    ):
+        return "SCALE_SOURCE_UNSAFE"
+    if spec.entity_membership and candidate.entity not in spec.entity_membership:
+        return "ENTITY_MEMBERSHIP_MISMATCH"
+    return None
+
+
+def _role_spec_fingerprint(request: OperandRequest) -> str:
+    assert request.observation_role is not None
+    canonical = json.dumps(
+        request.observation_role.to_dict(),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _confidence_value(value: object) -> float | None:

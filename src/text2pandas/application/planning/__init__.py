@@ -8,6 +8,7 @@ from .contracts import (
 )
 from .planner import PlanningError, compile_execution_plan
 from text2pandas.domain.semantic import ObservationRoleSpec
+from .observation_roles import infer_observation_role_spec
 
 __all__ = [
     "BindingConstraint",
@@ -17,4 +18,5 @@ __all__ = [
     "ObservationRoleSpec",
     "PlanningError",
     "compile_execution_plan",
+    "infer_observation_role_spec",
 ]

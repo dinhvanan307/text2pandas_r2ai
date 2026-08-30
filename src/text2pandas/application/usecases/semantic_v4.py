@@ -37,6 +37,7 @@ class SemanticV4Config:
     disagreement_margin: float = 0.2
     require_answer_consensus: bool = False
     maximum_relevant_tables: int = 10
+    infer_observation_roles: bool = False
 
     def __post_init__(self) -> None:
         if self.max_parse_candidates < 1 or self.max_binding_candidates < 1:
@@ -182,7 +183,11 @@ class SemanticV4Engine:
                 failures[f"PARSE:{result.reason or 'PARSE_FAILED'}"] += 1
                 continue
             try:
-                plan = compile_execution_plan(result.ast, self.parser.ontology)
+                plan = compile_execution_plan(
+                    result.ast,
+                    self.parser.ontology,
+                    infer_observation_roles=self.config.infer_observation_roles,
+                )
             except PlanningError as error:
                 failures[f"PLAN:{error}"] += 1
                 continue

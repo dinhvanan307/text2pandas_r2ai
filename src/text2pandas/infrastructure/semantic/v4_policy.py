@@ -20,6 +20,7 @@ class SemanticV4RuntimePolicy:
     production_eligible: bool
     operand_pool_k: int
     include_recoverable_collisions: bool
+    enforce_observation_roles: bool
     hierarchy: HierarchicalRetrievalPolicy
     engine: SemanticV4Config
     verification: VerificationPolicy
@@ -41,6 +42,9 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         raise ValueError("operand_pool_k must be positive")
     include_recoverable = bool(
         physical.get("include_recoverable_collisions", False)
+    )
+    enforce_observation_roles = bool(
+        physical.get("enforce_observation_roles", False)
     )
     allow_recoverable = bool(
         verification.get("allow_recoverable_collisions", False)
@@ -71,6 +75,7 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         disagreement_margin=_float(search.get("disagreement_margin", 0.2)),
         require_answer_consensus=bool(search.get("require_answer_consensus", False)),
         maximum_relevant_tables=_int(search.get("maximum_relevant_tables", 10)),
+        infer_observation_roles=bool(search.get("infer_observation_roles", False)),
     )
     verification_policy = VerificationPolicy(
         allow_recoverable_collisions=allow_recoverable,
@@ -90,6 +95,7 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         production_eligible=production_eligible,
         operand_pool_k=operand_pool_k,
         include_recoverable_collisions=include_recoverable,
+        enforce_observation_roles=enforce_observation_roles,
         hierarchy=hierarchy_policy,
         engine=engine_policy,
         verification=verification_policy,

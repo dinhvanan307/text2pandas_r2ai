@@ -85,3 +85,30 @@ def test_versioned_policy_classifies_rows_columns_and_safe_scales() -> None:
     assert policy.classify_column("", "prior") == ObservationColumnRole.PRIOR
     assert "none" not in policy.strict_money_scale_sources
     assert len(policy.fingerprint) == 64
+
+
+def test_planner_infers_explicit_cost_closing_scale_and_entity_roles() -> None:
+    ast = QuestionAST(
+        expression=MetricRef(
+            "inventory",
+            entities=("HNG",),
+            periods=("2024",),
+            basis=Basis.CONSOLIDATED,
+            expected_unit=UnitSpec(Dimension.MONEY, 0, "VND"),
+        ),
+        output=OutputSpec(ResultKind.SCALAR, UnitSpec(Dimension.MONEY, 0, "VND")),
+        question="Giá gốc hàng tồn kho cuối năm 2024 của HNG là bao nhiêu?",
+    )
+
+    request = compile_execution_plan(
+        ast, load_ontology(), infer_observation_roles=True
+    ).requests[0]
+    role = request.observation_role
+
+    assert role is not None
+    assert role.allowed_row_roles == (ObservationRowRole.COST,)
+    assert role.allowed_column_roles == (ObservationColumnRole.CLOSING,)
+    assert role.allowed_period_roles == ("closing",)
+    assert "du phong" in role.forbidden_row_path_tokens
+    assert role.entity_membership == ("HNG",)
+    assert "column_path" in role.allowed_scale_sources

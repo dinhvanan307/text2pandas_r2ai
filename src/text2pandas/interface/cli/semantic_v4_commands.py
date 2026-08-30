@@ -109,6 +109,7 @@ def cmd_shadow_v4(args: Namespace) -> int:
         top_k=policy.operand_pool_k,
         source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
         include_recoverable_collisions=policy.include_recoverable_collisions,
+        enforce_observation_roles=policy.enforce_observation_roles,
     )
     retriever = HierarchicalOperandRetriever(physical_retriever, policy.hierarchy)
     engine = SemanticV4Engine(
