@@ -213,6 +213,7 @@ def cmd_shadow_v4(args: Namespace) -> int:
                 "hierarchical_top_k": policy.hierarchy.top_k,
                 "max_parse_candidates": policy.engine.max_parse_candidates,
                 "max_binding_candidates": policy.engine.max_binding_candidates,
+                "require_answer_consensus": policy.engine.require_answer_consensus,
                 "include_recoverable_collisions": policy.include_recoverable_collisions,
             },
             "metrics": {

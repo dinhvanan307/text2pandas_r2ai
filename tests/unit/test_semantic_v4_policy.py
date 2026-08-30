@@ -19,6 +19,17 @@ def test_v4_runtime_policy_is_shadow_locked_and_consistent() -> None:
     assert len(policy.config_sha256) == 64
 
 
+def test_wave4_policy_limits_rebinding_and_requires_consensus() -> None:
+    policy = load_semantic_v4_policy(
+        ROOT / "configs/semantic/search_v4_wave4.yaml"
+    )
+
+    assert policy.policy_id == "semantic-v4-wave4-search-v2"
+    assert policy.engine.max_binding_candidates == 3
+    assert policy.engine.require_answer_consensus
+    assert not policy.production_eligible
+
+
 def test_v4_policy_rejects_retrieval_verifier_collision_mismatch(tmp_path: Path) -> None:
     source = (ROOT / "configs/semantic/search_v4.yaml").read_text(encoding="utf-8")
     path = tmp_path / "invalid.yaml"

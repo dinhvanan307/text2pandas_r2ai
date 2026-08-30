@@ -69,6 +69,7 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         max_binding_candidates=_int(search.get("max_binding_candidates", 8)),
         minimum_confidence=_float(search.get("minimum_confidence", 0.62)),
         disagreement_margin=_float(search.get("disagreement_margin", 0.2)),
+        require_answer_consensus=bool(search.get("require_answer_consensus", False)),
         maximum_relevant_tables=_int(search.get("maximum_relevant_tables", 10)),
     )
     verification_policy = VerificationPolicy(

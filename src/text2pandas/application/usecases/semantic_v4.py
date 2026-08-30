@@ -35,6 +35,7 @@ class SemanticV4Config:
     max_binding_candidates: int = 8
     minimum_confidence: float = 0.62
     disagreement_margin: float = 0.2
+    require_answer_consensus: bool = False
     maximum_relevant_tables: int = 10
 
     def __post_init__(self) -> None:
@@ -223,6 +224,15 @@ class SemanticV4Engine:
         ranked_groups = sorted(groups, key=_group_sort_key)
         winning_group = ranked_groups[0]
         selected = max(winning_group, key=_alternative_sort_key)
+        if self.config.require_answer_consensus and len(ranked_groups) > 1:
+            return self._abstain_after_search(
+                qid,
+                "SEMANTIC_CANDIDATE_DISAGREEMENT",
+                alternatives,
+                candidate_tables,
+                failures,
+                search_trace,
+            )
         competing_score = (
             max(value.joint_score for value in ranked_groups[1])
             if len(ranked_groups) > 1

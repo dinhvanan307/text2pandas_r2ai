@@ -103,6 +103,25 @@ def test_v4_engine_abstains_when_equally_supported_programs_disagree() -> None:
     assert result.candidate_tables == ("table:a", "table:b")
 
 
+def test_v4_engine_strict_policy_rejects_any_verified_answer_disagreement() -> None:
+    engine = SemanticV4Engine(
+        SemanticParser(load_ontology(), _FormulaAnnotator()),
+        _FormulaRetriever(ambiguous=True),
+        PandasSandboxReplay(),
+        config=SemanticV4Config(
+            max_binding_candidates=3,
+            minimum_confidence=0.0,
+            require_answer_consensus=True,
+        ),
+    )
+
+    result = engine.answer("Biên lợi nhuận ròng VCB năm 2024?")
+
+    assert not result.ok
+    assert result.reason == "SEMANTIC_CANDIDATE_DISAGREEMENT"
+    assert result.successful_candidates == 2
+
+
 def test_v4_engine_does_not_use_recoverable_collision_without_verifier_policy() -> None:
     result = _engine(_FormulaRetriever(collision=True)).answer(
         "Biên lợi nhuận ròng VCB năm 2024?"
