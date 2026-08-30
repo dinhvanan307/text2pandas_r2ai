@@ -25,6 +25,7 @@ RUN_ROOTS = (
     "safe-recovery",
     "recovery-wave2",
     "recovery-wave3",
+    "recovery-wave4",
 )
 
 
