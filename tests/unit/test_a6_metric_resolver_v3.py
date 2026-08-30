@@ -34,7 +34,8 @@ matching:
   min_source_coverage_milli: 600
   max_hypotheses: 20
   require_unique_winner_per_span: true
-  blocked_scope_tokens: [cua, cong, ty, co, phan, me, so, du, dau, cuoi, ky, nam, vnd, bang, cp]
+  exclude_entity_tokens_from_scoring: true
+  blocked_scope_tokens: [cua, cong, ty, co, phan, me, so, du, dau, cuoi, ky, nam, vnd, bang, cp, va]
 abbreviation_rules:
   - rule_id: usd-currency-name
     phrase: usd
@@ -496,6 +497,99 @@ def test_resolver_blocks_elided_entity_suffix_from_metric_candidates(tmp_path: P
     assert result.status == "RESOLVED"
     assert len(result.selected) == 1
     assert result.selected[0].aliases == ("Cho vay khách hàng",)
+
+
+def test_resolver_does_not_join_metric_phrase_across_entity_conjunction(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "receivable",
+                "PVT",
+                "2017-12-31",
+                "Các khoản phải thu khách hàng khác",
+                "Phải thu khách hàng › Các khoản phải thu khách hàng khác",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "company_like_label",
+                "PVT",
+                "2017-12-31",
+                "Tổng Công ty Dung dịch khoan và Hóa phẩm Dầu khí",
+                "Phải thu bên liên quan › Tổng Công ty Dung dịch khoan và Hóa phẩm Dầu khí",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(entity="PVT"),
+        entities=("PVT", "BSR"),
+        periods=("2017",),
+        operation=OperationKind.SUBTRACT,
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        entity_aliases={
+            "PVT": ("Tổng Công ty cổ phần Vận tải Dầu khí",),
+            "BSR": ("Tổng Công ty Lọc hóa dầu Việt Nam",),
+        },
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Sự chênh lệch số dư phải thu khách hàng từ các bên liên quan "
+        "cuối năm 2017 giữa Tổng Công ty cổ phần Vận tải Dầu khí và "
+        "Tổng Công ty Lọc hóa dầu Việt Nam là bao nhiêu tỷ đồng?",
+        annotations,
+    )
+
+    assert result.status == "RESOLVED"
+    assert len(result.selected) == 1
+    assert result.selected[0].aliases == ("Các khoản phải thu khách hàng khác",)
+
+
+def test_resolver_keeps_counterparty_label_when_primary_ticker_is_explicit(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "ownership",
+                "HPG",
+                "2023-12-31",
+                "Công ty CP Gang thép Hòa Phát",
+                "Các công ty con › Công ty CP Gang thép Hòa Phát",
+                "",
+                "percent",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(entity="HPG"),
+        periods=("2023",),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        entity_aliases={"HPG": ("Hòa Phát",)},
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Tỷ lệ sở hữu Công ty CP Gang thép Hòa Phát của HPG năm 2023?",
+        annotations,
+    )
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].aliases == ("Công ty CP Gang thép Hòa Phát",)
 
 
 def test_resolver_prefers_complete_reordered_qualifier_phrase(tmp_path: Path) -> None:

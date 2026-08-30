@@ -30,7 +30,7 @@ from text2pandas.infrastructure.retrieval.fact_label import (
 )
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
-_DEFAULT_CONFIG = _REPO_ROOT / "configs/semantic/metric_resolution_v1.yaml"
+_DEFAULT_CONFIG = _REPO_ROOT / "configs/semantic/metric_resolution_v2.yaml"
 _TOKEN = re.compile(r"[a-z0-9]+")
 _NOTE_SUFFIX = re.compile(r"\s*\((?:thuyet minh\s*)?\d+[a-z]?\)\s*$")
 _NORMALIZED_NOTE_SUFFIX = re.compile(r"\s+thuyet minh\s+\d+[a-z]?$")
@@ -158,6 +158,7 @@ class _Config:
     max_hypotheses: int
     require_unique_winner_per_span: bool
     blocked_scope_tokens: frozenset[str]
+    exclude_entity_tokens_from_scoring: bool
     rules: tuple[_Rule, ...]
     sha256: str
 
@@ -248,8 +249,16 @@ class A6MetricMentionResolver:
         if not annotations.entities and annotations.mode != "screen_open":
             return MetricResolutionResult("ABSTAIN", reason="ENTITY_SCOPE_UNAVAILABLE")
         rows = self._source_rows(annotations)
-        question_tokens, normalized_question = self._question_tokens(question, annotations.entities)
-        hypotheses = self._hypotheses(rows, question_tokens, normalized_question, annotations)
+        question_tokens, normalized_question, entity_spans = self._question_tokens(
+            question, annotations.entities
+        )
+        hypotheses = self._hypotheses(
+            rows,
+            question_tokens,
+            normalized_question,
+            entity_spans,
+            annotations,
+        )
         if not hypotheses:
             expected_dimension = _source_metric_dimension(annotations)
             compatible_units = {
@@ -423,20 +432,47 @@ class A6MetricMentionResolver:
         self._scope_cache[key] = result
         return result
 
-    def _question_tokens(self, question: str, entities: Sequence[str]) -> tuple[list[_Token], str]:
+    def _question_tokens(
+        self,
+        question: str,
+        entities: Sequence[str],
+    ) -> tuple[list[_Token], str, tuple[tuple[int, int], ...]]:
         normalized = normalize_phrase(question)
-        blocked_phrases = [normalize_phrase(entity) for entity in entities]
+        blocked_spans: list[tuple[int, int]] = []
+        scoring_spans: list[tuple[int, int]] = []
         for entity in entities:
+            entity_phrases = [normalize_phrase(entity)]
             raw = self.entity_aliases.get(entity, ())
             values = (raw,) if isinstance(raw, str) else raw
             for value in values:
-                blocked_phrases.extend(_entity_phrase_variants(str(value)))
-        blocked_spans = [
-            match.span()
-            for phrase in blocked_phrases
-            if phrase
-            for match in re.finditer(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", normalized)
-        ]
+                entity_phrases.extend(_entity_phrase_variants(str(value)))
+            entity_spans = [
+                match.span()
+                for phrase in entity_phrases
+                if phrase
+                for match in re.finditer(
+                    rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])",
+                    normalized,
+                )
+            ]
+            blocked_spans.extend(entity_spans)
+            ticker = normalize_phrase(entity)
+            ticker_spans = [
+                match.span()
+                for match in re.finditer(
+                    rf"(?<![a-z0-9]){re.escape(ticker)}(?![a-z0-9])",
+                    normalized,
+                )
+            ]
+            if ticker_spans:
+                scoring_spans.extend(ticker_spans)
+            elif entity_spans:
+                longest = max(end - start for start, end in entity_spans)
+                scoring_spans.extend(
+                    (start, end)
+                    for start, end in entity_spans
+                    if end - start == longest
+                )
         tokens = [
             _Token(match.group(0), match.start(), match.end())
             for match in _TOKEN.finditer(normalized)
@@ -445,13 +481,18 @@ class A6MetricMentionResolver:
                 match.start() >= start and match.end() <= end for start, end in blocked_spans
             )
         ]
-        return _apply_token_rules(tokens, self.config.rules), normalized
+        return (
+            _apply_token_rules(tokens, self.config.rules),
+            normalized,
+            tuple(sorted(set(scoring_spans))),
+        )
 
     def _hypotheses(
         self,
         rows: Sequence[_SourceRow],
         question_tokens: list[_Token],
         normalized_question: str,
+        entity_spans: tuple[tuple[int, int], ...],
         annotations: QuestionAnnotations,
     ) -> list[MetricHypothesis]:
         groups: dict[tuple[str, Dimension], _Group] = {}
@@ -474,6 +515,11 @@ class A6MetricMentionResolver:
             group.support += row.support
 
         hypotheses: list[MetricHypothesis] = []
+        scoring_question = (
+            _mask_spans(normalized_question, entity_spans)
+            if self.config.exclude_entity_tokens_from_scoring
+            else normalized_question
+        )
         for group in groups.values():
             if _context_free_person_name(group):
                 continue
@@ -496,12 +542,13 @@ class A6MetricMentionResolver:
                     normalized_question, first.start, last.end
                 )
                 phrase = normalized_question[phrase_start:phrase_end]
-                phrase_values = _semantic_metric_tokens(phrase)
+                scoring_phrase = scoring_question[phrase_start:phrase_end]
+                phrase_values = _semantic_metric_tokens(scoring_phrase)
                 source_semantic_values = _semantic_metric_tokens(" ".join(source_values))
                 short_exact_label = (
                     0 < len(source_semantic_values) <= 2
                     and source_semantic_values == phrase_values
-                    and normalize_fact_label(surface) == normalize_fact_label(phrase)
+                    and normalize_fact_label(surface) == normalize_fact_label(scoring_phrase)
                 )
                 if _introduces_unrequested_accounting_qualifier(
                     frozenset(source_values),
@@ -522,7 +569,7 @@ class A6MetricMentionResolver:
                         context_values.update(_semantic_metric_tokens(segment))
                 overlap = len(phrase_values.intersection(source_semantic_values))
                 evidence_overlap = len(
-                    frozenset(_TOKEN.findall(phrase)).intersection(source_values)
+                    frozenset(_TOKEN.findall(scoring_phrase)).intersection(source_values)
                 )
                 context_overlap = len(phrase_values.intersection(context_values))
                 query_coverage = round(1000 * context_overlap / max(1, len(phrase_values)))
@@ -574,7 +621,10 @@ class A6MetricMentionResolver:
             ):
                 continue
             surface = normalized_question[phrase_start:phrase_end]
-            surface_tokens = frozenset(match.group(0) for match in _TOKEN.finditer(surface))
+            scoring_surface = scoring_question[phrase_start:phrase_end]
+            surface_tokens = frozenset(
+                match.group(0) for match in _TOKEN.finditer(scoring_surface)
+            )
             if surface_tokens and surface_tokens <= self.config.blocked_scope_tokens:
                 continue
             source_id = _source_id(self.source_build_id, group.semantic_key, group.dimension)
@@ -647,6 +697,9 @@ def _load_config(path: Path) -> _Config:
             normalize_phrase(str(value))
             for value in matching.get("blocked_scope_tokens", ())
             if normalize_phrase(str(value))
+        ),
+        exclude_entity_tokens_from_scoring=bool(
+            matching.get("exclude_entity_tokens_from_scoring", False)
         ),
         rules=tuple(rules),
         sha256=sha256_file(path),
@@ -770,6 +823,15 @@ def _metric_phrase_span(normalized_question: str, start: int, end: int) -> tuple
             break
         right = index
     return tokens[left].start, tokens[right].end
+
+
+def _mask_spans(value: str, spans: Sequence[tuple[int, int]]) -> str:
+    """Blank annotated entity spans without changing character offsets."""
+
+    characters = list(value)
+    for start, end in spans:
+        characters[start:end] = " " * (end - start)
+    return "".join(characters)
 
 
 def _semantic_metric_tokens(value: str) -> frozenset[str]:
