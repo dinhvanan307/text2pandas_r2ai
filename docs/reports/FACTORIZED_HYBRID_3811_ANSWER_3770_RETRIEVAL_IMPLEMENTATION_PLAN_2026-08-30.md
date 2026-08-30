@@ -2,7 +2,7 @@
 
 **Ngày:** 2026-08-30
 
-**Trạng thái:** `READY_TO_IMPLEMENT — NOT_BUILT — NOT_UPLOADED`
+**Trạng thái:** `IMPLEMENTED — READY_TO_UPLOAD_LOCAL — NOT_UPLOADED`
 
 **Phạm vi:** chỉ compose submission từ hai ZIP đã có bằng phép thay thế theo
 field; không chạy lại answer generation hoặc retrieval.
@@ -501,19 +501,20 @@ docs/reports/
 - [Official retrieval winner report](./ACTUAL_TABLE_RETRIEVAL_RECOVERY_2026-08-29.md)
 - [P0 Metric Resolver/Selector implementation report](./P0_METRIC_RESOLVER_SELECTOR_IMPLEMENTATION_REPORT_2026-08-29.md)
 
-## 11. Trạng thái tại thời điểm đóng gói plan
+## 11. Trạng thái sau implementation
 
 ```text
 PLAN:          COMPLETE
-IMPLEMENTATION: NOT_STARTED
-CANDIDATE ZIP: NOT_BUILT
-VALIDATION:    NOT_MEASURED
-REPLAY:        NOT_MEASURED
-DETERMINISM:   NOT_MEASURED
+IMPLEMENTATION: COMPLETE
+CANDIDATE ZIP: BUILT
+VALIDATION:    PASS — 1012 records, 0 error, 0 warning
+REPLAY:        PASS — 625/625
+DETERMINISM:   PASS — A2/B byte-identical
 UPLOAD:        NOT_PERFORMED
 OFFICIAL SCORE: NOT_MEASURED
 ```
 
-Plan này không phải bằng chứng candidate đã tăng điểm. Nó là contract triển
-khai và release để phép ghép 3811 × 3770 có thể được đo một cách deterministic,
-fail-closed và truy vết đến đúng ZIP SHA-256.
+Kết quả triển khai và exact artifact SHA được ghi tại
+[implementation report](./FACTORIZED_HYBRID_3811_ANSWER_3770_RETRIEVAL_REPORT_2026-08-30.md).
+Các gate local không phải bằng chứng candidate đã tăng điểm; official score chỉ
+được xác nhận sau khi leaderboard receipt được bind với đúng ZIP SHA-256.
