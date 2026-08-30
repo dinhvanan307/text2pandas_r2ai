@@ -64,6 +64,18 @@ def test_release_manifest_locks_exact_a17_policy() -> None:
     assert manifest["policy"]["semantic_v3_promoted"] is False
 
 
+def test_manifest_rejects_incoherent_emitted_counts(tmp_path: Path) -> None:
+    payload = MANIFEST.read_text(encoding="utf-8").replace(
+        '"expected_output_emitted": 638',
+        '"expected_output_emitted": 639',
+    )
+    path = tmp_path / "bad_manifest.json"
+    path.write_text(payload, encoding="utf-8")
+
+    with pytest.raises(PatchError, match="expected_baseline_emitted \\+ expected_fills"):
+        _load_manifest(path)
+
+
 def test_composition_changes_only_allowlist_and_uses_retrieval_owner() -> None:
     answer = _bundle(
         "answer.zip",

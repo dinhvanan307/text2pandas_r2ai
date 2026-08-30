@@ -115,6 +115,22 @@ def _load_manifest(path: Path) -> JsonObject:
         raise PatchError("policy.expected_corrections must be an integer")
     if isinstance(expected_fills, bool) or not isinstance(expected_fills, int):
         raise PatchError("policy.expected_fills must be an integer")
+    for key in (
+        "expected_records",
+        "expected_baseline_emitted",
+        "expected_output_emitted",
+        "table_cap",
+    ):
+        value = policy.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise PatchError(f"policy.{key} must be a positive integer")
+    if policy["expected_output_emitted"] != (
+        policy["expected_baseline_emitted"] + expected_fills
+    ):
+        raise PatchError(
+            "policy.expected_output_emitted must equal "
+            "expected_baseline_emitted + expected_fills"
+        )
     if policy.get("p0_enabled") is not False:
         raise PatchError("P0 must remain disabled")
     if policy.get("model_gold_used") is not False:
@@ -681,6 +697,12 @@ def main() -> int:
     answer = _read_bundle(args.answer_zip, identities["answer_zip_sha256"])
     retrieval = _read_bundle(args.retrieval_zip, identities["retrieval_zip_sha256"])
     v3 = _read_bundle(args.v3_zip, identities["semantic_v3_zip_sha256"])
+    baseline_emitted = sum(_emitted(record) for record in answer.records)
+    if baseline_emitted != policy["expected_baseline_emitted"]:
+        raise PatchError(
+            f"answer source emitted count is {baseline_emitted}, "
+            f"expected {policy['expected_baseline_emitted']}"
+        )
     a6_sha = _require_file_sha256(
         args.a6_db, identities["a6_silver_db_sha256"], "A6 silver database"
     )
@@ -761,6 +783,7 @@ def main() -> int:
         },
         "policy": policy,
         "composition": composition,
+        "answer_source_emitted": baseline_emitted,
         "layer_diff": diff,
         "source_verification": {
             "verified_patches": len(expanded_sources),
