@@ -110,14 +110,17 @@ class LegacyVietnameseAnnotator:
             period_count=len(intent.years),
             operation=operation_kind,
         )
-        aggregate_all_entities = (
-            aggregate_evidence == "aggregate_domain:multi_entity_total"
+        aggregate_all_entities = aggregate_evidence == "aggregate_domain:multi_entity_total"
+        average_all_entities = (
+            operation_kind == OperationKind.AVERAGE
+            and len(intent.targets) < len(intent.tickers)
         )
-        entities = (
-            tuple(sorted(intent.tickers))
-            if aggregate_all_entities
-            else intent.targets
-        )
+        if aggregate_all_entities:
+            entities = tuple(sorted(intent.tickers))
+        elif average_all_entities:
+            entities = intent.ordered_tickers
+        else:
+            entities = intent.targets
         dimension, scale, _token = scan_question_unit(question)
         if intent.explicit_scope == "công ty mẹ":
             basis = Basis.SEPARATE
@@ -146,7 +149,9 @@ class LegacyVietnameseAnnotator:
             basis=basis,
             requested_unit=UnitSpec(_DIMENSION[dimension], scale),
             operation=operation_kind,
-            mode="screen" if aggregate_all_entities else intent.mode,
+            mode="screen"
+            if aggregate_all_entities or average_all_entities
+            else intent.mode,
             rank_direction=rank_direction,
             return_mode=return_mode,
             reverse_difference=operation.reverse_difference,

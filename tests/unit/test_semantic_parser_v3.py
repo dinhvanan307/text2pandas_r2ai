@@ -529,6 +529,31 @@ def test_total_after_leading_period_compiles_multi_entity_sum() -> None:
     assert result.ast.expression.members == ("HAG", "MPC", "SAB")
 
 
+def test_average_over_named_companies_keeps_complete_entity_domain() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {
+                "HPG": "CTCP Tập đoàn Hòa Phát",
+                "MSR": "CTCP Masan High-Tech Materials",
+                "NKG": "CTCP Thép Nam Kim",
+            }
+        ),
+    )
+
+    result = parser.parse(
+        "Giá trị trung bình tổng tài sản của CTCP Tập đoàn Hòa Phát, "
+        "CTCP Masan High-Tech Materials và CTCP Thép Nam Kim năm 2024 "
+        "là bao nhiêu tỷ đồng?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+    assert result.ast.expression.function == AggregateFunction.AVERAGE
+    assert result.ast.expression.axis == Axis.ENTITY
+    assert result.ast.expression.members == ("HPG", "MSR", "NKG")
+
+
 def test_explicit_numeric_predicate_compiles_typed_entity_count() -> None:
     parser = SemanticParser(
         load_ontology(),
