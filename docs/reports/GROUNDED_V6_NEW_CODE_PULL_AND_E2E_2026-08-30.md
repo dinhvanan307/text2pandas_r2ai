@@ -1,9 +1,13 @@
 # GROUNDED V6 — NEW CODE PULL, AUDIT VÀ E2E
 
-**Ngày chạy:** 2026-08-30  
-**Branch:** `mentor-grounded-v6`  
-**Source commit:** `88ad7b04b66d00ade3fdb0f1c58e479f6c525a38`  
-**Kết luận release:** `BLOCKED_NO_PUBLISHABLE_HANDOFF`  
+**Ngày chạy:** 2026-08-30
+
+**Branch:** `mentor-grounded-v6`
+
+**Source commit:** `88ad7b04b66d00ade3fdb0f1c58e479f6c525a38`
+
+**Kết luận release:** `BLOCKED_NO_PUBLISHABLE_HANDOFF`
+
 **Official score của candidate mới:** `NOT_MEASURED`
 
 ## 1. Kết luận điều hành
