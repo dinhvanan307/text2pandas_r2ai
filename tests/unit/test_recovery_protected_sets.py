@@ -65,3 +65,44 @@ def test_partition_sets_rejects_inherited_qid_outside_executable_set() -> None:
         assert "not executable" in str(error)
     else:
         raise AssertionError("invalid inherited recovery QID must fail closed")
+
+
+def test_partition_sets_seals_narrow_mutation_scope_and_out_of_scope_abstentions() -> None:
+    baseline = {
+        1: _row(True),
+        2: _row(False),
+        3: _row(False),
+        4: _row(False),
+    }
+
+    result = partition_sets(
+        baseline,
+        {2, 3, 4},
+        set(),
+        expected_records=4,
+        expected_executable=1,
+        expected_unresolved=3,
+        mutation_scope_qids={2, 4},
+    )
+
+    assert result["w5_mutation_scope"] == (2, 4)
+    assert result["p_out_of_scope_unresolved"] == (3,)
+
+
+def test_partition_sets_rejects_scope_outside_abstentions() -> None:
+    baseline = {1: _row(True), 2: _row(False)}
+
+    try:
+        partition_sets(
+            baseline,
+            {2},
+            set(),
+            expected_records=2,
+            expected_executable=1,
+            expected_unresolved=1,
+            mutation_scope_qids={1},
+        )
+    except ValueError as error:
+        assert "outside baseline abstentions" in str(error)
+    else:
+        raise AssertionError("scope outside abstentions must fail closed")

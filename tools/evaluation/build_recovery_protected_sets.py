@@ -58,6 +58,7 @@ def partition_sets(
     expected_records: int,
     expected_executable: int,
     expected_unresolved: int,
+    mutation_scope_qids: set[int] | None = None,
 ) -> dict[str, tuple[int, ...]]:
     """Validate the mutation boundary and return stable sorted QID sets."""
 
@@ -84,12 +85,23 @@ def partition_sets(
         )
     if executable & inventory_qids:
         raise ValueError("protected answers overlap the mutation pool")
-    return {
+    sets = {
         "p_answer": tuple(sorted(executable)),
         "p_retrieval": tuple(sorted(all_qids)),
         "p_inherited_recovery": tuple(sorted(inherited_qids)),
         "mutation_pool": tuple(sorted(inventory_qids)),
     }
+    if mutation_scope_qids is not None:
+        if not mutation_scope_qids.issubset(unresolved):
+            raise ValueError(
+                "scoped mutation QIDs are outside baseline abstentions: "
+                f"{sorted(mutation_scope_qids - unresolved)}"
+            )
+        sets["w5_mutation_scope"] = tuple(sorted(mutation_scope_qids))
+        sets["p_out_of_scope_unresolved"] = tuple(
+            sorted(unresolved - mutation_scope_qids)
+        )
+    return sets
 
 
 def main() -> int:
@@ -102,6 +114,12 @@ def main() -> int:
     parser.add_argument("--expected-executable", type=int, required=True)
     parser.add_argument("--expected-unresolved", type=int, required=True)
     parser.add_argument("--expected-inherited", type=int, required=True)
+    parser.add_argument(
+        "--mutation-scope",
+        type=Path,
+        help="Optional JSON scope with a records list used to seal a narrower mutation set",
+    )
+    parser.add_argument("--expected-mutation-scope", type=int)
     args = parser.parse_args()
 
     output = args.output.expanduser().resolve()
@@ -125,6 +143,23 @@ def main() -> int:
         raise ValueError(
             f"expected {args.expected_inherited} inherited QIDs, found {len(inherited_qids)}"
         )
+    mutation_scope_path = (
+        args.mutation_scope.expanduser().resolve() if args.mutation_scope else None
+    )
+    mutation_scope_qids: set[int] | None = None
+    if mutation_scope_path is not None:
+        scope = json.loads(mutation_scope_path.read_text(encoding="utf-8"))
+        scope_records = scope.get("records")
+        if not isinstance(scope_records, list):
+            raise ValueError("mutation scope must contain a records list")
+        mutation_scope_qids = {int(row["qid"]) for row in scope_records}
+        if args.expected_mutation_scope is None:
+            parser.error("--expected-mutation-scope is required with --mutation-scope")
+        if len(mutation_scope_qids) != args.expected_mutation_scope:
+            raise ValueError(
+                "unexpected mutation scope count: "
+                f"expected={args.expected_mutation_scope} actual={len(mutation_scope_qids)}"
+            )
     sets = partition_sets(
         baseline,
         inventory_qids,
@@ -132,6 +167,7 @@ def main() -> int:
         expected_records=args.expected_records,
         expected_executable=args.expected_executable,
         expected_unresolved=args.expected_unresolved,
+        mutation_scope_qids=mutation_scope_qids,
     )
 
     output.mkdir(parents=True)
@@ -159,6 +195,16 @@ def main() -> int:
             "baseline": {"path": str(baseline_path), "sha256": sha256_file(baseline_path)},
             "inventory": {"path": str(inventory_path), "sha256": sha256_file(inventory_path)},
             "inherited_ledger": {"path": str(ledger_path), "sha256": sha256_file(ledger_path)},
+            **(
+                {
+                    "mutation_scope": {
+                        "path": str(mutation_scope_path),
+                        "sha256": sha256_file(mutation_scope_path),
+                    }
+                }
+                if mutation_scope_path is not None
+                else {}
+            ),
         },
         "outputs": {
             "protected_sets": {
