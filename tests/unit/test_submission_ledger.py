@@ -82,6 +82,29 @@ def test_submission_3828_is_bound_to_the_reviewed23_official_artifact() -> None:
     }
 
 
+def test_submission_3842_is_bound_to_the_wave4_official_artifact() -> None:
+    payload = json.loads(LEDGER.read_text(encoding="utf-8"))
+    entry = next(row for row in payload["submissions"] if row["submission_id"] == 3842)
+    provenance_path = ROOT / "provenance/submissions/submission_3842.json"
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+
+    assert entry["status"] == "INCOMPLETE_RECEIPT_ATTRIBUTION"
+    assert entry["zip_sha256"] == provenance["artifact"]["sha256"]
+    assert entry["git_commit"] == provenance["attribution"]["git_commit"]
+    assert entry["config_sha256"] == provenance["attribution"]["config_sha256"]
+    assert provenance["coverage"] == {
+        "executable": 798,
+        "records": 1012,
+        "unresolved": 214,
+    }
+    assert provenance["replay"] == {
+        "emitted_errors": 0,
+        "executed": 798,
+        "matched": 798,
+        "unresolved": 214,
+    }
+
+
 def test_local_candidate_cannot_masquerade_as_official_submission() -> None:
     payload = json.loads(LEDGER.read_text(encoding="utf-8"))
     candidates = payload["local_candidates"]
