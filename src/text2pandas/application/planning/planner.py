@@ -97,6 +97,7 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
             consumers=tuple(sorted(item.consumers)),
             required_context_phrases=item.ref.required_context_phrases,
             source_binding=source_binding,
+            observation_role=item.ref.observation_role,
         )
 
     constraints: list[BindingConstraint] = []
@@ -162,6 +163,9 @@ def _collect(
                 expression.statement_types,
                 expression.qualifiers,
                 expression.required_context_phrases,
+                repr(expression.observation_role.to_dict())
+                if expression.observation_role is not None
+                else None,
             )
             if expression.source_binding is not None:
                 key = (*key, repr(expression.source_binding.to_dict()))

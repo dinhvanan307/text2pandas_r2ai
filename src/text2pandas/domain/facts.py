@@ -14,7 +14,12 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
 
-from text2pandas.domain.semantic import Basis, UnitSpec
+from text2pandas.domain.semantic import (
+    Basis,
+    ObservationColumnRole,
+    ObservationRowRole,
+    UnitSpec,
+)
 
 
 class FactReadiness(StrEnum):
@@ -50,6 +55,9 @@ class FinancialFact:
     readiness: FactReadiness
     collision_class: str | None
     source_confidence: float | None
+    scale_source: str | None = None
+    row_role: ObservationRowRole = ObservationRowRole.UNKNOWN
+    column_role: ObservationColumnRole = ObservationColumnRole.UNKNOWN
 
     def semantic_key(self) -> tuple[object, ...]:
         """Identity for deduplication without collapsing distinct disclosures."""
@@ -63,6 +71,9 @@ class FinancialFact:
             self.column_hierarchy,
             self.period,
             self.period_role,
+            self.scale_source,
+            self.row_role,
+            self.column_role,
             self.value,
             self.unit,
         )

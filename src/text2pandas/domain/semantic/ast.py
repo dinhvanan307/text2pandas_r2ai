@@ -17,6 +17,7 @@ from .types import (
     Basis,
     ComparisonOperator,
     LogicalOperator,
+    ObservationRoleSpec,
     OutputSpec,
     PeriodSemantics,
     PredicateQuantifier,
@@ -85,6 +86,7 @@ class MetricRef:
     # Every phrase is a hard evidence requirement, unlike soft qualifiers.
     required_context_phrases: tuple[str, ...] = ()
     source_binding: MetricBindingHint | None = None
+    observation_role: ObservationRoleSpec | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -318,6 +320,11 @@ def expression_to_dict(expression: Expression) -> dict[str, Any]:
                 if expression.source_binding
                 else {}
             ),
+            **(
+                {"observation_role": expression.observation_role.to_dict()}
+                if expression.observation_role
+                else {}
+            ),
         }
     if isinstance(expression, Literal):
         return {"type": "literal", "value": expression.value, "unit": expression.unit.to_dict()}
@@ -439,6 +446,11 @@ def expression_from_dict(raw: Mapping[str, Any]) -> Expression:
             source_binding=(
                 MetricBindingHint.from_dict(_mapping(raw["source_binding"]))
                 if raw.get("source_binding") is not None
+                else None
+            ),
+            observation_role=(
+                ObservationRoleSpec.from_dict(_mapping(raw["observation_role"]))
+                if raw.get("observation_role") is not None
                 else None
             ),
         )

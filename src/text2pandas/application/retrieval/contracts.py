@@ -8,7 +8,12 @@ from decimal import Decimal
 from typing import Protocol
 
 from text2pandas.application.planning import ExecutionPlan, OperandRequest
-from text2pandas.domain.semantic import Basis, UnitSpec
+from text2pandas.domain.semantic import (
+    Basis,
+    ObservationColumnRole,
+    ObservationRowRole,
+    UnitSpec,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +50,9 @@ class ObservationCandidate:
     readiness: str = "ready"
     collision_class: str | None = None
     source_confidence: float | None = None
+    scale_source: str | None = None
+    row_role: ObservationRowRole = ObservationRowRole.UNKNOWN
+    column_role: ObservationColumnRole = ObservationColumnRole.UNKNOWN
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -80,6 +88,9 @@ class ObservationCandidate:
             "readiness": self.readiness,
             "collision_class": self.collision_class,
             "source_confidence": self.source_confidence,
+            "scale_source": self.scale_source,
+            "row_role": self.row_role.value,
+            "column_role": self.column_role.value,
         }
 
 

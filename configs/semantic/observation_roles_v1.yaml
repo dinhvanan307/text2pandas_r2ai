@@ -1,0 +1,53 @@
+schema_version: 1
+policy_id: observation-roles-v1
+
+row_role_priority:
+  - allowance
+  - cost
+  - net
+  - total
+
+row_roles:
+  allowance:
+    - dự phòng
+    - hao mòn lũy kế
+    - khấu hao lũy kế
+  cost:
+    - giá gốc
+    - nguyên giá
+  net:
+    - giá trị còn lại
+    - giá trị ghi sổ
+    - giá trị thuần
+  total:
+    - tổng cộng
+    - cộng
+    - tổng số
+
+column_roles:
+  closing:
+    - số cuối năm
+    - cuối năm
+    - số cuối kỳ
+    - cuối kỳ
+  opening:
+    - số đầu năm
+    - đầu năm
+    - số đầu kỳ
+    - đầu kỳ
+  current:
+    - năm nay
+    - kỳ này
+    - hiện tại
+  prior:
+    - năm trước
+    - kỳ trước
+  as_of:
+    - tại ngày
+
+strict_money_scale_sources:
+  - cell
+  - column_path
+  - row_context
+  - table_context
+  - section_context

@@ -46,6 +46,100 @@ class PeriodSemantics(StrEnum):
     UNKNOWN = "unknown"
 
 
+class ObservationRowRole(StrEnum):
+    TOTAL = "total"
+    CHILD = "child"
+    ALLOWANCE = "allowance"
+    COST = "cost"
+    NET = "net"
+    UNKNOWN = "unknown"
+
+
+class ObservationColumnRole(StrEnum):
+    CLOSING = "closing"
+    OPENING = "opening"
+    CURRENT = "current"
+    PRIOR = "prior"
+    AS_OF = "as_of"
+    UNKNOWN = "unknown"
+
+
+class ObservationSignMode(StrEnum):
+    AS_REPORTED = "as_reported"
+    POSITIVE_MAGNITUDE = "positive_magnitude"
+    SIGNED_DIFFERENCE = "signed_difference"
+
+
+@dataclass(frozen=True, slots=True)
+class ObservationRoleSpec:
+    """Hard semantic requirements for selecting one physical observation."""
+
+    source_metric_id: str | None = None
+    accepted_source_metric_codes: tuple[str, ...] = ()
+    exact_row_labels: tuple[str, ...] = ()
+    required_row_path_tokens: tuple[str, ...] = ()
+    forbidden_row_path_tokens: tuple[str, ...] = ()
+    allowed_row_roles: tuple[ObservationRowRole, ...] = ()
+    allowed_column_roles: tuple[ObservationColumnRole, ...] = ()
+    allowed_period_roles: tuple[str, ...] = ()
+    sign_mode: ObservationSignMode = ObservationSignMode.AS_REPORTED
+    allowed_scale_sources: tuple[str, ...] = ()
+    entity_membership: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "source_metric_id": self.source_metric_id,
+            "accepted_source_metric_codes": list(self.accepted_source_metric_codes),
+            "exact_row_labels": list(self.exact_row_labels),
+            "required_row_path_tokens": list(self.required_row_path_tokens),
+            "forbidden_row_path_tokens": list(self.forbidden_row_path_tokens),
+            "allowed_row_roles": [value.value for value in self.allowed_row_roles],
+            "allowed_column_roles": [
+                value.value for value in self.allowed_column_roles
+            ],
+            "allowed_period_roles": list(self.allowed_period_roles),
+            "sign_mode": self.sign_mode.value,
+            "allowed_scale_sources": list(self.allowed_scale_sources),
+            "entity_membership": list(self.entity_membership),
+        }
+
+    @classmethod
+    def from_dict(cls, raw: Mapping[str, Any]) -> ObservationRoleSpec:
+        return cls(
+            source_metric_id=_optional_str(raw.get("source_metric_id")),
+            accepted_source_metric_codes=tuple(
+                str(value) for value in raw.get("accepted_source_metric_codes", ())
+            ),
+            exact_row_labels=tuple(str(value) for value in raw.get("exact_row_labels", ())),
+            required_row_path_tokens=tuple(
+                str(value) for value in raw.get("required_row_path_tokens", ())
+            ),
+            forbidden_row_path_tokens=tuple(
+                str(value) for value in raw.get("forbidden_row_path_tokens", ())
+            ),
+            allowed_row_roles=tuple(
+                ObservationRowRole(str(value))
+                for value in raw.get("allowed_row_roles", ())
+            ),
+            allowed_column_roles=tuple(
+                ObservationColumnRole(str(value))
+                for value in raw.get("allowed_column_roles", ())
+            ),
+            allowed_period_roles=tuple(
+                str(value) for value in raw.get("allowed_period_roles", ())
+            ),
+            sign_mode=ObservationSignMode(
+                str(raw.get("sign_mode", ObservationSignMode.AS_REPORTED.value))
+            ),
+            allowed_scale_sources=tuple(
+                str(value) for value in raw.get("allowed_scale_sources", ())
+            ),
+            entity_membership=tuple(
+                str(value) for value in raw.get("entity_membership", ())
+            ),
+        )
+
+
 class ArithmeticOperator(StrEnum):
     ADD = "add"
     SUBTRACT = "subtract"

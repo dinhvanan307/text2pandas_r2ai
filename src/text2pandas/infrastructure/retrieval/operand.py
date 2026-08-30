@@ -21,6 +21,10 @@ from text2pandas.domain.semantic import (
 )
 
 from .fact_label import fact_label_segments, normalize_fact_label
+from .observation_roles import (
+    ObservationRolePolicy,
+    load_observation_role_policy,
+)
 
 FACT_RETRIEVAL_POLICY_VERSION = "fact-retrieval-v3"
 RECOVERABLE_COLLISION_CLASSES = ("missing_column_group", "missing_row_parent")
@@ -57,6 +61,7 @@ class SqliteOperandRetriever:
         table_rank_priors: tuple[str, ...] = (),
         source_build_id: str | None = None,
         include_recoverable_collisions: bool = False,
+        observation_role_policy: ObservationRolePolicy | None = None,
     ):
         if top_k < 1:
             raise ValueError("top_k must be positive")
@@ -67,6 +72,9 @@ class SqliteOperandRetriever:
         self.table_rank = {uid: index for index, uid in enumerate(table_rank_priors)}
         self.source_build_id = source_build_id
         self.include_recoverable_collisions = include_recoverable_collisions
+        self.observation_role_policy = (
+            observation_role_policy or load_observation_role_policy()
+        )
         self._metric_patterns = {
             metric_id: _MetricPattern(
                 tuple(dict.fromkeys(normalize_phrase(alias) for alias in metric.aliases)),
@@ -91,6 +99,9 @@ class SqliteOperandRetriever:
         )
         self._collision_expression = (
             "o.collision_class" if "collision_class" in observation_columns else "NULL"
+        )
+        self._scale_source_expression = (
+            "o.scale_source" if "scale_source" in observation_columns else "NULL"
         )
         readiness_columns = {
             str(row[1])
@@ -179,6 +190,7 @@ class SqliteOperandRetriever:
                    o.row_path_text, o.metric_label_clean, o.col_path_text,
                    o.period_end, o.period_role, o.value_decimal_text,
                    o.value_source_raw, o.unit_kind, o.currency, o.scale_exponent,
+                   {self._scale_source_expression},
                    o.is_restated, o.grid_row_idx, o.grid_col_idx, t.section_text
             FROM observations o
             JOIN observation_readiness r USING(observation_uid)
@@ -253,6 +265,8 @@ class SqliteOperandRetriever:
                 "table_prior_count": len(self.table_rank),
                 "recoverable_collisions_enabled": self.include_recoverable_collisions,
                 "local_currency_overrides": local_currency_overrides,
+                "observation_role_policy": self.observation_role_policy.policy_id,
+                "observation_role_fingerprint": self.observation_role_policy.fingerprint,
                 **({"source_binding": True} if source_binding is not None else {}),
             },
         )
@@ -302,6 +316,7 @@ class SqliteOperandRetriever:
             unit_kind,
             currency,
             scale,
+            scale_source,
             is_restated,
             grid_row,
             grid_column,
@@ -447,6 +462,11 @@ class SqliteOperandRetriever:
             ),
             source_confidence=(
                 _confidence_value(readiness_confidence)
+            ),
+            scale_source=None if scale_source in (None, "") else str(scale_source),
+            row_role=self.observation_role_policy.classify_row(label),
+            column_role=self.observation_role_policy.classify_column(
+                str(column_path or ""), None if period_role is None else str(period_role)
             ),
         )
 

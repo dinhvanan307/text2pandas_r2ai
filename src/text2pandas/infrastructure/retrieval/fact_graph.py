@@ -43,4 +43,7 @@ def project_candidate(candidate: ObservationCandidate) -> FinancialFact:
         readiness=readiness,
         collision_class=candidate.collision_class,
         source_confidence=candidate.source_confidence,
+        scale_source=candidate.scale_source,
+        row_role=candidate.row_role,
+        column_role=candidate.column_role,
     )
