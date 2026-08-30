@@ -66,6 +66,27 @@
       "source_baseline_commit": "a2d3ef0308612f3025cf1a78c3d5bc470d0634f6",
       "decision": "KEEP_BASELINE",
       "reason": "Byte-identical to the frozen baseline package; uploading would not create an upgraded-vs-baseline experiment."
+    },
+    {
+      "run_id": "adjudicated-a17-3811x3770-20260830-01",
+      "status": "NOT_SUBMITTED",
+      "zip_path": "artifacts/submissions/submission_adjudicated-a17-3811-answer-3770-retrieval-20260830-01.zip",
+      "zip_sha256": "f59c734e160705ee748a0573c991b65fc6007054602cd63074db16f0ff78b628",
+      "source_commit": "00f23494d1376d63e829073312fc3cabb0c8d342",
+      "patch_manifest": "configs/evaluation/adjudicated_answer_patch_a17_v1.json",
+      "patch_manifest_sha256": "bb60f27b800e7464eb0cfd9d1a8039c83e228d49b60b1af49c78d0c11ad9b388",
+      "answer_source_submission_id": 3811,
+      "retrieval_source_submission_id": 3770,
+      "records": 1012,
+      "emitted": 638,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "replay_matched": 638,
+      "deterministic_two_run": true,
+      "official_metrics": "NOT_MEASURED_UNTIL_UPLOAD",
+      "receipt_path": null,
+      "decision": "READY_TO_UPLOAD",
+      "reason": "Allowlisted 4 source-backed corrections and 13 source-backed fills on the sealed 3811 answer layer, with retrieval fields exactly owned by submission 3770."
     }
   ]
 }
