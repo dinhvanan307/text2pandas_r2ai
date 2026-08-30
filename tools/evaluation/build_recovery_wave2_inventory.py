@@ -21,8 +21,7 @@ from text2pandas.pipelines.retrieval.alias_store import load_aliases
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASELINE = ROOT / "artifacts/official/submission-3828/submission.zip"
 DEFAULT_RECORDS = ROOT / (
-    "artifacts/runs/grounded-v5/"
-    "grounded-v6-downloaded-replace-trusted-20260830-r1/records.jsonl"
+    "artifacts/runs/grounded-v5/grounded-v6-downloaded-replace-trusted-20260830-r1/records.jsonl"
 )
 DEFAULT_QUESTIONS = ROOT / "data/raw/btc/questions/questions.jsonl"
 
@@ -71,9 +70,7 @@ def classify_case(
 
 def _rows(path: Path) -> list[dict[str, object]]:
     return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
 
 
@@ -107,6 +104,12 @@ def main() -> int:
     parser.add_argument("--records", type=Path, default=DEFAULT_RECORDS)
     parser.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--expected-abstentions", type=int, default=277)
+    parser.add_argument(
+        "--kind",
+        default="text2pandas.recovery_wave2_inventory",
+        help="Versioned inventory kind recorded in summary and manifest",
+    )
     args = parser.parse_args()
     output = args.output.expanduser().resolve()
     if output.exists():
@@ -174,8 +177,10 @@ def main() -> int:
             }
         )
 
-    if len(inventory) != 277:
-        raise ValueError(f"expected 277 submission-3828 abstentions, found {len(inventory)}")
+    if len(inventory) != args.expected_abstentions:
+        raise ValueError(
+            f"expected {args.expected_abstentions} baseline abstentions, found {len(inventory)}"
+        )
     operation_counts = Counter(str(row["semantic"]["operation"]) for row in inventory)  # type: ignore[index]
     risk_counts = Counter(str(row["triage"]["risk_tier"]) for row in inventory)  # type: ignore[index]
     repair_counts = Counter(str(row["triage"]["repair_class"]) for row in inventory)  # type: ignore[index]
@@ -187,7 +192,7 @@ def main() -> int:
     )
     summary = {
         "schema_version": 1,
-        "kind": "text2pandas.recovery_wave2_inventory",
+        "kind": args.kind,
         "records": len(inventory),
         "operation_counts": dict(sorted(operation_counts.items())),
         "risk_tier_counts": dict(sorted(risk_counts.items())),
