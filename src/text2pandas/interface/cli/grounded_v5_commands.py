@@ -80,6 +80,12 @@ def configure_grounded_v5_parser(parser: argparse.ArgumentParser, root: Path) ->
     parser.add_argument("--minimum-confidence", type=float, default=0.7)
     parser.add_argument("--fact-limit", type=int, default=100)
     parser.add_argument("--maximum-relevant-tables", type=int, default=10)
+    parser.add_argument(
+        "--release-profile",
+        choices=["complete", "competition"],
+        default="complete",
+        help="Keep all-QID completeness separate from competition-compatible abstentions",
+    )
     parser.add_argument("--model", default="qwen3:8b")
     parser.add_argument("--ollama-endpoint", default="http://127.0.0.1:11434")
     parser.add_argument(
@@ -218,12 +224,22 @@ def cmd_grounded_v5(
             require_executable=False,
         ),
     )
-    validation = validate_zip(package, questions, corpus_root=corpus)
-    replay = replay_zip(package, scratch / f"grounded-v5-{args.run_id}-replay")
+    validation = validate_zip(
+        package,
+        questions,
+        corpus_root=corpus,
+        profile=args.release_profile,
+    )
+    replay = replay_zip(
+        package,
+        scratch / f"grounded-v5-{args.run_id}-replay",
+        profile=args.release_profile,
+    )
     release_blockers = publication_blockers(
         validation,
         replay,
         expected_records=len(questions),
+        profile=args.release_profile,
     )
     package_ok = not release_blockers
     summary = {
@@ -259,6 +275,7 @@ def cmd_grounded_v5(
             "selected_qids": sorted(selected),
             "deterministic_only": bool(args.deterministic_only),
             "plan_cache": str(Path(args.plan_cache).resolve()),
+            "release_profile": args.release_profile,
         },
         "inputs": {
             "questions": {
@@ -301,6 +318,11 @@ def cmd_grounded_v5(
             "warnings": validation.warnings,
         },
         "replay": replay,
+        "coverage": {
+            "executable": replay["executed"],
+            "unresolved": replay["no_evidence"],
+            "rate": replay["executed"] / replay["total"] if replay["total"] else 0.0,
+        },
         "publication_blockers": release_blockers,
     }
     (stage / "manifest.json").write_text(

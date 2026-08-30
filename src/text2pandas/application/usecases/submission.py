@@ -22,6 +22,7 @@ from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 from text2pandas.application.usecases.answer import AnswerResult
 from text2pandas.infrastructure.sandbox.query import (
@@ -31,6 +32,7 @@ from text2pandas.infrastructure.sandbox.query import (
 )
 
 __all__ = [
+    "ReleaseProfile",
     "SubmissionBuildError",
     "SubmissionConfig",
     "ValidationReport",
@@ -39,6 +41,8 @@ __all__ = [
     "replay_zip",
     "validate_zip",
 ]
+
+ReleaseProfile = Literal["complete", "competition"]
 
 _PY_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _LOCATOR = re.compile(r"^(?P<doc>[^|]+)\|(?P<line>[1-9]\d*)$")
@@ -177,8 +181,19 @@ def validate_zip(
     *,
     corpus_root: Path | None = None,
     strict: bool = True,
+    profile: ReleaseProfile = "complete",
 ) -> ValidationReport:
-    """Validate the exact submission, grounding, and execution contracts."""
+    """Validate structure and grounding under one explicit release profile.
+
+    ``complete`` preserves the internal all-QID execution target. ``competition``
+    keeps unresolved records visible as warnings while retaining every structural,
+    locator, evidence and query-safety error.  The latter is supported by the
+    user-confirmed official submission 3821 artifact; it does not turn coverage
+    into correctness evidence.
+    """
+
+    if profile not in {"complete", "competition"}:
+        raise ValueError(f"unsupported release profile: {profile!r}")
 
     rep = ValidationReport(0)
     expected_ids = set(expected)
@@ -331,10 +346,14 @@ def validate_zip(
 
             if not evidence:
                 message = f"C12 {tag}: evidence rỗng; mọi câu hỏi phải thực thi được"
-                (rep.errors if strict else rep.warnings).append(message)
+                (rep.errors if strict and profile == "complete" else rep.warnings).append(
+                    message
+                )
             if not query:
                 message = f"C12 {tag}: pandas_query rỗng; mọi câu hỏi phải thực thi được"
-                (rep.errors if strict else rep.warnings).append(message)
+                (rep.errors if strict and profile == "complete" else rep.warnings).append(
+                    message
+                )
             if evidence and query:
                 try:
                     validate_query(query, names_seen)
@@ -386,12 +405,21 @@ def _validate_document(
     return cache[canonical]
 
 
-def replay_zip(zip_path: Path, workdir: Path, tolerance: float = 1e-6) -> dict[str, int]:
+def replay_zip(
+    zip_path: Path,
+    workdir: Path,
+    tolerance: float = 1e-6,
+    *,
+    profile: ReleaseProfile = "complete",
+) -> dict[str, int]:
     """Giải nén vào thư mục sạch, chạy lại MỌI pandas_query, so với answer.
 
     Đây là phép kiểm C10. Nếu bước này không đạt thì Execution Accuracy sẽ
     hỏng ngoài đời thật — và ta biết trước khi nộp, không phải sau.
     """
+    if profile not in {"complete", "competition"}:
+        raise ValueError(f"unsupported release profile: {profile!r}")
+
     import pandas as pd
 
     _ = workdir  # compatibility with the former extract-to-disk API
@@ -406,10 +434,11 @@ def replay_zip(zip_path: Path, workdir: Path, tolerance: float = 1e-6) -> dict[s
         ev = r.get("evidence") or []
         if not ev:
             stat["no_evidence"] += 1
-            # The organiser executes every scored query.  Skipping abstentions
-            # here previously produced a false-green 712/712 replay while 300
-            # records failed with ValueError on the leaderboard.
-            stat["error"] += 1
+            if profile == "complete":
+                # Complete coverage remains an internal quality target.  The
+                # competition profile reports this count separately instead of
+                # conflating abstention with an emitted-query execution failure.
+                stat["error"] += 1
             continue
         env: dict[str, object] = {}
         try:
@@ -434,6 +463,7 @@ def publication_blockers(
     replay: Mapping[str, int],
     *,
     expected_records: int,
+    profile: ReleaseProfile = "complete",
 ) -> list[str]:
     """Return all reasons an artifact must not be published.
 
@@ -442,9 +472,19 @@ def publication_blockers(
     records which were never executed.
     """
 
+    if profile not in {"complete", "competition"}:
+        raise ValueError(f"unsupported release profile: {profile!r}")
+
     blockers = [f"validation:{error}" for error in validation.errors]
-    if validation.warnings:
+    if profile == "complete" and validation.warnings:
         blockers.extend(f"validation-warning:{warning}" for warning in validation.warnings)
+    elif profile == "competition":
+        allowed = ("evidence rỗng", "pandas_query rỗng")
+        blockers.extend(
+            f"validation-warning:{warning}"
+            for warning in validation.warnings
+            if not any(marker in warning for marker in allowed)
+        )
     if validation.n_records != expected_records:
         blockers.append(f"record-count:{validation.n_records}!={expected_records}")
     total = int(replay.get("total", -1))
@@ -454,12 +494,15 @@ def publication_blockers(
     errors = int(replay.get("error", -1))
     if total != expected_records:
         blockers.append(f"replay-total:{total}!={expected_records}")
-    if executed != expected_records:
-        blockers.append(f"replay-executed:{executed}!={expected_records}")
-    if matched != expected_records:
-        blockers.append(f"replay-matched:{matched}!={expected_records}")
-    if no_evidence != 0:
-        blockers.append(f"replay-no-evidence:{no_evidence}")
+    if profile == "complete":
+        if executed != expected_records:
+            blockers.append(f"replay-executed:{executed}!={expected_records}")
+        if matched != expected_records:
+            blockers.append(f"replay-matched:{matched}!={expected_records}")
+        if no_evidence != 0:
+            blockers.append(f"replay-no-evidence:{no_evidence}")
+    elif matched != executed:
+        blockers.append(f"replay-matched:{matched}!={executed}")
     if errors != 0:
         blockers.append(f"replay-errors:{errors}")
     return blockers

@@ -46,6 +46,12 @@ def main() -> int:
     parser.add_argument("--candidate-run-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
+        "--release-profile",
+        choices=["complete", "competition"],
+        default="complete",
+        help="Explicitly select the all-QID or competition-compatible release contract",
+    )
+    parser.add_argument(
         "--questions",
         type=Path,
         default=QUESTIONS,
@@ -80,14 +86,24 @@ def main() -> int:
             if line.strip()
         )
     }
-    validation = validate_zip(source_zip, questions, corpus_root=CORPUS)
+    validation = validate_zip(
+        source_zip,
+        questions,
+        corpus_root=CORPUS,
+        profile=args.release_profile,
+    )
     with tempfile.TemporaryDirectory(prefix="text2pandas-handoff-") as temp:
-        replay = replay_zip(source_zip, Path(temp) / "replay")
+        replay = replay_zip(
+            source_zip,
+            Path(temp) / "replay",
+            profile=args.release_profile,
+        )
     replay_mismatches = replay["executed"] - replay["matched"]
     blockers = publication_blockers(
         validation,
         replay,
         expected_records=len(questions),
+        profile=args.release_profile,
     )
     if blockers:
         raise ValueError(f"candidate failed fresh handoff verification: blockers={blockers[:10]}")
@@ -103,6 +119,7 @@ def main() -> int:
         "status": "READY_FOR_MANUAL_LEADERBOARD_UPLOAD_EXPERIMENTAL",
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "candidate_run_id": args.candidate_run_id,
+        "release_profile": args.release_profile,
         "evaluation_scope": {
             "path": str(questions_path),
             "sha256": sha256_file(questions_path),
@@ -120,6 +137,11 @@ def main() -> int:
             "warnings": validation.warnings,
         },
         "replay": {**replay, "mismatches": replay_mismatches},
+        "coverage": {
+            "executable": replay["executed"],
+            "unresolved": replay["no_evidence"],
+            "rate": replay["executed"] / replay["total"] if replay["total"] else 0.0,
+        },
         "source": source,
     }
     (output / "HANDOFF.json").write_text(
@@ -131,16 +153,20 @@ def main() -> int:
         f"{sha256_file(output / 'candidate_manifest.json')}  candidate_manifest.json\n",
         encoding="utf-8",
     )
-    blockers = ", ".join(str(value) for value in handoff["publication_blockers"])
+    policy_blocker_text = ", ".join(
+        str(value) for value in handoff["publication_blockers"]
+    )
     (output / "README.md").write_text(
         "# Text2Pandas leaderboard submission handoff\n\n"
         "Upload `submission.zip` directly to the competition leaderboard.\n\n"
         f"- Records: {validation.n_records}\n"
         f"- SHA-256: `{actual_sha}`\n"
         f"- Replay: {replay['matched']}/{replay['executed']} matched\n"
-        "- Validation errors/warnings: 0/0\n"
+        f"- Validation errors/warnings: {len(validation.errors)}/{len(validation.warnings)}\n"
+        f"- Coverage: {replay['executed']}/{replay['total']} executable\n"
+        f"- Release profile: {args.release_profile}\n"
         "- Release class: experimental manual-upload candidate\n"
-        f"- Production-promotion blockers: {blockers or 'none'}\n\n"
+        f"- Production-promotion blockers: {policy_blocker_text or 'none'}\n\n"
         "Manual leaderboard upload is allowed for measurement; it does not mark "
         "the semantic candidate as production-promoted. Record the returned submission ID and "
         "all ten official metrics in the implementation report.\n",

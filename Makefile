@@ -147,7 +147,8 @@ submission-handoff: ## Verify và materialize manual-upload bundle; RUN_ID= OUTP
 	@test -n "$(RUN_ID)" -a -n "$(OUTPUT)" \
 	  || { echo "LỖI: cần RUN_ID=<hybrid-run-id> OUTPUT=<immutable-dir>" >&2; exit 2; }
 	@$(PY) tools/package_submission_handoff.py \
-	  --candidate-run-id "$(RUN_ID)" --output "$(OUTPUT)"
+	  --candidate-run-id "$(RUN_ID)" --output "$(OUTPUT)" \
+	  $(if $(RELEASE_PROFILE),--release-profile "$(RELEASE_PROFILE)")
 
 materialize-h0: ## Tái tạo adjudication ledger + ZIP determinism report; FORCE=1 để ghi đè
 	@$(PY) tools/execution/materialize_h0.py $(if $(FORCE),--force)

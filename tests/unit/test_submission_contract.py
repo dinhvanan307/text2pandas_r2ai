@@ -188,6 +188,55 @@ def test_diagnostic_abstention_is_visible_and_never_publishable(tmp_path: Path) 
     assert "replay-errors:1" in blockers
 
 
+def test_competition_profile_separates_abstention_from_emitted_replay_error(
+    tmp_path: Path,
+) -> None:
+    incomplete = _result()
+    incomplete.answer = None
+    incomplete.evidence = []
+    incomplete.pandas_query = ""
+    incomplete.has_csv = False
+    archive = build_submission(
+        [incomplete],
+        {1: QUESTION},
+        tmp_path / "competition-abstention",
+        SubmissionConfig(require_executable=False),
+    )
+
+    validation = validate_zip(archive, {1: QUESTION}, profile="competition")
+    replay = replay_zip(archive, tmp_path / "unused", profile="competition")
+
+    assert validation.errors == []
+    assert len(validation.warnings) == 2
+    assert replay == {
+        "total": 1,
+        "executed": 0,
+        "matched": 0,
+        "no_evidence": 1,
+        "error": 0,
+    }
+    assert publication_blockers(
+        validation,
+        replay,
+        expected_records=1,
+        profile="competition",
+    ) == []
+
+
+def test_competition_profile_does_not_hide_structural_warnings(tmp_path: Path) -> None:
+    archive = _build(tmp_path, "competition-structural")
+    validation = validate_zip(archive, {1: QUESTION}, profile="competition")
+    validation.warnings.append("C14: orphan structural warning")
+    replay = replay_zip(archive, tmp_path / "unused", profile="competition")
+
+    assert publication_blockers(
+        validation,
+        replay,
+        expected_records=1,
+        profile="competition",
+    ) == ["validation-warning:C14: orphan structural warning"]
+
+
 def test_publication_gate_requires_every_expected_record_to_replay(
     tmp_path: Path,
 ) -> None:
