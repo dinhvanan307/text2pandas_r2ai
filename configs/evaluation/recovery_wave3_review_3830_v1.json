@@ -1,0 +1,312 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.recovery_wave3_review",
+  "baseline": {
+    "zip_path": "artifacts/official/submission-3830/submission.zip",
+    "zip_sha256": "b79fe44c110ecca5a3657ed360cc1c02f5badb4f7f7c9f4b1d456f48b20fb601"
+  },
+  "a6_database": {
+    "database_path": "data/processed/a6/c6887fb633374fad/silver.db",
+    "database_sha256": "fa6c46d6d46b4735f6a23fe1f2b8e2be16c206b712f47b8f22a5f0647f5dc3c8"
+  },
+  "policy": {
+    "mode": "additive_only",
+    "require_execution_ready": true,
+    "protect_existing_answers": true,
+    "protect_retrieval": true,
+    "runtime_model_gold": false,
+    "unreviewed_inventory_qids": "FAIL_CLOSED"
+  },
+  "reviews": [
+    {
+      "qid": 284,
+      "cohort": "wave3_safe_direct",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["0a33c1cd47ae128d"],
+      "pandas_query": "float(df1[df1['observation_uid'] == '0a33c1cd47ae128d']['value'].values[0])",
+      "expected_answer": 17469561.0,
+      "rationale": "Parent EIB closing common share capital at par is reported directly in VND million."
+    },
+    {
+      "qid": 319,
+      "cohort": "wave3_safe_direct",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["97cc24324068252d"],
+      "pandas_query": "float(df1[df1['observation_uid'] == '97cc24324068252d']['value'].values[0])",
+      "expected_answer": 9807843.0,
+      "rationale": "Consolidated MSN reports Techcombank's 2016 equity-method carrying amount directly in VND million."
+    },
+    {
+      "qid": 580,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["8da43f86134ab653", "fef988ee2ca95fd5"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '8da43f86134ab653']['value'].values[0]) - float(df1[df1['observation_uid'] == 'fef988ee2ca95fd5']['value'].values[0])) / 1000000)",
+      "expected_answer": -47954.483518,
+      "rationale": "Consolidated deferred-tax expense/(income), 2016 minus the 2015 comparative, converted from VND to VND million."
+    },
+    {
+      "qid": 658,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["0b2eab2b22a9bb29", "e67286f80099a0b8"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '0b2eab2b22a9bb29']['value'].values[0]) / float(df1[df1['observation_uid'] == 'e67286f80099a0b8']['value'].values[0]) * 100)",
+      "expected_answer": 16.70294229036583,
+      "rationale": "Consolidated share of profit in associates/joint ventures divided by consolidated profit after tax for 2024."
+    },
+    {
+      "qid": 660,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["8c50c30ca62f49d8", "2cd4826cab5c80c8"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '8c50c30ca62f49d8']['value'].values[0]) / float(df1[df1['observation_uid'] == '2cd4826cab5c80c8']['value'].values[0]) * 100)",
+      "expected_answer": 17.3208787002139,
+      "rationale": "Parent CTG total commitments issued divided by total assets at 2022 year-end; both are in VND million."
+    },
+    {
+      "qid": 664,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["72f8fc93508da429", "c31e7467f358ba8e"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '72f8fc93508da429']['value'].values[0]) - float(df1[df1['observation_uid'] == 'c31e7467f358ba8e']['value'].values[0])) / float(df1[df1['observation_uid'] == '72f8fc93508da429']['value'].values[0]) * 100)",
+      "expected_answer": 63.38863141648897,
+      "rationale": "Consolidated accumulated depreciation is closing tangible-PPE cost less closing carrying amount, divided by closing cost."
+    },
+    {
+      "qid": 669,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["526b5989c05d5042", "32afcd3daf046879"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '526b5989c05d5042']['value'].values[0]) / float(df1[df1['observation_uid'] == '32afcd3daf046879']['value'].values[0]) * 100)",
+      "expected_answer": 9.693177207012265,
+      "rationale": "Consolidated short-term trade payables divided by consolidated current liabilities at 2019 year-end."
+    },
+    {
+      "qid": 671,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["4a038c9bbd1e9f64", "a685ffe199697559"],
+      "pandas_query": "float(abs(float(df1[df1['observation_uid'] == '4a038c9bbd1e9f64']['value'].values[0])) / float(df1[df1['observation_uid'] == 'a685ffe199697559']['value'].values[0]) * 100)",
+      "expected_answer": 57.24440499103878,
+      "rationale": "Consolidated credit-risk provision expense divided by consolidated profit before tax for 2020."
+    },
+    {
+      "qid": 676,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["7d9ca5f00ecfe101", "c0dc7b0f3085380c", "c01f21e1e81a7f70"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '7d9ca5f00ecfe101']['value'].values[0]) + float(df1[df1['observation_uid'] == 'c0dc7b0f3085380c']['value'].values[0])) / float(df1[df1['observation_uid'] == 'c01f21e1e81a7f70']['value'].values[0]) * 100)",
+      "expected_answer": 70.374907731397,
+      "rationale": "Parent VCB general plus specific customer-loan provisions divided by parent net profit for 2017."
+    },
+    {
+      "qid": 677,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["cd2b12e96a224f1a", "b553e32d11d06b19"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'cd2b12e96a224f1a']['value'].values[0]) - float(df1[df1['observation_uid'] == 'b553e32d11d06b19']['value'].values[0])) / 100000000000)",
+      "expected_answer": 3.33726664734,
+      "rationale": "Parent PRT financial income less financial expense, converted from VND to VND hundred-billion units."
+    },
+    {
+      "qid": 680,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["fa6bbce5af7c4e11", "79b0102334bc054e"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == 'fa6bbce5af7c4e11']['value'].values[0]) / float(df1[df1['observation_uid'] == '79b0102334bc054e']['value'].values[0]) * 100)",
+      "expected_answer": 50.496599668698636,
+      "rationale": "Parent QNS deposit-interest income divided by total financial income for 2024."
+    },
+    {
+      "qid": 685,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["859306ed50f7a838", "0c10f18eec6494dd", "7cb369db956c647c", "ce86ddf4634d9129"],
+      "pandas_query": "float(abs(float(df1[df1['observation_uid'] == '859306ed50f7a838']['value'].values[0])) / (float(df1[df1['observation_uid'] == '0c10f18eec6494dd']['value'].values[0]) + float(df1[df1['observation_uid'] == '7cb369db956c647c']['value'].values[0]) + float(df1[df1['observation_uid'] == 'ce86ddf4634d9129']['value'].values[0])) * 100)",
+      "expected_answer": 107.5416601936008,
+      "rationale": "Parent BAB loan-loss reserve divided by the sum of substandard, doubtful and loss loans at 2025 year-end."
+    },
+    {
+      "qid": 692,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["1f912422b752c948", "0c5a6d94b2b8d491"],
+      "pandas_query": "float(abs(float(df1[df1['observation_uid'] == '1f912422b752c948']['value'].values[0])) / float(df1[df1['observation_uid'] == '0c5a6d94b2b8d491']['value'].values[0]) * 100)",
+      "expected_answer": 1.2029640327423596,
+      "rationale": "Parent BID closing customer-loan provision divided by gross customer loans at 2018 year-end."
+    },
+    {
+      "qid": 696,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["bac0bd0549c19b4d", "3d292829e72dc26a", "3ec27b35e46fa7fb"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == 'bac0bd0549c19b4d']['value'].values[0]) / ((float(df1[df1['observation_uid'] == '3d292829e72dc26a']['value'].values[0]) + float(df1[df1['observation_uid'] == '3ec27b35e46fa7fb']['value'].values[0])) / 2))",
+      "expected_answer": 5.279664948211131,
+      "rationale": "Consolidated HSG net revenue divided by average opening and closing equity for fiscal 2019."
+    },
+    {
+      "qid": 697,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["fb4fe04e85763bee", "a5ae6a103c846408"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == 'fb4fe04e85763bee']['value'].values[0]) / float(df1[df1['observation_uid'] == 'a5ae6a103c846408']['value'].values[0]) * 100)",
+      "expected_answer": 100.0,
+      "rationale": "Parent MSN's sole associate investment at 2016 year-end is Techcombank; the detail and physical total have the same source value."
+    },
+    {
+      "qid": 711,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["9ca6bcb097c7d5ae", "6018245e5628c046"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '9ca6bcb097c7d5ae']['value'].values[0]) / float(df1[df1['observation_uid'] == '6018245e5628c046']['value'].values[0]) * 100)",
+      "expected_answer": 91.07083306008217,
+      "rationale": "Parent DPM related-party sales divided by total sales and service revenue for 2017."
+    },
+    {
+      "qid": 714,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["a923bfa52609e996", "40ab24fe2af31f58"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'a923bfa52609e996']['value'].values[0]) - float(df1[df1['observation_uid'] == '40ab24fe2af31f58']['value'].values[0])) / 1000000000)",
+      "expected_answer": 238.891842241,
+      "rationale": "Consolidated HUT financial income less financial expense, converted from VND to VND billion."
+    },
+    {
+      "qid": 717,
+      "cohort": "wave3_safe_ratio",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["27a7c4e261a52d4f", "a997b20b7739a201"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '27a7c4e261a52d4f']['value'].values[0]) / float(df1[df1['observation_uid'] == 'a997b20b7739a201']['value'].values[0]) * 100)",
+      "expected_answer": 14.991199999711462,
+      "rationale": "Parent NVB total contingent liabilities and commitments divided by total assets at 2019 year-end."
+    },
+    {
+      "qid": 729,
+      "cohort": "wave3_safe_direct",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["c022ff9ee086f616"],
+      "pandas_query": "float(df1[df1['observation_uid'] == 'c022ff9ee086f616']['value'].values[0])",
+      "expected_answer": 31.97,
+      "rationale": "KHG reports Nguyen Khai Hoan's closing ownership ratio directly as 31.97 percent."
+    },
+    {
+      "qid": 734,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["8285417353a88021", "da5069f1d452a2b3"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '8285417353a88021']['value'].values[0]) - float(df1[df1['observation_uid'] == 'da5069f1d452a2b3']['value'].values[0])) / 1000000000000)",
+      "expected_answer": 6.49897486034,
+      "rationale": "Parent DIG CFO minus parent KBC CFO for 2025, converted from VND to VND trillion."
+    },
+    {
+      "qid": 773,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["90c9c80bb233fd8a", "1fa31d02e102d963"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '90c9c80bb233fd8a']['value'].values[0]) - float(df1[df1['observation_uid'] == '1fa31d02e102d963']['value'].values[0]) / 1000000)",
+      "expected_answer": 752291.440047,
+      "rationale": "Parent VRE external-service expense minus parent KBC, normalized to VND million."
+    },
+    {
+      "qid": 781,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["4ffec6c2570aa1ba", "872a0f1875a87d8e"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '4ffec6c2570aa1ba']['value'].values[0]) - float(df1[df1['observation_uid'] == '872a0f1875a87d8e']['value'].values[0])) / 1000000000)",
+      "expected_answer": -1251.543540229,
+      "rationale": "Parent PC1 closing short-term borrowings minus parent GEX, converted from VND to VND billion."
+    },
+    {
+      "qid": 785,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["822322ff8b46b424", "487e5c0b5d68116b"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '822322ff8b46b424']['value'].values[0]) - float(df1[df1['observation_uid'] == '487e5c0b5d68116b']['value'].values[0]))",
+      "expected_answer": 6112098.0,
+      "rationale": "The question asks how many fewer HUT shares were outstanding than HHS; this is HHS minus HUT."
+    },
+    {
+      "qid": 787,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["ce90af104abfeb09", "384fc465ad6f770e"],
+      "pandas_query": "float(abs(float(df1[df1['observation_uid'] == 'ce90af104abfeb09']['value'].values[0]) - float(df1[df1['observation_uid'] == '384fc465ad6f770e']['value'].values[0])))",
+      "expected_answer": 4092929.0,
+      "rationale": "Absolute difference between parent NVB and KLB total on-balance-sheet currency positions, both in VND million."
+    },
+    {
+      "qid": 800,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["22891b10b083cdcd", "49a43996b0ac784a", "f48c5d27ec0dd6cf"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '22891b10b083cdcd']['value'].values[0]) + float(df1[df1['observation_uid'] == '49a43996b0ac784a']['value'].values[0]) - float(df1[df1['observation_uid'] == 'f48c5d27ec0dd6cf']['value'].values[0]))",
+      "expected_answer": 117336113.0,
+      "rationale": "Parent BID deposits plus borrowings from other credit institutions minus parent MSB's corresponding total, in VND million."
+    },
+    {
+      "qid": 812,
+      "cohort": "wave3_safe_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["012285763d7a7ff1", "120842ae1e5c511e"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '012285763d7a7ff1']['value'].values[0]) - float(df1[df1['observation_uid'] == '120842ae1e5c511e']['value'].values[0])) / 1000000000000)",
+      "expected_answer": 3.43828610888,
+      "rationale": "Consolidated VNM tangible-PPE carrying amount minus SAB at 2016 year-end, converted to VND trillion."
+    },
+    {
+      "qid": 963,
+      "cohort": "wave3_safe_count",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["055804b3ab8e2eab", "b2e6a89aa29a540c", "9cac5d6ea5448f81"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '055804b3ab8e2eab']['value'].values[0]) > 100000000000) + (float(df1[df1['observation_uid'] == 'b2e6a89aa29a540c']['value'].values[0]) > 100000000000) + (float(df1[df1['observation_uid'] == '9cac5d6ea5448f81']['value'].values[0]) > 100000000000))",
+      "expected_answer": 2.0,
+      "rationale": "Parent PC1 and VGC exceed VND 100 billion in cash and cash equivalents; parent SAM does not."
+    },
+    {
+      "qid": 967,
+      "cohort": "wave3_safe_extremum",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["a1c88e1e9cecd1d1", "f6a6a427fda29542", "edd29a947c16a9eb", "25037bd6877ec40e", "85aa9efd2b15d6f9"],
+      "pandas_query": "float(max(abs(float(df1[df1['observation_uid'] == 'a1c88e1e9cecd1d1']['value'].values[0])), abs(float(df1[df1['observation_uid'] == 'f6a6a427fda29542']['value'].values[0])), abs(float(df1[df1['observation_uid'] == 'edd29a947c16a9eb']['value'].values[0])), abs(float(df1[df1['observation_uid'] == '25037bd6877ec40e']['value'].values[0])), abs(float(df1[df1['observation_uid'] == '85aa9efd2b15d6f9']['value'].values[0]))))",
+      "expected_answer": 40469060.0,
+      "rationale": "BID loan-loss provisions are contra-asset balances; the requested largest balance is the maximum magnitude, reached in 2023."
+    },
+    {
+      "qid": 987,
+      "cohort": "wave3_safe_sum",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["7fa17cdbbc694a82", "826d5154455023f2", "9d2b0054fadb99de", "8a61cf5e2e785742", "f9110082633ce81a", "721efd1b56e5e061", "4ecb711fce1729da", "3f4052b85a2be857", "6978bb46f4b15c64"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '7fa17cdbbc694a82']['value'].values[0]) - float(df1[df1['observation_uid'] == '826d5154455023f2']['value'].values[0]) + float(df1[df1['observation_uid'] == '9d2b0054fadb99de']['value'].values[0]) - float(df1[df1['observation_uid'] == '8a61cf5e2e785742']['value'].values[0]) + float(df1[df1['observation_uid'] == 'f9110082633ce81a']['value'].values[0]) - float(df1[df1['observation_uid'] == '721efd1b56e5e061']['value'].values[0]) - float(df1[df1['observation_uid'] == '4ecb711fce1729da']['value'].values[0]) + float(df1[df1['observation_uid'] == '3f4052b85a2be857']['value'].values[0]) - float(df1[df1['observation_uid'] == '6978bb46f4b15c64']['value'].values[0])) / 1000000)",
+      "expected_answer": 34302.554189,
+      "rationale": "Sum of parent-company net FX results (gains less losses) for VNM, MCH, SAB and MSN, converted to VND million."
+    }
+  ]
+}

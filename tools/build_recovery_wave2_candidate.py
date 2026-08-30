@@ -1,4 +1,4 @@
-"""Build and gate the submission-3828 Recovery Wave 2 candidate."""
+"""Build and gate an additive, source-sealed recovery candidate."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from text2pandas.application.usecases.submission import (
     validate_zip,
 )
 from text2pandas.application.usecases.wave2_recovery import (
-    build_wave2_recovery_candidate,
+    build_recovery_candidate,
 )
 from text2pandas.infrastructure.checksums import sha256_file
 
@@ -55,6 +55,11 @@ def main() -> int:
     parser.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
     parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     parser.add_argument("--run-root", type=Path, default=DEFAULT_RUN_ROOT)
+    parser.add_argument(
+        "--candidate-kind",
+        default="text2pandas.recovery_wave2_candidate",
+    )
+    parser.add_argument("--evidence-prefix", default="wave2")
     args = parser.parse_args()
 
     if not args.run_id or Path(args.run_id).name != args.run_id:
@@ -81,11 +86,12 @@ def main() -> int:
     if missing:
         parser.error(f"required inputs are missing: {missing}")
 
-    build = build_wave2_recovery_candidate(
+    build = build_recovery_candidate(
         baseline_zip=baseline,
         a6_database=a6_database,
         review_ledger=review_ledger,
         output_zip=output_zip,
+        evidence_prefix=args.evidence_prefix,
     )
     questions = _question_scope(questions_path)
     validations = {
@@ -120,7 +126,7 @@ def main() -> int:
     }
     manifest = {
         "schema_version": 1,
-        "kind": "text2pandas.recovery_wave2_candidate",
+        "kind": args.candidate_kind,
         "run_id": args.run_id,
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "source": {

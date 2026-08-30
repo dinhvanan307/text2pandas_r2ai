@@ -1,4 +1,4 @@
-"""Build a source-sealed, additive-only recovery candidate on submission 3828."""
+"""Build source-sealed, additive-only recovery candidates."""
 
 from __future__ import annotations
 
@@ -54,7 +54,29 @@ def build_wave2_recovery_candidate(
     review_ledger: Path,
     output_zip: Path,
 ) -> Wave2RecoveryBuild:
-    """Fill only reviewed abstentions using execution-ready A6 observations."""
+    """Fill Wave 2 reviewed abstentions using execution-ready A6 observations."""
+
+    return build_recovery_candidate(
+        baseline_zip=baseline_zip,
+        a6_database=a6_database,
+        review_ledger=review_ledger,
+        output_zip=output_zip,
+        evidence_prefix="wave2",
+    )
+
+
+def build_recovery_candidate(
+    *,
+    baseline_zip: Path,
+    a6_database: Path,
+    review_ledger: Path,
+    output_zip: Path,
+    evidence_prefix: str,
+) -> Wave2RecoveryBuild:
+    """Fill reviewed abstentions while preserving every protected baseline layer."""
+
+    if not evidence_prefix or not evidence_prefix.replace("_", "").isalnum():
+        raise SubmissionBuildError("evidence prefix must be a non-empty path-safe token")
 
     if output_zip.exists():
         raise FileExistsError(f"immutable candidate already exists: {output_zip}")
@@ -97,7 +119,7 @@ def build_wave2_recovery_candidate(
     invalid = sorted(set(accepted) - unresolved)
     if invalid:
         raise SubmissionBuildError(
-            f"Wave 2 may only fill baseline abstentions; invalid QIDs={invalid[:10]}"
+            f"recovery may only fill baseline abstentions; invalid QIDs={invalid[:10]}"
         )
 
     candidate_records = [dict(row) for row in baseline_records]
@@ -124,7 +146,7 @@ def build_wave2_recovery_candidate(
                 raise SubmissionBuildError(f"QID {qid} has duplicate fact UIDs")
             facts = [_load_ready_fact(connection, qid, uid) for uid in fact_uids]
             source_fact_count += len(facts)
-            csv_name = f"data/wave2_q{qid:04d}.csv"
+            csv_name = f"data/{evidence_prefix}_q{qid:04d}.csv"
             if csv_name in candidate_csvs:
                 raise SubmissionBuildError(f"QID {qid} evidence member collides with baseline")
             csv_payload = _facts_csv(qid, facts)
