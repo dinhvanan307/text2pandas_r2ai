@@ -55,6 +55,31 @@
       },
       "blocker": "Exact ZIP, SHA-256, commit, timestamp and receipt are absent.",
       "source": "docs/reports/QUESTION_PARSER_RETRIEVAL_IMPACT_AUDIT_2026-08-28.md"
+    },
+    {
+      "submission_id": 3816,
+      "status": "INCOMPLETE_ATTRIBUTED_RECORD",
+      "submitted_at_utc": "2026-08-30T01:30:00Z",
+      "zip_path": "artifacts/submissions/submission_adjudicated-a17-3811-answer-3770.zip",
+      "zip_sha256": "f59c734e160705ee748a0573c991b65fc6007054602cd63074db16f0ff78b628",
+      "git_commit": "00f23494d1376d63e829073312fc3cabb0c8d342",
+      "config_sha256": "bb60f27b800e7464eb0cfd9d1a8039c83e228d49b60b1af49c78d0c11ad9b388",
+      "receipt_path": null,
+      "metrics": {
+        "classification": "USER_REPORTED_OFFICIAL_ATTRIBUTED",
+        "execution_accuracy": 0.2925,
+        "tables_f2_macro": 0.3,
+        "docs_f2_macro": 0.7086,
+        "tables_precision": 0.2707,
+        "tables_recall": 0.3435,
+        "tables_mrr_at_5": 0.3801,
+        "docs_precision": 0.6349,
+        "docs_recall": 0.7651,
+        "docs_mrr_at_5": 0.7885,
+        "answer_accuracy": 0.2925
+      },
+      "blocker": "Leaderboard receipt export is absent; exact local ZIP, SHA-256, source commit and patch manifest are attributed.",
+      "source": "User-reported leaderboard row for submission 3816 on 2026-08-30 08:30 Asia/Ho_Chi_Minh."
     }
   ],
   "local_candidates": [
@@ -68,25 +93,56 @@
       "reason": "Byte-identical to the frozen baseline package; uploading would not create an upgraded-vs-baseline experiment."
     },
     {
-      "run_id": "adjudicated-a17-3811x3770-20260830-01",
-      "status": "NOT_SUBMITTED",
-      "zip_path": "artifacts/submissions/submission_adjudicated-a17-3811-answer-3770-retrieval-20260830-01.zip",
-      "zip_sha256": "f59c734e160705ee748a0573c991b65fc6007054602cd63074db16f0ff78b628",
-      "source_commit": "00f23494d1376d63e829073312fc3cabb0c8d342",
-      "patch_manifest": "configs/evaluation/adjudicated_answer_patch_a17_v1.json",
-      "patch_manifest_sha256": "bb60f27b800e7464eb0cfd9d1a8039c83e228d49b60b1af49c78d0c11ad9b388",
-      "answer_source_submission_id": 3811,
+      "run_id": "tier-b9-3816x3770-20260830-01",
+      "status": "READY_TO_UPLOAD",
+      "zip_path": "artifacts/submissions/submission_tier-b9-3816-answer-3770-retrieval-20260830-01.zip",
+      "zip_sha256": "679d7d80ae9e46ca6b2f11a88ca9a3550e7538599796a38556b00f3ca2265771",
+      "implementation_commits": [
+        "53b42d82c83e649c0c511eb3eaa3cec7c4879a8c",
+        "7708a0148e5bee6d484c4ec83e1d5c173c803331"
+      ],
+      "patch_manifest": "configs/evaluation/adjudicated_answer_patch_tier_b9_v1.json",
+      "patch_manifest_sha256": "52c3ac33613ada7fc003166f7ebf671dfe840f828c0620c91b18df8ff85cac1b",
+      "answer_source_submission_id": 3816,
       "retrieval_source_submission_id": 3770,
       "records": 1012,
-      "emitted": 638,
+      "emitted": 647,
+      "fills": 9,
+      "corrections": 0,
       "validation_errors": 0,
       "validation_warnings": 0,
-      "replay_matched": 638,
+      "replay_matched": 647,
       "deterministic_two_run": true,
       "official_metrics": "NOT_MEASURED_UNTIL_UPLOAD",
       "receipt_path": null,
-      "decision": "READY_TO_UPLOAD",
-      "reason": "Allowlisted 4 source-backed corrections and 13 source-backed fills on the sealed 3811 answer layer, with retrieval fields exactly owned by submission 3770."
+      "decision": "PRIMARY_NEXT_SUBMISSION",
+      "reason": "Preserves all 638 emitted answers from official SAFE 3816, adds nine A6 source-backed answers only on abstentions, and preserves retrieval fields from submission 3770 exactly."
+    },
+    {
+      "run_id": "tier-b-safe5-3816x3770-20260830-01",
+      "status": "READY_FALLBACK",
+      "zip_path": "artifacts/submissions/submission_tier-b-safe5-3816-answer-3770-retrieval-20260830-01.zip",
+      "zip_sha256": "8c53d218cfbf20921067ea4c197d29ebff9219b63e4e9a0039b2e4f0bb67c749",
+      "implementation_commits": [
+        "53b42d82c83e649c0c511eb3eaa3cec7c4879a8c",
+        "7708a0148e5bee6d484c4ec83e1d5c173c803331"
+      ],
+      "patch_manifest": "configs/evaluation/adjudicated_answer_patch_tier_b_safe5_v1.json",
+      "patch_manifest_sha256": "b779761ac15a27ecb4177a83e9993b035592b08ff49b5f3ce9ec2620a2dc0eff",
+      "answer_source_submission_id": 3816,
+      "retrieval_source_submission_id": 3770,
+      "records": 1012,
+      "emitted": 643,
+      "fills": 5,
+      "corrections": 0,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "replay_matched": 643,
+      "deterministic_two_run": true,
+      "official_metrics": "NOT_MEASURED_UNTIL_UPLOAD",
+      "receipt_path": null,
+      "decision": "FALLBACK_ONLY",
+      "reason": "Lower-risk subset of five direct-source fills; retained for comparison but not selected while submission quota is constrained."
     }
   ]
 }

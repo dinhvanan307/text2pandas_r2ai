@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0",
+  "kind": "text2pandas.submission_release_seal",
+  "strategy": "SAFE_3816_PLUS_TIER_B9_WITH_3770_RETRIEVAL",
+  "generated_at_utc": "2026-08-30T04:01:47Z",
+  "status": "READY_NOT_SUBMITTED",
+  "source": {
+    "implementation_commits": [
+      "53b42d82c83e649c0c511eb3eaa3cec7c4879a8c",
+      "7708a0148e5bee6d484c4ec83e1d5c173c803331"
+    ],
+    "tree_dirty_at_acceptance": false,
+    "python": "3.11.15",
+    "lock_sha256_prefix": "9d6f082cdaa11d9a",
+    "source_hash": "0719b86ff68679a3",
+    "config_hash": "98bea804c7c08f63"
+  },
+  "active_lineage": {
+    "raw_snapshot_id": "ca033190f2e9e99f",
+    "a6_build_id": "c6887fb633374fad",
+    "a6_silver_db_sha256": "fa6c46d6d46b4735f6a23fe1f2b8e2be16c206b712f47b8f22a5f0647f5dc3c8",
+    "retrieval_index_id": "872ccb0dda9a2bb6",
+    "retrieval_db_sha256": "72d307f8a2bb542a40f97e112456d537b90823e7b57a20eaef04a94545ab6daf"
+  },
+  "official_safe_baseline": {
+    "submission_id": 3816,
+    "submitted_at_utc": "2026-08-30T01:30:00Z",
+    "path": "artifacts/submissions/submission_adjudicated-a17-3811-answer-3770.zip",
+    "sha256": "f59c734e160705ee748a0573c991b65fc6007054602cd63074db16f0ff78b628",
+    "metrics_classification": "USER_REPORTED_OFFICIAL_EXACT_CANDIDATE",
+    "execution_accuracy": 0.2925,
+    "answer_accuracy": 0.2925,
+    "tables_f2_macro": 0.3,
+    "docs_f2_macro": 0.7086
+  },
+  "inputs": {
+    "answer": {
+      "submission_id": 3816,
+      "path": "artifacts/submissions/submission_adjudicated-a17-3811-answer-3770.zip",
+      "sha256": "f59c734e160705ee748a0573c991b65fc6007054602cd63074db16f0ff78b628",
+      "emitted": 638
+    },
+    "retrieval": {
+      "submission_id": 3770,
+      "path": "artifacts/submissions/submission_actual-table-retrieval-safe-3966500-20260829-01.zip",
+      "sha256": "15c1854d86c3be2510ae44d10eeca1ece68c8d691bcb2c84ffa280b6b008e169"
+    },
+    "semantic_v3_source": {
+      "promoted": false,
+      "path": "artifacts/runs/semantic-v3/semantic-v3-e2e-audit-aadc8f8-20260829-01/package-stripped-1.zip",
+      "sha256": "3e068bc697ac9d34512f16d520af5bf4d51a6e0dc3137c503a25f9acfacb54f0",
+      "records_used": 0
+    },
+    "patch_manifest": {
+      "path": "configs/evaluation/adjudicated_answer_patch_tier_b9_v1.json",
+      "sha256": "52c3ac33613ada7fc003166f7ebf671dfe840f828c0620c91b18df8ff85cac1b",
+      "manual_a6_fills": 9,
+      "corrections": 0,
+      "p0_enabled": false,
+      "model_gold_used": false
+    }
+  },
+  "build_history": {
+    "blocked_attempt_preserved": {
+      "run_id": "tier-b9-3816x3770-20260830-a",
+      "path": "artifacts/runs/submission/tier-b9-3816x3770-20260830-a",
+      "status": "BLOCKED",
+      "reason": "Two malformed manual pandas queries and an incorrect corpus root caused replay errors; no release artifact was promoted from this run."
+    },
+    "deterministic_runs": {
+      "a": {
+        "run_id": "tier-b9-3816x3770-20260830-b",
+        "zip_path": "artifacts/runs/submission/tier-b9-3816x3770-20260830-b/submission.zip",
+        "zip_sha256": "679d7d80ae9e46ca6b2f11a88ca9a3550e7538599796a38556b00f3ca2265771",
+        "report_path": "artifacts/runs/submission/tier-b9-3816x3770-20260830-b/composition_report.json",
+        "report_sha256": "ead4d6ea156a3ae9905b60b37b7e9035ab6f06bbd88791154376653568d48058"
+      },
+      "b": {
+        "run_id": "tier-b9-3816x3770-20260830-c",
+        "zip_path": "artifacts/runs/submission/tier-b9-3816x3770-20260830-c/submission.zip",
+        "zip_sha256": "679d7d80ae9e46ca6b2f11a88ca9a3550e7538599796a38556b00f3ca2265771",
+        "report_path": "artifacts/runs/submission/tier-b9-3816x3770-20260830-c/composition_report.json",
+        "report_sha256": "7fab672253aaaa7285da96039bc8bea2dbb2e8cdd36e3d1fcd6835143ebc65bf"
+      },
+      "zip_byte_identical": true
+    }
+  },
+  "release": {
+    "path": "artifacts/submissions/submission_tier-b9-3816-answer-3770-retrieval-20260830-01.zip",
+    "sha256": "679d7d80ae9e46ca6b2f11a88ca9a3550e7538599796a38556b00f3ca2265771",
+    "bytes": 1142102,
+    "submission_json_sha256": "46215251ede89cb9325ba1f288228d6bed8a19e5ef84fb97f6847782b4046f36",
+    "records": 1012,
+    "emitted": 647,
+    "abstained": 365,
+    "csv_members": 1152,
+    "archive_members": 1153,
+    "max_tables": 10
+  },
+  "ownership_gates": {
+    "answer_source_emitted": 638,
+    "answer_fields_equal_3816_outside_allowlist": "1003/1003",
+    "patched_qids": [452, 460, 546, 601, 647, 808, 883, 956, 967],
+    "retrieval_fields_equal_3770": "1012/1012",
+    "questions_equal_source": "1012/1012",
+    "duplicate_ids": 0,
+    "duplicate_tables": 0,
+    "duplicate_docs": 0,
+    "orphan_csvs": 0,
+    "missing_csvs": 0
+  },
+  "verification": {
+    "strict_validation_records": 1012,
+    "strict_validation_errors": 0,
+    "strict_validation_warnings": 0,
+    "replay_total": 1012,
+    "replay_executed": 647,
+    "replay_matched": 647,
+    "replay_errors": 0,
+    "full_test_report": "artifacts/reports/tier_b9_acceptance_20260830_01/test_report.json",
+    "full_test_report_sha256": "c4bcfbf1413f13761c6772b81b899aa849067367fa18370f41ce992fbb5285ae",
+    "tests_collected": 2294,
+    "tests_passed": 2252,
+    "tests_failed": 0,
+    "tests_skipped": 42,
+    "offline_ci": "PASS",
+    "materialized_integration": "23 passed",
+    "active_snapshots": "PASS",
+    "dp_env_check": "PASS"
+  },
+  "fallback": {
+    "status": "READY_NOT_SELECTED",
+    "path": "artifacts/submissions/submission_tier-b-safe5-3816-answer-3770-retrieval-20260830-01.zip",
+    "sha256": "8c53d218cfbf20921067ea4c197d29ebff9219b63e4e9a0039b2e4f0bb67c749",
+    "bytes": 1136625,
+    "records": 1012,
+    "emitted": 643,
+    "replay_matched": 643,
+    "strict_validation_errors": 0,
+    "strict_validation_warnings": 0,
+    "zip_byte_identical": true
+  },
+  "official_metrics": {
+    "answer_accuracy": "NOT_MEASURED_UNTIL_UPLOAD",
+    "execution_accuracy": "NOT_MEASURED_UNTIL_UPLOAD",
+    "tables_f2_macro": "NOT_MEASURED_UNTIL_UPLOAD",
+    "docs_f2_macro": "NOT_MEASURED_UNTIL_UPLOAD"
+  },
+  "upload": {
+    "status": "NOT_UPLOADED",
+    "submission_id": null,
+    "receipt_path": null
+  }
+}
