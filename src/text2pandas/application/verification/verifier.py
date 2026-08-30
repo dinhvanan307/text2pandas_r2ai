@@ -11,6 +11,7 @@ from text2pandas.application.retrieval import ObservationCandidate
 from text2pandas.domain.semantic import Basis, Dimension
 
 from .contracts import VerificationPolicy, VerificationResult
+from .family_completeness import validate_family_completeness
 
 
 class ProgramVerifier:
@@ -62,6 +63,17 @@ class ProgramVerifier:
                 warnings.append(f"PHYSICAL_ID_INCOMPLETE:{request_id}")
             self._verify_readiness(request_id, candidate, hard_failures, warnings)
 
+        family_trace: dict[str, object] = {"family": "disabled"}
+        if self.policy.enforce_family_completeness:
+            family = validate_family_completeness(bound_plan)
+            hard_failures.extend(family.failures)
+            family_trace = {
+                "family": family.family,
+                "expected_members": list(family.expected_members),
+                "bound_members": list(family.bound_members),
+                "failures": list(family.failures),
+            }
+
         score = max(0.0, 1.0 - 0.04 * len(warnings) - 0.25 * len(hard_failures))
         status = "OK" if not hard_failures else "ABSTAIN"
         reasons = (*hard_failures, *warnings)
@@ -77,6 +89,7 @@ class ProgramVerifier:
                     "hard_failures": hard_failures,
                     "warnings": warnings,
                     "evidence_count": len(bound_plan.operands),
+                    "family_completeness": family_trace,
                 },
             ),
         )

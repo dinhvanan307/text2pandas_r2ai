@@ -40,6 +40,7 @@ def test_wave5_policy_enables_role_inference_and_hard_filtering() -> None:
     assert not policy.production_eligible
     assert policy.enforce_observation_roles
     assert policy.engine.infer_observation_roles
+    assert policy.verification.enforce_family_completeness
     assert policy.engine.max_binding_candidates == 3
     assert policy.engine.require_answer_consensus
 

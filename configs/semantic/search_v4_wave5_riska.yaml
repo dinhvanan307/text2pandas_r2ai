@@ -31,6 +31,7 @@ program_search:
 
 verification:
   allow_recoverable_collisions: false
+  enforce_family_completeness: true
   recoverable_collision_classes:
     - missing_column_group
     - missing_row_parent

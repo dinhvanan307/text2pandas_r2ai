@@ -13,6 +13,7 @@ class VerificationPolicy:
         "missing_row_parent",
     )
     minimum_recoverable_confidence: float = 0.75
+    enforce_family_completeness: bool = False
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.minimum_recoverable_confidence <= 1.0:

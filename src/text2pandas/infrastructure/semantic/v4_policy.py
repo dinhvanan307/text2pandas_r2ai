@@ -88,6 +88,9 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         minimum_recoverable_confidence=_float(
             verification.get("minimum_recoverable_confidence", 0.75)
         ),
+        enforce_family_completeness=bool(
+            verification.get("enforce_family_completeness", False)
+        ),
     )
     return SemanticV4RuntimePolicy(
         policy_id=str(raw["policy_id"]),
