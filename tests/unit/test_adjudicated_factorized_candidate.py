@@ -64,6 +64,20 @@ def test_release_manifest_locks_exact_a17_policy() -> None:
     assert manifest["policy"]["semantic_v3_promoted"] is False
 
 
+def test_manifest_accepts_constrained_model_as_a6_source(tmp_path: Path) -> None:
+    payload = MANIFEST.read_text(encoding="utf-8").replace(
+        '"kind": "A6_MANUAL"',
+        '"kind": "A6_CONSTRAINED_MODEL"',
+        1,
+    )
+    path = tmp_path / "constrained.json"
+    path.write_text(payload, encoding="utf-8")
+
+    loaded = _load_manifest(path)
+
+    assert any(patch["source"]["kind"] == "A6_CONSTRAINED_MODEL" for patch in loaded["patches"])
+
+
 def test_manifest_rejects_incoherent_emitted_counts(tmp_path: Path) -> None:
     payload = MANIFEST.read_text(encoding="utf-8").replace(
         '"expected_output_emitted": 638',

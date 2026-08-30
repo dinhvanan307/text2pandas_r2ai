@@ -50,7 +50,7 @@ _write_zip = _factorized._write_zip
 JsonObject = dict[str, Any]
 _ANSWER_FIELDS = ("answer", "evidence", "pandas_query")
 _RETRIEVAL_FIELDS = ("relevant_tables", "relevant_docs")
-_SOURCE_KINDS = frozenset(("A6_MANUAL", "SEMANTIC_V3_PACKAGE"))
+_SOURCE_KINDS = frozenset(("A6_MANUAL", "A6_CONSTRAINED_MODEL", "SEMANTIC_V3_PACKAGE"))
 _DECISIONS = frozenset(("CORRECT", "FILL"))
 
 
@@ -789,6 +789,10 @@ def main() -> int:
             "verified_patches": len(expanded_sources),
             "manual": sum(
                 item["source_kind"] == "A6_MANUAL" for item in expanded_sources
+            ),
+            "constrained_model": sum(
+                item["source_kind"] == "A6_CONSTRAINED_MODEL"
+                for item in expanded_sources
             ),
             "semantic_v3_package": sum(
                 item["source_kind"] == "SEMANTIC_V3_PACKAGE"
