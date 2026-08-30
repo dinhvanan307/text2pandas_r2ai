@@ -12,6 +12,9 @@ aliases:
   EIB:
     - alias: Eximbank
       qids: [783, 792]
+  HNG:
+    - alias: Nông nghiệp Quốc tế HAGL
+      qids: [782]
   STB:
     - alias: Ngân hàng TMCP Sài Gòn Thương Tín
       qids: [508, 624]
