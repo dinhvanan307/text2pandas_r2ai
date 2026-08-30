@@ -40,6 +40,7 @@ __all__ = [
     "publication_blockers",
     "replay_zip",
     "validate_zip",
+    "write_deterministic_submission_zip",
 ]
 
 ReleaseProfile = Literal["complete", "competition"]
@@ -158,13 +159,42 @@ def build_submission(
     (out_dir / cfg.json_name).write_bytes(json_bytes)
 
     zip_path = out_dir.parent / f"{out_dir.name}.zip"
-    with zipfile.ZipFile(zip_path, "x", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
-        _write_deterministic(z, cfg.json_name, json_bytes)
-        for csv_file in sorted(data_dir.iterdir()):
-            if not csv_file.is_file() or csv_file.suffix.lower() != ".csv":
-                continue
-            _write_deterministic(z, f"data/{csv_file.name}", csv_file.read_bytes())
+    csv_payloads = {
+        f"data/{csv_file.name}": csv_file.read_bytes()
+        for csv_file in sorted(data_dir.iterdir())
+        if csv_file.is_file() and csv_file.suffix.lower() == ".csv"
+    }
+    write_deterministic_submission_zip(
+        zip_path,
+        json_name=cfg.json_name,
+        json_bytes=json_bytes,
+        csv_payloads=csv_payloads,
+    )
     return zip_path
+
+
+def write_deterministic_submission_zip(
+    zip_path: Path,
+    *,
+    json_name: str,
+    json_bytes: bytes,
+    csv_payloads: Mapping[str, bytes],
+) -> None:
+    """Write one immutable submission archive with stable byte identity."""
+
+    if "/" in json_name or not json_name.lower().endswith(".json"):
+        raise SubmissionBuildError(f"invalid top-level submission JSON name: {json_name!r}")
+    invalid = [
+        name
+        for name in csv_payloads
+        if not _CSV_PATH.fullmatch(name) or Path(name).name != name.removeprefix("data/")
+    ]
+    if invalid:
+        raise SubmissionBuildError(f"invalid submission CSV member names: {invalid[:5]}")
+    with zipfile.ZipFile(zip_path, "x", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        _write_deterministic(archive, json_name, json_bytes)
+        for name in sorted(csv_payloads):
+            _write_deterministic(archive, name, csv_payloads[name])
 
 
 def _write_deterministic(archive: zipfile.ZipFile, name: str, payload: bytes) -> None:

@@ -19,7 +19,7 @@ from text2pandas.infrastructure.checksums import sha256_file
 ROOT = Path(__file__).resolve().parents[1]
 QUESTIONS = ROOT / "data/raw/btc/questions/questions.jsonl"
 CORPUS = ROOT / "data/raw/btc/financial_statements"
-RUN_ROOTS = ("answer", "grounded-v5")
+RUN_ROOTS = ("answer", "grounded-v5", "safe-recovery")
 
 
 def _resolve_candidate_stage(run_id: str) -> tuple[Path, Path]:
