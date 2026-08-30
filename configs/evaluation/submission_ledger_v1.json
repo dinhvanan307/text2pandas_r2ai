@@ -105,6 +105,31 @@
       },
       "blocker": "The exact ZIP, source commit and review-ledger config are attributed. A durable leaderboard receipt is still absent.",
       "source": "User-confirmed leaderboard row for submission 3828 on 2026-08-30 17:53 Asia/Ho_Chi_Minh, mapped to the exact reviewed23 handoff ZIP from the current thread."
+    },
+    {
+      "submission_id": 3830,
+      "status": "INCOMPLETE_RECEIPT_ATTRIBUTION",
+      "submitted_at_utc": "2026-08-30T11:43:00Z",
+      "zip_path": "artifacts/official/submission-3830/submission.zip",
+      "zip_sha256": "b79fe44c110ecca5a3657ed360cc1c02f5badb4f7f7c9f4b1d456f48b20fb601",
+      "git_commit": "869c6550c96a52a20be37a8912c1e86644679d52",
+      "config_sha256": "8c97f1094b1bbf2621d17b1c5c19409242e7b6213d73d3d9a8a2fc78eeb44022",
+      "receipt_path": null,
+      "metrics": {
+        "classification": "USER_CONFIRMED_OFFICIAL_ARTIFACT_PARTIALLY_ATTRIBUTED",
+        "execution_accuracy": 0.3696,
+        "tables_f2_macro": 0.3151,
+        "docs_f2_macro": 0.7361,
+        "tables_precision": 0.2797,
+        "tables_recall": 0.3571,
+        "tables_mrr_at_5": 0.3939,
+        "docs_precision": 0.6534,
+        "docs_recall": 0.7952,
+        "docs_mrr_at_5": 0.8162,
+        "answer_accuracy": 0.3696
+      },
+      "blocker": "The exact ZIP, source commit and review-ledger config are attributed. A durable leaderboard receipt is still absent.",
+      "source": "User-confirmed leaderboard row for submission 3830 on 2026-08-30 18:43 Asia/Ho_Chi_Minh, mapped to the exact Recovery Wave 2 handoff ZIP from the current thread."
     }
   ],
   "local_candidates": [

@@ -1,0 +1,50 @@
+{
+  "artifact": {
+    "bytes": 935256,
+    "csv_members": 1158,
+    "duplicate_members": 0,
+    "json_member": "submission.json",
+    "json_sha256": "97a2f4c901a21159a810db9568be1fbbbe3e6bfde879672fe32dcc337fafb9b7",
+    "members": 1159,
+    "orphan_csv_members": 0,
+    "path": "artifacts/official/submission-3830/submission.zip",
+    "sha256": "b79fe44c110ecca5a3657ed360cc1c02f5badb4f7f7c9f4b1d456f48b20fb601"
+  },
+  "attribution": {
+    "artifact_confirmation": "USER_CONFIRMED_EXACT_ARTIFACT",
+    "config_path": "configs/evaluation/recovery_wave2_review_3828_v1.json",
+    "config_sha256": "8c97f1094b1bbf2621d17b1c5c19409242e7b6213d73d3d9a8a2fc78eeb44022",
+    "git_commit": "869c6550c96a52a20be37a8912c1e86644679d52",
+    "leaderboard_receipt_path": null,
+    "remaining_blockers": [
+      "leaderboard receipt is absent"
+    ]
+  },
+  "coverage": {
+    "executable": 763,
+    "records": 1012,
+    "unresolved": 249
+  },
+  "kind": "text2pandas.official_submission_identity",
+  "metrics": {
+    "answer_accuracy": 0.3696,
+    "docs_f2_macro": 0.7361,
+    "docs_mrr_at_5": 0.8162,
+    "docs_precision": 0.6534,
+    "docs_recall": 0.7952,
+    "execution_accuracy": 0.3696,
+    "tables_f2_macro": 0.3151,
+    "tables_mrr_at_5": 0.3939,
+    "tables_precision": 0.2797,
+    "tables_recall": 0.3571
+  },
+  "replay": {
+    "emitted_errors": 0,
+    "executed": 763,
+    "matched": 763,
+    "unresolved": 249
+  },
+  "schema_version": 1,
+  "submission_id": 3830,
+  "submitted_at_utc": "2026-08-30T11:43:00Z"
+}
