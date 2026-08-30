@@ -80,6 +80,31 @@
       },
       "blocker": "Leaderboard receipt export is absent; exact local ZIP, SHA-256, source commit and patch manifest are attributed.",
       "source": "User-reported leaderboard row for submission 3816 on 2026-08-30 08:30 Asia/Ho_Chi_Minh."
+    },
+    {
+      "submission_id": 3818,
+      "status": "INCOMPLETE_ATTRIBUTED_RECORD",
+      "submitted_at_utc": "2026-08-30T04:28:00Z",
+      "zip_path": "artifacts/submissions/submission_tier-b9-3816-answer-3770-retrieval-20260830-01.zip",
+      "zip_sha256": "679d7d80ae9e46ca6b2f11a88ca9a3550e7538599796a38556b00f3ca2265771",
+      "git_commit": "7708a0148e5bee6d484c4ec83e1d5c173c803331",
+      "config_sha256": "52c3ac33613ada7fc003166f7ebf671dfe840f828c0620c91b18df8ff85cac1b",
+      "receipt_path": null,
+      "metrics": {
+        "classification": "USER_REPORTED_OFFICIAL_ATTRIBUTED",
+        "execution_accuracy": 0.2964,
+        "tables_f2_macro": 0.3,
+        "docs_f2_macro": 0.7086,
+        "tables_precision": 0.2707,
+        "tables_recall": 0.3435,
+        "tables_mrr_at_5": 0.3801,
+        "docs_precision": 0.6349,
+        "docs_recall": 0.7651,
+        "docs_mrr_at_5": 0.7885,
+        "answer_accuracy": 0.2964
+      },
+      "blocker": "Leaderboard receipt export is absent; exact local ZIP, SHA-256, source commit and patch manifest are attributed.",
+      "source": "User-reported leaderboard row for submission 3818 on 2026-08-30 11:28 Asia/Ho_Chi_Minh."
     }
   ],
   "local_candidates": [
@@ -94,7 +119,7 @@
     },
     {
       "run_id": "tier-b9-3816x3770-20260830-01",
-      "status": "READY_TO_UPLOAD",
+      "status": "SUBMITTED_OFFICIAL_BASELINE",
       "zip_path": "artifacts/submissions/submission_tier-b9-3816-answer-3770-retrieval-20260830-01.zip",
       "zip_sha256": "679d7d80ae9e46ca6b2f11a88ca9a3550e7538599796a38556b00f3ca2265771",
       "implementation_commits": [
@@ -113,10 +138,16 @@
       "validation_warnings": 0,
       "replay_matched": 647,
       "deterministic_two_run": true,
-      "official_metrics": "NOT_MEASURED_UNTIL_UPLOAD",
+      "official_metrics": {
+        "submission_id": 3818,
+        "execution_accuracy": 0.2964,
+        "answer_accuracy": 0.2964,
+        "tables_f2_macro": 0.3,
+        "docs_f2_macro": 0.7086
+      },
       "receipt_path": null,
-      "decision": "PRIMARY_NEXT_SUBMISSION",
-      "reason": "Preserves all 638 emitted answers from official SAFE 3816, adds nine A6 source-backed answers only on abstentions, and preserves retrieval fields from submission 3770 exactly."
+      "decision": "SAFE_OFFICIAL_BASELINE_3818",
+      "reason": "Official submission 3818 confirmed this exact ZIP at answer/execution accuracy 0.2964; keep immutable as the regression baseline."
     },
     {
       "run_id": "tier-b-safe5-3816x3770-20260830-01",
