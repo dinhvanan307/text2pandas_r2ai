@@ -14,6 +14,9 @@ from tools.submission.build_adjudicated_factorized_candidate import _load_manife
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "configs/evaluation/adjudicated_answer_patch_tier_b9_v1.json"
+SAFE5_MANIFEST = (
+    ROOT / "configs/evaluation/adjudicated_answer_patch_tier_b_safe5_v1.json"
+)
 A6_DB = ROOT / "data/processed/a6/c6887fb633374fad/silver.db"
 SAFE_3816 = (
     ROOT
@@ -41,6 +44,17 @@ def test_tier_b9_manifest_is_fill_only_and_fail_closed() -> None:
         "semantic_v3_promoted": False,
         "fail_closed": True,
     }
+
+
+def test_safe5_manifest_is_exact_direct_safe_subset() -> None:
+    manifest = _load_manifest(SAFE5_MANIFEST)
+
+    assert manifest["patch_id"] == "adjudicated-answer-patch-tier-b-safe5-v1"
+    assert [item["qid"] for item in manifest["patches"]] == [452, 546, 601, 883, 956]
+    assert manifest["policy"]["expected_baseline_emitted"] == 638
+    assert manifest["policy"]["expected_output_emitted"] == 643
+    assert manifest["policy"]["expected_corrections"] == 0
+    assert manifest["policy"]["expected_fills"] == 5
 
 
 @pytest.mark.skipif(not A6_DB.is_file(), reason="active A6 database is not materialized")
