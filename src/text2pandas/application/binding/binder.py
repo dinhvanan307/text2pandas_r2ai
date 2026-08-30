@@ -237,16 +237,37 @@ def _semantically_equivalent(left: _State, right: _State) -> bool:
         return False
     for request_id, left_candidate in left.assignments.items():
         right_candidate = right.assignments[request_id]
-        if (
-            left_candidate.value != right_candidate.value
-            or left_candidate.unit != right_candidate.unit
-            or left_candidate.basis != right_candidate.basis
-            or left_candidate.entity != right_candidate.entity
-            or left_candidate.period != right_candidate.period
-            or left_candidate.is_restated != right_candidate.is_restated
+        if _candidate_semantic_key(left_candidate) != _candidate_semantic_key(
+            right_candidate
         ):
             return False
     return True
+
+
+def _candidate_semantic_key(candidate: ObservationCandidate) -> tuple[object, ...]:
+    """Do not collapse same-number facts selected from different semantic roles."""
+
+    return (
+        candidate.document_id,
+        candidate.entity,
+        candidate.basis,
+        candidate.statement_type,
+        candidate.metric_id,
+        candidate.matched_metric_id,
+        candidate.source_metric_code,
+        candidate.row_uid,
+        candidate.row_hierarchy,
+        candidate.row_role,
+        candidate.column_uid,
+        candidate.column_hierarchy,
+        candidate.column_role,
+        candidate.period,
+        candidate.period_role,
+        candidate.scale_source,
+        candidate.value,
+        candidate.unit,
+        candidate.is_restated,
+    )
 
 
 def _abstain(reason: str, *, trace: tuple[dict[str, object], ...] = ()) -> BindingResult:

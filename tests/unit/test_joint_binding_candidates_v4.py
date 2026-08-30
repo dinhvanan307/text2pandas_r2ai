@@ -7,7 +7,12 @@ from text2pandas.application.binding import JointBinder
 from text2pandas.application.parsing import OperationKind, QuestionAnnotations, SemanticParser
 from text2pandas.application.planning import compile_execution_plan
 from text2pandas.application.retrieval import CandidateBatch, ObservationCandidate
-from text2pandas.domain.semantic import Basis, Dimension, UnitSpec
+from text2pandas.domain.semantic import (
+    Basis,
+    Dimension,
+    ObservationRowRole,
+    UnitSpec,
+)
 from text2pandas.infrastructure.ontology import load_ontology
 
 
@@ -142,3 +147,54 @@ def test_canonical_bind_still_fails_closed_on_non_equivalent_tie() -> None:
 
     assert not result.ok
     assert result.reason == "BINDING_TIE"
+
+
+def test_same_number_different_row_role_remains_semantically_distinct() -> None:
+    plan, batches = _two_operand_fixture()
+    request = plan.requests[0]
+    scoped = replace(plan, requests=(request,), constraints=())
+    total = replace(
+        _candidate(request, "total", "doc-a", 10.0),
+        row_uid="row-total",
+        row_hierarchy=("Hàng tồn kho", "Tổng cộng"),
+        row_role=ObservationRowRole.TOTAL,
+    )
+    allowance = replace(
+        total,
+        observation_uid="allowance",
+        row_uid="row-allowance",
+        row_hierarchy=("Hàng tồn kho", "Dự phòng"),
+        row_role=ObservationRowRole.ALLOWANCE,
+    )
+
+    result = JointBinder().bind_candidates(
+        scoped,
+        {request.request_id: CandidateBatch(request.request_id, (total, allowance), {})},
+        limit=3,
+    )
+
+    assert result.ok
+    assert len(result.candidates) == 2
+
+
+def test_physical_duplicate_with_same_semantic_identity_is_collapsed() -> None:
+    plan, _ = _two_operand_fixture()
+    request = plan.requests[0]
+    scoped = replace(plan, requests=(request,), constraints=())
+    first = replace(
+        _candidate(request, "physical-a", "doc-a", 10.0),
+        row_uid="row-1",
+        column_uid="column-1",
+        row_hierarchy=("Doanh thu",),
+        column_hierarchy=("Năm nay",),
+    )
+    duplicate = replace(first, observation_uid="physical-b", table_uid="table:other")
+
+    result = JointBinder().bind_candidates(
+        scoped,
+        {request.request_id: CandidateBatch(request.request_id, (first, duplicate), {})},
+        limit=3,
+    )
+
+    assert result.ok
+    assert len(result.candidates) == 1
