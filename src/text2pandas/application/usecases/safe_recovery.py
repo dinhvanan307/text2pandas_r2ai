@@ -312,11 +312,11 @@ def _facts_csv(qid: int, facts: Sequence[object]) -> bytes:
         if not isinstance(item, Mapping):
             raise SubmissionBuildError(f"QID {qid} has a non-object selected fact")
         uid = item.get("uid")
-        value = item.get("canonical_value")
+        value = item.get("raw_value")
         if not isinstance(uid, str) or not uid or uid in seen_uids:
             raise SubmissionBuildError(f"QID {qid} has an invalid or duplicate fact UID")
         if value is None:
-            raise SubmissionBuildError(f"QID {qid} fact {uid} has no canonical value")
+            raise SubmissionBuildError(f"QID {qid} fact {uid} has no raw value")
         seen_uids.add(uid)
         writer.writerow(
             (

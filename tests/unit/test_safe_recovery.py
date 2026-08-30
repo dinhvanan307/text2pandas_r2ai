@@ -61,6 +61,7 @@ def _fixture(root: Path) -> tuple[Path, Path, Path]:
                     "selected_facts": [
                         {
                             "uid": "fact-2",
+                            "raw_value": "7",
                             "canonical_value": "7",
                             "table_uid": "table-2",
                             "document_id": "DOC_2022",
