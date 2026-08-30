@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal
 
 from text2pandas.application.parsing import OperationKind, QuestionAnnotations, SemanticParser
 from text2pandas.application.retrieval import CandidateBatch, ObservationCandidate
-from text2pandas.application.usecases.semantic_v4 import SemanticV4Config, SemanticV4Engine
+from text2pandas.application.usecases.semantic_v4 import (
+    ProgramAlternative,
+    SemanticV4Config,
+    SemanticV4Engine,
+    _selection_signatures_disagree,
+)
 from text2pandas.domain.semantic import Basis, Dimension, UnitSpec
 from text2pandas.infrastructure.execution import PandasSandboxReplay
 from text2pandas.infrastructure.ontology import load_ontology
@@ -130,3 +136,32 @@ def test_v4_engine_does_not_use_recoverable_collision_without_verifier_policy() 
     assert not result.ok
     assert result.reason == "NO_VERIFIED_PROGRAM"
     assert any(key.startswith("VERIFY:EVIDENCE_NOT_EXECUTION_READY") for key in result.failure_counts)
+
+
+def test_selection_consensus_uses_semantic_key_not_only_answer() -> None:
+    first = ProgramAlternative(
+        parse_candidate_id="a",
+        answer=Decimal(10),
+        query="float(10)",
+        joint_score=1.0,
+        binding_score=1.0,
+        binding_margin=None,
+        verifier_score=1.0,
+        relevant_tables=(),
+        relevant_documents=(),
+        evidence=(),
+        ast={},
+        plan_fingerprint="a" * 64,
+        ontology_fingerprint="b" * 64,
+        trace=(),
+        selection_signatures=('{"selected_key":"VCB"}',),
+    )
+    same_key = replace(first, parse_candidate_id="b")
+    other_key_same_answer = replace(
+        first,
+        parse_candidate_id="c",
+        selection_signatures=('{"selected_key":"BID"}',),
+    )
+
+    assert not _selection_signatures_disagree([first, same_key])
+    assert _selection_signatures_disagree([first, other_key_same_answer])

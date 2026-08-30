@@ -76,6 +76,9 @@ def load_semantic_v4_policy(path: str | Path) -> SemanticV4RuntimePolicy:
         require_answer_consensus=bool(search.get("require_answer_consensus", False)),
         maximum_relevant_tables=_int(search.get("maximum_relevant_tables", 10)),
         infer_observation_roles=bool(search.get("infer_observation_roles", False)),
+        require_selection_key_consensus=bool(
+            search.get("require_selection_key_consensus", False)
+        ),
     )
     verification_policy = VerificationPolicy(
         allow_recoverable_collisions=allow_recoverable,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal
 
 import pandas as pd
@@ -14,7 +15,18 @@ from text2pandas.application.parsing import (
 )
 from text2pandas.application.planning import compile_execution_plan
 from text2pandas.application.retrieval import CandidateBatch, ObservationCandidate
-from text2pandas.domain.semantic import Basis, Dimension, RankDirection, UnitSpec
+from text2pandas.domain.semantic import (
+    Axis,
+    Basis,
+    Dimension,
+    MetricRef,
+    OutputSpec,
+    QuestionAST,
+    Rank,
+    RankDirection,
+    ResultKind,
+    UnitSpec,
+)
 from text2pandas.infrastructure.ontology import load_ontology
 from text2pandas.infrastructure.sandbox.query import execute_query
 
@@ -149,6 +161,13 @@ def test_select_at_arg_executes_rank_metric_then_returns_a_different_metric() ->
     compiled = compile_pandas(binding.bound_plan)
 
     assert typed.ok and typed.answer == Decimal(30)
+    signatures = typed.trace[0]["selection_signatures"]
+    assert isinstance(signatures, list)
+    assert signatures[0]["selected_key"] == "BID"
+    assert signatures[0]["bound_rank_keys"] == ["BID", "VCB"]
+    assert signatures[0]["projected_keys"] == ["BID", "VCB"]
+    assert signatures[0]["rank_metric_ids"] == ["total_assets"]
+    assert signatures[0]["projected_metric_ids"] == ["profit_after_tax"]
     assert compiled.ok
     frames = {}
     for evidence in compiled.program.evidence:
@@ -164,6 +183,65 @@ def test_select_at_arg_executes_rank_metric_then_returns_a_different_metric() ->
             }
         )
     assert execute_query(compiled.program.query, frames) == 30.0
+
+
+def test_rank_requires_complete_domain_and_unique_selected_key() -> None:
+    ontology = load_ontology()
+    rank = Rank(
+        Axis.ENTITY,
+        ("VCB", "BID"),
+        MetricRef(
+            "total_assets",
+            entities=("VCB", "BID"),
+            periods=("2024",),
+            basis=Basis.CONSOLIDATED,
+            expected_unit=UnitSpec(Dimension.MONEY, 6, "VND"),
+        ),
+        RankDirection.DESCENDING,
+    )
+    ast = QuestionAST(
+        expression=rank,
+        output=OutputSpec(ResultKind.ENTITY, UnitSpec(Dimension.ENTITY)),
+        question="Công ty nào có tổng tài sản lớn nhất?",
+    )
+    plan = compile_execution_plan(ast, ontology)
+    batches = {}
+    for request in plan.requests:
+        candidate = ObservationCandidate(
+            observation_uid=f"obs:{request.entity}",
+            table_uid=f"table:{request.entity}",
+            document_id=f"{request.entity}-2024",
+            entity=request.entity or "?",
+            basis=Basis.CONSOLIDATED,
+            statement_type="balance_sheet",
+            metric_id=request.metric_id,
+            row_path="Tổng cộng tài sản",
+            column_path="2024",
+            period="2024-12-31",
+            period_role="closing",
+            value=Decimal(100),
+            value_raw="100",
+            unit=UnitSpec(Dimension.MONEY, 6, "VND"),
+            is_restated=False,
+            score=10.0,
+            score_reasons=("fixture",),
+            grid_row=1,
+            grid_column=1,
+        )
+        batches[request.request_id] = CandidateBatch(request.request_id, (candidate,), {})
+    binding = JointBinder().bind(plan, batches)
+    assert binding.ok and binding.bound_plan is not None
+
+    tied = TypedExecutor().execute(binding.bound_plan)
+    one_request_id = next(iter(binding.bound_plan.operands))
+    incomplete_bound = replace(
+        binding.bound_plan,
+        operands={one_request_id: binding.bound_plan.operands[one_request_id]},
+    )
+    incomplete = TypedExecutor().execute(incomplete_bound)
+
+    assert not tied.ok and tied.reason == "RANK_KEY_TIE"
+    assert not incomplete.ok and incomplete.reason == "RANK_DOMAIN_INCOMPLETE"
 
 
 def test_filtered_minimum_executes_and_compiles_the_same_qualifying_periods() -> None:

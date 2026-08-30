@@ -6,6 +6,7 @@ from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
+import json
 from typing import Protocol
 
 from text2pandas.application.binding import BoundExecutionPlan, JointBinder
@@ -38,6 +39,7 @@ class SemanticV4Config:
     require_answer_consensus: bool = False
     maximum_relevant_tables: int = 10
     infer_observation_roles: bool = False
+    require_selection_key_consensus: bool = False
 
     def __post_init__(self) -> None:
         if self.max_parse_candidates < 1 or self.max_binding_candidates < 1:
@@ -66,6 +68,7 @@ class ProgramAlternative:
     plan_fingerprint: str
     ontology_fingerprint: str
     trace: tuple[dict[str, object], ...]
+    selection_signatures: tuple[str, ...] = ()
 
     def summary(self) -> dict[str, object]:
         return {
@@ -77,6 +80,7 @@ class ProgramAlternative:
             "verifier_score": self.verifier_score,
             "relevant_tables": list(self.relevant_tables),
             "plan_fingerprint": self.plan_fingerprint,
+            "selection_signatures": list(self.selection_signatures),
         }
 
 
@@ -229,6 +233,18 @@ class SemanticV4Engine:
         ranked_groups = sorted(groups, key=_group_sort_key)
         winning_group = ranked_groups[0]
         selected = max(winning_group, key=_alternative_sort_key)
+        if (
+            self.config.require_selection_key_consensus
+            and _selection_signatures_disagree(alternatives)
+        ):
+            return self._abstain_after_search(
+                qid,
+                "SELECTED_KEY_DISAGREEMENT",
+                alternatives,
+                candidate_tables,
+                failures,
+                search_trace,
+            )
         if self.config.require_answer_consensus and len(ranked_groups) > 1:
             return self._abstain_after_search(
                 qid,
@@ -361,6 +377,7 @@ class SemanticV4Engine:
                 bound_plan.plan.fingerprint,
                 bound_plan.plan.ontology_fingerprint,
                 (*parsed.result.trace, *typed.trace, *compiled.trace, *verified.trace),
+                _canonical_selection_signatures(typed.trace),
             ),
             None,
         )
@@ -411,6 +428,34 @@ def _answers_equivalent(left: Decimal | str, right: Decimal | str) -> bool:
     if isinstance(left, Decimal) and isinstance(right, Decimal):
         return answers_match(left, float(right))
     return str(left) == str(right)
+
+
+def _canonical_selection_signatures(
+    trace: tuple[dict[str, object], ...],
+) -> tuple[str, ...]:
+    output: list[str] = []
+    for item in trace:
+        raw = item.get("selection_signatures")
+        if not isinstance(raw, list):
+            continue
+        for signature in raw:
+            if isinstance(signature, Mapping):
+                output.append(
+                    json.dumps(
+                        dict(signature),
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                )
+    return tuple(sorted(output))
+
+
+def _selection_signatures_disagree(
+    alternatives: list[ProgramAlternative],
+) -> bool:
+    signatures = {alternative.selection_signatures for alternative in alternatives}
+    return any(signatures) and len(signatures) != 1
 
 
 def _alternative_sort_key(value: ProgramAlternative) -> tuple[float, float, str]:

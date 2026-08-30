@@ -28,6 +28,7 @@ program_search:
   require_answer_consensus: true
   maximum_relevant_tables: 10
   infer_observation_roles: true
+  require_selection_key_consensus: true
 
 verification:
   allow_recoverable_collisions: false
