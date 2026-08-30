@@ -189,6 +189,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
+        publication_blockers,
         replay_zip,
         validate_zip,
     )
@@ -242,12 +243,8 @@ def cmd_run(args: argparse.Namespace) -> int:
                 "answer_pool_tables": args.answer_pool_tables,
                 "output_score_margin": args.output_score_margin,
                 "retrieval_primary_boost": args.retrieval_primary_boost,
-                "prefer_retrieval_output_in_binding": (
-                    args.prefer_retrieval_output_in_binding
-                ),
-                "experimental_direct_interest_average": (
-                    args.experimental_direct_interest_average
-                ),
+                "prefer_retrieval_output_in_binding": (args.prefer_retrieval_output_in_binding),
+                "experimental_direct_interest_average": (args.experimental_direct_interest_average),
                 "package_requested": not args.no_package,
                 "doc_id_variant": args.doc_id,
                 "locator_base": args.locator_base,
@@ -307,7 +304,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     if stat["executed"]:
         print(f"  khớp answer  {100 * stat['matched'] / stat['executed']:.2f}% số câu chạy được")
 
-    package_ok = val.ok and stat["error"] == 0 and stat["matched"] == stat["executed"]
+    release_blockers = publication_blockers(val, stat, expected_records=len(questions))
+    package_ok = not release_blockers
     final = SUBMIT_DIR / f"submission_{args.run_id}.zip"
     published = None
     if package_ok:
@@ -345,6 +343,7 @@ def cmd_package(args: argparse.Namespace) -> int:
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
+        publication_blockers,
         replay_zip,
         validate_zip,
     )
@@ -408,7 +407,8 @@ def cmd_package(args: argparse.Namespace) -> int:
     )
     if stat["executed"]:
         print(f"  bất biến answer == eval(query): {100 * stat['matched'] / stat['executed']:.2f}%")
-    package_ok = val.ok and stat["error"] == 0 and stat["matched"] == stat["executed"]
+    release_blockers = publication_blockers(val, stat, expected_records=len(questions))
+    package_ok = not release_blockers
     published = None
     if package_ok:
         published = SUBMIT_DIR / f"submission_{args.run_id}.zip"
@@ -442,6 +442,7 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
+        publication_blockers,
         replay_zip,
         validate_zip,
     )
@@ -509,6 +510,7 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
     validation = validate_zip(zip_path, questions, corpus_root=CORPUS)
     replay = replay_zip(zip_path, SCRATCH / f"replay-{args.run_id}")
     replay_mismatches = replay["executed"] - replay["matched"]
+    release_blockers = publication_blockers(validation, replay, expected_records=len(questions))
     report = {
         "schema_version": 1,
         "kind": "text2pandas.semantic_v3_submission_validation",
@@ -521,6 +523,7 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
         },
         "replay": replay,
         "replay_mismatches": replay_mismatches,
+        "publication_blockers": release_blockers,
     }
     report_path = stage / f"package-{cfg.doc_id_variant}-{cfg.locator_base}.report.json"
     report_path.write_text(
@@ -537,7 +540,7 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
     )
     print(f"  zip              : {zip_path}")
     print(f"  report           : {report_path}")
-    return 0 if not validation.errors and not replay["error"] and not replay_mismatches else 1
+    return int(bool(release_blockers))
 
 
 def cmd_hybrid_v3(args: argparse.Namespace) -> int:
@@ -555,6 +558,7 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
+        publication_blockers,
         replay_zip,
         validate_zip,
     )
@@ -605,7 +609,7 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
         if isinstance(semantic_promotion, dict) and semantic_promotion.get("status")
         else None
     )
-    publication_eligible, publication_blockers = hybrid_publication_eligibility(
+    publication_eligible, policy_publication_blockers = hybrid_publication_eligibility(
         policy,
         semantic_promotion_status,
     )
@@ -635,7 +639,8 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
     validation = validate_zip(zip_path, questions, corpus_root=CORPUS)
     replay = replay_zip(zip_path, SCRATCH / f"hybrid-replay-{args.run_id}")
     replay_mismatches = replay["executed"] - replay["matched"]
-    package_ok = not validation.errors and not replay["error"] and not replay_mismatches
+    release_blockers = publication_blockers(validation, replay, expected_records=len(questions))
+    package_ok = not release_blockers
     published = None
     if package_ok and publication_eligible:
         published = SUBMIT_DIR / f"submission_{args.run_id}.zip"
@@ -665,7 +670,7 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
                 "production_eligible": policy.production_eligible,
                 "semantic_promotion_status": semantic_promotion_status,
                 "publication_eligible": publication_eligible,
-                "publication_blockers": list(publication_blockers),
+                "publication_blockers": list(policy_publication_blockers),
                 "relevant_refs_mode": policy.relevant_refs_mode,
                 "maximum_relevant_tables": policy.maximum_relevant_tables,
             },
@@ -684,6 +689,7 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
             },
             "replay": replay,
             "replay_mismatches": replay_mismatches,
+            "publication_blockers": release_blockers,
             "package": {
                 "path": str(zip_path.relative_to(ROOT)),
                 "sha256": sha256_file(zip_path),
@@ -709,7 +715,7 @@ def cmd_hybrid_v3(args: argparse.Namespace) -> int:
     print(f"  zip                : {zip_path}")
     print(f"  attribution        : {report.attribution_path}")
     if not publication_eligible:
-        print(f"  publish            : BLOCKED — {', '.join(publication_blockers)}")
+        print(f"  publish            : BLOCKED — {', '.join(policy_publication_blockers)}")
     elif published:
         print(f"  publish            : {published}")
     return 0 if package_ok else 1
@@ -940,9 +946,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                         qid,
                         question,
                     )
-                    operand_retriever.set_table_rank_priors(
-                        tuple(upstream.ranked_table_uids)
-                    )
+                    operand_retriever.set_table_rank_priors(tuple(upstream.ranked_table_uids))
                 else:
                     operand_retriever.set_table_rank_priors(())
                 result = engine.answer(question, qid=qid)
@@ -1201,9 +1205,7 @@ def main(argv: list[str] | None = None) -> int:
     hybrid.add_argument(
         "--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped"
     )
-    hybrid.add_argument(
-        "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
-    )
+    hybrid.add_argument("--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1)
     shadow_v4 = sub.add_parser(
         "shadow-v4",
         help="Chạy corpus-grounded Semantic V4 ở chế độ shadow",

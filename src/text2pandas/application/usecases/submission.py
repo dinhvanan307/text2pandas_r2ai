@@ -18,9 +18,10 @@ import json
 import math
 import re
 import zipfile
+from collections import Counter
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Mapping
 
 from text2pandas.application.usecases.answer import AnswerResult
 from text2pandas.infrastructure.sandbox.query import (
@@ -29,7 +30,15 @@ from text2pandas.infrastructure.sandbox.query import (
     validate_query,
 )
 
-__all__ = ["SubmissionConfig", "ValidationReport", "build_submission", "validate_zip", "replay_zip"]
+__all__ = [
+    "SubmissionBuildError",
+    "SubmissionConfig",
+    "ValidationReport",
+    "build_submission",
+    "publication_blockers",
+    "replay_zip",
+    "validate_zip",
+]
 
 _PY_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _LOCATOR = re.compile(r"^(?P<doc>[^|]+)\|(?P<line>[1-9]\d*)$")
@@ -53,6 +62,13 @@ class SubmissionConfig:
     doc_id_variant: str = "stripped"  # 'stripped' | 'literal'
     locator_base: int = 1  # 1 | 0
     json_name: str = "submission.json"
+    # Diagnostic candidates may preserve abstentions for analysis, but they are
+    # never publishable.  Production submission builders keep this strict.
+    require_executable: bool = True
+
+
+class SubmissionBuildError(ValueError):
+    """A publishable submission cannot be materialized from these results."""
 
 
 @dataclass(slots=True)
@@ -67,10 +83,7 @@ class ValidationReport:
 
 
 def _apply_variants(res: AnswerResult, cfg: SubmissionConfig) -> tuple[list[str], list[str]]:
-    docs = [
-        d + "_extracted" if cfg.doc_id_variant == "literal" else d
-        for d in res.relevant_docs
-    ]
+    docs = [d + "_extracted" if cfg.doc_id_variant == "literal" else d for d in res.relevant_docs]
     tables: list[str] = []
     for loc in res.relevant_tables:
         doc, _, line = loc.rpartition("|")
@@ -88,6 +101,34 @@ def build_submission(
     cfg: SubmissionConfig,
 ) -> Path:
     """Ghi cây thư mục bài nộp rồi nén. Trả về đường dẫn ZIP."""
+    result_ids = [result.qid for result in results]
+    duplicate_ids = sorted(qid for qid, count in Counter(result_ids).items() if count > 1)
+    if duplicate_ids:
+        raise SubmissionBuildError(f"duplicate result QIDs: {duplicate_ids[:5]}")
+    unknown_ids = sorted(set(result_ids) - set(questions))
+    if unknown_ids:
+        raise SubmissionBuildError(f"results contain unknown QIDs: {unknown_ids[:5]}")
+    if cfg.require_executable:
+        missing_ids = sorted(set(questions) - set(result_ids))
+        if missing_ids:
+            raise SubmissionBuildError(
+                f"publishable submission is missing {len(missing_ids)} QIDs: {missing_ids[:5]}"
+            )
+        incomplete = [
+            result.qid
+            for result in results
+            if result.answer is None
+            or not result.has_csv
+            or not result.evidence
+            or not result.pandas_query.strip()
+        ]
+        if incomplete:
+            raise SubmissionBuildError(
+                "publishable submission requires answer, evidence, and a non-empty "
+                f"query for every QID; incomplete={len(incomplete)}, "
+                f"examples={incomplete[:5]}"
+            )
+
     out_dir.mkdir(parents=True, exist_ok=True)
     data_dir = out_dir / "data"
     data_dir.mkdir(exist_ok=True)
@@ -99,8 +140,8 @@ def build_submission(
             {
                 "id": res.qid,
                 "question": questions.get(res.qid, ""),
-                # C19: phải phủ MỌI id. Khi không rút được số vẫn phải có bản ghi;
-                # 0.0 là giá trị giữ chỗ hợp lệ kiểu float, không phải câu trả lời.
+                # Diagnostic candidates may retain 0.0 placeholders solely to
+                # expose unresolved QIDs. Strict builds reject them above.
                 "answer": float(res.answer) if res.answer is not None else 0.0,
                 "relevant_docs": docs,
                 "relevant_tables": tables,
@@ -213,12 +254,13 @@ def validate_zip(
                 seen_ids.add(r["id"])
             if not isinstance(r.get("question"), str):
                 rep.errors.append(f"C11 {tag}: question phải là string")
-            elif expected_questions is not None and r.get("id") in expected_questions:
-                if r["question"] != expected_questions[r["id"]]:
-                    rep.errors.append(f"C19 {tag}: question không khớp dữ liệu gốc")
-            if not isinstance(r.get("answer"), (int, float)) or isinstance(
-                r.get("answer"), bool
+            elif (
+                expected_questions is not None
+                and r.get("id") in expected_questions
+                and r["question"] != expected_questions[r["id"]]
             ):
+                rep.errors.append(f"C19 {tag}: question không khớp dữ liệu gốc")
+            if not isinstance(r.get("answer"), (int, float)) or isinstance(r.get("answer"), bool):
                 rep.errors.append(f"C11 {tag}: answer phải là số")
             elif not math.isfinite(float(r["answer"])):
                 rep.errors.append(f"C11 {tag}: answer phải là số hữu hạn")
@@ -237,16 +279,10 @@ def validate_zip(
                 tables = []
             if len(tables) != len(set(tables)):
                 rep.errors.append(f"C20 {tag}: relevant_tables chứa phần tử trùng")
-            table_docs = [
-                value.rsplit("|", 1)[0]
-                for value in tables
-                if _LOCATOR.fullmatch(value)
-            ]
+            table_docs = [value.rsplit("|", 1)[0] for value in tables if _LOCATOR.fullmatch(value)]
             expected_docs = list(dict.fromkeys(table_docs))
             if docs != expected_docs:
-                rep.errors.append(
-                    f"C20 {tag}: relevant_docs phải suy ra đúng từ relevant_tables"
-                )
+                rep.errors.append(f"C20 {tag}: relevant_docs phải suy ra đúng từ relevant_tables")
             if not isinstance(evidence, list):
                 rep.errors.append(f"C11 {tag}: evidence phải là list")
                 evidence = []
@@ -264,9 +300,7 @@ def validate_zip(
                     rep.errors.append(f"C20 {tag}: locator sai định dạng: {loc!r}")
                     continue
                 if corpus_root is not None:
-                    lines = _validate_document(
-                        match["doc"], corpus_root, document_cache, rep, tag
-                    )
+                    lines = _validate_document(match["doc"], corpus_root, document_cache, rep, tag)
                     line = int(match["line"])
                     if lines is not None and not (1 <= line <= len(lines)):
                         rep.errors.append(f"C20 {tag}: locator vượt số dòng: {loc!r}")
@@ -295,11 +329,13 @@ def validate_zip(
                 if isinstance(p, str) and p:
                     referenced_csvs.add(p)
 
-            if evidence and not query:
-                rep.errors.append(f"C12 {tag}: có evidence nhưng pandas_query rỗng")
-            elif query and not evidence:
-                rep.errors.append(f"C12 {tag}: có pandas_query nhưng evidence rỗng")
-            elif evidence and query:
+            if not evidence:
+                message = f"C12 {tag}: evidence rỗng; mọi câu hỏi phải thực thi được"
+                (rep.errors if strict else rep.warnings).append(message)
+            if not query:
+                message = f"C12 {tag}: pandas_query rỗng; mọi câu hỏi phải thực thi được"
+                (rep.errors if strict else rep.warnings).append(message)
+            if evidence and query:
                 try:
                     validate_query(query, names_seen)
                 except QuerySafetyError as error:
@@ -341,13 +377,7 @@ def _validate_document(
         report.errors.append(f"C20 {tag}: document id sai định dạng: {doc_id!r}")
         cache[canonical] = None
         return None
-    path = (
-        corpus_root
-        / match["ticker"]
-        / match["year"]
-        / canonical
-        / f"{canonical}_extracted.txt"
-    )
+    path = corpus_root / match["ticker"] / match["year"] / canonical / f"{canonical}_extracted.txt"
     if not path.is_file():
         report.errors.append(f"C20 {tag}: document không tồn tại: {doc_id!r}")
         cache[canonical] = None
@@ -370,12 +400,16 @@ def replay_zip(zip_path: Path, workdir: Path, tolerance: float = 1e-6) -> dict[s
     records = json.loads(archive.read(json_name))
 
     stat = {"total": 0, "executed": 0, "matched": 0, "no_evidence": 0, "error": 0}
-    cache: dict[str, "pd.DataFrame"] = {}
+    cache: dict[str, pd.DataFrame] = {}
     for r in records:
         stat["total"] += 1
         ev = r.get("evidence") or []
         if not ev:
             stat["no_evidence"] += 1
+            # The organiser executes every scored query.  Skipping abstentions
+            # here previously produced a false-green 712/712 replay while 300
+            # records failed with ValueError on the leaderboard.
+            stat["error"] += 1
             continue
         env: dict[str, object] = {}
         try:
@@ -393,3 +427,39 @@ def replay_zip(zip_path: Path, workdir: Path, tolerance: float = 1e-6) -> dict[s
             stat["error"] += 1
     archive.close()
     return stat
+
+
+def publication_blockers(
+    validation: ValidationReport,
+    replay: Mapping[str, int],
+    *,
+    expected_records: int,
+) -> list[str]:
+    """Return all reasons an artifact must not be published.
+
+    This is the single release decision contract.  Callers must not recreate a
+    weaker local condition such as ``matched == executed`` because that ignores
+    records which were never executed.
+    """
+
+    blockers = [f"validation:{error}" for error in validation.errors]
+    if validation.warnings:
+        blockers.extend(f"validation-warning:{warning}" for warning in validation.warnings)
+    if validation.n_records != expected_records:
+        blockers.append(f"record-count:{validation.n_records}!={expected_records}")
+    total = int(replay.get("total", -1))
+    executed = int(replay.get("executed", -1))
+    matched = int(replay.get("matched", -1))
+    no_evidence = int(replay.get("no_evidence", -1))
+    errors = int(replay.get("error", -1))
+    if total != expected_records:
+        blockers.append(f"replay-total:{total}!={expected_records}")
+    if executed != expected_records:
+        blockers.append(f"replay-executed:{executed}!={expected_records}")
+    if matched != expected_records:
+        blockers.append(f"replay-matched:{matched}!={expected_records}")
+    if no_evidence != 0:
+        blockers.append(f"replay-no-evidence:{no_evidence}")
+    if errors != 0:
+        blockers.append(f"replay-errors:{errors}")
+    return blockers

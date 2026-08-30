@@ -23,6 +23,7 @@ from text2pandas.application.usecases.grounded_v5 import (
 from text2pandas.application.usecases.submission import (
     SubmissionConfig,
     build_submission,
+    publication_blockers,
     replay_zip,
     validate_zip,
 )
@@ -49,22 +50,27 @@ from text2pandas.pipelines.retrieval.alias_store import load_aliases
 def configure_grounded_v5_parser(parser: argparse.ArgumentParser, root: Path) -> None:
     parser.add_argument("--run-id", required=True)
     parser.add_argument(
+        "--questions",
+        type=Path,
+        help=(
+            "Exact JSONL evaluation scope. Baseline ZIP may be a superset, but the "
+            "candidate and release gate contain only these QIDs."
+        ),
+    )
+    parser.add_argument(
         "--baseline-zip",
         type=Path,
-        default=root
-        / "artifacts/handoffs/VAR-submission-hybrid-safe-20260829-v1/submission.zip",
+        default=root / "artifacts/handoffs/VAR-submission-hybrid-safe-20260829-v1/submission.zip",
     )
     parser.add_argument(
         "--secondary-zip",
         type=Path,
-        default=root
-        / "artifacts/handoffs/submission-v4-hybrid-20260829-r4-final/submission.zip",
+        default=root / "artifacts/handoffs/submission-v4-hybrid-20260829-r4-final/submission.zip",
     )
     parser.add_argument(
         "--semantic-records",
         type=Path,
-        default=root
-        / "artifacts/runs/semantic-v4/semantic-v4-full-20260829-r2/records.jsonl",
+        default=root / "artifacts/runs/semantic-v4/semantic-v4-full-20260829-r2/records.jsonl",
     )
     parser.add_argument(
         "--promotion-mode",
@@ -106,6 +112,13 @@ def cmd_grounded_v5(
     scratch: Path,
     verbose: bool,
 ) -> int:
+    scope_path = (
+        Path(args.questions).expanduser().resolve()
+        if args.questions is not None
+        else questions_path.resolve()
+    )
+    if not scope_path.is_file():
+        raise BuildSafetyError(f"evaluation question scope is missing: {scope_path}")
     verification = verify_active_snapshots(paths, scope="all")
     failures = [item for item in verification.items if not item.ok]
     if failures:
@@ -169,7 +182,7 @@ def cmd_grounded_v5(
             report = build_grounded_v5_candidate(
                 baseline_zip=Path(args.baseline_zip),
                 secondary_zip=Path(args.secondary_zip) if args.secondary_zip else None,
-                questions_path=questions_path,
+                questions_path=scope_path,
                 a6_db=active.a6_path / "silver.db",
                 output_dir=stage,
                 generator=generator,
@@ -189,7 +202,7 @@ def cmd_grounded_v5(
         int(row["id"]): str(row["question"])
         for row in (
             json.loads(line)
-            for line in questions_path.read_text(encoding="utf-8").splitlines()
+            for line in scope_path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         )
     }
@@ -197,15 +210,20 @@ def cmd_grounded_v5(
         report.results,
         questions,
         stage,
-        SubmissionConfig(doc_id_variant="stripped", locator_base=1),
+        SubmissionConfig(
+            doc_id_variant="stripped",
+            locator_base=1,
+            require_executable=False,
+        ),
     )
     validation = validate_zip(package, questions, corpus_root=corpus)
     replay = replay_zip(package, scratch / f"grounded-v5-{args.run_id}-replay")
-    package_ok = (
-        validation.ok
-        and replay["error"] == 0
-        and replay["matched"] == replay["executed"]
+    release_blockers = publication_blockers(
+        validation,
+        replay,
+        expected_records=len(questions),
     )
+    package_ok = not release_blockers
     summary = {
         "n_questions": report.n_questions,
         "n_baseline_executable": report.n_baseline_executable,
@@ -240,6 +258,11 @@ def cmd_grounded_v5(
             "plan_cache": str(Path(args.plan_cache).resolve()),
         },
         "inputs": {
+            "questions": {
+                "path": str(scope_path),
+                "sha256": sha256_file(scope_path),
+                "records": len(questions),
+            },
             "baseline_zip": {
                 "path": str(Path(args.baseline_zip).resolve()),
                 "sha256": sha256_file(Path(args.baseline_zip).resolve()),
@@ -275,6 +298,7 @@ def cmd_grounded_v5(
             "warnings": validation.warnings,
         },
         "replay": replay,
+        "publication_blockers": release_blockers,
     }
     (stage / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -294,6 +318,6 @@ def cmd_grounded_v5(
     print(f"  ZIP                     {package}")
     print(f"  SHA-256                 {manifest['package']['sha256']}")
     if not package_ok:
-        for validation_error in validation.errors[:10]:
-            print(f"   ✗ {validation_error}")
+        for blocker in release_blockers[:10]:
+            print(f"   ✗ {blocker}")
     return 0 if package_ok else 1

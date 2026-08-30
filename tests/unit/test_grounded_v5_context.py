@@ -1,5 +1,10 @@
+import json
 from dataclasses import replace
 from decimal import Decimal
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 from text2pandas.application.parsing.contracts import (
     OperationKind,
@@ -14,12 +19,56 @@ from text2pandas.application.usecases.grounded_synthesis import (
     execute_grounded,
 )
 from text2pandas.application.usecases.grounded_v5 import (
+    GroundedV5BuildError,
     _coherent_basis_candidates,
     _expand_period_range_annotations,
     _is_trusted_recovery,
     _is_trusted_replacement,
+    _questions,
+    _validate_source_coverage,
 )
 from text2pandas.domain.semantic import Basis, Dimension, RankDirection, UnitSpec
+
+
+def test_evaluation_scope_accepts_source_bundle_superset(tmp_path: Path) -> None:
+    scope_path = tmp_path / "public-questions.jsonl"
+    scope_path.write_text(
+        json.dumps({"id": 20, "question": "Scoped question"}) + "\n",
+        encoding="utf-8",
+    )
+    scope = _questions(scope_path)
+    bundle = SimpleNamespace(
+        records={
+            10: {"question": "Question outside this phase"},
+            20: {"question": "Scoped question"},
+        }
+    )
+
+    _validate_source_coverage(bundle, scope, "baseline")
+
+
+def test_evaluation_scope_rejects_duplicate_qids(tmp_path: Path) -> None:
+    scope_path = tmp_path / "duplicate-questions.jsonl"
+    scope_path.write_text(
+        "\n".join(
+            (
+                json.dumps({"id": 20, "question": "First"}),
+                json.dumps({"id": 20, "question": "Second"}),
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(GroundedV5BuildError, match="duplicate QID 20"):
+        _questions(scope_path)
+
+
+def test_evaluation_scope_rejects_missing_scoped_qid() -> None:
+    bundle = SimpleNamespace(records={10: {"question": "Different question"}})
+
+    with pytest.raises(GroundedV5BuildError, match="missing 1 scoped QIDs"):
+        _validate_source_coverage(bundle, {20: "Scoped question"}, "baseline")
 
 
 def _basis_fact(

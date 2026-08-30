@@ -55,9 +55,7 @@ from text2pandas.domain.metrics import normalize_phrase
 from text2pandas.domain.semantic import Basis, Dimension
 from text2pandas.infrastructure.retrieval.grounded import GroundedFactRetriever
 
-PromotionMode = Literal[
-    "recover_only", "replace_trusted", "replace_all", "shadow"
-]
+PromotionMode = Literal["recover_only", "replace_trusted", "replace_all", "shadow"]
 
 
 class GroundedV5BuildError(ValueError):
@@ -79,9 +77,7 @@ class GroundedV5Config:
             "replace_all",
             "shadow",
         }:
-            raise GroundedV5BuildError(
-                f"unsupported promotion mode: {self.promotion_mode}"
-            )
+            raise GroundedV5BuildError(f"unsupported promotion mode: {self.promotion_mode}")
         if not 0 <= self.minimum_confidence <= 1:
             raise GroundedV5BuildError("minimum_confidence must be in [0, 1]")
         if self.fact_limit < 1:
@@ -122,9 +118,7 @@ class SubmissionBundle:
         ]
         if len(roots) != 1:
             self.archive.close()
-            raise GroundedV5BuildError(
-                f"submission must contain exactly one root JSON: {roots}"
-            )
+            raise GroundedV5BuildError(f"submission must contain exactly one root JSON: {roots}")
         try:
             rows = json.loads(self.archive.read(roots[0]).decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -198,9 +192,7 @@ def build_grounded_v5_candidate(
         records_path = output_dir / "records.jsonl"
         table_by_locator, locator_by_table = _table_locator_maps(a6_db)
         semantic_priors = _semantic_priors(semantic_records_path)
-        connection = sqlite3.connect(
-            f"file:{a6_db.resolve()}?mode=ro&immutable=1", uri=True
-        )
+        connection = sqlite3.connect(f"file:{a6_db.resolve()}?mode=ro&immutable=1", uri=True)
         retriever = GroundedFactRetriever(connection)
         results: list[AnswerResult] = []
         outcomes: Counter[str] = Counter()
@@ -226,8 +218,7 @@ def build_grounded_v5_candidate(
                     }
                     selected = config.selected_qids is None or qid in config.selected_qids
                     should_attempt = selected and (
-                        config.promotion_mode
-                        in {"replace_trusted", "replace_all", "shadow"}
+                        config.promotion_mode in {"replace_trusted", "replace_all", "shadow"}
                         or not seed_ok
                     )
                     if should_attempt:
@@ -308,14 +299,13 @@ def build_grounded_v5_candidate(
                                 for concept in query_concepts
                             ]
                             hints["required_formulas"] = [
-                                formula.to_planner_dict()
-                                for formula in required_formulas
+                                formula.to_planner_dict() for formula in required_formulas
                             ]
                             if semantic_ast is not None:
                                 hints["semantic_ast"] = semantic_ast
-                            accepted: tuple[
-                                GroundedPlan | GroundedProgram, GroundedExecution
-                            ] | None = None
+                            accepted: (
+                                tuple[GroundedPlan | GroundedProgram, GroundedExecution] | None
+                            ) = None
                             for candidate_index, plan in enumerate(
                                 _plan_candidates(
                                     generator,
@@ -362,9 +352,7 @@ def build_grounded_v5_candidate(
                                 )
                                 raise GroundedPlanError(reason)
                             plan, execution = accepted
-                            trusted_replacement = _is_trusted_replacement(
-                                plan, execution
-                            )
+                            trusted_replacement = _is_trusted_replacement(plan, execution)
                             trusted_recovery = _is_trusted_recovery(plan, execution)
                             will_promote = config.promotion_mode != "shadow" and (
                                 config.promotion_mode == "replace_all"
@@ -379,15 +367,15 @@ def build_grounded_v5_candidate(
                                     qid=qid,
                                     execution=execution,
                                     data_dir=data_dir,
-                                    scorer_tables=_scorer_tables(
-                                        baseline_row, seed_row
-                                    ),
+                                    scorer_tables=_scorer_tables(baseline_row, seed_row),
                                     locator_by_table=locator_by_table,
                                 )
                                 promoted += 1
                                 recovered += int(not seed_ok)
                                 replaced += int(seed_ok)
-                                outcome = "PROMOTED_RECOVERY" if not seed_ok else "PROMOTED_REPLACEMENT"
+                                outcome = (
+                                    "PROMOTED_RECOVERY" if not seed_ok else "PROMOTED_REPLACEMENT"
+                                )
                             elif config.promotion_mode == "replace_trusted" and seed_ok:
                                 outcome = "KEPT_SEED_UNTRUSTED_REPLACEMENT"
                             else:
@@ -409,8 +397,7 @@ def build_grounded_v5_candidate(
                                 "candidate_metric_counts": dict(
                                     sorted(
                                         Counter(
-                                            fact.retrieval_metric or "<unbound>"
-                                            for fact in facts
+                                            fact.retrieval_metric or "<unbound>" for fact in facts
                                         ).items()
                                     )
                                 ),
@@ -518,20 +505,38 @@ def _plan_candidates(
 
 def _questions(path: Path) -> dict[int, str]:
     output: dict[int, str] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if not line.strip():
             continue
-        row = json.loads(line)
-        output[int(row["id"])] = str(row["question"])
+        try:
+            row = json.loads(line)
+            qid = int(row["id"])
+            question = str(row["question"]).strip()
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            raise GroundedV5BuildError(
+                f"invalid question scope row {line_number}: {error}"
+            ) from error
+        if qid < 1 or not question:
+            raise GroundedV5BuildError(
+                f"invalid question scope row {line_number}: id and question are required"
+            )
+        if qid in output:
+            raise GroundedV5BuildError(
+                f"duplicate QID {qid} in question scope at row {line_number}"
+            )
+        output[qid] = question
+    if not output:
+        raise GroundedV5BuildError("question scope is empty")
     return output
 
 
 def _validate_source_coverage(
     bundle: SubmissionBundle, questions: Mapping[int, str], label: str
 ) -> None:
-    if set(bundle.records) != set(questions):
+    missing = set(questions) - set(bundle.records)
+    if missing:
         raise GroundedV5BuildError(
-            f"{label} QID coverage differs from source questions"
+            f"{label} is missing {len(missing)} scoped QIDs: {sorted(missing)[:5]}"
         )
     for qid, question in questions.items():
         if str(bundle.records[qid].get("question") or "") != question:
@@ -605,9 +610,7 @@ def _finite_number(value: object) -> float | None:
     return output if math.isfinite(output) else None
 
 
-def _scorer_tables(
-    baseline_row: Mapping[str, object], seed_row: Mapping[str, object]
-) -> list[str]:
+def _scorer_tables(baseline_row: Mapping[str, object], seed_row: Mapping[str, object]) -> list[str]:
     baseline = _strings(baseline_row.get("relevant_tables"))
     return baseline or _strings(seed_row.get("relevant_tables"))
 
@@ -768,10 +771,7 @@ def _expand_period_range_annotations(
     # "Tiền thuê tối thiểu" is an accounting metric noun phrase, not a
     # request to take the minimum.  The lexical annotator otherwise routes
     # these direct-value questions into the extremum validator.
-    if (
-        annotation.operation is OperationKind.EXTREMUM
-        and "tien thue toi thieu" in normalized
-    ):
+    if annotation.operation is OperationKind.EXTREMUM and "tien thue toi thieu" in normalized:
         annotation = replace(
             annotation,
             operation=OperationKind.LOOKUP,
@@ -779,18 +779,16 @@ def _expand_period_range_annotations(
             rank_direction=None,
             operation_evidence="accounting_metric:minimal_lease_payment",
         )
-    if (
-        len(annotation.periods) == 1
-        and "dau nam" in normalized
-        and "cuoi nam" in normalized
-    ):
+    if len(annotation.periods) == 1 and "dau nam" in normalized and "cuoi nam" in normalized:
         try:
             year = int(annotation.periods[0][:4])
         except ValueError:
             return annotation
         return replace(annotation, periods=(str(year - 1), str(year)))
-    if len(annotation.periods) == 1 and "binh quan" in normalized and any(
-        cue in normalized for cue in ("tong tai san", "von chu so huu")
+    if (
+        len(annotation.periods) == 1
+        and "binh quan" in normalized
+        and any(cue in normalized for cue in ("tong tai san", "von chu so huu"))
     ):
         try:
             year = int(annotation.periods[0][:4])
@@ -877,8 +875,7 @@ def _validate_plan_context(
         expected_scale = annotation.requested_unit.scale_exponent
         if expected_scale is not None and plan.output_scale_exponent != expected_scale:
             raise GroundedPlanError(
-                f"requested output scale mismatch: {expected_scale} vs "
-                f"{plan.output_scale_exponent}"
+                f"requested output scale mismatch: {expected_scale} vs {plan.output_scale_exponent}"
             )
     facts_by_uid = {fact.observation_uid: fact for fact in candidates}
     selected = [facts_by_uid[uid] for uid in selected_uids if uid in facts_by_uid]
@@ -917,14 +914,10 @@ def _validate_plan_context(
             raise GroundedPlanError(f"selected facts miss requested periods: {sorted(missing)}")
     if annotation.basis is not Basis.UNSPECIFIED:
         wrong_basis = [
-            fact.observation_uid
-            for fact in selected
-            if fact.basis is not annotation.basis
+            fact.observation_uid for fact in selected if fact.basis is not annotation.basis
         ]
         if wrong_basis:
-            raise GroundedPlanError(
-                f"selected facts violate requested basis: {wrong_basis[:5]}"
-            )
+            raise GroundedPlanError(f"selected facts violate requested basis: {wrong_basis[:5]}")
     else:
         bases_by_entity: dict[str, set[Basis]] = defaultdict(set)
         for fact in selected:
@@ -936,9 +929,7 @@ def _validate_plan_context(
             if len(bases) > 1
         }
         if mixed:
-            raise GroundedPlanError(
-                f"selected facts mix statement bases by entity: {mixed}"
-            )
+            raise GroundedPlanError(f"selected facts mix statement bases by entity: {mixed}")
 
 
 def _coherent_basis_candidates(
@@ -961,9 +952,7 @@ def _coherent_basis_candidates(
     coverage: dict[tuple[str, Basis], set[tuple[str, str]]] = defaultdict(set)
     scores: dict[tuple[str, Basis], float] = defaultdict(float)
     for fact in facts:
-        metric = fact.retrieval_metric or normalize_phrase(
-            fact.row_path.rsplit("›", 1)[-1]
-        )
+        metric = fact.retrieval_metric or normalize_phrase(fact.row_path.rsplit("›", 1)[-1])
         year = str(fact.period_year or "")
         if (
             fact.entity
@@ -992,10 +981,7 @@ def _coherent_basis_candidates(
         )
         chosen[entity] = selected[1]
     return tuple(
-        fact
-        for fact in facts
-        if fact.entity not in chosen
-        or fact.basis is chosen[fact.entity]
+        fact for fact in facts if fact.entity not in chosen or fact.basis is chosen[fact.entity]
     )
 
 
@@ -1022,9 +1008,7 @@ _TRUSTED_REPLACEMENT_LABELS: dict[str, tuple[str, ...]] = {
     "profit_before_tax": ("loi nhuan truoc thue",),
     "profit_after_tax": ("loi nhuan sau thue", "loi nhuan thuan sau thue"),
     "interest_expense": ("chi phi lai vay",),
-    "cash_flow_from_operations": (
-        "luu chuyen tien thuan tu hoat dong kinh doanh",
-    ),
+    "cash_flow_from_operations": ("luu chuyen tien thuan tu hoat dong kinh doanh",),
     "current_assets": ("tai san ngan han",),
     "inventory": ("hang ton kho",),
     "total_assets": ("tong cong tai san", "tong tai san"),
@@ -1105,15 +1089,12 @@ def _is_trusted_replacement(
 
     if not isinstance(plan, GroundedProgram):
         return False
-    operations = {
-        node.operation for node in _reachable_program_nodes(plan)
-    }
+    operations = {node.operation for node in _reachable_program_nodes(plan)}
     resolver_trusted = bool(execution.facts) and all(
         is_high_trust_logical_fact(fact) for fact in execution.facts
     )
     if resolver_trusted and (
-        operations & _TRUSTED_REPLACEMENT_COMPOSITION
-        or operations <= _TRUSTED_REPLACEMENT_ALGEBRA
+        operations & _TRUSTED_REPLACEMENT_COMPOSITION or operations <= _TRUSTED_REPLACEMENT_ALGEBRA
     ):
         return True
     # The historical metric-code fallback predates logical fact resolution.
@@ -1158,9 +1139,8 @@ def _is_trusted_recovery(
         if has_hard_logical_fact_conflict(fact):
             return False
         metric = fact.retrieval_metric or ""
-        governed_metric = (
-            metric in _TRUSTED_REPLACEMENT_METRIC_CODES
-            or metric.startswith(("source_", "reported_"))
+        governed_metric = metric in _TRUSTED_REPLACEMENT_METRIC_CODES or metric.startswith(
+            ("source_", "reported_")
         )
         if not governed_metric:
             return False
@@ -1202,28 +1182,20 @@ def _validate_required_metric_coverage(
     selected_metrics = {fact.retrieval_metric for fact in selected}
     missing_metrics = set(required_metric_ids) - selected_metrics
     if missing_metrics:
-        raise GroundedPlanError(
-            f"program misses required metrics: {sorted(missing_metrics)}"
-        )
+        raise GroundedPlanError(f"program misses required metrics: {sorted(missing_metrics)}")
     required_entities = set(annotation.entities)
     required_periods = {value[:4] for value in annotation.periods}
     for metric_id in required_metric_ids:
-        metric_facts = [
-            fact for fact in selected if fact.retrieval_metric == metric_id
-        ]
+        metric_facts = [fact for fact in selected if fact.retrieval_metric == metric_id]
         if required_entities and metric_id not in (partial_entity_metrics or set()):
-            missing_entities = required_entities - {
-                fact.entity for fact in metric_facts
-            }
+            missing_entities = required_entities - {fact.entity for fact in metric_facts}
             if missing_entities:
                 raise GroundedPlanError(
                     f"metric {metric_id} misses entities: {sorted(missing_entities)}"
                 )
         if required_periods:
             missing_periods = required_periods - {
-                str(fact.period_year)
-                for fact in metric_facts
-                if fact.period_year is not None
+                str(fact.period_year) for fact in metric_facts if fact.period_year is not None
             }
             allowed_gap = (
                 {min(required_periods)}
@@ -1328,17 +1300,14 @@ def _validate_program_shape(
             }
         ):
             required.add(ProgramOperation.SUBTRACT)
-    elif (
-        annotation.operation is OperationKind.EXTREMUM
-        and not operations.intersection(
-            {
-                ProgramOperation.MINIMUM,
-                ProgramOperation.MAXIMUM,
-                ProgramOperation.ARGMIN_KEY,
-                ProgramOperation.ARGMAX_KEY,
-                ProgramOperation.SELECT_AT_KEY,
-            }
-        )
+    elif annotation.operation is OperationKind.EXTREMUM and not operations.intersection(
+        {
+            ProgramOperation.MINIMUM,
+            ProgramOperation.MAXIMUM,
+            ProgramOperation.ARGMIN_KEY,
+            ProgramOperation.ARGMAX_KEY,
+            ProgramOperation.SELECT_AT_KEY,
+        }
     ):
         raise GroundedPlanError("extremum program has no ranking/extremum node")
     missing = required - operations
@@ -1355,9 +1324,7 @@ def _validate_program_literals(
     nodes: Sequence[ProgramNode] | None = None,
 ) -> None:
     selected_nodes = program.nodes if nodes is None else nodes
-    literals = {
-        node.literal for node in selected_nodes if node.literal is not None
-    }
+    literals = {node.literal for node in selected_nodes if node.literal is not None}
     if not literals:
         return
     normalized = question.lower().replace("−", "-")
@@ -1436,12 +1403,16 @@ def _validate_required_formula_operations(
             }
             if len(metrics) == 1:
                 signature = ("metric", next(iter(metrics)))
-        elif node.operation in {
-            ProgramOperation.ADD,
-            ProgramOperation.SUBTRACT,
-            ProgramOperation.MULTIPLY,
-            ProgramOperation.DIVIDE,
-        } and len(node.input_ids) == 2:
+        elif (
+            node.operation
+            in {
+                ProgramOperation.ADD,
+                ProgramOperation.SUBTRACT,
+                ProgramOperation.MULTIPLY,
+                ProgramOperation.DIVIDE,
+            }
+            and len(node.input_ids) == 2
+        ):
             left = actual_signature(node.input_ids[0])
             right = actual_signature(node.input_ids[1])
             if left is not None and right is not None:
@@ -1469,14 +1440,10 @@ def _validate_required_formula_operations(
         expression = getattr(requirement, "expression", None)
         formula_id = str(getattr(requirement, "formula_id", "unknown"))
         if not isinstance(expression, Mapping):
-            raise GroundedPlanError(
-                f"required formula {formula_id} has no expression contract"
-            )
+            raise GroundedPlanError(f"required formula {formula_id} has no expression contract")
         expected_signature = _formula_expression_signature(expression)
         if expected_signature not in actual_signatures:
-            raise GroundedPlanError(
-                f"program violates required formula lineage: {formula_id}"
-            )
+            raise GroundedPlanError(f"program violates required formula lineage: {formula_id}")
 
 
 def _formula_expression_signature(
@@ -1579,9 +1546,7 @@ def _attempt_payload(
 ) -> dict[str, object]:
     return {
         "status": status,
-        "plan": json.loads(
-            json.dumps(asdict(plan), default=_json_scalar, sort_keys=True)
-        ),
+        "plan": json.loads(json.dumps(asdict(plan), default=_json_scalar, sort_keys=True)),
         "answer": execution.answer,
         "pandas_query": execution.pandas_query,
         "candidate_facts": len(facts),

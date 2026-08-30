@@ -136,9 +136,7 @@ def cmd_shadow_v4(args: Namespace) -> int:
                         qid,
                         question,
                     )
-                    physical_retriever.set_table_rank_priors(
-                        tuple(upstream.ranked_table_uids)
-                    )
+                    physical_retriever.set_table_rank_priors(tuple(upstream.ranked_table_uids))
                 else:
                     physical_retriever.set_table_rank_priors(())
                 result = engine.answer(question, qid=qid)
@@ -172,9 +170,7 @@ def cmd_shadow_v4(args: Namespace) -> int:
             retrieval_connection.close()
     seconds = round(time.time() - started, 3)
     peak_rss_raw = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    peak_rss_bytes = int(
-        peak_rss_raw if platform.system() == "Darwin" else peak_rss_raw * 1024
-    )
+    peak_rss_bytes = int(peak_rss_raw if platform.system() == "Darwin" else peak_rss_raw * 1024)
     promotion = evaluate_promotion(
         PromotionMetrics(
             questions=len(questions),
@@ -225,9 +221,7 @@ def cmd_shadow_v4(args: Namespace) -> int:
                 "reasons": dict(reasons.most_common()),
                 "differentials": dict(differentials),
                 "confidence_mean": (
-                    sum(confidence_values) / len(confidence_values)
-                    if confidence_values
-                    else None
+                    sum(confidence_values) / len(confidence_values) if confidence_values else None
                 ),
                 "replay_mismatches": replay_mismatches,
                 "seconds": seconds,
@@ -270,6 +264,7 @@ def cmd_package_v4(args: Namespace) -> int:
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
+        publication_blockers,
         replay_zip,
         validate_zip,
     )
@@ -307,7 +302,9 @@ def cmd_package_v4(args: Namespace) -> int:
                 evidence=evidence if answer is not None else [],
                 pandas_query=str(record.get("pandas_query") or "") if answer is not None else "",
                 confidence=float(record.get("confidence") or 0.0),
-                csv_name=Path(evidence[0]["csv_path"]).name if evidence and answer is not None else "",
+                csv_name=Path(evidence[0]["csv_path"]).name
+                if evidence and answer is not None
+                else "",
                 has_csv=bool(evidence and answer is not None),
                 notes=[str(record["reason"])] if record.get("reason") else [],
             )
@@ -326,6 +323,7 @@ def cmd_package_v4(args: Namespace) -> int:
     validation = validate_zip(zip_path, questions, corpus_root=CORPUS)
     replay = replay_zip(zip_path, SCRATCH / f"v4-replay-{args.run_id}")
     replay_mismatches = replay["executed"] - replay["matched"]
+    release_blockers = publication_blockers(validation, replay, expected_records=len(questions))
     report = {
         "schema_version": 1,
         "kind": "text2pandas.semantic_v4_submission_validation",
@@ -338,6 +336,7 @@ def cmd_package_v4(args: Namespace) -> int:
         },
         "replay": replay,
         "replay_mismatches": replay_mismatches,
+        "publication_blockers": release_blockers,
     }
     report_path = stage / f"package-{cfg.doc_id_variant}-{cfg.locator_base}.report.json"
     report_path.write_text(
@@ -354,7 +353,7 @@ def cmd_package_v4(args: Namespace) -> int:
     )
     print(f"  zip               : {zip_path}")
     print(f"  report            : {report_path}")
-    return int(bool(validation.errors or replay["error"] or replay_mismatches))
+    return int(bool(release_blockers))
 
 
 def cmd_hybrid_v4(args: Namespace) -> int:
@@ -369,6 +368,7 @@ def cmd_hybrid_v4(args: Namespace) -> int:
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
+        publication_blockers,
         replay_zip,
         validate_zip,
     )
@@ -416,7 +416,7 @@ def cmd_hybrid_v4(args: Namespace) -> int:
         if isinstance(semantic_promotion, dict) and semantic_promotion.get("status")
         else None
     )
-    publication_eligible, publication_blockers = hybrid_publication_eligibility(
+    publication_eligible, policy_publication_blockers = hybrid_publication_eligibility(
         policy,
         semantic_promotion_status,
     )
@@ -442,7 +442,8 @@ def cmd_hybrid_v4(args: Namespace) -> int:
     validation = validate_zip(zip_path, questions, corpus_root=CORPUS)
     replay = replay_zip(zip_path, SCRATCH / f"hybrid-v4-replay-{args.run_id}")
     replay_mismatches = replay["executed"] - replay["matched"]
-    package_ok = not validation.errors and not replay["error"] and not replay_mismatches
+    release_blockers = publication_blockers(validation, replay, expected_records=len(questions))
+    package_ok = not release_blockers
     published = None
     if package_ok and publication_eligible:
         published = SUBMIT_DIR / f"submission_{args.run_id}.zip"
@@ -472,7 +473,7 @@ def cmd_hybrid_v4(args: Namespace) -> int:
                 "production_eligible": policy.production_eligible,
                 "semantic_promotion_status": semantic_promotion_status,
                 "publication_eligible": publication_eligible,
-                "publication_blockers": list(publication_blockers),
+                "publication_blockers": list(policy_publication_blockers),
                 "relevant_refs_mode": policy.relevant_refs_mode,
                 "maximum_relevant_tables": policy.maximum_relevant_tables,
             },
@@ -491,6 +492,7 @@ def cmd_hybrid_v4(args: Namespace) -> int:
             },
             "replay": replay,
             "replay_mismatches": replay_mismatches,
+            "publication_blockers": release_blockers,
             "package": {
                 "path": str(zip_path.relative_to(ROOT)),
                 "sha256": sha256_file(zip_path),
@@ -519,7 +521,7 @@ def cmd_hybrid_v4(args: Namespace) -> int:
     )
     print(f"  zip                : {zip_path}")
     if not publication_eligible:
-        print(f"  publish            : BLOCKED — {', '.join(publication_blockers)}")
+        print(f"  publish            : BLOCKED — {', '.join(policy_publication_blockers)}")
     elif published:
         print(f"  publish            : {published}")
     return 0 if package_ok else 1

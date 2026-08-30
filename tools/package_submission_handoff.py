@@ -9,7 +9,11 @@ import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
-from text2pandas.application.usecases.submission import replay_zip, validate_zip
+from text2pandas.application.usecases.submission import (
+    publication_blockers,
+    replay_zip,
+    validate_zip,
+)
 from text2pandas.infrastructure.checksums import sha256_file
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +45,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate-run-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--questions",
+        type=Path,
+        default=QUESTIONS,
+        help="Exact leaderboard phase question JSONL used as the release scope",
+    )
     args = parser.parse_args()
     try:
         stage, source_zip = _resolve_candidate_stage(args.candidate_run_id)
@@ -59,11 +69,14 @@ def main() -> int:
     if source.get("git_dirty") is not False or not source.get("git_commit"):
         raise ValueError("candidate source identity is not a clean Git commit")
 
+    questions_path = args.questions.expanduser().resolve()
+    if not questions_path.is_file():
+        parser.error(f"evaluation question scope is missing: {questions_path}")
     questions = {
         int(row["id"]): str(row["question"])
         for row in (
             json.loads(line)
-            for line in QUESTIONS.read_text(encoding="utf-8").splitlines()
+            for line in questions_path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         )
     }
@@ -71,11 +84,13 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="text2pandas-handoff-") as temp:
         replay = replay_zip(source_zip, Path(temp) / "replay")
     replay_mismatches = replay["executed"] - replay["matched"]
-    if validation.errors or replay["error"] or replay_mismatches:
-        raise ValueError(
-            "candidate failed fresh handoff verification: "
-            f"validation={validation.errors}, replay={replay}"
-        )
+    blockers = publication_blockers(
+        validation,
+        replay,
+        expected_records=len(questions),
+    )
+    if blockers:
+        raise ValueError(f"candidate failed fresh handoff verification: blockers={blockers[:10]}")
 
     output.mkdir(parents=True)
     submission_path = output / "submission.zip"
@@ -88,6 +103,11 @@ def main() -> int:
         "status": "READY_FOR_MANUAL_LEADERBOARD_UPLOAD_EXPERIMENTAL",
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "candidate_run_id": args.candidate_run_id,
+        "evaluation_scope": {
+            "path": str(questions_path),
+            "sha256": sha256_file(questions_path),
+            "records": len(questions),
+        },
         "production_promoted": bool(policy.get("publication_eligible", False)),
         "publication_blockers": policy.get("publication_blockers") or [],
         "submission": {
