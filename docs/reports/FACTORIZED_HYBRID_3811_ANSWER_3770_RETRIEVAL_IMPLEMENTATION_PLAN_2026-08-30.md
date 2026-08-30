@@ -124,7 +124,7 @@ CLI dự kiến:
 .venv/bin/python tools/submission/build_factorized_hybrid.py \
   --answer-zip artifacts/submissions/submission_baseline-union-retrieval-overlay-20260830-01.zip \
   --retrieval-zip artifacts/submissions/submission_actual-table-retrieval-safe-3966500-20260829-01.zip \
-  --corpus-root data/raw/btc \
+  --corpus-root data/raw/btc/financial_statements \
   --output artifacts/runs/submission/factorized-hybrid-3811x3770-20260830-a/submission.zip \
   --report artifacts/runs/submission/factorized-hybrid-3811x3770-20260830-a/composition_report.json \
   --expect-answer-sha256 535ee597e8b87662451a60d46c147189f0919b397dda63c472ac94a07cf79933 \
@@ -133,6 +133,11 @@ CLI dự kiến:
 
 Lệnh trên chỉ là interface phải implement; tại thời điểm viết plan, tool và
 candidate chưa tồn tại.
+
+`configs/datasets/active_snapshot.yaml` đặt raw snapshot tại `data/raw/btc`,
+nhưng submission validator nhận thư mục chứa trực tiếp các ticker. Vì vậy
+`--corpus-root` phải trỏ tới subdirectory canonical
+`data/raw/btc/financial_statements`.
 
 Composer phải:
 
