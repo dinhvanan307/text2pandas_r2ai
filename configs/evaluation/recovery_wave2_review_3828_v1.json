@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.recovery_wave2_review",
+  "baseline": {
+    "zip_path": "artifacts/official/submission-3828/submission.zip",
+    "zip_sha256": "87d6c6e9da03057994427816599a02a7a1c67b296e2d5252b5b0a2b560086476"
+  },
+  "a6_database": {
+    "database_path": "data/processed/a6/c6887fb633374fad/silver.db",
+    "database_sha256": "fa6c46d6d46b4735f6a23fe1f2b8e2be16c206b712f47b8f22a5f0647f5dc3c8"
+  },
+  "policy": {
+    "mode": "additive_only",
+    "require_execution_ready": true,
+    "protect_existing_answers": true,
+    "protect_retrieval": true,
+    "runtime_model_gold": false
+  },
+  "reviews": [
+    {
+      "qid": 151,
+      "cohort": "pack_a",
+      "decision": "FAIL_CLOSED",
+      "reason": "Intended VND savings-deposit observations are semantic-collision non-candidates."
+    },
+    {
+      "qid": 267,
+      "cohort": "pack_a",
+      "decision": "FAIL_CLOSED",
+      "reason": "Intended ACB foreign-currency term-deposit observations are semantic-collision non-candidates."
+    },
+    {
+      "qid": 407,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["d8126a05f81b98fd", "e88ddb3415a70d1a", "885fb7db294f14b7", "9c318e785457678e", "b7e618913b628b21", "6bdcddc419300b67", "477dffda5329651d", "e5a9bb7a75a1d122"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '477dffda5329651d']['value'].values[0]) / float(df1[df1['observation_uid'] == 'e5a9bb7a75a1d122']['value'].values[0])) + 0 * (float(df1[df1['observation_uid'] == 'd8126a05f81b98fd']['value'].values[0]) / float(df1[df1['observation_uid'] == 'e88ddb3415a70d1a']['value'].values[0])) + 0 * (float(df1[df1['observation_uid'] == '885fb7db294f14b7']['value'].values[0]) / float(df1[df1['observation_uid'] == '9c318e785457678e']['value'].values[0])) + 0 * (float(df1[df1['observation_uid'] == 'b7e618913b628b21']['value'].values[0]) / float(df1[df1['observation_uid'] == '6bdcddc419300b67']['value'].values[0])))",
+      "expected_answer": 1.7145059397391298,
+      "rationale": "CFO/LNST is lowest in 2021; the requested next-year current ratio uses 2022 current assets and current liabilities."
+    },
+    {
+      "qid": 465,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["51042f162d68dd20", "5f636b54807e8dcd", "4d7d10f83a82e4fe", "094a7d9f401cc133", "b9c2df97a825dcda", "a3e94be035b8db66", "5aa4c11894149e21", "8dab670241e9c4e1"],
+      "pandas_query": "float(((float(df1[df1['observation_uid'] == '5aa4c11894149e21']['value'].values[0]) + abs(float(df1[df1['observation_uid'] == '8dab670241e9c4e1']['value'].values[0]))) / abs(float(df1[df1['observation_uid'] == '8dab670241e9c4e1']['value'].values[0]))) + 0 * (float(df1[df1['observation_uid'] == '51042f162d68dd20']['value'].values[0]) / float(df1[df1['observation_uid'] == '5f636b54807e8dcd']['value'].values[0])) + 0 * (float(df1[df1['observation_uid'] == '4d7d10f83a82e4fe']['value'].values[0]) / float(df1[df1['observation_uid'] == '094a7d9f401cc133']['value'].values[0])) + 0 * (float(df1[df1['observation_uid'] == 'b9c2df97a825dcda']['value'].values[0]) / float(df1[df1['observation_uid'] == 'a3e94be035b8db66']['value'].values[0])))",
+      "expected_answer": 8.138020523057806,
+      "rationale": "PLX has the highest liabilities-to-equity ratio; its interest coverage is (PBT + interest expense) / interest expense."
+    },
+    {
+      "qid": 590,
+      "cohort": "pack_a",
+      "decision": "FAIL_CLOSED",
+      "reason": "The intended HHV 2025 credit-limit observations are period-unresolved."
+    },
+    {
+      "qid": 652,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["d319aecd79050578", "6819142b35ab4589"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'd319aecd79050578']['value'].values[0]) - float(df1[df1['observation_uid'] == '6819142b35ab4589']['value'].values[0])) / 1000000000)",
+      "expected_answer": 28.529335671,
+      "rationale": "Parent-company closing corporate-income-tax payable, 2018 minus 2017, converted from VND to VND billion."
+    },
+    {
+      "qid": 656,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["cc7a670e910a35eb", "5eee9e0cdc1e2ab0"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == 'cc7a670e910a35eb']['value'].values[0]) / float(df1[df1['observation_uid'] == '5eee9e0cdc1e2ab0']['value'].values[0]) * 100)",
+      "expected_answer": 1.3888537152420668,
+      "rationale": "Consolidated cash equivalents divided by total assets at 2024 year-end."
+    },
+    {
+      "qid": 663,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["ac7f6b7eeae843a0", "2563ce5cf055482c", "c16d0dd0b1d58ea8"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'ac7f6b7eeae843a0']['value'].values[0]) + float(df1[df1['observation_uid'] == '2563ce5cf055482c']['value'].values[0])) / float(df1[df1['observation_uid'] == 'c16d0dd0b1d58ea8']['value'].values[0]) * 100)",
+      "expected_answer": 36.76031567513054,
+      "rationale": "Parent-company short- and long-term borrowings divided by total assets; same source-unit context cancels in the ratio."
+    },
+    {
+      "qid": 673,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["7fc36ce6d3cfc15d", "9a52baf16be8b496"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '7fc36ce6d3cfc15d']['value'].values[0]) / float(df1[df1['observation_uid'] == '9a52baf16be8b496']['value'].values[0]) * 100)",
+      "expected_answer": 39.18741975141434,
+      "rationale": "Parent-company current assets divided by total sources at 2025 year-end."
+    },
+    {
+      "qid": 686,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["d3cfc722f507afb5", "71d6b53777a5ca8d"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == 'd3cfc722f507afb5']['value'].values[0]) / float(df1[df1['observation_uid'] == '71d6b53777a5ca8d']['value'].values[0]) * 100)",
+      "expected_answer": 18.1681239402019,
+      "rationale": "Consolidated profit before tax divided by net revenue for 2023."
+    },
+    {
+      "qid": 690,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["0367b910a616c489", "bbe692b47a52c692", "adb0b75a364aee04", "6b15605cae1b355a"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '0367b910a616c489']['value'].values[0]) + float(df1[df1['observation_uid'] == 'bbe692b47a52c692']['value'].values[0])) / (float(df1[df1['observation_uid'] == 'adb0b75a364aee04']['value'].values[0]) + float(df1[df1['observation_uid'] == '6b15605cae1b355a']['value'].values[0])))",
+      "expected_answer": 1236.0580703284945,
+      "rationale": "Parent-company total borrowings divided by cash plus bank deposits; all facts share the same source unit."
+    },
+    {
+      "qid": 700,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["2055b568b580ffc1", "e6411b4b9a925137"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '2055b568b580ffc1']['value'].values[0]) / float(df1[df1['observation_uid'] == 'e6411b4b9a925137']['value'].values[0]) * 100)",
+      "expected_answer": 1.2425392664750174,
+      "rationale": "Consolidated interest payable divided by long-term borrowings at 2015 year-end."
+    },
+    {
+      "qid": 724,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["3e135c24a6d7fece", "d8a661f56c20ce24", "2159293a8fe8afed", "bbede45f94d4c03a"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '3e135c24a6d7fece']['value'].values[0]) / (float(df1[df1['observation_uid'] == 'd8a661f56c20ce24']['value'].values[0]) + float(df1[df1['observation_uid'] == '2159293a8fe8afed']['value'].values[0]) + float(df1[df1['observation_uid'] == 'bbede45f94d4c03a']['value'].values[0])) * 100)",
+      "expected_answer": 45.576314805160095,
+      "rationale": "Parent-company financial expense divided by total revenue defined as net sales plus financial and other income."
+    },
+    {
+      "qid": 731,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["51f92b08f2b8aae3", "34e36fcbefdb11e3"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '51f92b08f2b8aae3']['value'].values[0]) / float(df1[df1['observation_uid'] == '34e36fcbefdb11e3']['value'].values[0]) * 100)",
+      "expected_answer": 97.44192301490192,
+      "rationale": "Consolidated customer loans divided by customer deposits at 2025 year-end."
+    },
+    {
+      "qid": 738,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["5cbcea1f1dd9d81e", "770322b797298bd0"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '5cbcea1f1dd9d81e']['value'].values[0]) - float(df1[df1['observation_uid'] == '770322b797298bd0']['value'].values[0]))",
+      "expected_answer": 2730271.0,
+      "rationale": "Parent CTG tangible-PPE carrying value minus parent MBB, both already in VND million."
+    },
+    {
+      "qid": 744,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["f1ead5e4acf55ca1", "b1740ef42f13fda1"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == 'f1ead5e4acf55ca1']['value'].values[0]) - float(df1[df1['observation_uid'] == 'b1740ef42f13fda1']['value'].values[0]))",
+      "expected_answer": -2880000.0,
+      "rationale": "Question order defines parent KLB minus parent EIB; both balances are in VND million."
+    },
+    {
+      "qid": 765,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["590f353874f44a55", "89728c2d02376de0"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '590f353874f44a55']['value'].values[0]) - float(df1[df1['observation_uid'] == '89728c2d02376de0']['value'].values[0]))",
+      "expected_answer": 16264852.0,
+      "rationale": "Consolidated VPB interest income minus consolidated ACB interest income, in VND million."
+    },
+    {
+      "qid": 783,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["fa41c67c07ded7dd", "fe829a70d7bfdbb4"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == 'fa41c67c07ded7dd']['value'].values[0]) - float(df1[df1['observation_uid'] == 'fe829a70d7bfdbb4']['value'].values[0]))",
+      "expected_answer": 700372245.0,
+      "rationale": "Parent MBB total assets minus parent EIB total assets at 2023 year-end, in VND million."
+    },
+    {
+      "qid": 803,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["4dd6e31c58067cc4", "d7bb746b29cd9d8d"],
+      "pandas_query": "float(float(df1[df1['observation_uid'] == '4dd6e31c58067cc4']['value'].values[0]) - float(df1[df1['observation_uid'] == 'd7bb746b29cd9d8d']['value'].values[0]))",
+      "expected_answer": 5269738.0,
+      "rationale": "Parent MBB deposits at the State Bank of Vietnam minus parent SHB, in VND million."
+    },
+    {
+      "qid": 809,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["51dca47860d79831", "3066283ee51989ed"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '51dca47860d79831']['value'].values[0]) - float(df1[df1['observation_uid'] == '3066283ee51989ed']['value'].values[0])) / 1000000000)",
+      "expected_answer": 175.629021664,
+      "rationale": "Parent DNH corporate-income-tax payable minus HND, converted from VND to VND billion."
+    },
+    {
+      "qid": 824,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["95d49d4594a2014b", "e0ec0adccf73be38", "98f4bee2676d2371"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '95d49d4594a2014b']['value'].values[0]) + float(df1[df1['observation_uid'] == 'e0ec0adccf73be38']['value'].values[0]) + float(df1[df1['observation_uid'] == '98f4bee2676d2371']['value'].values[0])) / 3 / 1000000)",
+      "expected_answer": 455.149976,
+      "rationale": "Arithmetic mean of the three requested year-end outstanding-share counts, converted to million shares."
+    },
+    {
+      "qid": 826,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["55c46e3c799f40c6", "73363b9f34fb7e1b", "8a3cf53cf437f2a3", "f7c5766212c198d0", "4b81eee062c3bf49", "5a421e5f906b280b", "6dfada2247e51f43", "166e070d381e8730"],
+      "pandas_query": "float(2016 + 0 * (abs(float(df1[df1['observation_uid'] == '55c46e3c799f40c6']['value'].values[0])) / abs(float(df1[df1['observation_uid'] == '73363b9f34fb7e1b']['value'].values[0]))) + 0 * (abs(float(df1[df1['observation_uid'] == '8a3cf53cf437f2a3']['value'].values[0])) / abs(float(df1[df1['observation_uid'] == 'f7c5766212c198d0']['value'].values[0]))) + 0 * (abs(float(df1[df1['observation_uid'] == '4b81eee062c3bf49']['value'].values[0])) / abs(float(df1[df1['observation_uid'] == '5a421e5f906b280b']['value'].values[0]))) + 0 * (abs(float(df1[df1['observation_uid'] == '6dfada2247e51f43']['value'].values[0])) / abs(float(df1[df1['observation_uid'] == '166e070d381e8730']['value'].values[0]))))",
+      "expected_answer": 2016.0,
+      "rationale": "All four source/total COGS ratios are grounded; the maximum is 2016."
+    },
+    {
+      "qid": 833,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["e3ef656b2de86f30", "c022da651f694dec", "f7bfe1f9240a0b16"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'e3ef656b2de86f30']['value'].values[0]) + float(df1[df1['observation_uid'] == 'c022da651f694dec']['value'].values[0]) + float(df1[df1['observation_uid'] == 'f7bfe1f9240a0b16']['value'].values[0])) / 100000000000)",
+      "expected_answer": 9.71070872249,
+      "rationale": "Sum of parent-company dividend income for the three requested years, converted to VND hundred-billion units."
+    },
+    {
+      "qid": 853,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["04d86c33b960098e", "1288f33918fcb0cc", "fd505fa6e8b2151d", "c13ad4938195217f", "cc32fc1a8345ffc0", "360633b740ee785e"],
+      "pandas_query": "float(((float(df1[df1['observation_uid'] == '04d86c33b960098e']['value'].values[0]) / float(df1[df1['observation_uid'] == '1288f33918fcb0cc']['value'].values[0])) + (float(df1[df1['observation_uid'] == 'fd505fa6e8b2151d']['value'].values[0]) / float(df1[df1['observation_uid'] == 'c13ad4938195217f']['value'].values[0])) + (float(df1[df1['observation_uid'] == 'cc32fc1a8345ffc0']['value'].values[0]) / float(df1[df1['observation_uid'] == '360633b740ee785e']['value'].values[0]))) / 3 * 100)",
+      "expected_answer": 66.38826084914893,
+      "rationale": "Average of three parent-company equity-to-total-sources ratios for 2022."
+    },
+    {
+      "qid": 883,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["b023da4d4053535e", "83944b8fd2f72ea4", "85580eaa5a9361b9"],
+      "pandas_query": "float(2023 + 0 * float(df1[df1['observation_uid'] == 'b023da4d4053535e']['value'].values[0]) + 0 * float(df1[df1['observation_uid'] == '83944b8fd2f72ea4']['value'].values[0]) + 0 * float(df1[df1['observation_uid'] == '85580eaa5a9361b9']['value'].values[0]))",
+      "expected_answer": 2023.0,
+      "rationale": "The directly comparable MBB debt-trading-security balances peak in 2023."
+    },
+    {
+      "qid": 917,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["f92e308b1d46c46d", "686bf602c27e2b9e", "7e80663ad3f47b1b"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'f92e308b1d46c46d']['value'].values[0]) + float(df1[df1['observation_uid'] == '686bf602c27e2b9e']['value'].values[0]) + float(df1[df1['observation_uid'] == '7e80663ad3f47b1b']['value'].values[0])) / 3 / 1000000)",
+      "expected_answer": 583229.4858443333,
+      "rationale": "Average of parent-company short-term trade payables for VSC, VJC and ACV, converted to VND million."
+    },
+    {
+      "qid": 942,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["9c24033bd13a56b0", "91300b5a6304b485", "3e4c1b35b886e02d"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '9c24033bd13a56b0']['value'].values[0]) + float(df1[df1['observation_uid'] == '91300b5a6304b485']['value'].values[0]) + float(df1[df1['observation_uid'] == '3e4c1b35b886e02d']['value'].values[0])) / 3)",
+      "expected_answer": 156376.33333333334,
+      "rationale": "Average parent-company net FX result for VPB, EIB and HDB; source values are already VND million."
+    },
+    {
+      "qid": 943,
+      "cohort": "pack_b_direct_safe",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["cf7a73b12f11a7aa", "78cd848b97230dc6", "29a68dd095009896"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'cf7a73b12f11a7aa']['value'].values[0]) + float(df1[df1['observation_uid'] == '78cd848b97230dc6']['value'].values[0]) + float(df1[df1['observation_uid'] == '29a68dd095009896']['value'].values[0])) / 3 / 1000000000)",
+      "expected_answer": 290.09442426933333,
+      "rationale": "Average consolidated cash and cash equivalents for DCM, VIF and NKG in 2018, converted to VND billion."
+    },
+    {
+      "qid": 949,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["2b31f18a929fe5f6", "3b4f65fd5ba9751b", "442c27981468568f", "a223c3e7c8ba5444", "c20095444a4ced66", "541a806d7897c52e", "5326851038f6b4ed", "d075d1aa60c7304c", "9c23fd480ecdba7f", "dfa9943915694a40"],
+      "pandas_query": "float(((float(df1[df1['observation_uid'] == '2b31f18a929fe5f6']['value'].values[0]) + float(df1[df1['observation_uid'] == '3b4f65fd5ba9751b']['value'].values[0]) + float(df1[df1['observation_uid'] == '442c27981468568f']['value'].values[0]) + float(df1[df1['observation_uid'] == 'a223c3e7c8ba5444']['value'].values[0]) + float(df1[df1['observation_uid'] == 'c20095444a4ced66']['value'].values[0]) + float(df1[df1['observation_uid'] == '541a806d7897c52e']['value'].values[0])) > 1000000) + (float(df1[df1['observation_uid'] == '5326851038f6b4ed']['value'].values[0]) > 1000000) + ((float(df1[df1['observation_uid'] == 'd075d1aa60c7304c']['value'].values[0]) + float(df1[df1['observation_uid'] == '9c23fd480ecdba7f']['value'].values[0])) > 1000000) + (float(df1[df1['observation_uid'] == 'dfa9943915694a40']['value'].values[0]) > 1000000))",
+      "expected_answer": 3.0,
+      "rationale": "ACB, BID and MBB exceed positive VND 1 trillion; EIB does not. ACB and EIB use source-proven income/expense components."
+    },
+    {
+      "qid": 952,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["12a80da58d391269", "797a7644588e2058", "fc77dac49c83ab6d", "4d35d92ff23bacb4"],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '12a80da58d391269']['value'].values[0]) + float(df1[df1['observation_uid'] == '797a7644588e2058']['value'].values[0]) + float(df1[df1['observation_uid'] == 'fc77dac49c83ab6d']['value'].values[0]) + float(df1[df1['observation_uid'] == '4d35d92ff23bacb4']['value'].values[0])) / 4 / 1000000000)",
+      "expected_answer": 43.3481444,
+      "rationale": "Average DTK short-term other receivables across the requested separate/consolidated basis and years."
+    },
+    {
+      "qid": 999,
+      "cohort": "pack_a",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {"metric": true, "entity": true, "period": true, "basis": true, "operation": true, "unit": true, "source": true},
+      "fact_uids": ["83e284a53a275e18", "2ed9e1698bd421c5", "acb0631743a05e52"],
+      "pandas_query": "float(2025 + 0 * float(df1[df1['observation_uid'] == '83e284a53a275e18']['value'].values[0]) + 0 * float(df1[df1['observation_uid'] == '2ed9e1698bd421c5']['value'].values[0]) + 0 * float(df1[df1['observation_uid'] == 'acb0631743a05e52']['value'].values[0]))",
+      "expected_answer": 2025.0,
+      "rationale": "Parent VCB issued valuable papers are directly comparable and peak in 2025."
+    }
+  ]
+}
