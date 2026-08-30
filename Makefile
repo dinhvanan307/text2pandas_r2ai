@@ -132,7 +132,8 @@ competition-proxy-eval: ## Chấm đúng 10 metric BTC trên local governed gold
 	@$(PY) tools/evaluation/evaluate_competition_proxy.py \
 	  --candidate "$(CANDIDATE)" --output "$(OUTPUT)" \
 	  $(if $(BASELINE),--baseline "$(BASELINE)") \
-	  $(if $(TOLERANCE),--tolerance "$(TOLERANCE)")
+	  $(if $(TOLERANCE),--tolerance "$(TOLERANCE)") \
+	  $(if $(RELEASE_PROFILE),--release-profile "$(RELEASE_PROFILE)")
 
 semantic-promotion-eval: ## Chấm sealed gold + locked policy; RECORDS= GOLD_RELEASE= SUBMISSION_HANDOFF= OUTPUT=
 	@test -n "$(RECORDS)" -a -n "$(GOLD_RELEASE)" \

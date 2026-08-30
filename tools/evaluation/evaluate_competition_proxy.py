@@ -23,7 +23,7 @@ from text2pandas.application.usecases.competition_evaluation import (
     normalize_table_ref,
     score_competition,
 )
-from text2pandas.application.usecases.submission import validate_zip
+from text2pandas.application.usecases.submission import ReleaseProfile, validate_zip
 from text2pandas.infrastructure.checksums import sha256_file
 from text2pandas.infrastructure.sandbox.query import execute_query
 
@@ -166,8 +166,14 @@ def _evaluate(
     answers: list[AnswerGold],
     questions: dict[int, str],
     tolerance: float,
+    release_profile: ReleaseProfile,
 ) -> dict[str, Any]:
-    validation = validate_zip(path, questions, corpus_root=CORPUS)
+    validation = validate_zip(
+        path,
+        questions,
+        corpus_root=CORPUS,
+        profile=release_profile,
+    )
     records, json_name = _submission(path)
     score = score_competition(
         _predictions(records),
@@ -198,6 +204,11 @@ def main() -> int:
     parser.add_argument("--answer-gold", type=Path, default=ANSWER_GOLD)
     parser.add_argument("--a6-db", type=Path, default=A6_DB)
     parser.add_argument("--tolerance", type=float, default=0.005)
+    parser.add_argument(
+        "--release-profile",
+        choices=["complete", "competition"],
+        default="complete",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     output = args.output.expanduser().resolve()
@@ -216,12 +227,14 @@ def main() -> int:
         answers,
         questions,
         args.tolerance,
+        args.release_profile,
     )
     report: dict[str, Any] = {
         "schema_version": 1,
         "kind": "text2pandas.competition_proxy_evaluation",
         "classification": "LOCAL_DEVELOPMENT_PROXY_NOT_OFFICIAL",
         "official_score_guarantee": False,
+        "release_profile": args.release_profile,
         "metric_semantics": "BTC_PUBLISHED_MACRO_PER_QUERY",
         "tolerance": {
             "kind": "relative_with_absolute_floor",
@@ -252,6 +265,7 @@ def main() -> int:
             answers,
             questions,
             args.tolerance,
+            args.release_profile,
         )
         report["baseline"] = baseline
         report["comparison"] = compare_scores(candidate, baseline)
