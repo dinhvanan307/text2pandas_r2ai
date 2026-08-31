@@ -187,3 +187,13 @@ def test_generation_failure_remains_unresolved_silver() -> None:
     assert queue[0]["review_decision"] is None
     assert summary["correctness"] == "NOT_MEASURED"
     assert summary["independent_gold"] is False
+
+
+def test_generation_failure_preserves_explicit_basis() -> None:
+    scope = _scope()
+    scope["question"] = "Lợi nhuận sau thuế công ty mẹ năm 2024 là bao nhiêu?"
+
+    draft = generation_failure_draft(scope, {"model_id": "test-model"}, "bad JSON")
+
+    assert draft["structural_status"] == "UNRESOLVED"
+    assert draft["composition_frame"]["basis"] == "separate"

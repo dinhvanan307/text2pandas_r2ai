@@ -69,14 +69,7 @@ def compile_model_draft(
         for raw, compiled in zip(raw_mentions, frame["metric_mentions"], strict=True)
     ):
         compiler_adjustments.append("ALIGN_METRIC_MENTIONS_TO_EXACT_SOURCE_SPANS")
-    normalized_question = _normalized_text(question)
-    explicit_basis = (
-        "separate"
-        if "cong ty me" in normalized_question
-        else "consolidated"
-        if "hop nhat" in normalized_question
-        else None
-    )
+    explicit_basis = _explicit_basis(question)
     if explicit_basis is not None and frame.get("basis") != explicit_basis:
         raise SemanticParserModelDraftError(
             f"explicit basis mismatch: question={explicit_basis} frame={frame.get('basis')}"
@@ -179,6 +172,7 @@ def generation_failure_draft(
     """Create an explicit unresolved record after bounded generation retries."""
 
     family = str(scope_row.get("family") or "")
+    question = str(scope_row.get("question") or "")
     complexity = "direct" if family == "direct_lookup" else "compositional"
     response = {
         "structural_status": "UNRESOLVED",
@@ -186,7 +180,10 @@ def generation_failure_draft(
         "composition_frame": {
             "entity_domain": [],
             "period_domain": [],
-            "basis": None,
+            # Preserve an explicit basis even on a failed generation so the
+            # unresolved wrapper satisfies the same source-question invariant
+            # as a successful draft.
+            "basis": _explicit_basis(question),
             "metric_mentions": [],
             "predicate_clauses": [],
             "logical_connectors": [],
@@ -306,6 +303,15 @@ def _source_span(question: str, mention: str) -> tuple[int, int] | None:
 
 def _normalized_text(value: str) -> str:
     return _normalized_text_with_offsets(value)[0]
+
+
+def _explicit_basis(question: str) -> str | None:
+    normalized = _normalized_text(question)
+    if "cong ty me" in normalized:
+        return "separate"
+    if "hop nhat" in normalized:
+        return "consolidated"
+    return None
 
 
 def _normalized_text_with_offsets(value: str) -> tuple[str, list[int]]:

@@ -107,7 +107,7 @@ def generate(args: argparse.Namespace) -> int:
                 prompt_template,
                 row,
                 ontology_hints=_ontology_hints(str(row["question"]), ontology),
-                validation_feedback=errors[-1:] if errors else (),
+                validation_feedback=tuple(errors[-1:]),
             )
             last_prompt_hash = _sha256_text(prompt)
             try:
