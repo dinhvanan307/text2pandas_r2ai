@@ -1062,3 +1062,159 @@ def test_temporal_cohort_average_changes_formula_after_positive_growth_filter() 
     assert projection.left.formula_id == "gross_margin"
     assert projection.left.expression.left.periods == ("2020",)
     assert projection.right.expression.left.periods == ("2019",)
+
+
+def test_average_compiles_explicit_reported_ratio_before_outer_aggregate() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {"MSN": "MSN", "MPC": "MPC", "VNM": "VNM", "MML": "MML"}
+        ),
+    )
+
+    result = parser.parse(
+        "Tính tỷ trọng chi phí khấu hao trên tổng chi phí quản lý doanh nghiệp "
+        "năm 2022 của MSN, MPC, VNM và MML, sau đó lấy trung bình của 4 tỷ trọng "
+        "này theo đơn vị phần trăm."
+    )
+
+    assert result.ok
+    aggregate = result.ast.expression
+    assert isinstance(aggregate, Aggregate)
+    assert aggregate.function == AggregateFunction.AVERAGE
+    assert isinstance(aggregate.expression, Arithmetic)
+    assert aggregate.expression.operator == ArithmeticOperator.DIVIDE
+    assert isinstance(aggregate.expression.left, Unary)
+    assert isinstance(aggregate.expression.right, Unary)
+
+
+def test_known_money_expression_cannot_be_relabelled_as_percent_output() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"NLG": "NLG"}),
+    )
+
+    result = parser.parse(
+        "Tỷ trọng vốn chủ sở hữu trung bình của NLG trong các năm 2015, 2018 và "
+        "2024 là bao nhiêu %?"
+    )
+
+    assert not result.ok
+    assert result.reason == "DIMENSION_MISMATCH:money:percent"
+
+
+def test_temporal_cohort_accepts_o_ca_nam_and_ty_le_thay_doi_growth() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"DCM": "DCM", "DPM": "DPM", "PRT": "PRT"}),
+    )
+
+    result = parser.parse(
+        "Trong nhóm DCM, DPM và PRT, xét các công ty có lưu chuyển tiền thuần từ "
+        "hoạt động kinh doanh dương ở cả năm 2019 và 2020, trung bình tỷ lệ thay "
+        "đổi doanh thu thuần năm 2020 so với năm 2019 là bao nhiêu %?"
+    )
+
+    assert result.ok
+    aggregate = result.ast.expression
+    assert isinstance(aggregate, Aggregate)
+    assert isinstance(aggregate.expression, Filter)
+    assert isinstance(aggregate.expression.predicate, QuantifiedPredicate)
+    assert aggregate.expression.predicate.quantifier == PredicateQuantifier.ALL
+    projection = aggregate.expression.expression
+    assert isinstance(projection, Arithmetic)
+    assert projection.operator == ArithmeticOperator.GROWTH
+
+
+def test_explicit_ratio_same_metric_roles_fail_closed() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"MSR": "MSR", "GVR": "GVR", "AAA": "AAA"}),
+    )
+
+    result = parser.parse(
+        "Trung bình tỷ trọng ngoại tệ USD trong tổng dư lượng ngoại tệ cuối năm "
+        "2023 của MSR, GVR và AAA là bao nhiêu phần trăm?"
+    )
+
+    assert not result.ok
+    assert result.reason == "EXPLICIT_RATIO_ROLE_COLLISION"
+
+
+def test_period_comparison_filter_precedes_ratio_change_and_average() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"DCM": "DCM", "DPM": "DPM", "PRT": "PRT"}),
+    )
+
+    result = parser.parse(
+        "Trong nhóm DCM, DPM và PRT, xét các công ty có doanh thu thuần năm 2020 "
+        "cao hơn năm 2019, mức thay đổi trung bình của tỷ lệ lợi nhuận gộp trên "
+        "doanh thu thuần từ năm 2019 đến năm 2020 là bao nhiêu điểm phần trăm?"
+    )
+
+    assert result.ok
+    aggregate = result.ast.expression
+    assert isinstance(aggregate, Aggregate)
+    assert isinstance(aggregate.expression, Filter)
+    assert isinstance(aggregate.expression.predicate, Comparison)
+    assert aggregate.expression.predicate.left.periods == ("2020",)
+    assert aggregate.expression.predicate.right.periods == ("2019",)
+    projection = aggregate.expression.expression
+    assert isinstance(projection, Arithmetic)
+    assert projection.operator == ArithmeticOperator.SUBTRACT
+
+
+def test_inner_multi_period_sign_filter_does_not_hide_trailing_sum() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator(
+            {"HPG": "HPG", "HSG": "HSG", "MSR": "MSR", "NKG": "NKG"}
+        ),
+    )
+
+    result = parser.parse(
+        "Trong nhóm HPG, HSG, MSR và NKG, xét các công ty có tỷ lệ lợi nhuận "
+        "sau thuế trên doanh thu thuần dương trong cả ba năm 2020, 2021 và 2022, "
+        "tổng doanh thu thuần năm 2022 là bao nhiêu nghìn tỷ đồng?"
+    )
+
+    assert result.ok
+    aggregate = result.ast.expression
+    assert isinstance(aggregate, Aggregate)
+    assert aggregate.function == AggregateFunction.SUM
+    assert isinstance(aggregate.expression, Filter)
+    assert isinstance(aggregate.expression.predicate, QuantifiedPredicate)
+    assert aggregate.expression.predicate.quantifier == PredicateQuantifier.ALL
+    projection = aggregate.expression.expression
+    assert isinstance(projection, MetricRef)
+    assert projection.metric_id == "net_revenue"
+    assert projection.periods == ("2022",)
+
+
+def test_filtered_accrual_ratio_preserves_nested_period_average() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"DLG": "DLG", "HHV": "HHV", "VSC": "VSC"}),
+    )
+
+    result = parser.parse(
+        "Trong nhóm DLG, HHV và VSC, xét các công ty có lợi nhuận sau thuế dương "
+        "năm 2020, trung bình tỷ lệ của chênh lệch giữa lợi nhuận sau thuế và lưu "
+        "chuyển tiền thuần từ hoạt động kinh doanh năm 2020 trên trung bình tổng "
+        "tài sản cuối năm 2019 và cuối năm 2020 là bao nhiêu %?"
+    )
+
+    assert result.ok
+    outer = result.ast.expression
+    assert isinstance(outer, Aggregate)
+    assert isinstance(outer.expression, Filter)
+    assert isinstance(outer.expression.predicate, Comparison)
+    projection = outer.expression.expression
+    assert isinstance(projection, Arithmetic)
+    assert projection.operator == ArithmeticOperator.DIVIDE
+    assert isinstance(projection.left, Arithmetic)
+    assert projection.left.operator == ArithmeticOperator.SUBTRACT
+    assert isinstance(projection.right, Aggregate)
+    assert projection.right.axis == Axis.PERIOD
+    assert projection.right.members == ("2019", "2020")

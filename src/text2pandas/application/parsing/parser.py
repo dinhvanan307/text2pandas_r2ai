@@ -45,6 +45,7 @@ from text2pandas.domain.semantic import (
     Unary,
     UnaryOperator,
     UnitSpec,
+    iter_metric_refs,
     validate_question_ast,
 )
 from text2pandas.domain.semantic.ast import Expression, Predicate
@@ -428,6 +429,21 @@ class SemanticParser:
             return _abstain(expression_result)
         expression, result_kind = expression_result
         output_unit = self._output_unit(annotations, formula, mentions, result_kind)
+        expression_dimension = _expression_dimension(expression)
+        if (
+            result_kind == ResultKind.SCALAR
+            and expression_dimension != Dimension.UNKNOWN
+            and output_unit.dimension != Dimension.UNKNOWN
+            and not _output_dimension_compatible(
+                expression_dimension,
+                output_unit.dimension,
+                expression,
+            )
+        ):
+            return _abstain(
+                "DIMENSION_MISMATCH:"
+                f"{expression_dimension.value}:{output_unit.dimension.value}"
+            )
         ast = QuestionAST(
             expression=expression,
             output=OutputSpec(result_kind, output_unit),
@@ -502,8 +518,35 @@ class SemanticParser:
     ) -> tuple[Expression, ResultKind] | str:
         operation = annotations.operation
         axis, members = _operation_axis(annotations)
+        accrual_average = _filtered_accrual_average_expression(
+            question,
+            annotations,
+            mentions,
+        )
+        if operation == OperationKind.AVERAGE and axis == Axis.ENTITY:
+            if isinstance(accrual_average, str):
+                return accrual_average
+            if accrual_average is not None:
+                return (
+                    Aggregate(
+                        AggregateFunction.AVERAGE,
+                        axis,
+                        Filter(
+                            axis,
+                            members,
+                            accrual_average[0],
+                            accrual_average[1],
+                        ),
+                        members,
+                    ),
+                    ResultKind.SCALAR,
+                )
         explicit_ratio: Expression | None = None
-        if operation == OperationKind.DIVIDE or (
+        if operation in {
+            OperationKind.DIVIDE,
+            OperationKind.SUM,
+            OperationKind.AVERAGE,
+        } or (
             operation == OperationKind.EXTREMUM
             and annotations.return_mode in {ReturnMode.MEMBER, ReturnMode.VALUE}
         ):
@@ -511,7 +554,12 @@ class SemanticParser:
                 normalize_phrase(question), annotations, mentions
             )
             if isinstance(ratio_result, str):
-                return ratio_result
+                if not (
+                    operation in {OperationKind.SUM, OperationKind.AVERAGE}
+                    and ratio_result == "EXPLICIT_RATIO_OPERAND_UNRESOLVED"
+                ):
+                    return ratio_result
+                ratio_result = None
             explicit_ratio = ratio_result
             if explicit_ratio is not None:
                 base = explicit_ratio
@@ -544,6 +592,10 @@ class SemanticParser:
         if (
             not isinstance(base, FormulaCall)
             and any(mention.metric.review_status != "reviewed" for mention in mentions)
+            and not _reported_mentions_are_explicit_ratio_operands(
+                mentions,
+                explicit_ratio,
+            )
             and not all(
                 _reported_operation_allowed(mention, operation)
                 for mention in mentions
@@ -608,6 +660,25 @@ class SemanticParser:
                     ResultKind.SCALAR,
                 )
             if axis == Axis.ENTITY:
+                period_comparison_roles = _period_comparison_filtered_aggregate_roles(
+                    question,
+                    annotations,
+                    mentions,
+                    formula_mentions,
+                )
+                if isinstance(period_comparison_roles, str):
+                    return period_comparison_roles
+                if period_comparison_roles is not None:
+                    cohort_predicate, cohort_value = period_comparison_roles
+                    return (
+                        Aggregate(
+                            function,
+                            axis,
+                            Filter(axis, members, cohort_predicate, cohort_value),
+                            members,
+                        ),
+                        ResultKind.SCALAR,
+                    )
                 temporal_roles = _temporal_filtered_aggregate_roles(
                     question,
                     annotations,
@@ -618,6 +689,25 @@ class SemanticParser:
                     return temporal_roles
                 if temporal_roles is not None:
                     cohort_predicate, cohort_value = temporal_roles
+                    return (
+                        Aggregate(
+                            function,
+                            axis,
+                            Filter(axis, members, cohort_predicate, cohort_value),
+                            members,
+                        ),
+                        ResultKind.SCALAR,
+                    )
+                sign_filtered_roles = _sign_filtered_direct_aggregate_roles(
+                    question,
+                    annotations,
+                    mentions,
+                    formula_mentions,
+                )
+                if isinstance(sign_filtered_roles, str):
+                    return sign_filtered_roles
+                if sign_filtered_roles is not None:
+                    cohort_predicate, cohort_value = sign_filtered_roles
                     return (
                         Aggregate(
                             function,
@@ -648,6 +738,7 @@ class SemanticParser:
                     )
             if (
                 not isinstance(base, FormulaCall)
+                and explicit_ratio is None
                 and len({mention.metric.metric_id for mention in mentions}) != 1
             ):
                 return "DIRECT_OPERATION_METRIC_AMBIGUOUS"
@@ -1145,33 +1236,52 @@ def _explicit_ratio_expression(
     and denominator.
     """
 
-    marker = re.search(r"\b(?:ty trong|ty le)\b", normalized_question)
-    if marker is None:
+    markers = tuple(_EXPLICIT_RATIO_MARKER.finditer(normalized_question))
+    resolved: list[tuple[re.Match[str], re.Match[str], MetricMention, MetricMention]] = []
+    errors: list[str] = []
+    for index, marker in enumerate(markers):
+        boundary = markers[index + 1].start() if index + 1 < len(markers) else len(
+            normalized_question
+        )
+        roles = _explicit_ratio_roles(
+            normalized_question,
+            mentions,
+            marker=marker,
+            boundary=boundary,
+        )
+        if isinstance(roles, str):
+            errors.append(roles)
+        elif roles is not None:
+            resolved.append(roles)
+    if len(resolved) > 1:
+        # Multiple explicit ratios belong to nested filter/projection grammar;
+        # they are not one flat aggregate base.
         return None
-    operator = re.search(r"\btren\b", normalized_question[marker.end() :])
-    if operator is None:
-        return None
-    operator_start = marker.end() + operator.start()
-    operator_end = marker.end() + operator.end()
-    numerator = tuple(
-        mention
-        for mention in mentions
-        if mention.start >= marker.end() and mention.end <= operator_start
+    if not resolved:
+        return errors[0] if errors else None
+    roles = resolved[0]
+    marker, _operator, numerator, denominator = roles
+    return _ratio_expression_from_roles(
+        marker,
+        numerator,
+        denominator,
+        annotations,
+        normalized_question,
     )
-    denominator = tuple(
-        mention for mention in mentions if mention.start >= operator_end
-    )
-    numerator = _deduplicate_role_mentions(numerator)
-    denominator = _deduplicate_role_mentions(denominator)
-    if not numerator or not denominator:
-        return "EXPLICIT_RATIO_OPERAND_UNRESOLVED"
-    if len(numerator) != 1 or len(denominator) != 1:
-        return "EXPLICIT_RATIO_OPERAND_AMBIGUOUS"
+
+
+def _ratio_expression_from_roles(
+    marker: re.Match[str],
+    numerator: MetricMention,
+    denominator: MetricMention,
+    annotations: QuestionAnnotations,
+    normalized_question: str,
+) -> Expression:
     numerator_expression: Expression = _metric_ref_with_context(
-        numerator[0], annotations, normalized_question
+        numerator, annotations, normalized_question
     )
     denominator_expression: Expression = _metric_ref_with_context(
-        denominator[0], annotations, normalized_question
+        denominator, annotations, normalized_question
     )
     if marker.group(0) == "ty trong":
         numerator_expression = Unary(
@@ -1196,20 +1306,90 @@ def _needs_explicit_ratio_source_role(
 ) -> bool:
     if annotations.operation not in {OperationKind.DIVIDE, OperationKind.EXTREMUM}:
         return False
-    marker = re.search(r"\b(?:ty trong|ty le)\b", normalized_question)
+    marker = _EXPLICIT_RATIO_MARKER.search(normalized_question)
     if marker is None:
         return False
-    operator = re.search(r"\btren\b", normalized_question[marker.end() :])
+    operator = _EXPLICIT_RATIO_RELATION.search(normalized_question, marker.end())
     if operator is None:
         return False
-    operator_start = marker.end() + operator.start()
-    operator_end = marker.end() + operator.end()
     has_numerator = any(
-        mention.start >= marker.end() and mention.end <= operator_start
+        mention.start >= marker.end() and mention.end <= operator.start()
         for mention in mentions
     )
-    has_denominator = any(mention.start >= operator_end for mention in mentions)
+    has_denominator = any(mention.start >= operator.end() for mention in mentions)
     return not (has_numerator and has_denominator)
+
+
+_EXPLICIT_RATIO_MARKER = re.compile(r"\b(?:ty trong|ty le|ty so)\b")
+_EXPLICIT_RATIO_RELATION = re.compile(r"\b(?:tren|so voi|trong tong)\b")
+
+
+def _explicit_ratio_roles(
+    normalized_question: str,
+    mentions: tuple[MetricMention, ...],
+    *,
+    marker: re.Match[str] | None = None,
+    boundary: int | None = None,
+) -> tuple[re.Match[str], re.Match[str], MetricMention, MetricMention] | str | None:
+    """Bind explicit numerator/denominator spans before metric policy.
+
+    The relation words own operand order.  A resolver score or mention order
+    must never swap the two sides, and two source concepts collapsing to the
+    same metric identity are treated as an unresolved collision.
+    """
+
+    if marker is None:
+        markers = tuple(_EXPLICIT_RATIO_MARKER.finditer(normalized_question))
+        if len(markers) != 1:
+            return None
+        marker = markers[0]
+    clause_end = len(normalized_question) if boundary is None else boundary
+    operator = _EXPLICIT_RATIO_RELATION.search(
+        normalized_question,
+        marker.end(),
+        clause_end,
+    )
+    if operator is None:
+        return None
+    numerator = _deduplicate_role_mentions(
+        tuple(
+            mention
+            for mention in mentions
+            if mention.start >= marker.end() and mention.end <= operator.start()
+        )
+    )
+    denominator = _deduplicate_role_mentions(
+        tuple(
+            mention
+            for mention in mentions
+            if mention.start >= operator.end() and mention.end <= clause_end
+        )
+    )
+    if not numerator or not denominator:
+        return "EXPLICIT_RATIO_OPERAND_UNRESOLVED"
+    if len(numerator) != 1 or len(denominator) != 1:
+        return "EXPLICIT_RATIO_OPERAND_AMBIGUOUS"
+    if numerator[0].metric.metric_id == denominator[0].metric.metric_id:
+        return "EXPLICIT_RATIO_ROLE_COLLISION"
+    return marker, operator, numerator[0], denominator[0]
+
+
+def _reported_mentions_are_explicit_ratio_operands(
+    mentions: tuple[MetricMention, ...],
+    explicit_ratio: Expression | None,
+) -> bool:
+    """Permit reported leaves only when exact grammar assigned both roles."""
+
+    if explicit_ratio is None:
+        return False
+    operand_ids = {
+        reference.metric_id for reference in iter_metric_refs(explicit_ratio)
+    }
+    return bool(operand_ids) and all(
+        mention.metric.review_status == "reviewed"
+        or mention.metric.metric_id in operand_ids
+        for mention in mentions
+    )
 
 
 def _deduplicate_role_mentions(
@@ -1328,6 +1508,90 @@ def _unit_dimensions_compatible(source: Dimension, requested: Dimension) -> bool
     if {source, requested} <= {Dimension.RATIO, Dimension.PERCENT}:
         return True
     return source == requested
+
+
+def _expression_dimension(expression: Expression) -> Dimension:
+    """Infer only dimensions that are statically guaranteed by the AST.
+
+    Unknown/source-labelled leaves stay unknown.  This gate is intentionally
+    conservative: it rejects a proven mismatch but never invents a unit for a
+    metric whose catalog typing is incomplete.
+    """
+
+    if isinstance(expression, MetricRef):
+        return (
+            Dimension.UNKNOWN
+            if expression.expected_unit is None
+            else expression.expected_unit.dimension
+        )
+    if isinstance(expression, Literal):
+        return expression.unit.dimension
+    if isinstance(expression, Unary):
+        return _expression_dimension(expression.expression)
+    if isinstance(expression, (RollingAverage, FormulaCall)):
+        return _expression_dimension(expression.expression)
+    if isinstance(expression, RollingGrowth):
+        return Dimension.RATIO
+    if isinstance(expression, Arithmetic):
+        if expression.operator in {ArithmeticOperator.DIVIDE, ArithmeticOperator.GROWTH}:
+            return Dimension.RATIO
+        left = _expression_dimension(expression.left)
+        right = _expression_dimension(expression.right)
+        if left == Dimension.UNKNOWN or right == Dimension.UNKNOWN:
+            return Dimension.UNKNOWN
+        if _unit_dimensions_compatible(left, right):
+            return left
+        return Dimension.UNKNOWN
+    if isinstance(expression, Aggregate):
+        if expression.function == AggregateFunction.COUNT:
+            return Dimension.COUNT
+        return _expression_dimension(expression.expression)
+    if isinstance(expression, Filter):
+        return _expression_dimension(expression.expression)
+    if isinstance(expression, Rank):
+        return _expression_dimension(expression.by)
+    if isinstance(expression, SelectAtArg):
+        return _expression_dimension(expression.expression)
+    return Dimension.UNKNOWN
+
+
+def _output_dimension_compatible(
+    source: Dimension,
+    requested: Dimension,
+    expression: Expression,
+) -> bool:
+    if _unit_dimensions_compatible(source, requested):
+        return True
+    return (
+        requested == Dimension.PERCENT_POINT
+        and source in {Dimension.RATIO, Dimension.PERCENT, Dimension.PERCENT_POINT}
+        and _contains_arithmetic_operator(expression, ArithmeticOperator.SUBTRACT)
+    )
+
+
+def _contains_arithmetic_operator(
+    expression: Expression,
+    operator: ArithmeticOperator,
+) -> bool:
+    if isinstance(expression, Arithmetic):
+        return (
+            expression.operator == operator
+            or _contains_arithmetic_operator(expression.left, operator)
+            or _contains_arithmetic_operator(expression.right, operator)
+        )
+    if isinstance(expression, (Unary, RollingAverage, RollingGrowth, FormulaCall)):
+        return _contains_arithmetic_operator(expression.expression, operator)
+    if isinstance(expression, Aggregate):
+        return _contains_arithmetic_operator(expression.expression, operator)
+    if isinstance(expression, Filter):
+        return _contains_arithmetic_operator(expression.expression, operator)
+    if isinstance(expression, Rank):
+        return _contains_arithmetic_operator(expression.by, operator)
+    if isinstance(expression, SelectAtArg):
+        return _contains_arithmetic_operator(expression.expression, operator) or (
+            _contains_arithmetic_operator(expression.rank.by, operator)
+        )
+    return False
 
 
 @dataclass(frozen=True, slots=True)
@@ -1534,10 +1798,29 @@ def _expression_mentions(
                 formula.output_unit.dimension,
             )
         )
-    explicit_relations = _explicit_share_expression_mentions(
-        normalized_question,
-        annotations,
-        metric_mentions,
+    explicit_relations = tuple(
+        relation
+        for relation in (
+            *_explicit_share_expression_mentions(
+                normalized_question,
+                annotations,
+                metric_mentions,
+            ),
+            *(
+                _explicit_ratio_expression_mentions(
+                    normalized_question,
+                    annotations,
+                    metric_mentions,
+                )
+                if annotations.operation in {OperationKind.SUM, OperationKind.AVERAGE}
+                else ()
+            ),
+        )
+        if not any(
+            relation.start >= formula_mention.start
+            and relation.end <= formula_mention.end
+            for formula_mention in formula_mentions
+        )
     )
     output.extend(explicit_relations)
     for metric_mention in metric_mentions:
@@ -1585,6 +1868,47 @@ def _expression_mentions(
 _EXPLICIT_SHARE = re.compile(
     r"\bchiem\s+(?:bao\s+nhieu\s+)?(?:phan\s+tram|%)\b"
 )
+
+
+def _explicit_ratio_expression_mentions(
+    normalized_question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+) -> tuple[_ExpressionMention, ...]:
+    """Expose an explicit ratio as one selectable nested expression."""
+
+    markers = tuple(_EXPLICIT_RATIO_MARKER.finditer(normalized_question))
+    output: list[_ExpressionMention] = []
+    for index, marker in enumerate(markers):
+        boundary = markers[index + 1].start() if index + 1 < len(markers) else len(
+            normalized_question
+        )
+        roles = _explicit_ratio_roles(
+            normalized_question,
+            metric_mentions,
+            marker=marker,
+            boundary=boundary,
+        )
+        if roles is None or isinstance(roles, str):
+            continue
+        _marker, _relation, numerator, denominator = roles
+        expression = _ratio_expression_from_roles(
+            marker,
+            numerator,
+            denominator,
+            annotations,
+            normalized_question,
+        )
+        output.append(
+            _ExpressionMention(
+                marker.start(),
+                denominator.end,
+                f"explicit_ratio:{numerator.metric.metric_id}:{denominator.metric.metric_id}",
+                expression,
+                Dimension.PERCENT,
+            )
+        )
+    return tuple(output)
 
 
 def _explicit_share_expression_mentions(
@@ -1922,6 +2246,85 @@ def _candidate_polarity(
     return str(terminal.group(1)) if terminal is not None else None
 
 
+_ACCRUAL_RATIO_PATTERN = re.compile(
+    r"\bchenh lech\s+(?:giua\s+)?loi nhuan sau thue\s+va\s+"
+    r"luu chuyen tien thuan tu hoat dong kinh doanh\b"
+)
+_AVERAGE_ASSETS_PATTERN = re.compile(r"\btrung binh\s+tong tai san\b")
+
+
+def _filtered_accrual_average_expression(
+    question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+) -> tuple[Predicate, Expression] | str | None:
+    """Compile ``PAT > 0 -> (PAT - CFO) / average assets -> average``.
+
+    All three operands are reviewed primary-statement metrics and every
+    operation is explicit in the question.  Near matches remain on the normal
+    fail-closed path.
+    """
+
+    normalized = normalize_phrase(question)
+    if (
+        len(annotations.entities) < 2
+        or len(annotations.periods) != 2
+        or _ACCRUAL_RATIO_PATTERN.search(normalized) is None
+        or _AVERAGE_ASSETS_PATTERN.search(normalized) is None
+        or re.search(r"\bloi nhuan sau thue\s+duong\b", normalized) is None
+    ):
+        return None
+    by_metric: dict[str, MetricMention] = {}
+    for mention in metric_mentions:
+        if mention.metric.metric_id in {
+            "profit_after_tax",
+            "cash_flow_from_operations",
+            "total_assets",
+        }:
+            by_metric.setdefault(mention.metric.metric_id, mention)
+    missing = {
+        "profit_after_tax",
+        "cash_flow_from_operations",
+        "total_assets",
+    } - set(by_metric)
+    if missing:
+        return "ACCRUAL_RATIO_OPERAND_UNRESOLVED:" + ",".join(sorted(missing))
+
+    current = max(annotations.periods)
+    profit = _metric_ref_with_context(
+        by_metric["profit_after_tax"],
+        replace(annotations, periods=(current,)),
+        normalized,
+    )
+    cfo = _metric_ref_with_context(
+        by_metric["cash_flow_from_operations"],
+        replace(annotations, periods=(current,)),
+        normalized,
+    )
+    assets = _metric_ref_with_context(
+        by_metric["total_assets"],
+        annotations,
+        normalized,
+    )
+    predicate = Comparison(
+        ComparisonOperator.GT,
+        profit,
+        Literal(0, UnitSpec(Dimension.MONEY, 0)),
+    )
+    average_assets = Aggregate(
+        AggregateFunction.AVERAGE,
+        Axis.PERIOD,
+        assets,
+        annotations.periods,
+    )
+    projection = Arithmetic(
+        ArithmeticOperator.DIVIDE,
+        Arithmetic(ArithmeticOperator.SUBTRACT, profit, cfo),
+        average_assets,
+    )
+    return predicate, projection
+
+
 def _filtered_aggregate_roles(
     question: str,
     annotations: QuestionAnnotations,
@@ -2020,8 +2423,196 @@ def _filtered_aggregate_roles(
 _TEMPORAL_COHORT_CUE = re.compile(
     r"\b(?:voi|xet)?\s*cac\s+(?:cong ty|doanh nghiep)\s+co\b"
 )
-_TEMPORAL_CHANGE = re.compile(r"\b(?:ty le\s+)?tang truong\b")
+_TEMPORAL_CHANGE = re.compile(
+    r"\b(?:(?:ty le\s+)?tang truong|ty le\s+thay doi)\b"
+)
 _TEMPORAL_DIFFERENCE = re.compile(r"\b(?:muc\s+)?(?:thay doi|chenh lech)\b")
+_ALL_STATED_PERIODS = re.compile(
+    r"\b(?:trong|o)\s+ca\s+(?:(?:hai|ba|bon|nam)\s+)?nam\b"
+)
+_PERIOD_VALUE_COMPARISON = re.compile(
+    r"\bnam\s+(?P<current>(?:19|20)\d{2})\s+"
+    r"(?P<operator>cao hon|lon hon|tang so voi|thap hon|nho hon|giam so voi)\s+"
+    r"(?:nam\s+)?(?P<prior>(?:19|20)\d{2})\b"
+)
+
+
+def _period_comparison_filtered_aggregate_roles(
+    question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+    formula_mentions: tuple[FormulaMention, ...],
+) -> tuple[Predicate, Expression] | str | None:
+    """Compile ``filter by current/prior, then change, then aggregate``.
+
+    This route is limited to a two-period finite entity cohort.  The metric
+    nearest the explicit year comparison owns the predicate; the projection
+    must be a different, uniquely reviewed ratio-like expression.
+    """
+
+    normalized = normalize_phrase(question)
+    if len(annotations.entities) < 2 or len(annotations.periods) != 2:
+        return None
+    comparison = _PERIOD_VALUE_COMPARISON.search(normalized)
+    if comparison is None:
+        return None
+    candidates = _expression_mentions(
+        normalized,
+        annotations,
+        metric_mentions,
+        formula_mentions,
+    )
+    preceding = [value for value in candidates if value.end <= comparison.start()]
+    if not preceding:
+        return "PERIOD_FILTER_PREDICATE_EXPRESSION_UNRESOLVED"
+    predicate_expression = max(
+        preceding,
+        key=lambda value: (value.end, value.end - value.start),
+    )
+    if comparison.start() - predicate_expression.end > 80:
+        return "PERIOD_FILTER_PREDICATE_EXPRESSION_UNRESOLVED"
+
+    projection_candidates = [
+        value
+        for value in candidates
+        if value.identity != predicate_expression.identity
+        and value.dimension in {Dimension.RATIO, Dimension.PERCENT}
+    ]
+    formula_candidates = [
+        value for value in projection_candidates if isinstance(value.expression, FormulaCall)
+    ]
+    if formula_candidates:
+        projection_candidates = formula_candidates
+    projections = _deduplicate_expression_identities(projection_candidates)
+    if not projections:
+        return "PERIOD_FILTER_SELECTED_EXPRESSION_UNRESOLVED"
+    if len(projections) != 1:
+        return "PERIOD_FILTER_SELECTED_EXPRESSION_AMBIGUOUS"
+    selected_expression = projections[0]
+
+    current = comparison.group("current")
+    prior = comparison.group("prior")
+    scoped_predicate = _without_qualifiers(predicate_expression.expression)
+    operator = (
+        ComparisonOperator.GT
+        if comparison.group("operator") in {"cao hon", "lon hon", "tang so voi"}
+        else ComparisonOperator.LT
+    )
+    predicate = Comparison(
+        operator,
+        _scope_expression(scoped_predicate, replace(annotations, periods=(current,))),
+        _scope_expression(scoped_predicate, replace(annotations, periods=(prior,))),
+    )
+    projection_base = _without_qualifiers(selected_expression.expression)
+    projection_operator = (
+        ArithmeticOperator.SUBTRACT
+        if annotations.requested_unit.dimension == Dimension.PERCENT_POINT
+        else ArithmeticOperator.GROWTH
+    )
+    projection = Arithmetic(
+        projection_operator,
+        _scope_expression(projection_base, replace(annotations, periods=(current,))),
+        _scope_expression(projection_base, replace(annotations, periods=(prior,))),
+    )
+    return predicate, projection
+
+
+def _sign_filtered_direct_aggregate_roles(
+    question: str,
+    annotations: QuestionAnnotations,
+    metric_mentions: tuple[MetricMention, ...],
+    formula_mentions: tuple[FormulaMention, ...],
+) -> tuple[Predicate, Expression] | str | None:
+    """Compile a sign-qualified cohort followed by a direct SUM/AVERAGE."""
+
+    normalized = normalize_phrase(question)
+    if len(annotations.entities) < 2 or _TEMPORAL_COHORT_CUE.search(normalized) is None:
+        return None
+    signs = tuple(re.finditer(r"\b(?:am|duong)\b", normalized))
+    if len(signs) != 1:
+        return None
+    sign = signs[0]
+    candidates = _expression_mentions(
+        normalized,
+        annotations,
+        metric_mentions,
+        formula_mentions,
+    )
+    predicate_candidates = [value for value in candidates if value.end <= sign.start()]
+    selected_candidates = [
+        value
+        for value in candidates
+        if value.start >= sign.end()
+        and _selected_dimension_compatible(
+            value.dimension,
+            annotations.requested_unit.dimension,
+        )
+    ]
+    if not predicate_candidates or not selected_candidates:
+        return None
+    predicate_expression = max(
+        predicate_candidates,
+        key=lambda value: (value.end, value.end - value.start),
+    )
+    selected = _deduplicate_expression_identities(selected_candidates)
+    if len(selected) != 1:
+        return "SIGN_FILTER_SELECTED_EXPRESSION_AMBIGUOUS"
+    selected_expression = selected[0]
+    if _temporal_operator(normalized[sign.end() :]) is not None:
+        return None
+
+    sign_operator = (
+        ComparisonOperator.GT if sign.group(0) == "duong" else ComparisonOperator.LT
+    )
+    predicate_base = _without_qualifiers(predicate_expression.expression)
+    zero_unit = UnitSpec(
+        predicate_expression.dimension,
+        0
+        if predicate_expression.dimension in {Dimension.MONEY, Dimension.SHARES}
+        else None,
+    )
+    comparison_predicate = Comparison(
+        sign_operator,
+        predicate_base,
+        Literal(0, zero_unit),
+    )
+    predicate: Predicate = comparison_predicate
+    if len(annotations.periods) > 1:
+        if _ALL_STATED_PERIODS.search(normalized[sign.end() :]) is None:
+            return None
+        predicate = QuantifiedPredicate(
+            Axis.PERIOD,
+            PredicateQuantifier.ALL,
+            comparison_predicate,
+        )
+
+    trailing_years = tuple(
+        match.group(0)
+        for match in re.finditer(r"(?:19|20)\d{2}", normalized[selected_expression.end :])
+        if match.group(0) in annotations.periods
+    )
+    selected_periods = (trailing_years[0],) if trailing_years else annotations.periods[-1:]
+    projection = _scope_expression(
+        _without_qualifiers(selected_expression.expression),
+        replace(annotations, periods=selected_periods),
+    )
+    return predicate, projection
+
+
+def _deduplicate_expression_identities(
+    candidates: list[_ExpressionMention],
+) -> tuple[_ExpressionMention, ...]:
+    by_identity: dict[str, _ExpressionMention] = {}
+    for candidate in candidates:
+        current = by_identity.get(candidate.identity)
+        if current is None or (candidate.end - candidate.start, -candidate.start) > (
+            current.end - current.start,
+            -current.start,
+        ):
+            by_identity[candidate.identity] = candidate
+    return tuple(
+        sorted(by_identity.values(), key=lambda value: (value.start, value.end, value.identity))
+    )
 
 
 def _temporal_filtered_aggregate_roles(
@@ -2097,7 +2688,7 @@ def _temporal_filtered_aggregate_roles(
             predicate_value,
             Literal(0, UnitSpec(Dimension.RATIO)),
         )
-    elif re.search(r"\btrong\s+ca\s+nam\b", normalized[sign.end() :]) is not None:
+    elif _ALL_STATED_PERIODS.search(normalized[sign.end() :]) is not None:
         zero_unit = UnitSpec(
             predicate_expression.dimension,
             0

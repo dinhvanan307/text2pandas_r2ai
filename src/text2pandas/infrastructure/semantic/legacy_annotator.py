@@ -62,6 +62,10 @@ _EXPLICIT_FILTERED_ENTITY_TOTAL = re.compile(
     r"\btong\s+[^,?]{1,80}\s+cua\s+"
     r"(?:cac\s+cong\s+ty|cac\s+doanh\s+nghiep|nhom)\b"
 )
+_TRAILING_FILTERED_TOTAL = re.compile(
+    r"[,;]\s*tong\s+[^,?]{1,100}\s+(?:nam\s+(?:19|20)\d{2}\s+)?"
+    r"la\s+bao\s+nhieu\b"
+)
 
 
 def _aggregate_override(
@@ -81,6 +85,8 @@ def _aggregate_override(
     """
 
     normalized = normalize_phrase(question)
+    if entity_count >= 2 and _TRAILING_FILTERED_TOTAL.search(normalized):
+        return OperationKind.SUM, "aggregate_domain:filtered_multi_entity_total"
     if entity_count >= 2 and _EXPLICIT_FILTERED_ENTITY_TOTAL.search(normalized):
         return OperationKind.SUM, "aggregate_domain:filtered_multi_entity_total"
     if operation != OperationKind.LOOKUP:
@@ -110,7 +116,10 @@ class LegacyVietnameseAnnotator:
             period_count=len(intent.years),
             operation=operation_kind,
         )
-        aggregate_all_entities = aggregate_evidence == "aggregate_domain:multi_entity_total"
+        aggregate_all_entities = aggregate_evidence in {
+            "aggregate_domain:multi_entity_total",
+            "aggregate_domain:filtered_multi_entity_total",
+        }
         average_all_entities = (
             operation_kind == OperationKind.AVERAGE
             and len(intent.targets) < len(intent.tickers)
