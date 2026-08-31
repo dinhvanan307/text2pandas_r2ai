@@ -24,6 +24,7 @@ from text2pandas.domain.semantic import (
     Filter,
     FormulaCall,
     Literal,
+    LogicalOperator,
     LogicalPredicate,
     MetricRef,
     PeriodSemantics,
@@ -1103,6 +1104,43 @@ def test_known_money_expression_cannot_be_relabelled_as_percent_output() -> None
     assert result.reason == "DIMENSION_MISMATCH:money:percent"
 
 
+def test_entity_difference_can_wrap_an_explicit_ratio() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"AAA": "AAA", "BBB": "BBB"}),
+    )
+
+    result = parser.parse(
+        "Chênh lệch tỷ trọng vay ngắn hạn trên tổng tài sản của AAA và BBB "
+        "năm 2024 là bao nhiêu phần trăm?"
+    )
+
+    assert result.ok
+    difference = result.ast.expression
+    assert isinstance(difference, Arithmetic)
+    assert difference.operator == ArithmeticOperator.SUBTRACT
+    assert isinstance(difference.left, Arithmetic)
+    assert difference.left.operator == ArithmeticOperator.DIVIDE
+    assert isinstance(difference.right, Arithmetic)
+    assert difference.right.operator == ArithmeticOperator.DIVIDE
+
+
+def test_percentage_movement_between_periods_is_growth_not_subtraction() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"AAA": "AAA"}),
+    )
+
+    result = parser.parse(
+        "Tỷ lệ biến động tổng tài sản của AAA giữa năm 2020 và năm 2024 "
+        "là bao nhiêu phần trăm?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Arithmetic)
+    assert result.ast.expression.operator == ArithmeticOperator.GROWTH
+
+
 def test_temporal_cohort_accepts_o_ca_nam_and_ty_le_thay_doi_growth() -> None:
     parser = SemanticParser(
         load_ontology(),
@@ -1124,6 +1162,50 @@ def test_temporal_cohort_accepts_o_ca_nam_and_ty_le_thay_doi_growth() -> None:
     projection = aggregate.expression.expression
     assert isinstance(projection, Arithmetic)
     assert projection.operator == ArithmeticOperator.GROWTH
+
+
+def test_multi_predicate_cohort_precedes_temporal_projection_and_average() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"AAA": "AAA", "BBB": "BBB", "CCC": "CCC"}),
+    )
+
+    result = parser.parse(
+        "Trong năm 2024, các công ty AAA, BBB và CCC có lợi nhuận sau thuế "
+        "dương và hệ số chuyển đổi lợi nhuận (CFO/LNST) lớn hơn 1 đạt tốc độ "
+        "tăng trưởng tổng tài sản bình quân là bao nhiêu phần trăm so với năm "
+        "2023?"
+    )
+
+    assert result.ok
+    aggregate = result.ast.expression
+    assert isinstance(aggregate, Aggregate)
+    assert isinstance(aggregate.expression, Filter)
+    predicate = aggregate.expression.predicate
+    assert isinstance(predicate, LogicalPredicate)
+    assert predicate.operator == LogicalOperator.AND
+    assert len(predicate.predicates) == 2
+    projection = aggregate.expression.expression
+    assert isinstance(projection, Arithmetic)
+    assert projection.operator == ArithmeticOperator.GROWTH
+    assert projection.left.periods == ("2024",)
+    assert projection.right.periods == ("2023",)
+
+
+def test_multi_predicate_route_requires_explicit_conjunction() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"AAA": "AAA", "BBB": "BBB", "CCC": "CCC"}),
+    )
+
+    result = parser.parse(
+        "Trong năm 2024, các công ty AAA, BBB và CCC có lợi nhuận sau thuế "
+        "dương, hệ số chuyển đổi lợi nhuận (CFO/LNST) lớn hơn 1 đạt tốc độ "
+        "tăng trưởng tổng tài sản bình quân là bao nhiêu phần trăm so với năm "
+        "2023?"
+    )
+
+    assert not result.ok
 
 
 def test_explicit_ratio_same_metric_roles_fail_closed() -> None:

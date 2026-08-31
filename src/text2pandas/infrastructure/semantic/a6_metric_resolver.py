@@ -260,7 +260,7 @@ class A6MetricMentionResolver:
             annotations,
         )
         if not hypotheses:
-            expected_dimension = _source_metric_dimension(annotations)
+            expected_dimension = _source_metric_dimension(question, annotations)
             compatible_units = {
                 row.unit_kind
                 for row in rows
@@ -496,7 +496,7 @@ class A6MetricMentionResolver:
         annotations: QuestionAnnotations,
     ) -> list[MetricHypothesis]:
         groups: dict[tuple[str, Dimension], _Group] = {}
-        expected_dimension = _source_metric_dimension(annotations)
+        expected_dimension = _source_metric_dimension(normalized_question, annotations)
         for row in rows:
             dimension = _dimension(row.unit_kind)
             if not _dimension_compatible(expected_dimension, dimension):
@@ -958,14 +958,39 @@ def _dimension_compatible(expected: Dimension, actual: Dimension) -> bool:
     return expected == actual
 
 
-def _source_metric_dimension(annotations: QuestionAnnotations) -> Dimension:
+_DERIVED_RATIO_RELATION = re.compile(
+    r"\b(?:ty trong|ty le|ty so)\b[^?]{0,180}\b(?:tren|so voi|trong tong)\b"
+)
+_DERIVED_TEMPORAL_PERCENT = re.compile(
+    r"\b(?:ty le bien dong|ty le thay doi|toc do tang truong|tang truong)\b"
+)
+
+
+def _source_metric_dimension(
+    question: str,
+    annotations: QuestionAnnotations,
+) -> Dimension:
     """Return the leaf dimension, which can differ from the answer dimension."""
 
+    normalized = normalize_phrase(question)
     if annotations.operation in {
         OperationKind.GROWTH,
         OperationKind.COUNT,
         OperationKind.EXTREMUM,
+        OperationKind.DIVIDE,
     }:
+        return Dimension.UNKNOWN
+    if annotations.operation in {OperationKind.SUM, OperationKind.AVERAGE} and (
+        _DERIVED_RATIO_RELATION.search(normalized) is not None
+        or _DERIVED_TEMPORAL_PERCENT.search(normalized) is not None
+    ):
+        return Dimension.UNKNOWN
+    if (
+        annotations.operation == OperationKind.SUBTRACT
+        and annotations.requested_unit.dimension
+        in {Dimension.PERCENT, Dimension.PERCENT_POINT, Dimension.RATIO}
+        and _DERIVED_RATIO_RELATION.search(normalized) is not None
+    ):
         return Dimension.UNKNOWN
     return annotations.requested_unit.dimension
 

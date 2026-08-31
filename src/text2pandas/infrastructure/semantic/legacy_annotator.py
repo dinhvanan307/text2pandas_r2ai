@@ -66,6 +66,7 @@ _TRAILING_FILTERED_TOTAL = re.compile(
     r"[,;]\s*tong\s+[^,?]{1,100}\s+(?:nam\s+(?:19|20)\d{2}\s+)?"
     r"la\s+bao\s+nhieu\b"
 )
+_PERCENTAGE_MOVEMENT = re.compile(r"\bty le bien dong\b")
 
 
 def _aggregate_override(
@@ -131,6 +132,15 @@ class LegacyVietnameseAnnotator:
         else:
             entities = intent.targets
         dimension, scale, _token = scan_question_unit(question)
+        if (
+            operation_kind == OperationKind.SUBTRACT
+            and len(intent.targets) == 1
+            and len(intent.years) == 2
+            and dimension in {"PERCENT", "RATIO"}
+            and _PERCENTAGE_MOVEMENT.search(normalize_phrase(question)) is not None
+        ):
+            operation_kind = OperationKind.GROWTH
+            aggregate_evidence = "semantic_operation:percentage_movement"
         if intent.explicit_scope == "công ty mẹ":
             basis = Basis.SEPARATE
         elif intent.explicit_scope == "hợp nhất":

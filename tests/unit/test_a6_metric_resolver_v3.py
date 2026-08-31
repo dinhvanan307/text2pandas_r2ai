@@ -414,6 +414,140 @@ def test_parser_promotes_unique_source_metric_for_derived_operation(
     assert result.ast.expression.right.source_binding is not None
 
 
+def test_resolver_uses_leaf_dimension_for_explicit_ratio_average(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "government_bond",
+                "AAA",
+                "2024-12-31",
+                "Trái phiếu Chính phủ",
+                "Chứng khoán nợ › Trái phiếu Chính phủ",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "debt_securities",
+                "AAA",
+                "2024-12-31",
+                "Chứng khoán nợ",
+                "Chứng khoán nợ",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        entities=("AAA", "BBB"),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        operation=OperationKind.AVERAGE,
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Trung bình tỷ trọng trái phiếu Chính phủ trong tổng chứng khoán nợ "
+        "của AAA và BBB năm 2024 là bao nhiêu phần trăm?",
+        annotations,
+    )
+
+    assert result.status == "RESOLVED"
+    assert {value.aliases for value in result.selected} == {
+        ("Chứng khoán nợ",),
+        ("Trái phiếu Chính phủ",),
+    }
+    assert all(value.unit.dimension == Dimension.MONEY for value in result.selected)
+
+
+def test_source_merge_keeps_unresolved_product_qualifier_fail_closed(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "product",
+                "AAA",
+                "2024-12-31",
+                "Doanh thu kinh doanh Ure Phú Mỹ",
+                "Doanh thu hàng sản xuất trong nước › Doanh thu Ure Phú Mỹ",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        operation=OperationKind.DIVIDE,
+    )
+    parser = SemanticParser(
+        load_ontology(),
+        _StaticAnnotator(annotations),
+        A6MetricMentionResolver(
+            connection,
+            source_build_id="fixture-build",
+            config_path=_config(tmp_path / "resolver.yaml"),
+        ),
+    )
+
+    result = parser.parse(
+        "Tỷ trọng doanh thu Ure Phú Mỹ trong tổng doanh thu thuần hàng hóa "
+        "sản xuất trong nước của AAA năm 2024 là bao nhiêu phần trăm?"
+    )
+
+    assert not result.ok
+    assert result.reason == "EXPLICIT_RATIO_OPERAND_AMBIGUOUS"
+
+
+def test_source_ratio_numerator_may_absorb_marker_suffix(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "investment",
+                "AAA",
+                "2024-12-31",
+                "Đầu tư tài chính dài hạn",
+                "Đầu tư tài chính dài hạn",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        operation=OperationKind.DIVIDE,
+    )
+    parser = SemanticParser(
+        load_ontology(),
+        _StaticAnnotator(annotations),
+        A6MetricMentionResolver(
+            connection,
+            source_build_id="fixture-build",
+            config_path=_config(tmp_path / "resolver.yaml"),
+        ),
+    )
+
+    result = parser.parse(
+        "Tỷ lệ đầu tư tài chính dài hạn trên vốn chủ sở hữu của AAA năm 2024 "
+        "là bao nhiêu phần trăm?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Arithmetic)
+    assert result.ast.expression.operator.value == "divide"
+    assert isinstance(result.ast.expression.left, MetricRef)
+    assert result.ast.expression.left.source_binding is not None
+
+
 def test_parser_replaces_structural_currency_member_with_complete_source_metric(
     tmp_path: Path,
 ) -> None:
