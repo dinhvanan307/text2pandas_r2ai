@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.semantic_parser_wave6_s0_provenance",
+  "run_id": "semantic-parser-wave6-s0-20260831-v1",
+  "status": "SEALED_PREDICTION_BASELINE",
+  "measurement_scope": "PREDICTED_STRUCTURE_ONLY_NOT_GOLD",
+  "correctness": "NOT_MEASURED",
+  "source": {
+    "git_commit": "3457612c57074192786c143ade1ef4c98f35e69b",
+    "git_dirty": false
+  },
+  "inputs": {
+    "questions_sha256": "64a428d90a8c5ad5d36a397d2de3b6e3aa4e4c1224dcdcb118fe3a4fca056ff0",
+    "a6_build_id": "c6887fb633374fad",
+    "ontology_fingerprint": "bdef88d94b814ae60109f3da486a627d02dfbbe5d1e3ad6ede942598532644c8",
+    "risk_a60_scope_path": "configs/evaluation/recovery_wave5_riska60_scope_3842_v1.json",
+    "risk_a60_scope_sha256": "9d77ec98fd7a1c2562ec94e4929d023dfbb0552560515c187b20593226d44899"
+  },
+  "artifacts": {
+    "manifest_path": "artifacts/runs/semantic-parser/semantic-parser-wave6-s0-20260831-v1/manifest.json",
+    "manifest_sha256": "7804bb7ad756d0a14d65c51f3e2bb782d72de46892d8756a683cb4f3cf1826fb",
+    "records_path": "artifacts/runs/semantic-parser/semantic-parser-wave6-s0-20260831-v1/records.jsonl",
+    "records_sha256": "63a2b6da21e3447cf652f8a7e2edf15f8c9ceb1bc1c7f35c1a97006abf93ead4"
+  },
+  "full_corpus": {
+    "records": 1012,
+    "primary_ok": 784,
+    "primary_abstain": 228,
+    "any_candidate_ok": 798
+  },
+  "risk_a60": {
+    "records": 60,
+    "development": 40,
+    "holdout": 20,
+    "primary_ok": 25,
+    "primary_abstain": 35,
+    "any_candidate_ok": 25
+  },
+  "promotion": {
+    "allowed": false,
+    "reason": "Independent parser gold and holdout correctness are not available."
+  }
+}
