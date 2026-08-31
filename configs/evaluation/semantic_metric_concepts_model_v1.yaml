@@ -1,0 +1,21 @@
+schema_version: 1
+vocabulary_id: semantic-metric-concepts-model-v1
+status: FROZEN_FOR_MODEL_SEMANTIC_GOLD_V1
+
+extends:
+  path: configs/evaluation/semantic_metric_concepts_v1.yaml
+  vocabulary_id: semantic-metric-concepts-v1
+
+policy:
+  authority: model_interpretation_of_question_meaning
+  parser_predictions_forbidden: true
+  runtime_bindings_forbidden: true
+  unknown_policy: mark_UNRESOLVED_do_not_invent
+  other_reported_metric_policy: require_non_empty_semantic_variant
+  clear_reported_line_outside_base: use_OTHER_REPORTED_METRIC_not_UNRESOLVED
+  variant_scope: OTHER_REPORTED_METRIC_only
+
+# The 39 base concepts are loaded from `extends.path`. For a precise reported
+# metric outside that compact ontology, the model uses OTHER_REPORTED_METRIC and
+# must preserve a stable Vietnamese semantic definition in `variant`. This keeps
+# niche financial line items distinguishable without deriving row/table IDs.

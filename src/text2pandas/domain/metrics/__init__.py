@@ -11,10 +11,15 @@ from .ontology import (
     normalize_phrase,
 )
 
+# P0 terminology: the validated MetricDefinition is the MetricSpec SSOT.
+# Keep one runtime type and one ontology; callers may use either name.
+MetricSpec = MetricDefinition
+
 __all__ = [
     "FormulaDefinition",
     "MetricDefinition",
     "MetricOntology",
+    "MetricSpec",
     "OntologyIssue",
     "OntologyValidationError",
     "expression_metric_ids",

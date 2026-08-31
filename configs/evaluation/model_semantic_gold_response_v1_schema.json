@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "text2pandas.model-semantic-gold-v1.model-response-v1",
+  "title": "Model response contract for MODEL_SEMANTIC_GOLD_V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entities",
+    "metrics",
+    "periods",
+    "basis",
+    "unit",
+    "operation_tree",
+    "output",
+    "operands",
+    "field_status",
+    "source_evidence",
+    "ambiguity_alternatives",
+    "notes"
+  ],
+  "properties": {
+    "entities": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+    "metrics": {"type": "array", "items": {"$ref": "#/$defs/metric"}},
+    "periods": {"type": "array", "items": {"$ref": "#/$defs/period"}},
+    "basis": {"$ref": "#/$defs/basis"},
+    "unit": {"$ref": "#/$defs/unit"},
+    "operation_tree": {
+      "anyOf": [{"$ref": "#/$defs/operation_tree"}, {"type": "null"}]
+    },
+    "output": {"anyOf": [{"$ref": "#/$defs/output"}, {"type": "null"}]},
+    "operands": {"type": "array", "items": {"$ref": "#/$defs/operand"}},
+    "field_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entities",
+        "metrics",
+        "periods",
+        "basis",
+        "unit",
+        "operation_tree",
+        "output",
+        "operands"
+      ],
+      "properties": {
+        "entities": {"$ref": "#/$defs/field_status"},
+        "metrics": {"$ref": "#/$defs/field_status"},
+        "periods": {"$ref": "#/$defs/field_status"},
+        "basis": {"$ref": "#/$defs/field_status"},
+        "unit": {"$ref": "#/$defs/field_status"},
+        "operation_tree": {"$ref": "#/$defs/field_status"},
+        "output": {"$ref": "#/$defs/field_status"},
+        "operands": {"$ref": "#/$defs/field_status"}
+      }
+    },
+    "source_evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+    "ambiguity_alternatives": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/ambiguity_alternative"}
+    },
+    "notes": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "field_status": {
+      "enum": ["RESOLVED", "AMBIGUOUS", "UNRESOLVED", "NOT_APPLICABLE"]
+    },
+    "basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "explicit"],
+      "properties": {
+        "value": {"enum": ["CONSOLIDATED", "SEPARATE", "UNSPECIFIED"]},
+        "explicit": {"type": "boolean"}
+      }
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension", "scale_exponent", "currency", "explicit"],
+      "properties": {
+        "dimension": {
+          "enum": ["MONEY", "PERCENT", "PERCENT_POINT", "RATIO", "COUNT", "SHARES", "UNKNOWN"]
+        },
+        "scale_exponent": {
+          "type": ["integer", "null"],
+          "enum": [null, 0, 3, 6, 9, 11, 12]
+        },
+        "currency": {"type": ["string", "null"]},
+        "explicit": {"type": "boolean"}
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_ref",
+        "mention_text",
+        "canonical_ref",
+        "resolution_status",
+        "entity_type",
+        "semantic_role"
+      ],
+      "properties": {
+        "entity_ref": {"type": "string", "pattern": "^e[1-9][0-9]*$"},
+        "mention_text": {"type": "string", "minLength": 1},
+        "canonical_ref": {"type": ["string", "null"]},
+        "resolution_status": {"enum": ["RESOLVED", "AMBIGUOUS", "UNRESOLVED"]},
+        "entity_type": {
+          "enum": ["COMPANY", "SUBSIDIARY", "INVESTEE", "PERSON", "INDUSTRY", "SEGMENT", "GROUP", "OTHER"]
+        },
+        "semantic_role": {
+          "enum": [
+            "REPORTING_ENTITY",
+            "COMPARISON_ENTITY",
+            "GROUP_MEMBER",
+            "INVESTEE",
+            "SUBSIDIARY",
+            "PARENT_ENTITY",
+            "POPULATION_MEMBER",
+            "FILTER_ENTITY",
+            "RANK_ENTITY",
+            "OTHER"
+          ]
+        }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_ref",
+        "phrase_text",
+        "concept_id",
+        "concept_status",
+        "reported_or_derived",
+        "definition_version",
+        "variant"
+      ],
+      "properties": {
+        "metric_ref": {"type": "string", "pattern": "^m[1-9][0-9]*$"},
+        "phrase_text": {"type": "string", "minLength": 1},
+        "concept_id": {"type": ["string", "null"]},
+        "concept_status": {"enum": ["RESOLVED", "AMBIGUOUS", "UNRESOLVED"]},
+        "reported_or_derived": {"enum": ["REPORTED", "DERIVED", "UNKNOWN"]},
+        "definition_version": {"const": "semantic-metric-concepts-model-v1"},
+        "variant": {"type": ["string", "null"]}
+      }
+    },
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["period_ref", "mention_text", "year", "quarter", "date", "point", "role", "explicit"],
+      "properties": {
+        "period_ref": {"type": "string", "pattern": "^p[1-9][0-9]*$"},
+        "mention_text": {"type": ["string", "null"]},
+        "year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 2100},
+        "quarter": {"type": ["integer", "null"], "minimum": 1, "maximum": 4},
+        "date": {"type": ["string", "null"]},
+        "point": {"enum": ["PERIOD", "OPENING", "CLOSING", "INSTANT", "UNKNOWN"]},
+        "role": {"enum": ["VALUE", "CURRENT", "PREVIOUS", "START", "END", "RANK_DOMAIN", "FILTER_DOMAIN"]},
+        "explicit": {"type": "boolean"}
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shape"],
+      "properties": {
+        "shape": {"enum": ["SCALAR", "ENTITY", "PERIOD", "COUNT", "TABLE", "SET", "BOOLEAN", "OTHER"]}
+      }
+    },
+    "literal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value", "comparator", "unit"],
+      "properties": {
+        "kind": {"enum": ["NUMBER", "PERCENT", "RATIO", "COUNT", "TEXT", "BOOLEAN"]},
+        "value": {"type": "string", "minLength": 1},
+        "comparator": {"enum": ["EQ", "NE", "GT", "GTE", "LT", "LTE", "IN", "NOT_IN"]},
+        "unit": {"anyOf": [{"$ref": "#/$defs/unit"}, {"type": "null"}]}
+      }
+    },
+    "operand_role": {
+      "enum": [
+        "VALUE", "LEFT", "RIGHT", "MINUEND", "SUBTRAHEND", "NUMERATOR", "DENOMINATOR",
+        "NEW", "OLD", "SUMMAND", "RANK_KEY", "PROJECTED_VALUE", "FILTER_OPERAND", "FILTER_THRESHOLD"
+      ]
+    },
+    "operand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operand_ref", "role", "metric_ref", "entity_ref", "period_ref", "basis", "unit", "literal"],
+      "properties": {
+        "operand_ref": {"type": "string", "pattern": "^o[1-9][0-9]*$"},
+        "role": {"$ref": "#/$defs/operand_role"},
+        "metric_ref": {"type": ["string", "null"]},
+        "entity_ref": {"type": ["string", "null"]},
+        "period_ref": {"type": ["string", "null"]},
+        "basis": {"anyOf": [{"$ref": "#/$defs/basis"}, {"type": "null"}]},
+        "unit": {"anyOf": [{"$ref": "#/$defs/unit"}, {"type": "null"}]},
+        "literal": {"anyOf": [{"$ref": "#/$defs/literal"}, {"type": "null"}]}
+      }
+    },
+    "operation_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "source_kind", "source_ref"],
+      "properties": {
+        "role": {"$ref": "#/$defs/operand_role"},
+        "source_kind": {"enum": ["OPERAND", "NODE"]},
+        "source_ref": {"type": "string", "pattern": "^[on][1-9][0-9]*$"}
+      }
+    },
+    "operation_tree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_id", "node", "inputs", "children"],
+      "properties": {
+        "node_id": {"type": "string", "pattern": "^n[1-9][0-9]*$"},
+        "node": {
+          "enum": [
+            "LOOKUP", "ADD", "SUBTRACT", "DIVIDE", "GROWTH", "PERCENT_CHANGE", "SUM", "AVERAGE",
+            "COUNT", "MINIMUM", "MAXIMUM", "ARGMIN", "ARGMAX", "SELECT_AT_ARG", "FILTER", "MEDIAN", "OTHER"
+          ]
+        },
+        "inputs": {"type": "array", "items": {"$ref": "#/$defs/operation_input"}},
+        "children": {"type": "array", "items": {"$ref": "#/$defs/operation_tree"}}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_path", "context_label", "status"],
+      "properties": {
+        "source_path": {"type": ["string", "null"]},
+        "context_label": {"type": ["string", "null"]},
+        "status": {"enum": ["LOCATED", "NOT_LOCATED", "NOT_APPLICABLE"]}
+      }
+    },
+    "ambiguity_alternative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alternative_id", "description"],
+      "properties": {
+        "alternative_id": {"type": "string", "pattern": "^a[1-9][0-9]*$"},
+        "description": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

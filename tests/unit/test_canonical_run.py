@@ -29,6 +29,19 @@ def test_canonical_runner_rejects_unknown_explicit_question_ids(tmp_path) -> Non
         )
 
 
+def test_canonical_runner_rejects_unknown_metric_selector_mode(tmp_path) -> None:
+    with pytest.raises(ValueError, match="metric_selector_mode"):
+        run_canonical_pipeline(
+            tmp_path / "missing-a6.db",
+            tmp_path / "missing-retrieval.db",
+            tmp_path / "missing-questions.jsonl",
+            tmp_path / "run",
+            metric_selector_mode="unsafe",
+        )
+
+    assert not (tmp_path / "run").exists()
+
+
 def _cell(row: str, *, section: str = "", context: str = "", rank: int = 0) -> CandidateCell:
     return CandidateCell(
         df_var="df1",

@@ -1,0 +1,64 @@
+schema_version: 1
+protocol_id: model-semantic-gold-v1
+release_id: MODEL_SEMANTIC_GOLD_V1
+
+provenance:
+  gold_mode: MODEL_GOLD
+  annotation_source: LLM
+  human_review: false
+  cross_model_review: false
+  official_human_gold: false
+
+target_set:
+  packet: artifacts/runs/evaluation/semantic-gold-v2-phase1.5-packet-20260829-03
+  cohorts: [HEADLINE_CORE, DIAGNOSTIC_SUPPLEMENT, RESERVE]
+  expected_records: 150
+  sampling_changes_allowed: false
+
+contracts:
+  schema: configs/evaluation/model_semantic_gold_v1_schema.json
+  model_response_schema: configs/evaluation/model_semantic_gold_response_v1_schema.json
+  metric_vocabulary: configs/evaluation/semantic_metric_concepts_model_v1.yaml
+  operation_vocabulary: configs/evaluation/semantic_operation_vocabulary_model_v1.yaml
+  evaluation: configs/evaluation/model_semantic_gold_evaluation_v1.yaml
+  guideline: data/curated/gold/semantic_gold_v2/MODEL_GOLD_GUIDELINE_V1.md
+  prompt: configs/evaluation/model_semantic_gold_prompt_v1.txt
+
+model:
+  provider: ollama
+  model_id: qwen2.5:14b
+  upstream_model_id: Qwen/Qwen2.5-14B-Instruct
+  parameters_b: 14.7
+  runtime_reported_parameters_b_rounded: 14.8
+  parameter_basis: upstream_non_embedding_parameter_count
+  manifest_sha256: 7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6
+  model_layer_sha256: 2049f5674b1e92b4464e5729975c9689fcfbf0b0e4443ccf10b5339f370f9a54
+  quantization: Q4_K_M
+  temperature: 0.0
+  top_p: 1.0
+  seed: 0
+  num_ctx: 32768
+  num_predict: 4096
+  max_attempts: 3
+  batch_size: 1
+
+forbidden_inputs:
+  - parser_prediction
+  - parser_trace
+  - retrieval_result
+  - retrieval_rank
+  - retrieval_score
+  - resolver_result
+  - vas_hints
+  - selected_table
+  - selected_row
+  - selected_cell
+  - numeric_answer
+  - pandas_query
+  - execution_result
+
+release:
+  output: data/curated/gold/semantic_gold_v2/MODEL_SEMANTIC_GOLD_V1
+  immutable: true
+  checksum_algorithm: sha256
+  status: SEALED_MODEL_GOLD

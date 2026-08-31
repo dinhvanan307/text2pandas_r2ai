@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "baseline_id": "p0-answer-baseline-02787-20260829",
+  "status": "FROZEN_WITH_PARTIAL_GENERATION_PROVENANCE",
+  "purpose": "P0 Metric Resolver and SelectorSpec differential baseline",
+  "leaderboard": {
+    "answer_accuracy": 0.2787,
+    "source": "USER_REPORTED_OFFICIAL_LEADERBOARD",
+    "submission_id": null,
+    "receipt_path": null
+  },
+  "artifact": {
+    "repository_path": "artifacts/submissions/submission_p0_baseline_02787_20260829.zip",
+    "original_path": "/Users/andinh307/Downloads/submission.zip",
+    "size_bytes": 1066217,
+    "sha256": "179d2c10425c96d55304183e27c5326b5bd2072d8d02fe74e211d23df3a060ad",
+    "submission_json_name": "submission.json",
+    "submission_json_sha256": "c2c34a3eec0ac0aff0752621539fbe5ab220eb4325cf840ddc3194e2a6576153",
+    "member_count": 1037,
+    "csv_member_count": 1036
+  },
+  "package_measurements": {
+    "records": 1012,
+    "nonzero_answers": 604,
+    "emitted_queries": 604,
+    "evidence_records": 604,
+    "mean_relevant_tables": 2.5790513833992095,
+    "mean_relevant_docs": 2.341897233201581
+  },
+  "strict_validation": {
+    "ok": true,
+    "errors": 0,
+    "warnings": 0
+  },
+  "clean_replay": {
+    "total": 1012,
+    "executed": 604,
+    "matched": 604,
+    "no_evidence": 408,
+    "error": 0
+  },
+  "active_data_identity": {
+    "dataset_id": "vifinqa-btc-2026",
+    "raw_snapshot_id": "ca033190f2e9e99f",
+    "a6_build_id": "c6887fb633374fad",
+    "retrieval_index_id": "872ccb0dda9a2bb6"
+  },
+  "repository_receipt": {
+    "head": "5e32eb38eebbcaa48a90f72b1db33ddc4702514e",
+    "artifact_generation_commit": null,
+    "artifact_generation_config": null,
+    "note": "The exact ZIP is frozen and replayable; its generating commit and runtime flags were not supplied and must not be inferred from the receipt HEAD."
+  },
+  "model_gold_freeze": {
+    "generator_resumed": false,
+    "checkpoint_status": "PARTIAL_CHECKPOINT",
+    "completed_records": 71,
+    "status_counts": {
+      "RESOLVED": 51,
+      "AMBIGUOUS": 0,
+      "UNRESOLVED": 20
+    },
+    "partial_checkpoint_sha256": "2ad024612f131f1781f482b6929effdf40fbc8d0b223665e1177f0e0ca124636",
+    "generation_state_sha256": "b306c8fc96a818ce8da7162afac14976636224572b33f074ebd506df942f3a8d"
+  }
+}

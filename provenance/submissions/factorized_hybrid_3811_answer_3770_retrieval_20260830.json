@@ -1,0 +1,139 @@
+{
+  "schema_version": "1.0",
+  "candidate_id": "factorized-hybrid-3811-answer-3770-retrieval-20260830-01",
+  "status": "READY_TO_UPLOAD_LOCAL_NOT_UPLOADED",
+  "strategy": "FACTORIZED_3811_ANSWER_3770_RETRIEVAL",
+  "active_data_identity": {
+    "dataset_id": "vifinqa-btc-2026",
+    "raw_snapshot_id": "ca033190f2e9e99f",
+    "a6_build_id": "c6887fb633374fad",
+    "retrieval_index_id": "872ccb0dda9a2bb6"
+  },
+  "implementation": {
+    "plan_commit": "2a8840c",
+    "composer_commit": "9b1e593188610cbdfa0095ebf2839e374d542bf9",
+    "tests_commit": "c80ae72201c65ed482026ba0588fa0e4777508d5",
+    "corpus_root_correction_commit": "deb2ac1f48da86e1fefe232c30b8d1b533a5f3c1",
+    "composer": "tools/submission/build_factorized_hybrid.py",
+    "tests": "tests/unit/test_factorized_hybrid.py",
+    "report": "docs/reports/FACTORIZED_HYBRID_3811_ANSWER_3770_RETRIEVAL_REPORT_2026-08-30.md"
+  },
+  "inputs": {
+    "answer_owner": {
+      "official_submission_id": 3811,
+      "path": "artifacts/submissions/submission_baseline-union-retrieval-overlay-20260830-01.zip",
+      "zip_sha256": "535ee597e8b87662451a60d46c147189f0919b397dda63c472ac94a07cf79933",
+      "submission_json_sha256": "9402898d7329efeeb218e7814e2bb38840860b0799ba1da876a7c8205b6ff153",
+      "records": 1012,
+      "emitted": 625,
+      "evidence_csvs": 1070,
+      "user_reported_official_answer_accuracy": 0.2826,
+      "user_reported_official_execution_accuracy": 0.2826
+    },
+    "retrieval_owner": {
+      "official_submission_id": 3770,
+      "path": "artifacts/submissions/submission_actual-table-retrieval-safe-3966500-20260829-01.zip",
+      "zip_sha256": "15c1854d86c3be2510ae44d10eeca1ece68c8d691bcb2c84ffa280b6b008e169",
+      "submission_json_sha256": "9f2c45e54ccd1309a31caaef91f1305c45183400a5dde7b7eee6bd5ab919c38f",
+      "records": 1012,
+      "max_tables": 10,
+      "profile": {
+        "score_margin": 0.5,
+        "primary_boost": 0.6
+      },
+      "user_reported_official_tables_f2": 0.3,
+      "user_reported_official_tables_recall": 0.3435,
+      "user_reported_official_docs_f2": 0.7086
+    }
+  },
+  "field_ownership": {
+    "answer_owner_3811": [
+      "id",
+      "question",
+      "answer",
+      "evidence",
+      "pandas_query",
+      "data/*.csv"
+    ],
+    "retrieval_owner_3770": [
+      "relevant_tables",
+      "relevant_docs"
+    ],
+    "merge_append_or_regeneration": false
+  },
+  "immutable_runs": {
+    "blocked_a": {
+      "path": "artifacts/runs/submission/factorized-hybrid-3811x3770-20260830-a",
+      "status": "BLOCKED_CALLER_CORPUS_ROOT_MISMATCH",
+      "output_zip_sha256": "4734e67507da46638c6587a6bdecb1187825667da3effd000631b96e03e2fe7f",
+      "validation_errors": 1377,
+      "replay": "PASS_625_OF_625",
+      "disposition": "PRESERVED_NOT_USED_AS_RELEASE_RUN"
+    },
+    "passing_a2": {
+      "path": "artifacts/runs/submission/factorized-hybrid-3811x3770-20260830-a2",
+      "status": "PASS",
+      "output_zip_sha256": "4734e67507da46638c6587a6bdecb1187825667da3effd000631b96e03e2fe7f",
+      "submission_json_sha256": "a01d33718d5c1158c93d7258b854c5dc2eac6a95fcf0d05fb2074bb2e324bb28"
+    },
+    "passing_b": {
+      "path": "artifacts/runs/submission/factorized-hybrid-3811x3770-20260830-b",
+      "status": "PASS",
+      "output_zip_sha256": "4734e67507da46638c6587a6bdecb1187825667da3effd000631b96e03e2fe7f",
+      "submission_json_sha256": "a01d33718d5c1158c93d7258b854c5dc2eac6a95fcf0d05fb2074bb2e324bb28"
+    }
+  },
+  "layer_gates": {
+    "records_and_unique_ids": "PASS_1012_OF_1012",
+    "source_questions_equal": "PASS_1012_OF_1012",
+    "id_order_equal_3811": "PASS_1012_OF_1012",
+    "question_equal_3811": "PASS_1012_OF_1012",
+    "answer_equal_3811": "PASS_1012_OF_1012",
+    "evidence_equal_3811": "PASS_1012_OF_1012",
+    "pandas_query_equal_3811": "PASS_1012_OF_1012",
+    "relevant_tables_equal_3770": "PASS_1012_OF_1012",
+    "relevant_docs_equal_3770": "PASS_1012_OF_1012",
+    "retrieval_changed_vs_3811": 176,
+    "emitted": 625,
+    "evidence_csv_bytes_equal_3811": "PASS_1070_OF_1070",
+    "max_tables": 10,
+    "duplicate_ids": 0,
+    "duplicate_table_qids": 0,
+    "duplicate_doc_qids": 0
+  },
+  "package_gates": {
+    "strict_validation": "PASS_1012_0_ERRORS_0_WARNINGS",
+    "clean_replay": "PASS_625_OF_625_0_ERRORS",
+    "root_json_files": 1,
+    "csv_members": 1070,
+    "missing_csvs": 0,
+    "orphan_csvs": 0,
+    "unzip_test": "PASS",
+    "two_build_zip_determinism": "PASS_BYTE_IDENTICAL"
+  },
+  "repository_gates": {
+    "factorized_unit_tests": "PASS_13_OF_13",
+    "snapshots_verify": "PASS",
+    "make_ci": "PASS_2217_PASSED_42_SKIPPED_30_DESELECTED",
+    "make_test_integration": "PASS_23_OF_23",
+    "docs_check": "PASS_0_BROKEN_LINKS",
+    "git_diff_check": "PASS"
+  },
+  "output": {
+    "path": "artifacts/submissions/submission_factorized-hybrid-3811-answer-3770-retrieval-20260830-01.zip",
+    "zip_sha256": "4734e67507da46638c6587a6bdecb1187825667da3effd000631b96e03e2fe7f",
+    "submission_json_sha256": "a01d33718d5c1158c93d7258b854c5dc2eac6a95fcf0d05fb2074bb2e324bb28",
+    "records": 1012,
+    "emitted": 625,
+    "members": 1071
+  },
+  "safety": {
+    "p0_enabled": false,
+    "model_gold_used": false,
+    "model_gold_generator_resumed": false,
+    "answer_generation_rerun": false,
+    "retrieval_rerun": false,
+    "upload_performed": false
+  },
+  "official_metrics": "NOT_MEASURED_UNTIL_LEADERBOARD_RECEIPT_IS_BOUND_TO_OUTPUT_ZIP_SHA256"
+}

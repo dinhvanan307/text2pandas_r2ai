@@ -25,3 +25,23 @@ coder:
   params_b: null
   license: null
   evidence_url: null
+
+# Development-only single-model annotator. It is not in the production answer
+# path and is pinned to the local Ollama manifest below. The user confirmed the
+# BTC ceiling for this task is 14.7B; upstream Qwen documents 14.7B non-embedding
+# parameters. Ollama rounds its local display to 14.8B.
+semantic_gold_generator:
+  name: Qwen/Qwen2.5-14B-Instruct
+  served_model: qwen2.5:14b
+  release_date: 2024-09-19
+  params_b: 14.7
+  runtime_reported_params_b_rounded: 14.8
+  parameter_basis: upstream_non_embedding_parameter_count
+  task_limit_b: 14.7
+  task_limit_authority: user_confirmed_btc_requirement_2026-08-29
+  license: Apache-2.0
+  evidence_url: https://huggingface.co/Qwen/Qwen2.5-14B-Instruct
+  local_manifest_sha256: 7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6
+  model_layer_sha256: 2049f5674b1e92b4464e5729975c9689fcfbf0b0e4443ccf10b5339f370f9a54
+  quantization: Q4_K_M
+  use: model_gold_generation_only

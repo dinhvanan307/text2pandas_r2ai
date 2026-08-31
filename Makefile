@@ -28,10 +28,9 @@ export LANG           := C.UTF-8
 .PHONY: help paths-check lint typecheck docs-check test-offline test-integration test-historical \
         verify-active-candidate semantic-coverage snapshots-verify \
         semantic-gold-v2-prepare semantic-gold-v2-local-e2e \
-        semantic-failure-review independent-gold-audit semantic-promotion-eval \
-        reranker-review-prepare reranker-review-seal reranker-heldout-eval \
-        competition-proxy-eval \
-        submission-handoff \
+        model-semantic-gold-generate model-semantic-gold-validate \
+        model-semantic-gold-canonicalize model-semantic-gold-seal \
+        model-semantic-gold-evaluate \
         data-verify a6-verify retrieval-verify materialize-h0 ci \
         dp-env-check dp-test dp-build dp-measure dp-release dp-verify \
         dp-rebuild-check dp-package
@@ -89,67 +88,38 @@ semantic-gold-v2-local-e2e: ## Chạy WP3-WP10 local 2 lần; MODE= PACKET= RUN_
 	  --packet "$(PACKET)" --run-a "$(RUN_A)" --run-b "$(RUN_B)" \
 	  --report "$(REPORT)" $(if $(INCLUDE_RESERVE),--include-reserve)
 
-semantic-failure-review: ## Tạo diagnostic backlog 300 QID; RECORDS= OUTPUT=
-	@test -n "$(RECORDS)" -a -n "$(OUTPUT)" \
-	  || { echo "LỖI: cần RECORDS=<v3-records.jsonl> OUTPUT=<immutable-dir>" >&2; exit 2; }
-	@$(PY) tools/evaluation/prepare_failure_review.py \
-	  --records "$(RECORDS)" --output "$(OUTPUT)" --target-count 300
+model-semantic-gold-generate: ## Generate model gold; PROTOCOL= WORK_DIR= [ENDPOINT=]
+	@test -n "$(PROTOCOL)" -a -n "$(WORK_DIR)" \
+	  || { echo "LỖI: cần PROTOCOL= WORK_DIR=" >&2; exit 2; }
+	@$(PY) tools/evaluation/generate_model_semantic_gold_v2.py generate \
+	  --protocol "$(PROTOCOL)" --work-dir "$(WORK_DIR)" \
+	  $(if $(ENDPOINT),--endpoint "$(ENDPOINT)")
 
-independent-gold-audit: ## Audit human review completeness; PACKET= OUTPUT=
-	@test -n "$(PACKET)" -a -n "$(OUTPUT)" \
-	  || { echo "LỖI: cần PACKET=<annotation-packet> OUTPUT=<report.json>" >&2; exit 2; }
-	@$(PY) tools/evaluation/audit_independent_gold.py \
-	  --packet "$(PACKET)" --output "$(OUTPUT)"
+model-semantic-gold-validate: ## Validate full model gold; PROTOCOL= WORK_DIR=
+	@test -n "$(PROTOCOL)" -a -n "$(WORK_DIR)" \
+	  || { echo "LỖI: cần PROTOCOL= WORK_DIR=" >&2; exit 2; }
+	@$(PY) tools/evaluation/generate_model_semantic_gold_v2.py validate \
+	  --protocol "$(PROTOCOL)" --work-dir "$(WORK_DIR)"
 
-reranker-review-prepare: ## Tạo packet A/B/C prediction-blind cho 120 QID reranker; OUTPUT=
-	@test -n "$(OUTPUT)" \
-	  || { echo "LỖI: cần OUTPUT=<immutable-dir>" >&2; exit 2; }
-	@$(PY) tools/evaluation/prepare_reranker_heldout_review.py \
-	  --output "$(OUTPUT)" \
-	  $(if $(SELECTION),--selection "$(SELECTION)") \
-	  $(if $(QUESTIONS),--questions "$(QUESTIONS)")
+model-semantic-gold-canonicalize: ## Canonicalize model gold; PROTOCOL= WORK_DIR=
+	@test -n "$(PROTOCOL)" -a -n "$(WORK_DIR)" \
+	  || { echo "LỖI: cần PROTOCOL= WORK_DIR=" >&2; exit 2; }
+	@$(PY) tools/evaluation/generate_model_semantic_gold_v2.py canonicalize \
+	  --protocol "$(PROTOCOL)" --work-dir "$(WORK_DIR)"
 
-reranker-review-seal: ## Seal nhãn evidence độc lập; PACKET= OUTPUT= RELEASE_ID=
-	@test -n "$(PACKET)" -a -n "$(OUTPUT)" -a -n "$(RELEASE_ID)" \
-	  || { echo "LỖI: cần PACKET= OUTPUT= RELEASE_ID=" >&2; exit 2; }
-	@$(PY) tools/evaluation/seal_reranker_heldout_review.py \
-	  --packet "$(PACKET)" \
-	  --selection "$(or $(SELECTION),configs/evaluation/reranker_heldout_v1.json)" \
-	  --questions "$(or $(QUESTIONS),data/gold/retrieval/heldout_v1_questions.jsonl)" \
-	  --output "$(OUTPUT)" --release-id "$(RELEASE_ID)"
+model-semantic-gold-seal: ## Seal immutable model gold; PROTOCOL= WORK_DIR= RELEASE=
+	@test -n "$(PROTOCOL)" -a -n "$(WORK_DIR)" -a -n "$(RELEASE)" \
+	  || { echo "LỖI: cần PROTOCOL= WORK_DIR= RELEASE=" >&2; exit 2; }
+	@$(PY) tools/evaluation/generate_model_semantic_gold_v2.py seal \
+	  --protocol "$(PROTOCOL)" --work-dir "$(WORK_DIR)" --release "$(RELEASE)" \
+	  $(if $(ENDPOINT),--endpoint "$(ENDPOINT)")
 
-reranker-heldout-eval: ## Chạy one-shot paired A/B trên sealed labels; LABELS= LABEL_MANIFEST= OUTPUT=
-	@test -n "$(LABELS)" -a -n "$(LABEL_MANIFEST)" -a -n "$(OUTPUT)" \
-	  || { echo "LỖI: cần LABELS= LABEL_MANIFEST= OUTPUT=" >&2; exit 2; }
-	@$(PY) tools/retrieval/evaluate_reranker_heldout.py \
-	  --selection "$(or $(SELECTION),configs/evaluation/reranker_heldout_v1.json)" \
-	  --labels "$(LABELS)" --label-manifest "$(LABEL_MANIFEST)" \
-	  --output "$(OUTPUT)"
-
-competition-proxy-eval: ## Chấm đúng 10 metric BTC trên local governed gold; CANDIDATE= OUTPUT= [BASELINE=]
-	@test -n "$(CANDIDATE)" -a -n "$(OUTPUT)" \
-	  || { echo "LỖI: cần CANDIDATE=<submission.zip> OUTPUT=<immutable-report.json>" >&2; exit 2; }
-	@$(PY) tools/evaluation/evaluate_competition_proxy.py \
-	  --candidate "$(CANDIDATE)" --output "$(OUTPUT)" \
-	  $(if $(BASELINE),--baseline "$(BASELINE)") \
-	  $(if $(TOLERANCE),--tolerance "$(TOLERANCE)") \
-	  $(if $(RELEASE_PROFILE),--release-profile "$(RELEASE_PROFILE)")
-
-semantic-promotion-eval: ## Chấm sealed gold + locked policy; RECORDS= GOLD_RELEASE= SUBMISSION_HANDOFF= OUTPUT=
-	@test -n "$(RECORDS)" -a -n "$(GOLD_RELEASE)" \
-	  -a -n "$(SUBMISSION_HANDOFF)" -a -n "$(OUTPUT)" \
-	  || { echo "LỖI: cần RECORDS= GOLD_RELEASE= SUBMISSION_HANDOFF= OUTPUT=" >&2; exit 2; }
-	@$(PY) tools/evaluation/evaluate_semantic_promotion.py \
-	  --records "$(RECORDS)" --gold-release "$(GOLD_RELEASE)" \
-	  --submission-handoff "$(SUBMISSION_HANDOFF)" --output "$(OUTPUT)" \
-	  $(if $(RERANKER_REPORT),--reranker-report "$(RERANKER_REPORT)")
-
-submission-handoff: ## Verify và materialize manual-upload bundle; RUN_ID= OUTPUT=
-	@test -n "$(RUN_ID)" -a -n "$(OUTPUT)" \
-	  || { echo "LỖI: cần RUN_ID=<hybrid-run-id> OUTPUT=<immutable-dir>" >&2; exit 2; }
-	@$(PY) tools/package_submission_handoff.py \
-	  --candidate-run-id "$(RUN_ID)" --output "$(OUTPUT)" \
-	  $(if $(RELEASE_PROFILE),--release-profile "$(RELEASE_PROFILE)")
+model-semantic-gold-evaluate: ## Evaluate canonical predictions; RELEASE= PREDICTIONS= [EVAL_REPORT=]
+	@test -n "$(RELEASE)" -a -n "$(PREDICTIONS)" \
+	  || { echo "LỖI: cần RELEASE= PREDICTIONS=" >&2; exit 2; }
+	@$(PY) tools/evaluation/evaluate_model_semantic_gold_v1.py \
+	  --release "$(RELEASE)" --predictions "$(PREDICTIONS)" \
+	  $(if $(EVAL_REPORT),--output "$(EVAL_REPORT)")
 
 materialize-h0: ## Tái tạo adjudication ledger + ZIP determinism report; FORCE=1 để ghi đè
 	@$(PY) tools/execution/materialize_h0.py $(if $(FORCE),--force)

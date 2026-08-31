@@ -67,6 +67,9 @@ def pipeline_manifest(
             "abstained": report.n_abstained,
             "seconds": report.seconds,
             "abstain_reasons": report.abstain_reasons,
+            "metric_selector_mode": report.metric_selector_mode,
+            "metric_resolution_status": report.metric_resolution_status,
+            "metric_differential_counts": report.metric_differential_counts,
         },
         "outputs": {
             "records_jsonl": {
