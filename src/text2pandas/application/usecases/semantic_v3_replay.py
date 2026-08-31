@@ -55,7 +55,14 @@ def replay_semantic_v3_records(
                 if not path.is_relative_to(root):
                     raise ValueError("evidence path escapes data root")
                 if path not in cache:
-                    cache[path] = pd.read_csv(path)
+                    # Observation UIDs are opaque identifiers, not numbers.  A UID
+                    # containing digits only is otherwise inferred as a float by
+                    # pandas, which loses precision and makes an exact query miss
+                    # after evidence has been serialized to CSV.
+                    cache[path] = pd.read_csv(
+                        path,
+                        dtype={"observation_uid": "string"},
+                    )
                 frames[str(item["variable"])] = cache[path]
             replayed = execute_query(query, frames)
             if math.isclose(replayed, answer, rel_tol=tolerance, abs_tol=tolerance):
