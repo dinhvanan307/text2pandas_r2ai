@@ -47,6 +47,11 @@ abbreviation_rules:
     replacement: chi phi thue tndn hien hanh
     evidence_qids: [89]
     negative_examples: [thu nhập khác]
+  - rule_id: raw-material-expense
+    phrase: chi phi nguyen lieu vat lieu
+    replacement: chi phi nguyen vat lieu
+    evidence_qids: [788]
+    negative_examples: [nguyên vật liệu tồn kho]
 """,
         encoding="utf-8",
     )
@@ -936,6 +941,57 @@ def test_resolver_merges_reordered_source_labels_into_one_logical_metric(
     assert result.selected[0].aliases == (
         "Giá vốn cho thuê dài hạn đất và cơ sở hạ tầng",
         "Giá vốn đất và cơ sở hạ tầng cho thuê dài hạn",
+    )
+
+
+def test_resolver_merges_governed_raw_material_expense_wording(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "first",
+                "AAA",
+                "2024-12-31",
+                "Chi phí nguyên liệu, vật liệu",
+                "Chi phí sản xuất › Chi phí nguyên liệu, vật liệu",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "second",
+                "BBB",
+                "2024-12-31",
+                "Chi phí nguyên, vật liệu",
+                "Chi phí sản xuất › Chi phí nguyên, vật liệu",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        entities=("AAA", "BBB"),
+        operation=OperationKind.SUBTRACT,
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Chi phí nguyên vật liệu của AAA và BBB chênh lệch nhau bao nhiêu?",
+        annotations,
+    )
+
+    assert result.status == "RESOLVED"
+    assert len(result.selected) == 1
+    assert result.selected[0].aliases == (
+        "Chi phí nguyên liệu, vật liệu",
+        "Chi phí nguyên, vật liệu",
     )
 
 

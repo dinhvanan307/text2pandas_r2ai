@@ -501,7 +501,7 @@ class A6MetricMentionResolver:
             dimension = _dimension(row.unit_kind)
             if not _dimension_compatible(expected_dimension, dimension):
                 continue
-            semantic_key = _semantic_key(row.label)
+            semantic_key = _semantic_key(row.label, self.config.rules)
             group = groups.setdefault(
                 (semantic_key, dimension),
                 _Group(semantic_key, dimension, set(), set(), set(), set(), set()),
@@ -906,13 +906,17 @@ def _introduces_unrequested_accounting_qualifier(
     )
 
 
-def _semantic_key(label: str) -> str:
+def _semantic_key(label: str, rules: Sequence[_Rule] = ()) -> str:
     normalized = _NOTE_SUFFIX.sub("", normalize_fact_label(label))
     normalized = _NORMALIZED_NOTE_SUFFIX.sub("", normalized)
     # A token multiset unifies source labels whose qualifiers were reordered
     # across report years. Joining without separators also preserves the prior
     # tolerance for OCR word-boundary loss (``lien quan`` vs ``lienquan``).
-    tokens = list(_TOKEN.findall(normalized))
+    raw_tokens = [
+        _Token(match.group(0), match.start(), match.end())
+        for match in _TOKEN.finditer(normalized)
+    ]
+    tokens = [value.value for value in _apply_token_rules(raw_tokens, rules)]
     # Vietnamese reports alternate between the legal and abbreviated name of
     # the same central-bank balance-sheet line.  Geography is not a product
     # qualifier in this institution name, so both labels share one identity.

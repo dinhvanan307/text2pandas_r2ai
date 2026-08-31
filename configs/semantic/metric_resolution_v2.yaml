@@ -71,3 +71,11 @@ abbreviation_rules:
       - thu nhập khác
       - thu nhập lãi thuần
     scope: metric_label
+  - rule_id: raw_material_expense_wording_v1
+    phrase: chi phi nguyen lieu vat lieu
+    replacement: chi phi nguyen vat lieu
+    evidence_qids: [788]
+    negative_examples:
+      - nguyên vật liệu tồn kho
+      - giá mua nguyên vật liệu
+    scope: metric_label
