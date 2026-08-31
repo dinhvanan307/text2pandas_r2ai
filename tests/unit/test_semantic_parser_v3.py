@@ -1223,6 +1223,39 @@ def test_explicit_ratio_same_metric_roles_fail_closed() -> None:
     assert result.reason == "EXPLICIT_RATIO_ROLE_COLLISION"
 
 
+def test_explicit_ratio_does_not_drop_unbound_gross_cost_role() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"EIB": "EIB"}),
+    )
+
+    result = parser.parse(
+        "Tỷ trọng nguyên giá tài sản cố định hữu hình trên tổng tài sản của "
+        "EIB năm 2023 là bao nhiêu phần trăm?"
+    )
+
+    assert not result.ok
+    assert result.reason in {
+        "EXPLICIT_RATIO_OPERAND_AMBIGUOUS",
+        "EXPLICIT_RATIO_OPERAND_UNRESOLVED",
+    }
+
+
+def test_lending_phrase_is_not_mapped_to_long_term_borrowings() -> None:
+    parser = SemanticParser(
+        load_ontology(),
+        LegacyVietnameseAnnotator({"HAG": "HAG"}),
+    )
+
+    result = parser.parse(
+        "Tỷ trọng khoản cho vay dài hạn bên liên quan trên tổng tài sản của "
+        "HAG năm 2018 là bao nhiêu phần trăm?"
+    )
+
+    assert not result.ok
+    assert result.reason == "EXPLICIT_RATIO_OPERAND_UNRESOLVED"
+
+
 def test_period_comparison_filter_precedes_ratio_change_and_average() -> None:
     parser = SemanticParser(
         load_ontology(),

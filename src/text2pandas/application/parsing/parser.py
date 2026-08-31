@@ -893,7 +893,12 @@ class SemanticParser:
             for alias in metric.aliases:
                 start = normalized.find(alias)
                 while start >= 0:
-                    raw.append(MetricMention(start, start + len(alias), alias, metric))
+                    if not _alias_occurrence_is_semantically_blocked(
+                        normalized,
+                        start,
+                        alias,
+                    ):
+                        raw.append(MetricMention(start, start + len(alias), alias, metric))
                     start = normalized.find(alias, start + 1)
         canonical_components: list[tuple[int, int]] = []
         reported = tuple(
@@ -1406,6 +1411,12 @@ def _needs_explicit_ratio_source_role(
 
 _EXPLICIT_RATIO_MARKER = re.compile(r"\b(?:ty trong|ty le|ty so)\b")
 _EXPLICIT_RATIO_RELATION = re.compile(r"\b(?:tren|so voi|trong tong)\b")
+_EXPLICIT_OBSERVATION_ROLE_CUES = (
+    "gia goc",
+    "nguyen gia",
+    "hao mon luy ke",
+    "khau hao luy ke",
+)
 
 
 def _explicit_ratio_roles(
@@ -1453,9 +1464,45 @@ def _explicit_ratio_roles(
         return "EXPLICIT_RATIO_OPERAND_UNRESOLVED"
     if len(numerator) != 1 or len(denominator) != 1:
         return "EXPLICIT_RATIO_OPERAND_AMBIGUOUS"
+    if _has_unbound_observation_role(
+        normalized_question[marker.end() : operator.start()],
+        numerator[0],
+    ) or _has_unbound_observation_role(
+        normalized_question[operator.end() : clause_end],
+        denominator[0],
+    ):
+        return "EXPLICIT_RATIO_OPERAND_UNRESOLVED"
     if numerator[0].metric.metric_id == denominator[0].metric.metric_id:
         return "EXPLICIT_RATIO_ROLE_COLLISION"
     return marker, operator, numerator[0], denominator[0]
+
+
+def _has_unbound_observation_role(clause: str, mention: MetricMention) -> bool:
+    requested = tuple(
+        cue for cue in _EXPLICIT_OBSERVATION_ROLE_CUES if cue in clause
+    )
+    if not requested:
+        return False
+    represented = [mention.alias]
+    if mention.source_binding is not None:
+        represented.extend(mention.source_binding.labels)
+        represented.extend(mention.source_binding.row_paths)
+    evidence = normalize_phrase(" ".join(represented))
+    return any(cue not in evidence for cue in requested)
+
+
+def _alias_occurrence_is_semantically_blocked(
+    normalized_question: str,
+    start: int,
+    alias: str,
+) -> bool:
+    """Keep lending phrases out of liability-side borrowing metrics."""
+
+    if not alias.startswith("vay "):
+        return False
+    prefix = normalized_question[:start].rstrip()
+    previous_token = prefix.rsplit(" ", 1)[-1] if prefix else ""
+    return previous_token == "cho"
 
 
 def _mention_in_explicit_ratio_numerator(
