@@ -6,11 +6,12 @@ evidence completeness checkable instead of aspirational.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
+from itertools import product
 from typing import Optional, Sequence
 
 from .ir import OperandSlot, OperationIR
-from .units import MONEY, UNKNOWN, Quantity, Unit
+from .units import UNKNOWN, Quantity, Unit
 
 
 @dataclass(frozen=True)
@@ -126,12 +127,19 @@ class Selector:
         return (period_hit, metric_hit, unit_known, scale_known)
 
     def pick(self, slot: OperandSlot, pool: Sequence[CandidateCell]) -> Optional[CandidateCell]:
-        best, best_score = None, None
-        for c in pool:
-            s = self.score(slot, c)
-            if best_score is None or s > best_score:
-                best, best_score = c, s
-        return best
+        ranked = self.rank(slot, pool)
+        return ranked[0] if ranked else None
+
+    def rank(self, slot: OperandSlot, pool: Sequence[CandidateCell]) -> list[CandidateCell]:
+        """Rank candidates while preserving legacy pool-order tie behavior."""
+
+        return sorted(pool, key=lambda cell: self.score(slot, cell), reverse=True)
+
+    def failure_reason(
+        self, slot: OperandSlot, pool: Sequence[CandidateCell]
+    ) -> Optional[str]:
+        _ = slot, pool
+        return None
 
 
 def bind(ir: OperationIR, pool: Sequence[CandidateCell],
@@ -162,5 +170,70 @@ def bind(ir: OperationIR, pool: Sequence[CandidateCell],
         bound.append(BoundOperand(slot.role, slot, cell, q))
 
     if unbound:
-        return BindingResult("ABSTAIN", bound, reason="UNBOUND_OPERANDS", unbound_roles=unbound)
+        selector_reason = next(
+            (
+                selector.failure_reason(slot, pool)
+                for slot in ir.slots
+                if slot.role in unbound and selector.failure_reason(slot, pool)
+            ),
+            None,
+        )
+        return BindingResult(
+            "ABSTAIN",
+            bound,
+            reason=selector_reason or "UNBOUND_OPERANDS",
+            unbound_roles=unbound,
+        )
     return BindingResult("OK", bound)
+
+
+def bind_ranked(
+    ir: OperationIR,
+    pool: Sequence[CandidateCell],
+    *,
+    selector: Selector,
+    max_bindings: int = 3,
+) -> tuple[BindingResult, ...]:
+    """Return at most three deterministic, distinct candidate bindings.
+
+    This function only enumerates bindings. Render, policy, execution and the
+    existing validator remain authoritative and decide whether the caller may
+    advance to the next binding.
+    """
+
+    if not 1 <= max_bindings <= 3:
+        raise ValueError("P0 max_bindings must be between 1 and 3")
+    ranked_by_slot = [selector.rank(slot, pool) for slot in ir.slots]
+    for slot, ranked in zip(ir.slots, ranked_by_slot, strict=True):
+        if not ranked:
+            return (
+                BindingResult(
+                    "ABSTAIN",
+                    reason=selector.failure_reason(slot, pool) or "UNBOUND_OPERANDS",
+                    unbound_roles=[slot.role],
+                ),
+            )
+    limits = [range(min(len(ranked), max_bindings)) for ranked in ranked_by_slot]
+    combinations = sorted(product(*limits), key=lambda indices: (sum(indices), indices))
+    results: list[BindingResult] = []
+    for indices in combinations:
+        cells = [ranked_by_slot[index][rank] for index, rank in enumerate(indices)]
+        physical = {(cell.csv_path, cell.row_index) for cell in cells}
+        if len(physical) != len(cells):
+            continue
+        operands: list[BoundOperand] = []
+        invalid = False
+        for slot, cell in zip(ir.slots, cells, strict=True):
+            quantity = cell.native_quantity()
+            if quantity.value is None:
+                invalid = True
+                break
+            operands.append(BoundOperand(slot.role, slot, cell, quantity))
+        if invalid:
+            continue
+        results.append(BindingResult("OK", operands))
+        if len(results) == max_bindings:
+            break
+    if results:
+        return tuple(results)
+    return (BindingResult("ABSTAIN", reason="NO_DISTINCT_BINDING"),)

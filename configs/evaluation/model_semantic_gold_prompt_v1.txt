@@ -1,0 +1,61 @@
+You are creating MODEL_GOLD semantic ground truth for one Vietnamese Text-to-Pandas
+financial question. This is a model-generated development asset, not human gold.
+
+Interpret only what the question asks semantically. Do not infer semantics from a
+parser prediction. Do not use a numeric answer to reverse-engineer the operation.
+Do not add table IDs, row IDs, cell IDs, retrieval ranks/scores, VAS hints, Pandas
+queries, execution results, or runtime binding output.
+
+Represent entities, metric phrases/concepts, periods, basis, requested unit,
+ordered operands, nested operation tree, and output according to the supplied
+frozen contracts.
+
+Important rules:
+
+1. Return exactly one JSON object and no Markdown.
+2. Entity and metric `mention_text`/`phrase_text` must be exact NFC substrings of
+   the question. The tool derives zero-based half-open offsets.
+3. Preserve semantic direction: A-B is MINUEND=A/SUBTRAHEND=B; A/B is
+   NUMERATOR=A/DENOMINATOR=B; growth is NEW then OLD.
+4. Named ratios are LOOKUP metrics. Explicitly spelled numerator/denominator is
+   DIVIDE.
+5. Use nested child nodes for filter/rank/select/composed arithmetic. A parent
+   input with `source_kind=NODE` must reference one direct child node.
+6. For a precise reported metric absent from the base ontology, use
+   `OTHER_REPORTED_METRIC` and put a concise stable Vietnamese semantic definition
+   in `variant`. This is mandatory: NEVER emit concept_id=null/UNRESOLVED merely
+   because a clearly named reported line item (for example `chi phí nhân công`
+   or `lãi thuần từ hoạt động dịch vụ`) is absent from the compact ontology.
+   `variant` is reserved exclusively for OTHER_REPORTED_METRIC, whose
+   concept_status is RESOLVED and reported_or_derived is REPORTED.
+7. Use UNSPECIFIED/explicit=false when the question states no reporting basis.
+8. `trăm tỷ` is MONEY exponent 11; `nghìn tỷ` is exponent 12.
+   Vietnamese `đồng` means currency `VND`. A stated unit such as `triệu đồng`
+   has explicit=true and field_status.unit=RESOLVED.
+9. Do not force RESOLVED. If genuinely ambiguous, set affected field status to
+   AMBIGUOUS and provide alternatives. If unrepresentable or unsupported, use
+   UNRESOLVED and explain in notes. MULTIPLY is unsupported.
+10. Do not emit record_status or status_reason; the tool derives them.
+11. Basis UNSPECIFIED/explicit=false is a valid resolved representation. Use
+    field_status.basis=NOT_APPLICABLE only when reporting basis has no semantic
+    relevance. Use field_status.unit=NOT_APPLICABLE only with UNKNOWN and
+    explicit=false (for example, an entity/period output with no requested unit).
+12. Preserve source casing exactly in mention_text and phrase_text. In
+    particular, if the question begins with `Tổng`, do not return `tổng`.
+13. Every valid financial question requires operation_tree, output, and operands.
+    Never mark those three fields NOT_APPLICABLE. A direct request such as
+    `Tổng tài sản ... là bao nhiêu?` is LOOKUP with one VALUE operand and SCALAR
+    output.
+
+The JSON object must contain exactly:
+
+entities, metrics, periods, basis, unit, operation_tree, output, operands,
+field_status, source_evidence, ambiguity_alternatives, notes.
+
+Use refs e1/m1/p1/o1/n1. Every ref must close. Every operation input has role,
+source_kind (OPERAND or NODE), and source_ref. Every operand has operand_ref, role,
+metric_ref, entity_ref, period_ref, basis, unit, and literal. A threshold literal
+has kind, value as a string, comparator, and unit.
+
+When no external source evidence is necessary for question semantics, emit:
+[{"source_path":null,"context_label":null,"status":"NOT_APPLICABLE"}].

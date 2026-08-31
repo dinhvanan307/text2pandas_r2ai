@@ -224,6 +224,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         retrieval_primary_boost=args.retrieval_primary_boost,
         prefer_retrieval_output_in_binding=args.prefer_retrieval_output_in_binding,
         enable_direct_interest_average=args.experimental_direct_interest_average,
+        metric_selector_mode=args.metric_selector_mode,
+        p0_source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
         progress=(lambda i, n: print(f"  ... {i} câu, {n} có đáp án", flush=True))
         if args.verbose
         else None,
@@ -243,8 +245,13 @@ def cmd_run(args: argparse.Namespace) -> int:
                 "answer_pool_tables": args.answer_pool_tables,
                 "output_score_margin": args.output_score_margin,
                 "retrieval_primary_boost": args.retrieval_primary_boost,
-                "prefer_retrieval_output_in_binding": (args.prefer_retrieval_output_in_binding),
-                "experimental_direct_interest_average": (args.experimental_direct_interest_average),
+                "prefer_retrieval_output_in_binding": (
+                    args.prefer_retrieval_output_in_binding
+                ),
+                "experimental_direct_interest_average": (
+                    args.experimental_direct_interest_average
+                ),
+                "metric_selector_mode": args.metric_selector_mode,
                 "package_requested": not args.no_package,
                 "doc_id_variant": args.doc_id,
                 "locator_base": args.locator_base,
@@ -273,6 +280,10 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"  thời gian            : {rep.seconds}s")
     for reason, count in list(rep.abstain_reasons.items())[:8]:
         print(f"    {reason:<48} {count:>5}")
+    if rep.metric_selector_mode != "off":
+        print(f"  metric P0 mode       : {rep.metric_selector_mode}")
+        print(f"  metric resolution    : {rep.metric_resolution_status}")
+        print(f"  metric differential  : {rep.metric_differential_counts}")
 
     if args.no_package:
         print(f"\n  run artifacts: {stage}")
@@ -1151,6 +1162,12 @@ def main(argv: list[str] | None = None) -> int:
         "--experimental-direct-interest-average",
         action="store_true",
         help="Enable the preregistered direct multi-entity interest-expense average trial",
+    )
+    rn.add_argument(
+        "--metric-selector-mode",
+        choices=["off", "shadow", "guarded"],
+        default="off",
+        help="P0 Metric Resolver/SelectorSpec mode; shadow never changes submission output",
     )
     rn.add_argument("--no-package", action="store_true")
     rn.add_argument("--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped")

@@ -25,14 +25,14 @@ from text2pandas.infrastructure.sandbox.query import (
     validate_query,
 )
 
-from .binding import BindingResult, BoundOperand, CandidateCell, Selector, bind
+from .binding import BindingResult, BoundOperand, CandidateCell, Selector, bind, bind_ranked
 from .frame import QuestionSemanticFrame, parse_question
 from .ir import OperationIR
-from .render import RenderResult, render
+from .render import render
 from .router import route
 from .units import Unit
-from .validate import PASS, VReason, ValidationResult, validate
-from .policy import check_operand_policies
+from .validate import ValidationResult, validate
+from .policy import CROSS_BASIS_OPERANDS, CROSS_PERIOD_METRIC_DRIFT, check_operand_policies
 
 STAGES = ("FRAME", "ROUTE", "BIND", "RENDER", "POLICY", "EXECUTE",
           "VALIDATE", "EVIDENCE")
@@ -116,7 +116,8 @@ def answer_question(question: str,
                     metric_id: Optional[str] = None,
                     requested_unit: Optional[Unit] = None,
                     selector: Optional[Selector] = None,
-                    resolved_entity: Optional[str] = None) -> PipelineResult:
+                    resolved_entity: Optional[str] = None,
+                    max_bind_attempts: int = 1) -> PipelineResult:
     """Run every stage. Abstains loudly instead of guessing at any point."""
     res = PipelineResult(qid=qid, status="OK")
 
@@ -137,75 +138,114 @@ def answer_question(question: str,
         return res
     res.ir = rr.ir
 
-    # -- BIND
-    br = bind(rr.ir, pool, selector=selector)
-    res.operands = br.operands
-    res.trace.append({"stage": "BIND", "status": br.status, "reason": br.reason,
-                      "bound": [o.role for o in br.operands],
-                      "unbound": br.unbound_roles})
-    if not br.ok:
-        res.status, res.stage_failed, res.reason = "ABSTAIN", "BIND", br.reason
-        return res
-
-    # -- RENDER (Unit Contract lives here)
-    rd = render(rr.ir, br.operands)
-    res.trace.append({"stage": "RENDER", "status": rd.status, "reason": rd.reason,
-                      "factors": rd.per_operand_factor})
-    if not rd.ok:
-        res.status, res.stage_failed, res.reason = "ABSTAIN", "RENDER", rd.reason
-        return res
-    res.query = rd.query
-
-    # -- POLICY (before EXECUTE: a zero denominator must be a declared reason
-    #    code, not a ZeroDivisionError caught by a generic except)
-    pol = check_operand_policies(rr.ir, br.operands)
-    res.trace.append({"stage": "POLICY", "status": pol.status, "reason": pol.reason})
-    if not pol.ok:
-        res.status, res.stage_failed, res.reason = "ABSTAIN", "POLICY", pol.reason
-        return res
-
-    # Reject a duplicated physical operand before the sandbox sees a
-    # necessarily constant expression such as ``cell / cell``.  The validator
-    # has always classified this as a hard selection failure; the effective-
-    # dependency gate must not accidentally downgrade it to an execution
-    # abstention merely because it now catches the constant earlier.
-    if rr.ir.arity > 1:
-        operand_cells = {(item.cell.csv_path, item.cell.row_index) for item in br.operands}
-        if len(operand_cells) < len(br.operands):
-            vr = ValidationResult("REJECT", [VReason.DUPLICATE_OPERAND_CELLS])
-            res.validation = vr
-            res.trace.append(
-                {
-                    "stage": "VALIDATE",
-                    "status": vr.verdict,
-                    "reason": VReason.DUPLICATE_OPERAND_CELLS,
-                }
-            )
-            res.status = "REJECT"
-            res.stage_failed = "VALIDATE"
-            res.reason = VReason.DUPLICATE_OPERAND_CELLS
+    active_selector = selector or Selector()
+    bindings = (
+        (bind(rr.ir, pool, selector=active_selector),)
+        if max_bind_attempts == 1
+        else bind_ranked(
+            rr.ir,
+            pool,
+            selector=active_selector,
+            max_bindings=max_bind_attempts,
+        )
+    )
+    for attempt, br in enumerate(bindings, start=1):
+        res.operands = br.operands
+        res.query = None
+        res.answer = None
+        res.validation = None
+        bind_trace = {
+            "stage": "BIND",
+            "status": br.status,
+            "reason": br.reason,
+            "bound": [operand.role for operand in br.operands],
+            "unbound": br.unbound_roles,
+        }
+        if max_bind_attempts > 1:
+            bind_trace["attempt"] = attempt
+            bind_trace["max_attempts"] = max_bind_attempts
+        res.trace.append(bind_trace)
+        if not br.ok:
+            res.status, res.stage_failed, res.reason = "ABSTAIN", "BIND", br.reason
             return res
 
-    # -- EXECUTE
-    value, err = execute(rd.query, frames)
-    res.trace.append({"stage": "EXECUTE", "status": "OK" if err is None else "ERROR",
-                      "reason": err})
-    if err is not None:
-        res.status, res.stage_failed, res.reason = "ABSTAIN", "EXECUTE", err
-        return res
+        # -- RENDER (Unit Contract lives here)
+        rd = render(rr.ir, br.operands)
+        res.trace.append({"stage": "RENDER", "status": rd.status, "reason": rd.reason,
+                          "factors": rd.per_operand_factor})
+        if not rd.ok:
+            if _try_next_binding(res, bindings, attempt, "RENDER", rd.reason):
+                continue
+            res.status, res.stage_failed, res.reason = "ABSTAIN", "RENDER", rd.reason
+            return res
+        res.query = rd.query
 
-    # -- VALIDATE
-    vr = validate(rr.ir, br.operands, value)
-    res.validation = vr
-    res.trace.append({"stage": "VALIDATE", "status": vr.verdict, "reason": ";".join(vr.reasons)})
-    if not vr.ok:
-        res.status = "REJECT" if vr.verdict == "REJECT" else "ABSTAIN"
-        res.stage_failed, res.reason = "VALIDATE", ";".join(vr.reasons)
-        return res
-    res.answer = value
+        # -- POLICY (before EXECUTE: a zero denominator must be a declared reason
+        #    code, not a ZeroDivisionError caught by a generic except)
+        pol = check_operand_policies(rr.ir, br.operands)
+        res.trace.append({"stage": "POLICY", "status": pol.status, "reason": pol.reason})
+        if not pol.ok:
+            if _try_next_binding(res, bindings, attempt, "POLICY", pol.reason):
+                continue
+            res.status, res.stage_failed, res.reason = "ABSTAIN", "POLICY", pol.reason
+            return res
 
-    # -- EVIDENCE
-    res.evidence = build_evidence(br.operands)
-    res.trace.append({"stage": "EVIDENCE", "status": "OK",
-                      "n_dataframes": len(res.evidence)})
+        # -- EXECUTE
+        assert rd.query is not None
+        value, err = execute(rd.query, frames)
+        res.trace.append({"stage": "EXECUTE", "status": "OK" if err is None else "ERROR",
+                          "reason": err})
+        if err is not None:
+            res.status, res.stage_failed, res.reason = "ABSTAIN", "EXECUTE", err
+            return res
+
+        # -- VALIDATE
+        vr = validate(rr.ir, br.operands, value)
+        res.validation = vr
+        res.trace.append({"stage": "VALIDATE", "status": vr.verdict,
+                          "reason": ";".join(vr.reasons)})
+        if not vr.ok:
+            reason = ";".join(vr.reasons)
+            if _try_next_binding(res, bindings, attempt, "VALIDATE", reason):
+                continue
+            res.status = "REJECT" if vr.verdict == "REJECT" else "ABSTAIN"
+            res.stage_failed, res.reason = "VALIDATE", reason
+            return res
+        res.answer = value
+
+        # -- EVIDENCE
+        res.evidence = build_evidence(br.operands)
+        res.trace.append({"stage": "EVIDENCE", "status": "OK",
+                          "n_dataframes": len(res.evidence)})
+        return res
     return res
+
+
+def _try_next_binding(
+    result: PipelineResult,
+    bindings: Sequence[BindingResult],
+    attempt: int,
+    stage: str,
+    reason: str | None,
+) -> bool:
+    if attempt >= len(bindings) or not _rebindable(stage, reason):
+        return False
+    result.trace.append(
+        {
+            "stage": "REBIND",
+            "from_attempt": attempt,
+            "next_attempt": attempt + 1,
+            "trigger_stage": stage,
+            "trigger_reason": reason,
+        }
+    )
+    return True
+
+
+def _rebindable(stage: str, reason: str | None) -> bool:
+    if stage in {"RENDER", "VALIDATE"}:
+        return True
+    return stage == "POLICY" and reason in {
+        CROSS_BASIS_OPERANDS,
+        CROSS_PERIOD_METRIC_DRIFT,
+    }

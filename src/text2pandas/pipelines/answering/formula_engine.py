@@ -26,7 +26,7 @@ _AGGREGATE_PREFIXES = ("tong cong ", "tong ", "cong ")
 
 
 @dataclass(frozen=True, slots=True)
-class MetricSpec:
+class _FormulaMetricProjection:
     metric_id: str
     aliases: tuple[str, ...]
     statement_types: tuple[str, ...]
@@ -78,7 +78,7 @@ class FormulaAnswer:
 
 
 @lru_cache(maxsize=1)
-def load_registry() -> tuple[dict[str, FormulaSpec], dict[str, MetricSpec]]:
+def load_registry() -> tuple[dict[str, FormulaSpec], dict[str, _FormulaMetricProjection]]:
     formula_document = yaml.safe_load(_FORMULAS.read_text(encoding="utf-8"))
     metric_document = yaml.safe_load(_METRICS.read_text(encoding="utf-8"))
     formulas: dict[str, FormulaSpec] = {}
@@ -95,9 +95,9 @@ def load_registry() -> tuple[dict[str, FormulaSpec], dict[str, MetricSpec]]:
             expression=dict(raw["expression"]),
         )
         formulas[spec.formula_id] = spec
-    metrics: dict[str, MetricSpec] = {}
+    metrics: dict[str, _FormulaMetricProjection] = {}
     for raw in metric_document.get("metrics", []):
-        spec = MetricSpec(
+        spec = _FormulaMetricProjection(
             metric_id=str(raw["metric_id"]),
             aliases=tuple(_normalize(value) for value in raw.get("aliases", [])),
             statement_types=tuple(str(value) for value in raw.get("statement_types", [])),
@@ -257,7 +257,7 @@ def _fail(result: FormulaAnswer, stage: str, reason: str) -> FormulaAnswer:
 
 
 def _rank_metric_candidates(
-    spec: MetricSpec,
+    spec: _FormulaMetricProjection,
     pool: Sequence[CandidateCell],
     *,
     entity: str,
@@ -306,7 +306,7 @@ def _rank_metric_candidates(
     return ranked
 
 
-def _period_role_score(spec: MetricSpec, cell: CandidateCell) -> float:
+def _period_role_score(spec: _FormulaMetricProjection, cell: CandidateCell) -> float:
     role = (cell.period_role or "").casefold()
     column = _normalize(cell.col_label)
     if spec.period_semantics == "point_in_time":
@@ -325,7 +325,7 @@ def _period_role_score(spec: MetricSpec, cell: CandidateCell) -> float:
     return 1.0
 
 
-def _section_relevance(spec: MetricSpec, cell: CandidateCell) -> float:
+def _section_relevance(spec: _FormulaMetricProjection, cell: CandidateCell) -> float:
     section_tokens = set(_normalize(cell.section_text).split())
     if not section_tokens:
         return 0.0
@@ -390,7 +390,9 @@ def _bind_coherent_operands(
     return groups[0][2]
 
 
-def _metric_match(spec: MetricSpec, label: str) -> tuple[int, int] | None:
+def _metric_match(
+    spec: _FormulaMetricProjection, label: str
+) -> tuple[int, int] | None:
     normalized = _normalize(label)
     if not normalized or any(normalized.startswith(value) for value in spec.forbidden_aliases):
         return None

@@ -1,0 +1,292 @@
+{
+  "schema_version": "1.0",
+  "patch_id": "adjudicated-answer-patch-tier-b-safe5-v1",
+  "strategy": "SAFE_3816_PLUS_TIER_B_SAFE5_WITH_3770_RETRIEVAL",
+  "identities": {
+    "raw_snapshot_id": "ca033190f2e9e99f",
+    "a6_build_id": "c6887fb633374fad",
+    "retrieval_index_id": "872ccb0dda9a2bb6",
+    "answer_submission_id": 3816,
+    "answer_zip_sha256": "f59c734e160705ee748a0573c991b65fc6007054602cd63074db16f0ff78b628",
+    "retrieval_submission_id": 3770,
+    "retrieval_zip_sha256": "15c1854d86c3be2510ae44d10eeca1ece68c8d691bcb2c84ffa280b6b008e169",
+    "semantic_v3_zip_sha256": "3e068bc697ac9d34512f16d520af5bf4d51a6e0dc3137c503a25f9acfacb54f0",
+    "a6_silver_db_sha256": "fa6c46d6d46b4735f6a23fe1f2b8e2be16c206b712f47b8f22a5f0647f5dc3c8",
+    "retrieval_db_sha256": "72d307f8a2bb542a40f97e112456d537b90823e7b57a20eaef04a94545ab6daf"
+  },
+  "policy": {
+    "expected_records": 1012,
+    "expected_baseline_emitted": 638,
+    "expected_output_emitted": 643,
+    "expected_corrections": 0,
+    "expected_fills": 5,
+    "table_cap": 10,
+    "p0_enabled": false,
+    "model_gold_used": false,
+    "semantic_v3_promoted": false,
+    "fail_closed": true
+  },
+  "patches": [
+    {
+      "qid": 452,
+      "decision": "FILL",
+      "question_sha256": "aae972d08f52f42ebf8b950238ff46b9cc2da008d962e9a8015293ea6447e533",
+      "expected_answer": 35.2215105708791,
+      "rationale": "The 2024 consolidated current-ratio median selects DLG and HHV; their source-backed gross-margin average is 35.2215105708791 percent.",
+      "source": {
+        "kind": "A6_MANUAL",
+        "operation": "FILTER_LT_MEDIAN_THEN_AVG_RATIO",
+        "evidence": [
+          {
+            "variable": "df1",
+            "table_uid": "fc4049255b95a17f",
+            "observation_uids": [
+              "7dc3cc7c71ece0bd"
+            ]
+          },
+          {
+            "variable": "df2",
+            "table_uid": "f2c62d3a1a1efb48",
+            "observation_uids": [
+              "cef0990403db9a25"
+            ]
+          },
+          {
+            "variable": "df4",
+            "table_uid": "876ee883dad9cd67",
+            "observation_uids": [
+              "1702f3e774f06012"
+            ]
+          },
+          {
+            "variable": "df5",
+            "table_uid": "22279378f21646df",
+            "observation_uids": [
+              "577c3dd0a92ddea3"
+            ]
+          },
+          {
+            "variable": "df6",
+            "table_uid": "717ae18dfa5d5531",
+            "observation_uids": [
+              "a7aba9ec6b540875",
+              "4230ab20c7421881"
+            ]
+          },
+          {
+            "variable": "df7",
+            "table_uid": "e7a875a3223d7346",
+            "observation_uids": [
+              "c6050b26fe884bfb"
+            ]
+          },
+          {
+            "variable": "df8",
+            "table_uid": "9fc03342c4425dc4",
+            "observation_uids": [
+              "fcb4a2d53f0d4e3b"
+            ]
+          },
+          {
+            "variable": "df9",
+            "table_uid": "8894000cdbb1329e",
+            "observation_uids": [
+              "3c1d939ab0b3508b"
+            ]
+          },
+          {
+            "variable": "df10",
+            "table_uid": "2aa24e1fcfc3ff76",
+            "observation_uids": [
+              "09a76ba637f6ed99"
+            ]
+          },
+          {
+            "variable": "df11",
+            "table_uid": "20c78b87397717ac",
+            "observation_uids": [
+              "94993cc2c311769d"
+            ]
+          },
+          {
+            "variable": "df12",
+            "table_uid": "8855412a658665f9",
+            "observation_uids": [
+              "ec71c48cc83bee4b"
+            ]
+          }
+        ],
+        "pandas_query": "(((((float(df6[df6['observation_uid'] == 'a7aba9ec6b540875']['value'].values[0]) / float(df6[df6['observation_uid'] == '4230ab20c7421881']['value'].values[0])) + (float(df9[df9['observation_uid'] == '3c1d939ab0b3508b']['value'].values[0]) / float(df10[df10['observation_uid'] == '09a76ba637f6ed99']['value'].values[0]))) / 2) * 100) if ((float(df7[df7['observation_uid'] == 'c6050b26fe884bfb']['value'].values[0]) / float(df8[df8['observation_uid'] == 'fcb4a2d53f0d4e3b']['value'].values[0])) < (float(df4[df4['observation_uid'] == '1702f3e774f06012']['value'].values[0]) / float(df5[df5['observation_uid'] == '577c3dd0a92ddea3']['value'].values[0])) and (float(df4[df4['observation_uid'] == '1702f3e774f06012']['value'].values[0]) / float(df5[df5['observation_uid'] == '577c3dd0a92ddea3']['value'].values[0])) < (float(df11[df11['observation_uid'] == '94993cc2c311769d']['value'].values[0]) / float(df12[df12['observation_uid'] == 'ec71c48cc83bee4b']['value'].values[0])) and (float(df11[df11['observation_uid'] == '94993cc2c311769d']['value'].values[0]) / float(df12[df12['observation_uid'] == 'ec71c48cc83bee4b']['value'].values[0])) < (float(df1[df1['observation_uid'] == '7dc3cc7c71ece0bd']['value'].values[0]) / float(df2[df2['observation_uid'] == 'cef0990403db9a25']['value'].values[0]))) else 0)"
+      }
+    },
+    {
+      "qid": 546,
+      "decision": "FILL",
+      "question_sha256": "8a6ca29317f5f683c105681a2cdaaa7996aae61f77ed239784870546a1c04258",
+      "expected_answer": 0.05010027975016958,
+      "rationale": "On 2020 consolidated statements only DLG and HHV have current ratios below one; the answer averages their CFO-to-current-liabilities ratios.",
+      "source": {
+        "kind": "A6_MANUAL",
+        "operation": "FILTER_CURRENT_RATIO_LT_ONE_THEN_AVG_RATIO",
+        "evidence": [
+          {
+            "variable": "df1",
+            "table_uid": "29ad4367fc867a3d",
+            "observation_uids": [
+              "8a75bb746e16e9b4"
+            ]
+          },
+          {
+            "variable": "df2",
+            "table_uid": "abd549ac1b1bc2ec",
+            "observation_uids": [
+              "fc3ba56835271fca"
+            ]
+          },
+          {
+            "variable": "df3",
+            "table_uid": "19107954dabe08b9",
+            "observation_uids": [
+              "d628f99258b82708"
+            ]
+          },
+          {
+            "variable": "df4",
+            "table_uid": "9c7a9f5804634770",
+            "observation_uids": [
+              "60a2aaee662f0915"
+            ]
+          },
+          {
+            "variable": "df5",
+            "table_uid": "49333124de68a083",
+            "observation_uids": [
+              "93f58540665c7a0f"
+            ]
+          },
+          {
+            "variable": "df6",
+            "table_uid": "c4e0250e0766daf2",
+            "observation_uids": [
+              "3355513c3f99f5ba"
+            ]
+          },
+          {
+            "variable": "df7",
+            "table_uid": "fd951124e1df748a",
+            "observation_uids": [
+              "c553077a0ee09a7a"
+            ]
+          },
+          {
+            "variable": "df8",
+            "table_uid": "f5a1c194ac491880",
+            "observation_uids": [
+              "37d6ae67701dcecd"
+            ]
+          }
+        ],
+        "pandas_query": "((((float(df3[df3['observation_uid'] == 'd628f99258b82708']['value'].values[0]) / float(df2[df2['observation_uid'] == 'fc3ba56835271fca']['value'].values[0])) + (float(df6[df6['observation_uid'] == '3355513c3f99f5ba']['value'].values[0]) / float(df5[df5['observation_uid'] == '93f58540665c7a0f']['value'].values[0]))) / 2) if ((float(df1[df1['observation_uid'] == '8a75bb746e16e9b4']['value'].values[0]) / float(df2[df2['observation_uid'] == 'fc3ba56835271fca']['value'].values[0])) < 1 and (float(df4[df4['observation_uid'] == '60a2aaee662f0915']['value'].values[0]) / float(df5[df5['observation_uid'] == '93f58540665c7a0f']['value'].values[0])) < 1 and (float(df7[df7['observation_uid'] == 'c553077a0ee09a7a']['value'].values[0]) / float(df8[df8['observation_uid'] == '37d6ae67701dcecd']['value'].values[0])) >= 1) else 0)"
+      }
+    },
+    {
+      "qid": 601,
+      "decision": "FILL",
+      "question_sha256": "e903735dc1c9a3947c5544ab5222b04b877a6e02a202cb4a52c5762db979a43e",
+      "expected_answer": 844.950578924,
+      "rationale": "Difference between the exact separate-statement short-term interest-payable closing balances for 2019 and 2016, converted from VND to billion VND.",
+      "source": {
+        "kind": "A6_MANUAL",
+        "operation": "SUBTRACT",
+        "evidence": [
+          {
+            "variable": "df1",
+            "table_uid": "1e27bb89f860b5d4",
+            "observation_uids": [
+              "746272b49c119d8f"
+            ]
+          },
+          {
+            "variable": "df2",
+            "table_uid": "94466049ab6fa9ab",
+            "observation_uids": [
+              "a834fb40a4d1edee"
+            ]
+          }
+        ],
+        "pandas_query": "((float(df1[df1['observation_uid'] == '746272b49c119d8f']['value'].values[0]) - float(df2[df2['observation_uid'] == 'a834fb40a4d1edee']['value'].values[0])) * 0.000000001)"
+      }
+    },
+    {
+      "qid": 883,
+      "decision": "FILL",
+      "question_sha256": "f9c2a086adefd0781a315a81b3af80f71e36446707b471db17ef953a044dfe09",
+      "expected_answer": 2023,
+      "rationale": "The exact trading debt-security child label is compared at 2022, 2023 and 2025 closing dates; 2023 has the highest balance.",
+      "source": {
+        "kind": "A6_MANUAL",
+        "operation": "ARGMAX_PERIOD",
+        "evidence": [
+          {
+            "variable": "df1",
+            "table_uid": "c0a44baf5286c2a9",
+            "observation_uids": [
+              "508706ce374a9c87",
+              "ee94ed36b5def702"
+            ]
+          },
+          {
+            "variable": "df2",
+            "table_uid": "633d223886a451c4",
+            "observation_uids": [
+              "5a6140d09a52285f"
+            ]
+          }
+        ],
+        "pandas_query": "(float(2023) if float(df1[df1['observation_uid'] == 'ee94ed36b5def702']['value'].values[0]) == max(float(df1[df1['observation_uid'] == '508706ce374a9c87']['value'].values[0]), float(df1[df1['observation_uid'] == 'ee94ed36b5def702']['value'].values[0]), float(df2[df2['observation_uid'] == '5a6140d09a52285f']['value'].values[0])) else (float(2022) if float(df1[df1['observation_uid'] == '508706ce374a9c87']['value'].values[0]) > float(df2[df2['observation_uid'] == '5a6140d09a52285f']['value'].values[0]) else float(2025)))"
+      }
+    },
+    {
+      "qid": 956,
+      "decision": "FILL",
+      "question_sha256": "f089535a6ee2991ed15ba39cb194e9696d9b6e251d2f8ac43034f4c365c2a9c4",
+      "expected_answer": 4517887.5,
+      "rationale": "Average of the exact SHB consolidated geographic-segment profit-before-tax values for the North in 2016, 2020, 2022 and 2024, already in million VND.",
+      "source": {
+        "kind": "A6_MANUAL",
+        "operation": "AVG",
+        "evidence": [
+          {
+            "variable": "df1",
+            "table_uid": "5d986f85fc2dbe67",
+            "observation_uids": [
+              "30866f2db96b3813"
+            ]
+          },
+          {
+            "variable": "df2",
+            "table_uid": "052cda8cbf02dfcd",
+            "observation_uids": [
+              "81911932ff538f83"
+            ]
+          },
+          {
+            "variable": "df3",
+            "table_uid": "19b811978bfb6aca",
+            "observation_uids": [
+              "1be49397ec577020"
+            ]
+          },
+          {
+            "variable": "df4",
+            "table_uid": "a76004b7d358c206",
+            "observation_uids": [
+              "5a00e691861cf666"
+            ]
+          }
+        ],
+        "pandas_query": "((float(df1[df1['observation_uid'] == '30866f2db96b3813']['value'].values[0]) + float(df2[df2['observation_uid'] == '81911932ff538f83']['value'].values[0]) + float(df3[df3['observation_uid'] == '1be49397ec577020']['value'].values[0]) + float(df4[df4['observation_uid'] == '5a00e691861cf666']['value'].values[0])) / 4)"
+      }
+    }
+  ]
+}

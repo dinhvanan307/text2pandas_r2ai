@@ -1,0 +1,276 @@
+{
+  "schema_version": "1.0",
+  "patch_id": "adjudicated-answer-patch-a17-v1",
+  "strategy": "ADJUDICATED_A17_3811_ANSWER_3770_RETRIEVAL",
+  "identities": {
+    "raw_snapshot_id": "ca033190f2e9e99f",
+    "a6_build_id": "c6887fb633374fad",
+    "retrieval_index_id": "872ccb0dda9a2bb6",
+    "answer_submission_id": 3811,
+    "answer_zip_sha256": "535ee597e8b87662451a60d46c147189f0919b397dda63c472ac94a07cf79933",
+    "retrieval_submission_id": 3770,
+    "retrieval_zip_sha256": "15c1854d86c3be2510ae44d10eeca1ece68c8d691bcb2c84ffa280b6b008e169",
+    "semantic_v3_zip_sha256": "3e068bc697ac9d34512f16d520af5bf4d51a6e0dc3137c503a25f9acfacb54f0",
+    "a6_silver_db_sha256": "fa6c46d6d46b4735f6a23fe1f2b8e2be16c206b712f47b8f22a5f0647f5dc3c8",
+    "retrieval_db_sha256": "72d307f8a2bb542a40f97e112456d537b90823e7b57a20eaef04a94545ab6daf"
+  },
+  "policy": {
+    "expected_records": 1012,
+    "expected_baseline_emitted": 625,
+    "expected_output_emitted": 638,
+    "expected_corrections": 4,
+    "expected_fills": 13,
+    "table_cap": 10,
+    "p0_enabled": false,
+    "model_gold_used": false,
+    "semantic_v3_promoted": false,
+    "fail_closed": true
+  },
+  "patches": [
+    {
+      "qid": 40,
+      "decision": "CORRECT",
+      "question_sha256": "770344ed1d93f28cde92d6ae65577fd0181830715abc86c17d2627cf90502c3d",
+      "expected_answer": 4642334.0,
+      "rationale": "The baseline binds profit before tax; the source row is profit after tax for VIB 2020.",
+      "source": {
+        "kind": "A6_MANUAL",
+        "operation": "LOOKUP",
+        "evidence": [
+          {
+            "variable": "df1",
+            "table_uid": "c2769fd03004fdb0",
+            "observation_uids": ["d27658cbe01351b1"]
+          }
+        ],
+        "pandas_query": "float(df1[df1['observation_uid'] == 'd27658cbe01351b1']['value'].values[0])"
+      }
+    },
+    {
+      "qid": 62,
+      "decision": "FILL",
+      "question_sha256": "b5864a9cb5ee062071b001ee43697f7dac3931e1611e3a6a8e8066577c4c8fed",
+      "expected_answer": 428450055.0,
+      "rationale": "Direct closing-balance lookup of standard-quality customer loans for parent MBB.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "cb237bb99a43cfb9536434c53892dd10bbfb807bce09e80cf4bdd5c716123d52"
+      }
+    },
+    {
+      "qid": 74,
+      "decision": "FILL",
+      "question_sha256": "7006d082700ec8b39f6693a55bcfd7a3b0fa2e1f7bff37eb9149f58ba2d08142",
+      "expected_answer": 9271.0,
+      "rationale": "Direct closing-cost lookup for KLB's Sai Gon-Rach Gia investment.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "01860bbb539b735f06d19df910769840f9382080602af4c384086200874d329e"
+      }
+    },
+    {
+      "qid": 118,
+      "decision": "CORRECT",
+      "question_sha256": "f61d9b0ae55905086f07216ec3744175aafe497c4b4418d9b85218258c532c4b",
+      "expected_answer": 2688909.0,
+      "rationale": "The baseline binds customer loans; the source row is the closing general provision for parent VCB.",
+      "source": {
+        "kind": "A6_MANUAL",
+        "operation": "LOOKUP",
+        "evidence": [
+          {
+            "variable": "df1",
+            "table_uid": "05819882fa7149f0",
+            "observation_uids": ["4d569e0df804c011"]
+          }
+        ],
+        "pandas_query": "float(df1[df1['observation_uid'] == '4d569e0df804c011']['value'].values[0])"
+      }
+    },
+    {
+      "qid": 291,
+      "decision": "CORRECT",
+      "question_sha256": "3d1dbba2e6e596cae5460d11d4733be7d9c72d812aafd224716673c66151f9cd",
+      "expected_answer": 1792876703.0,
+      "rationale": "The baseline applies an erroneous additional factor of 1000 to a source already expressed in thousand VND.",
+      "source": {
+        "kind": "A6_MANUAL",
+        "operation": "LOOKUP",
+        "evidence": [
+          {
+            "variable": "df1",
+            "table_uid": "9a6da50694bbabcd",
+            "observation_uids": ["36945745b734cc9d"]
+          }
+        ],
+        "pandas_query": "float(df1[df1['observation_uid'] == '36945745b734cc9d']['value'].values[0])"
+      }
+    },
+    {
+      "qid": 474,
+      "decision": "FILL",
+      "question_sha256": "2b86cc138dddd076b81e87e818a808128fda219ce973367cfac5587f9a3516fa",
+      "expected_answer": 1406.490201935,
+      "rationale": "For ASM 2016-2018, 2016 and 2018 exceed the 10 percent net-margin threshold; 2016 has the lower revenue.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "e3a7e25bef84f4fcd77cff6d65edeba90e0bf4d20bd361d3f75fcd2a488d9e2a"
+      }
+    },
+    {
+      "qid": 481,
+      "decision": "FILL",
+      "question_sha256": "c4f08fa26ee5c7d6841aa54ec261b1e8545a11fdb3bd6d4d71da636c7cf6221c",
+      "expected_answer": 1307.936213643,
+      "rationale": "For CEO 2022-2024, 2022 and 2024 exceed the 10 percent net-margin threshold; 2024 has the lower revenue.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "7672081725fb3358d93bcf29da3ce131bcbb4bdec6b6273881200156636e14c7"
+      }
+    },
+    {
+      "qid": 513,
+      "decision": "FILL",
+      "question_sha256": "1838245fe6aa0c6ecc9539e477c5d09911527804337da486209f458745fbfe40",
+      "expected_answer": 9.497171212,
+      "rationale": "2017 has the maximum closing inventory in the requested HHS cohort; the selected raw-material balance is source-backed.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "c60ee4787dcd1c1cdf7275a1876c08a03b8d7975f75d7c192482c05feb91f57c"
+      }
+    },
+    {
+      "qid": 521,
+      "decision": "FILL",
+      "question_sha256": "2426448f0f7909efe587c886fada863016f47e9ff75ec26c08e67f8d5b334b12",
+      "expected_answer": 500.688616629,
+      "rationale": "2023 has the maximum closing cash and cash equivalents in the requested HDG cohort; its interest expense is selected.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "bc15ab1259acc1c70ca2caad0f9baf22dd58f969481b7531e4f8cb33ac81bbe5"
+      }
+    },
+    {
+      "qid": 541,
+      "decision": "FILL",
+      "question_sha256": "086007b095bc9af94a49094817576fd35569661d72937ba2d3dcccdcd4328c60",
+      "expected_answer": 1.307936213643,
+      "rationale": "Unit-paraphrase of the independently checked CEO 2022-2024 threshold cohort.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "3dd74caf25fa608f893219e4d23d6eaeb2110c6b8af84b4207bb2d25272143b7"
+      }
+    },
+    {
+      "qid": 548,
+      "decision": "FILL",
+      "question_sha256": "ff2ce88dc7d780648dce5c8cb0ca81a84e00d18258b26b3054851081339406bd",
+      "expected_answer": 1.406490201935,
+      "rationale": "Unit-paraphrase of the independently checked ASM 2016-2018 threshold cohort.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "833e35467c03608cb8db9e975c6cdcb7ce031d83bbaf504a792a79e36a0df536"
+      }
+    },
+    {
+      "qid": 555,
+      "decision": "FILL",
+      "question_sha256": "cd8873757b5f441f0061354c6dc7743f104e45860f95b787868c11bc1915442e",
+      "expected_answer": 1.307936213643,
+      "rationale": "Paraphrase of the independently checked CEO 2022-2024 threshold cohort.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "a87cb368fd9b4438f68163ce9cec6c652e099fb47fc676880a8952f50b4354b4"
+      }
+    },
+    {
+      "qid": 577,
+      "decision": "FILL",
+      "question_sha256": "63f44625ae772a39faf034b798986d4b6cf46cfb65a1bf9a66656ed5c569bc7c",
+      "expected_answer": 1.307936213643,
+      "rationale": "Net-margin paraphrase of the independently checked CEO 2022-2024 threshold cohort.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "4761e897d9818b0794db6c53393ab2e5c7ced43592d74c76da7ca8a3dcafb13d"
+      }
+    },
+    {
+      "qid": 816,
+      "decision": "FILL",
+      "question_sha256": "0738ea1738141e27c4faa5c3eadc29caf2bc8a68d8d7b4e3beb323b20e85233e",
+      "expected_answer": 14.383448,
+      "rationale": "Average of the source-backed 2017, 2020 and 2022 closing short-term borrowing balances for MSN.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "7a1e583cf4e77c44f3261452acee9f16166cda2a8374222db7ef76121f6bcde1"
+      }
+    },
+    {
+      "qid": 834,
+      "decision": "FILL",
+      "question_sha256": "f2d00e008406d2d933288428f47b5158c548883fb5071b16ba1753139f3dd06b",
+      "expected_answer": 135.129055328395,
+      "rationale": "Maximum source-backed GAS net revenue across 2015, 2016, 2017 and 2025.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "393e59c1cc32db5a4efa8e1a557c5aa199320a1f04876440e84fda0e538d4550"
+      }
+    },
+    {
+      "qid": 903,
+      "decision": "FILL",
+      "question_sha256": "11bb238e50e5fc4b00dd64c438b2d7cff98b933df18ba5473bfd2184212a87c3",
+      "expected_answer": 0.02130538863,
+      "rationale": "Maximum source-backed MPC other expense across 2017, 2018 and 2020-2022, converted to hundred-billion VND.",
+      "source": {
+        "kind": "SEMANTIC_V3_PACKAGE",
+        "record_sha256": "ec258481da9c570d8086b8266f6c840c4b4dc193bb09a48727b1e23eb5883f10"
+      }
+    },
+    {
+      "qid": 905,
+      "decision": "CORRECT",
+      "question_sha256": "b79939e06e724e6ea80451274c3107ffb15a1d11e4921037782edf0d2aa3547e",
+      "expected_answer": 118.08004899999997,
+      "rationale": "The baseline sums unrelated revenue values; the patch sums financial income for VIC in 2020, 2021, 2023 and 2025.",
+      "source": {
+        "kind": "A6_MANUAL",
+        "operation": "SUM",
+        "evidence": [
+          {
+            "variable": "df1",
+            "table_uid": "d2e94353f3bef9a8",
+            "observation_uids": ["959ae60e6e5686ba"]
+          },
+          {
+            "variable": "df2",
+            "table_uid": "32240e1726a140dd",
+            "observation_uids": ["02187b67576e9623"]
+          },
+          {
+            "variable": "df3",
+            "table_uid": "a3523ae2a498275a",
+            "observation_uids": ["547e4d2246aa4aa0"]
+          },
+          {
+            "variable": "df4",
+            "table_uid": "3fbbc594e40d19ab",
+            "observation_uids": ["ff7fb8267914aa09"]
+          }
+        ],
+        "pandas_query": "((float(df1[df1['observation_uid'] == '959ae60e6e5686ba']['value'].values[0]) + float(df2[df2['observation_uid'] == '02187b67576e9623']['value'].values[0]) + float(df3[df3['observation_uid'] == '547e4d2246aa4aa0']['value'].values[0]) + float(df4[df4['observation_uid'] == 'ff7fb8267914aa09']['value'].values[0])) * 0.000001)"
+      }
+    }
+  ],
+  "excluded_v3_only_qids": {
+    "452": "Missing current-ratio filter before gross-margin aggregation.",
+    "460": "Missing median grouping and ratio operation.",
+    "546": "Current-ratio predicate is not proven for every entity.",
+    "601": "Metric mismatch between short-term interest payable and interest expense.",
+    "647": "Sign and magnitude semantics remain ambiguous.",
+    "808": "Signed versus absolute difference remains ambiguous.",
+    "883": "Inconsistent maturity-bucket columns across periods.",
+    "956": "Regional condition is omitted.",
+    "967": "Maximum over negative provisions selects the wrong magnitude candidate."
+  }
+}

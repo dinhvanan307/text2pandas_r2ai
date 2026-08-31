@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0",
+  "candidate_id": "baseline-union-retrieval-overlay-20260830-01",
+  "status": "FINAL_READY_LOCAL_NOT_UPLOADED",
+  "strategy": "BASELINE_UNION_PLUS_RETRIEVAL_WINNER_OVERLAY",
+  "composition_commit": "3a69690bb7b72475b42b8122cf010a7ca421cab2",
+  "active_data_identity": {
+    "dataset_id": "vifinqa-btc-2026",
+    "raw_snapshot_id": "ca033190f2e9e99f",
+    "a6_build_id": "c6887fb633374fad",
+    "retrieval_index_id": "872ccb0dda9a2bb6"
+  },
+  "inputs": {
+    "safe_baseline": {
+      "path": "artifacts/submissions/submission_p0_baseline_02787_20260829.zip",
+      "sha256": "179d2c10425c96d55304183e27c5326b5bd2072d8d02fe74e211d23df3a060ad",
+      "submission_json_sha256": "c2c34a3eec0ac0aff0752621539fbe5ab220eb4325cf840ddc3194e2a6576153",
+      "user_reported_official_answer_accuracy": 0.2787,
+      "emitted": 604
+    },
+    "canonical_current": {
+      "path": "artifacts/runs/answer/p0-shadow-full-1012-20260829-01/records.jsonl",
+      "sha256": "4179da8814bcac1c03a4ab7a1755a55cadbe8a78c01082591d69717ebf91907e",
+      "source_commit": "097ab24ab6545d586e0b00bb7256879ceeaaab79",
+      "metric_selector_mode": "shadow",
+      "selected_output": "legacy",
+      "emitted": 585
+    },
+    "retrieval_winner": {
+      "path": "artifacts/submissions/submission_actual-table-retrieval-safe-3966500-20260829-01.zip",
+      "sha256": "15c1854d86c3be2510ae44d10eeca1ece68c8d691bcb2c84ffa280b6b008e169",
+      "submission_json_sha256": "9f2c45e54ccd1309a31caaef91f1305c45183400a5dde7b7eee6bd5ab919c38f",
+      "source_commit": "39665000ceee411ad87c858f1839c8d2344903df",
+      "profile": {
+        "score_margin": 0.5,
+        "primary_boost": 0.6,
+        "normal_table_cap": 10
+      }
+    }
+  },
+  "outputs": {
+    "union": {
+      "path": "artifacts/submissions/submission_baseline-union-20260830-01.zip",
+      "sha256": "97429bc3a3070c286b474ef36b4d9dc756e5a64013d0c1efb4654d7931b70b68",
+      "submission_json_sha256": "633178c201af38126bb271abf19b60115a488be5367e1e67f11e1e062fa0ffab",
+      "records": 1012,
+      "emitted": 625,
+      "canonical_only_added": 21
+    },
+    "final": {
+      "path": "artifacts/submissions/submission_baseline-union-retrieval-overlay-20260830-01.zip",
+      "sha256": "535ee597e8b87662451a60d46c147189f0919b397dda63c472ac94a07cf79933",
+      "submission_json_sha256": "9402898d7329efeeb218e7814e2bb38840860b0799ba1da876a7c8205b6ff153",
+      "records": 1012,
+      "emitted": 625,
+      "retrieval_changed_qids": 419,
+      "table_additions": 2478,
+      "mean_tables": 5.0563241106719365,
+      "max_tables": 18
+    }
+  },
+  "preservation_gate": {
+    "pass": true,
+    "baseline_answer_unchanged": "604/604",
+    "baseline_query_unchanged": "604/604",
+    "baseline_evidence_unchanged": "604/604",
+    "baseline_table_prefix_preserved": "1012/1012"
+  },
+  "package_gates": {
+    "union": {
+      "strict_validation": "PASS_1012_0_ERRORS_0_WARNINGS",
+      "clean_replay": "PASS_625_OF_625"
+    },
+    "final": {
+      "strict_validation": "PASS_1012_0_ERRORS_0_WARNINGS",
+      "clean_replay": "PASS_625_OF_625"
+    },
+    "two_build_zip_determinism": "PASS"
+  },
+  "p0_answer_patch": {
+    "applied": false,
+    "reason": "only two baseline-abstain P0-only cases exist; source audit yields at most one win and one loss, below the required three wins and zero losses"
+  },
+  "model_gold": {
+    "used": false,
+    "generator_resumed": false,
+    "completed_records": 71,
+    "raw_attempt_files": 203,
+    "partial_checkpoint_sha256": "2ad024612f131f1781f482b6929effdf40fbc8d0b223665e1177f0e0ca124636",
+    "generation_state_sha256": "b306c8fc96a818ce8da7162afac14976636224572b33f074ebd506df942f3a8d"
+  },
+  "official_metrics": "NOT_MEASURED_UNTIL_UPLOAD"
+}
