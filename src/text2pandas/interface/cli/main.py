@@ -189,6 +189,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
+        publication_blockers,
         replay_zip,
         validate_zip,
     )
@@ -314,7 +315,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     if stat["executed"]:
         print(f"  khớp answer  {100 * stat['matched'] / stat['executed']:.2f}% số câu chạy được")
 
-    package_ok = val.ok and stat["error"] == 0 and stat["matched"] == stat["executed"]
+    release_blockers = publication_blockers(val, stat, expected_records=len(questions))
+    package_ok = not release_blockers
     final = SUBMIT_DIR / f"submission_{args.run_id}.zip"
     published = None
     if package_ok:
@@ -352,6 +354,7 @@ def cmd_package(args: argparse.Namespace) -> int:
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
+        publication_blockers,
         replay_zip,
         validate_zip,
     )
@@ -415,7 +418,8 @@ def cmd_package(args: argparse.Namespace) -> int:
     )
     if stat["executed"]:
         print(f"  bất biến answer == eval(query): {100 * stat['matched'] / stat['executed']:.2f}%")
-    package_ok = val.ok and stat["error"] == 0 and stat["matched"] == stat["executed"]
+    release_blockers = publication_blockers(val, stat, expected_records=len(questions))
+    package_ok = not release_blockers
     published = None
     if package_ok:
         published = SUBMIT_DIR / f"submission_{args.run_id}.zip"
@@ -449,6 +453,7 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
     from text2pandas.application.usecases.submission import (
         SubmissionConfig,
         build_submission,
+        publication_blockers,
         replay_zip,
         validate_zip,
     )
@@ -516,6 +521,7 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
     validation = validate_zip(zip_path, questions, corpus_root=CORPUS)
     replay = replay_zip(zip_path, SCRATCH / f"replay-{args.run_id}")
     replay_mismatches = replay["executed"] - replay["matched"]
+    release_blockers = publication_blockers(validation, replay, expected_records=len(questions))
     report = {
         "schema_version": 1,
         "kind": "text2pandas.semantic_v3_submission_validation",
@@ -528,6 +534,7 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
         },
         "replay": replay,
         "replay_mismatches": replay_mismatches,
+        "publication_blockers": release_blockers,
     }
     report_path = stage / f"package-{cfg.doc_id_variant}-{cfg.locator_base}.report.json"
     report_path.write_text(
@@ -544,7 +551,185 @@ def cmd_package_v3(args: argparse.Namespace) -> int:
     )
     print(f"  zip              : {zip_path}")
     print(f"  report           : {report_path}")
-    return 0 if not validation.errors and not replay["error"] and not replay_mismatches else 1
+    return int(bool(release_blockers))
+
+
+def cmd_hybrid_v3(args: argparse.Namespace) -> int:
+    """Compose V2 and replay-verified V3 records under a versioned route policy."""
+    from datetime import UTC, datetime
+
+    from text2pandas.application.usecases.hybrid_v3 import (
+        HybridBuildError,
+        build_hybrid_candidate,
+        hybrid_publication_eligibility,
+        table_locator_map,
+        validate_source_manifest,
+    )
+    from text2pandas.application.usecases.run_manifest import write_manifest
+    from text2pandas.application.usecases.submission import (
+        SubmissionConfig,
+        build_submission,
+        publication_blockers,
+        replay_zip,
+        validate_zip,
+    )
+    from text2pandas.infrastructure.checksums import sha256_file
+    from text2pandas.infrastructure.semantic import load_hybrid_policy
+    from text2pandas.infrastructure.snapshots import verify_active_snapshots
+    from text2pandas.infrastructure.source_identity import git_source_identity
+
+    verification = verify_active_snapshots(PROJECT_PATHS, scope="all")
+    failures = [item for item in verification.items if not item.ok]
+    if failures:
+        detail = "; ".join(f"{item.name}: {item.detail}" for item in failures)
+        raise BuildSafetyError(f"active snapshot preflight failed: {detail}")
+    legacy_stage = PROJECT_PATHS.run_dir("answer", args.legacy_run_id)
+    semantic_stage = PROJECT_PATHS.run_dir("semantic-v3", args.semantic_run_id)
+    policy_path = Path(args.policy).expanduser().resolve()
+    if not policy_path.is_file():
+        raise BuildSafetyError(f"missing hybrid policy: {policy_path}")
+    policy = load_hybrid_policy(policy_path)
+    legacy_manifest_path = legacy_stage / "manifest.json"
+    semantic_manifest_path = semantic_stage / "manifest.json"
+    if not legacy_manifest_path.is_file():
+        raise BuildSafetyError(f"missing legacy source manifest: {legacy_manifest_path}")
+    if not semantic_manifest_path.is_file():
+        raise BuildSafetyError(f"missing semantic source manifest: {semantic_manifest_path}")
+    legacy_manifest = json.loads(legacy_manifest_path.read_text(encoding="utf-8"))
+    semantic_manifest = json.loads(semantic_manifest_path.read_text(encoding="utf-8"))
+    legacy_records_sha256 = sha256_file(legacy_stage / "records.jsonl")
+    semantic_records_sha256 = sha256_file(semantic_stage / "records.jsonl")
+    try:
+        validate_source_manifest(
+            legacy_manifest,
+            expected_run_id=args.legacy_run_id,
+            records_sha256=legacy_records_sha256,
+            source_label="legacy",
+        )
+        validate_source_manifest(
+            semantic_manifest,
+            expected_run_id=args.semantic_run_id,
+            records_sha256=semantic_records_sha256,
+            source_label="semantic",
+        )
+    except HybridBuildError as error:
+        raise BuildSafetyError(str(error)) from error
+    semantic_promotion = semantic_manifest.get("promotion")
+    semantic_promotion_status = (
+        str(semantic_promotion.get("status"))
+        if isinstance(semantic_promotion, dict) and semantic_promotion.get("status")
+        else None
+    )
+    publication_eligible, policy_publication_blockers = hybrid_publication_eligibility(
+        policy,
+        semantic_promotion_status,
+    )
+    stage = PROJECT_PATHS.run_dir("answer", args.run_id)
+    table_cards = ACTIVE_SNAPSHOTS.a6_path / "dataframe/csv/table_cards.csv"
+    try:
+        report = build_hybrid_candidate(
+            legacy_records_path=legacy_stage / "records.jsonl",
+            semantic_records_path=semantic_stage / "records.jsonl",
+            legacy_data_dir=legacy_stage / "data",
+            semantic_data_dir=semantic_stage / "data",
+            output_dir=stage,
+            policy=policy,
+            table_locators=table_locator_map(table_cards),
+        )
+    except HybridBuildError as error:
+        raise BuildSafetyError(str(error)) from error
+
+    questions = {
+        int(row["id"]): str(row["question"])
+        for row in (
+            json.loads(line) for line in QUESTIONS.read_text(encoding="utf-8").splitlines() if line
+        )
+    }
+    cfg = SubmissionConfig(doc_id_variant=args.doc_id, locator_base=args.locator_base)
+    zip_path = build_submission(report.results, questions, stage, cfg)
+    validation = validate_zip(zip_path, questions, corpus_root=CORPUS)
+    replay = replay_zip(zip_path, SCRATCH / f"hybrid-replay-{args.run_id}")
+    replay_mismatches = replay["executed"] - replay["matched"]
+    release_blockers = publication_blockers(validation, replay, expected_records=len(questions))
+    package_ok = not release_blockers
+    published = None
+    if package_ok and publication_eligible:
+        published = SUBMIT_DIR / f"submission_{args.run_id}.zip"
+        publish_new_file(zip_path, published)
+    manifest_path = stage / "manifest.json"
+    write_manifest(
+        manifest_path,
+        {
+            "schema_version": "1.0",
+            "kind": "text2pandas.semantic_v3_hybrid_candidate",
+            "run_id": args.run_id,
+            "generated_at_utc": datetime.now(UTC).isoformat(),
+            "source": git_source_identity(ROOT),
+            "inputs": {
+                "legacy_run_id": args.legacy_run_id,
+                "legacy_records_sha256": legacy_records_sha256,
+                "legacy_manifest_sha256": sha256_file(legacy_manifest_path),
+                "semantic_run_id": args.semantic_run_id,
+                "semantic_records_sha256": semantic_records_sha256,
+                "semantic_manifest_sha256": sha256_file(semantic_manifest_path),
+                "policy": str(policy_path.relative_to(ROOT)),
+                "policy_sha256": sha256_file(policy_path),
+            },
+            "policy": {
+                "policy_id": policy.policy_id,
+                "status": policy.status,
+                "production_eligible": policy.production_eligible,
+                "semantic_promotion_status": semantic_promotion_status,
+                "publication_eligible": publication_eligible,
+                "publication_blockers": list(policy_publication_blockers),
+                "relevant_refs_mode": policy.relevant_refs_mode,
+                "maximum_relevant_tables": policy.maximum_relevant_tables,
+            },
+            "metrics": {
+                "questions": report.n_questions,
+                "promoted": report.n_promoted,
+                "recovered": report.n_recovered,
+                "value_changed": report.n_value_changed,
+                "decisions": report.decisions,
+                "promoted_routes": report.promoted_routes,
+            },
+            "validation": {
+                "records": validation.n_records,
+                "errors": validation.errors,
+                "warnings": validation.warnings,
+            },
+            "replay": replay,
+            "replay_mismatches": replay_mismatches,
+            "publication_blockers": release_blockers,
+            "package": {
+                "path": str(zip_path.relative_to(ROOT)),
+                "sha256": sha256_file(zip_path),
+                "published": None if published is None else str(published.relative_to(ROOT)),
+            },
+            "outputs": {
+                "records": str(report.records_path.relative_to(ROOT)),
+                "per_qid_attribution": str(report.attribution_path.relative_to(ROOT)),
+            },
+        },
+    )
+    print("\n╔═══════════ SEMANTIC V3 HYBRID ═══════════╗")
+    print(f"  policy             : {policy.policy_id} ({policy.status})")
+    print(f"  questions          : {report.n_questions:,}")
+    print(f"  promoted V3        : {report.n_promoted:,}")
+    print(f"  recovered abstain  : {report.n_recovered:,}")
+    print(f"  changed values     : {report.n_value_changed:,}")
+    print(f"  validation errors  : {len(validation.errors):,}")
+    print(
+        f"  replay             : {replay['executed']:,} executed · "
+        f"{replay['matched']:,} matched · {replay['error']:,} errors"
+    )
+    print(f"  zip                : {zip_path}")
+    print(f"  attribution        : {report.attribution_path}")
+    if not publication_eligible:
+        print(f"  publish            : BLOCKED — {', '.join(policy_publication_blockers)}")
+    elif published:
+        print(f"  publish            : {published}")
+    return 0 if package_ok else 1
 
 
 def cmd_silver(args: argparse.Namespace) -> int:
@@ -684,7 +869,8 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     from text2pandas.infrastructure.source_identity import git_source_identity
     from text2pandas.pipelines.retrieval.alias_store import load_aliases
 
-    verification = verify_active_snapshots(PROJECT_PATHS, scope="a6")
+    verification_scope = "all" if args.canonical_table_priors else "a6"
+    verification = verify_active_snapshots(PROJECT_PATHS, scope=verification_scope)
     if not verification.ok:
         detail = "; ".join(item.detail for item in verification.items if not item.ok)
         raise BuildSafetyError(f"active A6 snapshot preflight failed: {detail}")
@@ -719,6 +905,21 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
         f"file:{(ACTIVE_SNAPSHOTS.a6_path / 'silver.db').resolve()}?mode=ro&immutable=1",
         uri=True,
     )
+    retrieval_connection: sqlite3.Connection | None = None
+    table_retriever = None
+    if args.canonical_table_priors:
+        from text2pandas.pipelines.retrieval.submission_adapter import RetrievalToSubmission
+
+        retrieval_connection = sqlite3.connect(
+            f"file:{(ACTIVE_SNAPSHOTS.retrieval_path / 'retrieval.db').resolve()}"
+            "?mode=ro&immutable=1",
+            uri=True,
+        )
+        table_retriever = RetrievalToSubmission(
+            aliases,
+            top_k_rank=50,
+            top_k_rerank=50,
+        )
     resolver = A6MetricMentionResolver(
         connection,
         source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
@@ -729,14 +930,15 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
         LegacyVietnameseAnnotator(aliases),
         resolver,
     )
+    operand_retriever = SqliteOperandRetriever(
+        connection,
+        ontology,
+        top_k=args.operand_k,
+        source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
+    )
     engine = SemanticV3Engine(
         parser,
-        SqliteOperandRetriever(
-            connection,
-            ontology,
-            top_k=args.operand_k,
-            source_build_id=ACTIVE_SNAPSHOTS.a6_build_id,
-        ),
+        operand_retriever,
         PandasSandboxReplay(),
     )
     statuses: Counter[str] = Counter()
@@ -749,6 +951,15 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
             for index, item in enumerate(questions, 1):
                 qid = int(item["id"])
                 question = str(item["question"])
+                if table_retriever is not None and retrieval_connection is not None:
+                    upstream = table_retriever.refs_for(
+                        retrieval_connection,
+                        qid,
+                        question,
+                    )
+                    operand_retriever.set_table_rank_priors(tuple(upstream.ranked_table_uids))
+                else:
+                    operand_retriever.set_table_rank_priors(())
                 result = engine.answer(question, qid=qid)
                 differential = classify_differential(legacy.get(qid), result)
                 statuses[result.status] += 1
@@ -794,6 +1005,8 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                 writer.writerows(sorted(values.items()))
     finally:
         connection.close()
+        if retrieval_connection is not None:
+            retrieval_connection.close()
     seconds = round(time.time() - started, 3)
     peak_rss_raw = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     peak_rss_bytes = int(peak_rss_raw if platform.system() == "Darwin" else peak_rss_raw * 1024)
@@ -830,6 +1043,7 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
                 "limit": args.limit,
                 "operand_k": args.operand_k,
                 "legacy_run_id": args.legacy_run_id,
+                "canonical_table_priors": args.canonical_table_priors,
             },
             "metrics": {
                 "questions": len(questions),
@@ -872,6 +1086,24 @@ def cmd_shadow_v3(args: argparse.Namespace) -> int:
     print(f"  records          : {records_path}")
     print(f"  manifest         : {manifest_path}")
     return 0
+
+
+def cmd_shadow_v4(args: argparse.Namespace) -> int:
+    from .semantic_v4_commands import cmd_shadow_v4 as run
+
+    return run(args)
+
+
+def cmd_package_v4(args: argparse.Namespace) -> int:
+    from .semantic_v4_commands import cmd_package_v4 as run
+
+    return run(args)
+
+
+def cmd_hybrid_v4(args: argparse.Namespace) -> int:
+    from .semantic_v4_commands import cmd_hybrid_v4 as run
+
+    return run(args)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -964,6 +1196,11 @@ def main(argv: list[str] | None = None) -> int:
     shadow.add_argument("--offset", type=int, default=0)
     shadow.add_argument("--operand-k", type=int, default=20)
     shadow.add_argument("--legacy-run-id")
+    shadow.add_argument(
+        "--canonical-table-priors",
+        action="store_true",
+        help="Use Canonical retrieval table order as a question-scoped V3 soft prior",
+    )
     package_v3 = sub.add_parser(
         "package-v3", help="Đóng gói, validate và replay một Semantic V3 shadow run"
     )
@@ -974,6 +1211,68 @@ def main(argv: list[str] | None = None) -> int:
     package_v3.add_argument(
         "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
     )
+    hybrid = sub.add_parser(
+        "hybrid-v3",
+        help="Compose immutable Canonical V2 and Semantic V3 runs under a policy",
+    )
+    hybrid.add_argument("--run-id", required=True)
+    hybrid.add_argument("--legacy-run-id", required=True)
+    hybrid.add_argument("--semantic-run-id", required=True)
+    hybrid.add_argument("--policy", required=True)
+    hybrid.add_argument(
+        "--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped"
+    )
+    hybrid.add_argument("--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1)
+    shadow_v4 = sub.add_parser(
+        "shadow-v4",
+        help="Chạy corpus-grounded Semantic V4 ở chế độ shadow",
+    )
+    shadow_v4.add_argument("--run-id", required=True)
+    shadow_v4.add_argument("--limit", type=int, default=0)
+    shadow_v4.add_argument("--offset", type=int, default=0)
+    shadow_v4.add_argument("--legacy-run-id")
+    shadow_v4.add_argument(
+        "--policy",
+        default=str(ROOT / "configs/semantic/search_v4.yaml"),
+    )
+    shadow_v4.add_argument("--canonical-table-priors", action="store_true")
+    package_v4 = sub.add_parser(
+        "package-v4",
+        help="Đóng gói, validate và replay một Semantic V4 shadow run",
+    )
+    package_v4.add_argument("--run-id", required=True)
+    package_v4.add_argument(
+        "--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped"
+    )
+    package_v4.add_argument(
+        "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
+    )
+    hybrid_v4 = sub.add_parser(
+        "hybrid-v4",
+        help="Compose Canonical V2 và Semantic V4 thành candidate có attribution",
+    )
+    hybrid_v4.add_argument("--run-id", required=True)
+    hybrid_v4.add_argument("--legacy-run-id", required=True)
+    hybrid_v4.add_argument("--semantic-run-id", required=True)
+    hybrid_v4.add_argument(
+        "--policy",
+        default=str(ROOT / "configs/semantic/hybrid_candidate_v4_experimental.yaml"),
+    )
+    hybrid_v4.add_argument(
+        "--doc-id", dest="doc_id", choices=["stripped", "literal"], default="stripped"
+    )
+    hybrid_v4.add_argument(
+        "--locator-base", dest="locator_base", type=int, choices=[0, 1], default=1
+    )
+    grounded_v5 = sub.add_parser(
+        "grounded-v5",
+        help="Build scorer-safe candidate with grounded open-weight program synthesis",
+    )
+    from text2pandas.interface.cli.grounded_v5_commands import (
+        configure_grounded_v5_parser,
+    )
+
+    configure_grounded_v5_parser(grounded_v5, ROOT)
 
     args = p.parse_args(argv)
     handlers = {
@@ -988,7 +1287,28 @@ def main(argv: list[str] | None = None) -> int:
         "coverage": cmd_coverage,
         "shadow-v3": cmd_shadow_v3,
         "package-v3": cmd_package_v3,
+        "hybrid-v3": cmd_hybrid_v3,
+        "shadow-v4": cmd_shadow_v4,
+        "package-v4": cmd_package_v4,
+        "hybrid-v4": cmd_hybrid_v4,
     }
+    if args.cmd == "grounded-v5":
+        from text2pandas.interface.cli.grounded_v5_commands import cmd_grounded_v5
+
+        try:
+            return cmd_grounded_v5(
+                args,
+                root=ROOT,
+                paths=PROJECT_PATHS,
+                active=ACTIVE_SNAPSHOTS,
+                questions_path=QUESTIONS,
+                corpus=CORPUS,
+                scratch=SCRATCH,
+                verbose=bool(args.verbose),
+            )
+        except BuildSafetyError as error:
+            print(f"LỖI AN TOÀN BUILD: {error}", file=sys.stderr)
+            return 2
     try:
         return handlers[args.cmd](args)
     except BuildSafetyError as error:

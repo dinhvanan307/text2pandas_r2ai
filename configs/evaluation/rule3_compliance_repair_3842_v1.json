@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.rule3_compliance_repair",
+  "baseline": {
+    "zip_path": "artifacts/official/submission-3842/submission.zip",
+    "zip_sha256": "2a3457ee2af0b43ef849cc1a5e0d9c46c78cc94e34e560369796a02defa93d76"
+  },
+  "a6_database": {
+    "database_path": "data/processed/a6/c6887fb633374fad/silver.db",
+    "database_sha256": "fa6c46d6d46b4735f6a23fe1f2b8e2be16c206b712f47b8f22a5f0647f5dc3c8"
+  },
+  "policy": {
+    "preserve_answers": true,
+    "preserve_evidence": true,
+    "preserve_csv_payloads": true,
+    "rebind_uid_csv_source_locators": true,
+    "official_answer_accuracy": "NOT_MEASURED"
+  },
+  "simplifications": [
+    363, 365, 369, 370, 371, 372, 373, 376, 377, 378, 380, 382, 384,
+    386, 387, 390, 392, 394, 395, 398, 400, 401, 403, 407, 410, 421,
+    439, 465, 475, 477, 479, 485, 494, 500, 508, 509, 514, 520, 522,
+    523, 528, 530, 543, 544, 545, 556, 558, 561, 562, 570, 575
+  ],
+  "repairs": [
+    {"qid": 822, "direction": "max", "years": [2016, 2021, 2022, 2024]},
+    {"qid": 826, "direction": "max", "years": [2016, 2019, 2020, 2022]},
+    {"qid": 829, "direction": "max", "years": [2016, 2017, 2023, 2025]},
+    {"qid": 832, "direction": "max", "years": [2017, 2018, 2019, 2022, 2025]},
+    {"qid": 850, "direction": "max", "years": [2017, 2018, 2020, 2022, 2024]},
+    {"qid": 860, "direction": "max", "years": [2017, 2022, 2023]},
+    {"qid": 866, "direction": "max", "years": [2018, 2019, 2020, 2021]},
+    {"qid": 883, "direction": "max", "years": [2022, 2023, 2025]},
+    {"qid": 890, "direction": "max", "years": [2017, 2021, 2023]},
+    {"qid": 897, "direction": "max", "years": [2016, 2018, 2020]},
+    {"qid": 921, "direction": "max", "years": [2019, 2021, 2025]},
+    {"qid": 933, "direction": "max", "years": [2015, 2016, 2018, 2021]},
+    {"qid": 936, "direction": "max", "years": [2020, 2021, 2022, 2025]},
+    {"qid": 946, "direction": "max", "years": [2018, 2020, 2022]},
+    {"qid": 959, "direction": "max", "years": [2016, 2017, 2018, 2020]},
+    {"qid": 960, "direction": "max", "years": [2017, 2019, 2020, 2021, 2023]},
+    {"qid": 985, "direction": "max", "years": [2016, 2017, 2019, 2020, 2021]},
+    {"qid": 995, "direction": "max", "years": [2017, 2018, 2019]},
+    {"qid": 997, "direction": "max", "years": [2019, 2023, 2025]},
+    {"qid": 999, "direction": "max", "years": [2016, 2020, 2025]},
+    {"qid": 1000, "direction": "max", "years": [2020, 2021, 2023, 2024]}
+  ]
+}

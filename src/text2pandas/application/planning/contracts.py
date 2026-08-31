@@ -11,6 +11,7 @@ from enum import StrEnum
 from text2pandas.domain.semantic import (
     Basis,
     MetricBindingHint,
+    ObservationRoleSpec,
     PeriodSemantics,
     QuestionAST,
     UnitSpec,
@@ -41,6 +42,7 @@ class OperandRequest:
     consumers: tuple[str, ...]
     required_context_phrases: tuple[str, ...] = ()
     source_binding: MetricBindingHint | None = None
+    observation_role: ObservationRoleSpec | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -57,6 +59,11 @@ class OperandRequest:
             "required_context_phrases": list(self.required_context_phrases),
             "consumers": list(self.consumers),
             **({"source_binding": self.source_binding.to_dict()} if self.source_binding else {}),
+            **(
+                {"observation_role": self.observation_role.to_dict()}
+                if self.observation_role
+                else {}
+            ),
         }
 
 

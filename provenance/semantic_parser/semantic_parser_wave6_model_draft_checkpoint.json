@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.semantic_parser_wave6_model_draft_checkpoint",
+  "status": "COMPLETE_PENDING_HUMAN_REVIEW",
+  "gate": "P1_MODEL_DRAFT_ONLY",
+  "governance": {
+    "question_only": true,
+    "independent_human_gold": false,
+    "correctness": "NOT_MEASURED",
+    "runtime_use_allowed": false,
+    "submission_use_allowed": false,
+    "human_review_required": true
+  },
+  "scope": {
+    "path": "configs/evaluation/recovery_wave5_riska60_scope_3842_v1.json",
+    "sha256": "9d77ec98fd7a1c2562ec94e4929d023dfbb0552560515c187b20593226d44899",
+    "records": 60,
+    "development": 40,
+    "holdout": 20
+  },
+  "run": {
+    "path": "artifacts/runs/evaluation/semantic-parser-wave6-model-draft-20260831-v4",
+    "state": "GENERATION_COMPLETE",
+    "model_id": "qwen2.5:14b",
+    "model_digest": "sha256:7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "prompt_sha256": "1bcb919e46e43cd9f48e57bfd2173d92293f70dd07bdc40b4c0f8d87a2b3ae03",
+    "response_schema_sha256": "f6553272dd794a5fa1bbd7b4512f5a08b6c4d4488b18cd3c2cbe3a911ae1b791",
+    "protocol_sha256": "09f3ff48b8f3d2d97987a2a7c88b1461103a80dfd08b069f0aa0fadc35104aa6",
+    "ontology_fingerprint": "bdef88d94b814ae60109f3da486a627d02dfbbe5d1e3ad6ede942598532644c8"
+  },
+  "source": {
+    "initial_commit": "d2dcebba586e7feedf4de29c663a9ecd805a2268",
+    "initial_completed_qids": 21,
+    "resume_commit": "b4c7313684def2a4c5c942b7487627a322cd76c5",
+    "transition_reason": "generation_failure_draft explicit basis hotfix",
+    "prompt_schema_model_changed_during_transition": false,
+    "pre_hotfix_q629_attempt_files_preserved": 6
+  },
+  "measurement": {
+    "records": 60,
+    "unique_qids": 60,
+    "structural_status": {
+      "OK": 16,
+      "UNRESOLVED": 44
+    },
+    "development": {
+      "records": 40,
+      "OK": 11,
+      "UNRESOLVED": 29
+    },
+    "holdout": {
+      "records": 20,
+      "OK": 5,
+      "UNRESOLVED": 15
+    },
+    "human_reviewed": 0,
+    "independent_gold": false,
+    "correctness": "NOT_MEASURED"
+  },
+  "attempts": {
+    "responses": 163,
+    "validation_errors": 147,
+    "error_categories": {
+      "INVALID_AST_SCHEMA": 72,
+      "AST_VALIDATION": 26,
+      "MISSING_AST_OUTPUT": 17,
+      "UNUSED_METRIC_MENTION": 16,
+      "OUTPUT_DIMENSION_MISMATCH": 12,
+      "MENTION_ALIGNMENT": 3,
+      "JSON_DECODE": 1
+    }
+  },
+  "outputs": {
+    "model_draft.jsonl": {
+      "records": 60,
+      "sha256": "8ff74cee54127ad8fda96ba73110e852203637b4f447720d3ea77db64f439e38"
+    },
+    "user_review_queue.jsonl": {
+      "records": 60,
+      "sha256": "6b66b8377a9d2e81505d48abea6c7b95c70ef29783df257dafd81b39603e079f"
+    },
+    "generation_state.json": {
+      "sha256": "ff58de221f3bf7d4a415e16dec9c85ab12fc21c173dcc5f8a7a9ca7af836134e"
+    },
+    "generation_summary.json": {
+      "sha256": "a57c1e1fcb44784b95ab31dcb8076e47ad867b9395361f291e762e3e6e259ab6"
+    }
+  },
+  "verification": {
+    "scope_qids_exact_match": true,
+    "all_records_silver": true,
+    "review_decisions_empty": true,
+    "ok_records_have_ast": true,
+    "unresolved_records_have_no_ast": true,
+    "lint": "PASS",
+    "typecheck": "PASS:122",
+    "offline_tests": "PASS:2460:SKIP:42:DESELECT:29",
+    "integration_tests": "PASS:22:DESELECT:2509",
+    "docs_check": "BLOCKED_PREEXISTING:15"
+  },
+  "independent_review": {
+    "annotator_a": 0,
+    "annotator_b": 0,
+    "adjudication_c": 0,
+    "status": "BLOCKED_PENDING_HUMAN_REVIEW"
+  },
+  "runtime_parser_changed": false,
+  "submission_built": false,
+  "downstream_phases_started": false
+}

@@ -1,0 +1,20 @@
+schema_version: 1
+policy_id: semantic-v3-hybrid-metric-lookup-v1
+status: EXPERIMENTAL_REQUIRES_SEALED_GOLD
+production_eligible: false
+relevant_refs_mode: semantic_plus_legacy
+maximum_relevant_tables: 10
+
+default_route:
+  recover_legacy_abstention: false
+  replace_legacy_value: false
+  minimum_binding_margin: null
+
+# Correctness-first experiment. It is intentionally limited to a single
+# canonical metric_ref and requires a clear global-binding margin. Promotion to
+# an official candidate remains blocked until independent answer/binding gold.
+routes:
+  metric_ref:
+    recover_legacy_abstention: true
+    replace_legacy_value: true
+    minimum_binding_margin: 2.0

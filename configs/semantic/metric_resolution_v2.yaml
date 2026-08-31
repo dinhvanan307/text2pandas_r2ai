@@ -1,0 +1,81 @@
+schema_version: 1
+resolver_id: a6-source-metric-v2
+
+source:
+  a6_build_id: c6887fb633374fad
+
+matching:
+  min_contiguous_tokens: 3
+  min_token_overlap: 3
+  min_source_coverage_milli: 600
+  max_hypotheses: 20
+  require_unique_winner_per_span: true
+  # Annotated company names can be part of a valid disclosure label, but they
+  # cannot contribute metric-match score. Q766 is the corpus-attested positive
+  # case; company-like labels spanning the PVT/BSR scope are negative cases.
+  exclude_entity_tokens_from_scoring: true
+  # Corporate-scope boilerplate can appear as a numeric row label in ownership
+  # notes. It is entity/basis context, never a financial metric mention.
+  blocked_scope_tokens:
+    - cua
+    - cong
+    - ty
+    - co
+    - phan
+    - me
+    - tap
+    - doan
+    - tong
+    - ngan
+    - hang
+    - thuong
+    - mai
+    - trach
+    - nhiem
+    - huu
+    - han
+    - ctcp
+    - cp
+    - tmcp
+    # Structural/dimensional row members are qualifiers, not standalone
+    # financial metrics. A longer label such as "Mua nợ bằng VND" remains
+    # eligible because its token set is not contained by this vocabulary.
+    - so
+    - du
+    - dau
+    - cuoi
+    - ky
+    - nam
+    - ngay
+    - tai
+    - vnd
+    - bang
+    - gia
+    - tri
+    - va
+
+abbreviation_rules:
+  - rule_id: usd_currency_name_v1
+    phrase: usd
+    replacement: do la my usd
+    evidence_qids: [213]
+    negative_examples:
+      - doanh thu bán hàng
+      - chi phí dịch vụ mua ngoài
+    scope: metric_label
+  - rule_id: corporate_income_tax_tndn_v1
+    phrase: chi phi thue thu nhap hien hanh
+    replacement: chi phi thue tndn hien hanh
+    evidence_qids: [89]
+    negative_examples:
+      - thu nhập khác
+      - thu nhập lãi thuần
+    scope: metric_label
+  - rule_id: raw_material_expense_wording_v1
+    phrase: chi phi nguyen lieu vat lieu
+    replacement: chi phi nguyen vat lieu
+    evidence_qids: [788]
+    negative_examples:
+      - nguyên vật liệu tồn kho
+      - giá mua nguyên vật liệu
+    scope: metric_label

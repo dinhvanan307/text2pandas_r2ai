@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "structural_status",
+    "complexity_class",
+    "composition_frame",
+    "notes"
+  ],
+  "properties": {
+    "structural_status": {
+      "enum": ["OK", "AMBIGUOUS", "UNRESOLVED"]
+    },
+    "complexity_class": {
+      "enum": ["direct", "derived", "filtered", "aggregated", "ranked", "compositional"]
+    },
+    "composition_frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_domain",
+        "period_domain",
+        "basis",
+        "metric_mentions",
+        "predicate_clauses",
+        "logical_connectors",
+        "temporal_transforms",
+        "projection",
+        "aggregate",
+        "rank",
+        "operation_order",
+        "expected_ast",
+        "output_dimension",
+        "ambiguity"
+      ],
+      "properties": {
+        "entity_domain": {"type": "array", "items": {"type": "string"}},
+        "period_domain": {"type": "array", "items": {"type": "string"}},
+        "basis": {"enum": ["consolidated", "separate", "unspecified", null]},
+        "metric_mentions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["mention_text", "metric_id", "semantic_role", "reported_or_derived"],
+            "properties": {
+              "mention_text": {"type": "string"},
+              "metric_id": {"type": "string"},
+              "semantic_role": {"type": "string"},
+              "reported_or_derived": {"enum": ["reported", "derived"]}
+            }
+          }
+        },
+        "predicate_clauses": {"type": "array", "items": {"type": "object"}},
+        "logical_connectors": {"type": "array", "items": {"enum": ["and", "or"]}},
+        "temporal_transforms": {"type": "array", "items": {"type": "object"}},
+        "projection": {"anyOf": [{"type": "object"}, {"type": "null"}]},
+        "aggregate": {"anyOf": [{"type": "object"}, {"type": "null"}]},
+        "rank": {"anyOf": [{"type": "object"}, {"type": "null"}]},
+        "operation_order": {"type": "array", "items": {"type": "string"}},
+        "expected_ast": {"anyOf": [{"type": "object"}, {"type": "null"}]},
+        "output_dimension": {
+          "enum": ["money", "percent", "percent_point", "ratio", "count", "shares", "period", "entity", "unknown"]
+        },
+        "ambiguity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "notes"],
+          "properties": {
+            "status": {"enum": ["NONE", "AMBIGUOUS", "UNRESOLVED"]},
+            "notes": {"type": ["string", "null"]}
+          }
+        }
+      }
+    },
+    "notes": {"type": ["string", "null"]}
+  }
+}

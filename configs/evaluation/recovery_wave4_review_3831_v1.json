@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.recovery_wave4_review",
+  "baseline": {
+    "zip_path": "artifacts/official/submission-3831/submission.zip",
+    "zip_sha256": "c1494ea630e7654def93a426d6f00b31f77fef05a67baac4e07e1ac7be262245"
+  },
+  "questions": {
+    "path": "data/raw/btc/questions/questions.jsonl",
+    "sha256": "64a428d90a8c5ad5d36a397d2de3b6e3aa4e4c1224dcdcb118fe3a4fca056ff0",
+    "records": 1012
+  },
+  "a6_database": {
+    "database_path": "data/processed/a6/c6887fb633374fad/silver.db",
+    "database_sha256": "fa6c46d6d46b4735f6a23fe1f2b8e2be16c206b712f47b8f22a5f0647f5dc3c8",
+    "build_id": "c6887fb633374fad"
+  },
+  "semantic_identity": {
+    "ontology_fingerprint": "bdef88d94b814ae60109f3da486a627d02dfbbe5d1e3ad6ede942598532644c8",
+    "resolver_id": "a6-source-metric-v2",
+    "resolver_fingerprint": "ecf68f5cf27678ed5652eaf42fb1a263d5244d099ae71f050e62681cee34d586",
+    "resolver_config_sha256": "f63f77411e2e8c0a6859c8a654d424286c06fd152f76c3e23669f952cc051b65",
+    "s3_run_id": "semantic-v3-wave4-3831-axes-s3-20260830-v3",
+    "s4_run_id": "semantic-v4-wave4-3831-composition-s4-20260830-v1"
+  },
+  "policy": {
+    "mode": "additive_only",
+    "require_execution_ready": true,
+    "protect_existing_answers": true,
+    "protect_retrieval": true,
+    "runtime_model_gold": false,
+    "source_adjudication_required": true,
+    "official_correctness": "NOT_MEASURED"
+  },
+  "reviews": [
+    {
+      "qid": 405,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "S4 produced non-equivalent bindings for a nested growth filter, average-asset turnover rank, and projected ROE; the full operand chain was not source-adjudicated."
+    },
+    {
+      "qid": 412,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "The emitted entity domain omits MSN and therefore does not implement the question's complete population."
+    },
+    {
+      "qid": 423,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "S4 candidate disagreement remains across quick-ratio median filtering and the 15 percent EBIT scenario."
+    },
+    {
+      "qid": 435,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "The AST computes current interest coverage and omits the hypothetical 10 percent net-revenue reduction."
+    },
+    {
+      "qid": 450,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "The AST ranks revenue growth across all years but omits the median filter based on PAT minus CFO over average assets."
+    },
+    {
+      "qid": 451,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "S4 candidate disagreement remains for the inventory-days median filter and two-period average margin change."
+    },
+    {
+      "qid": 452,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "S4 candidate disagreement remains for the current-ratio median filter and average gross-margin projection."
+    },
+    {
+      "qid": 459,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "The rank expression uses equity alone and omits liabilities from the requested liabilities-to-equity ratio."
+    },
+    {
+      "qid": 495,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "Prior source review established that the emitted land-rent/other-receivables path does not answer the requested lease/related-party metric."
+    },
+    {
+      "qid": 513,
+      "cohort": "select_at_arg_source_resolved",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {
+        "metric": true,
+        "entity": true,
+        "period": true,
+        "basis": true,
+        "operation": true,
+        "unit": true,
+        "source": true
+      },
+      "parse_candidate_id": null,
+      "ast_fingerprint": "721d689314ed706b6f7412b42028cae8ddbdee4d1b0187052e16c12ea20b7a56",
+      "plan_fingerprint": "c77e3f98093171fa6739f1e53bf129aef7fe32b314539d25af1372546fab56c2",
+      "source_labels": [
+        "Hàng tồn kho",
+        "Nguyên liệu, vật liệu — Số cuối năm — Giá gốc"
+      ],
+      "fact_uids": [
+        "d4d8508ff2e22a91",
+        "902c58cace58729f",
+        "9674ce22ae58a0d6",
+        "1f0da3b9fccdc3df",
+        "cb6f3171bcddd5fb",
+        "6ae8976de9f19062",
+        "d105d9e65fd18863",
+        "083c5c4f73a6aa20",
+        "5cdfae78e0315e65",
+        "1abc033e28729738"
+      ],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '6ae8976de9f19062']['value'].values[0]) if float(df1[df1['observation_uid'] == 'd4d8508ff2e22a91']['value'].values[0]) == max(float(df1[df1['observation_uid'] == 'd4d8508ff2e22a91']['value'].values[0]), float(df1[df1['observation_uid'] == '902c58cace58729f']['value'].values[0]), float(df1[df1['observation_uid'] == '9674ce22ae58a0d6']['value'].values[0]), float(df1[df1['observation_uid'] == '1f0da3b9fccdc3df']['value'].values[0]), float(df1[df1['observation_uid'] == 'cb6f3171bcddd5fb']['value'].values[0])) else (float(df1[df1['observation_uid'] == 'd105d9e65fd18863']['value'].values[0]) if float(df1[df1['observation_uid'] == '902c58cace58729f']['value'].values[0]) == max(float(df1[df1['observation_uid'] == 'd4d8508ff2e22a91']['value'].values[0]), float(df1[df1['observation_uid'] == '902c58cace58729f']['value'].values[0]), float(df1[df1['observation_uid'] == '9674ce22ae58a0d6']['value'].values[0]), float(df1[df1['observation_uid'] == '1f0da3b9fccdc3df']['value'].values[0]), float(df1[df1['observation_uid'] == 'cb6f3171bcddd5fb']['value'].values[0])) else (float(df1[df1['observation_uid'] == '083c5c4f73a6aa20']['value'].values[0]) if float(df1[df1['observation_uid'] == '9674ce22ae58a0d6']['value'].values[0]) == max(float(df1[df1['observation_uid'] == 'd4d8508ff2e22a91']['value'].values[0]), float(df1[df1['observation_uid'] == '902c58cace58729f']['value'].values[0]), float(df1[df1['observation_uid'] == '9674ce22ae58a0d6']['value'].values[0]), float(df1[df1['observation_uid'] == '1f0da3b9fccdc3df']['value'].values[0]), float(df1[df1['observation_uid'] == 'cb6f3171bcddd5fb']['value'].values[0])) else (float(df1[df1['observation_uid'] == '5cdfae78e0315e65']['value'].values[0]) if float(df1[df1['observation_uid'] == '1f0da3b9fccdc3df']['value'].values[0]) == max(float(df1[df1['observation_uid'] == 'd4d8508ff2e22a91']['value'].values[0]), float(df1[df1['observation_uid'] == '902c58cace58729f']['value'].values[0]), float(df1[df1['observation_uid'] == '9674ce22ae58a0d6']['value'].values[0]), float(df1[df1['observation_uid'] == '1f0da3b9fccdc3df']['value'].values[0]), float(df1[df1['observation_uid'] == 'cb6f3171bcddd5fb']['value'].values[0])) else float(df1[df1['observation_uid'] == '1abc033e28729738']['value'].values[0]))))) / 1000000000)",
+      "expected_answer": 9.497171212,
+      "rationale": "2017 has the largest consolidated year-end inventory balance. The requested projected row is the year-end cost column for raw materials, 9,497,171,212 VND; the competing 4,318,565,094 value is the allowance column and is excluded by the explicit 'giá gốc' wording."
+    },
+    {
+      "qid": 521,
+      "cohort": "select_at_arg_source_resolved",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {
+        "metric": true,
+        "entity": true,
+        "period": true,
+        "basis": true,
+        "operation": true,
+        "unit": true,
+        "source": true
+      },
+      "parse_candidate_id": null,
+      "ast_fingerprint": "385d5df7659f1a58afd49b4c80aa397d3ea0a33686b6807fac9bd816e49a20a1",
+      "plan_fingerprint": "48b85e49d0e05502459df1a2c8b48a8b589a2a10813a3d9b2f1aec0f75c2ff6e",
+      "source_labels": [
+        "Tiền và các khoản tương đương tiền — Số cuối năm",
+        "Chi phí lãi vay"
+      ],
+      "fact_uids": [
+        "f29ee9159ed53217",
+        "364d6662a44cdf94",
+        "a49c82d98e2d1b65",
+        "0f5132f2fc285916",
+        "40c9585ddcd11912",
+        "0f97443951810cff"
+      ],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '0f5132f2fc285916']['value'].values[0]) if float(df1[df1['observation_uid'] == 'f29ee9159ed53217']['value'].values[0]) == max(float(df1[df1['observation_uid'] == 'f29ee9159ed53217']['value'].values[0]), float(df1[df1['observation_uid'] == '364d6662a44cdf94']['value'].values[0]), float(df1[df1['observation_uid'] == 'a49c82d98e2d1b65']['value'].values[0])) else (float(df1[df1['observation_uid'] == '40c9585ddcd11912']['value'].values[0]) if float(df1[df1['observation_uid'] == '364d6662a44cdf94']['value'].values[0]) == max(float(df1[df1['observation_uid'] == 'f29ee9159ed53217']['value'].values[0]), float(df1[df1['observation_uid'] == '364d6662a44cdf94']['value'].values[0]), float(df1[df1['observation_uid'] == 'a49c82d98e2d1b65']['value'].values[0])) else float(df1[df1['observation_uid'] == '0f97443951810cff']['value'].values[0]))) / 1000000000)",
+      "expected_answer": 500.688616629,
+      "rationale": "The consolidated year-end cash-and-cash-equivalents balance peaks in 2023 at 694,458,293,386 VND. The exact positive note row for 2023 interest expense is 500,688,616,629 VND."
+    },
+    {
+      "qid": 526,
+      "cohort": "select_at_arg",
+      "decision": "FAIL_CLOSED",
+      "reason": "The exact combined basic-and-diluted EPS source fact for 2023 is not execution-ready; the emitted program substituted a related diluted-EPS row, so the exact-source checklist is not satisfied."
+    },
+    {
+      "qid": 537,
+      "cohort": "select_at_arg_source_resolved",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {
+        "metric": true,
+        "entity": true,
+        "period": true,
+        "basis": true,
+        "operation": true,
+        "unit": true,
+        "source": true
+      },
+      "parse_candidate_id": "semantic-program:955e790f4f89df2d",
+      "ast_fingerprint": "9ddf94b6fdf407ddbfa4fa1aebe35f445f61ae6920bc472b3be7aeb55070f157",
+      "plan_fingerprint": "74b16e17e4df6129abe4650e4c95475f30d8c6168cd693a7016fc33c9ea62bfa",
+      "source_labels": [
+        "Quỹ phát triển khoa học và công nghệ",
+        "Đầu tư góp vốn vào đơn vị khác — Số cuối năm"
+      ],
+      "fact_uids": [
+        "58a688e3c893f4db",
+        "171ee4a4c6206ce6",
+        "143628d002017718",
+        "8999522261192187",
+        "36351f4a050f403c",
+        "cba90d4a09628682",
+        "9ed63672488a5a7f",
+        "b6c3f5b215fc2425",
+        "1674f69a96a513b6",
+        "3481e6e662562166"
+      ],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'cba90d4a09628682']['value'].values[0]) if float(df1[df1['observation_uid'] == '58a688e3c893f4db']['value'].values[0]) == max(float(df1[df1['observation_uid'] == '58a688e3c893f4db']['value'].values[0]), float(df1[df1['observation_uid'] == '171ee4a4c6206ce6']['value'].values[0]), float(df1[df1['observation_uid'] == '143628d002017718']['value'].values[0]), float(df1[df1['observation_uid'] == '8999522261192187']['value'].values[0]), float(df1[df1['observation_uid'] == '36351f4a050f403c']['value'].values[0])) else (float(df1[df1['observation_uid'] == '9ed63672488a5a7f']['value'].values[0]) if float(df1[df1['observation_uid'] == '171ee4a4c6206ce6']['value'].values[0]) == max(float(df1[df1['observation_uid'] == '58a688e3c893f4db']['value'].values[0]), float(df1[df1['observation_uid'] == '171ee4a4c6206ce6']['value'].values[0]), float(df1[df1['observation_uid'] == '143628d002017718']['value'].values[0]), float(df1[df1['observation_uid'] == '8999522261192187']['value'].values[0]), float(df1[df1['observation_uid'] == '36351f4a050f403c']['value'].values[0])) else (float(df1[df1['observation_uid'] == 'b6c3f5b215fc2425']['value'].values[0]) if float(df1[df1['observation_uid'] == '143628d002017718']['value'].values[0]) == max(float(df1[df1['observation_uid'] == '58a688e3c893f4db']['value'].values[0]), float(df1[df1['observation_uid'] == '171ee4a4c6206ce6']['value'].values[0]), float(df1[df1['observation_uid'] == '143628d002017718']['value'].values[0]), float(df1[df1['observation_uid'] == '8999522261192187']['value'].values[0]), float(df1[df1['observation_uid'] == '36351f4a050f403c']['value'].values[0])) else (float(df1[df1['observation_uid'] == '1674f69a96a513b6']['value'].values[0]) if float(df1[df1['observation_uid'] == '8999522261192187']['value'].values[0]) == max(float(df1[df1['observation_uid'] == '58a688e3c893f4db']['value'].values[0]), float(df1[df1['observation_uid'] == '171ee4a4c6206ce6']['value'].values[0]), float(df1[df1['observation_uid'] == '143628d002017718']['value'].values[0]), float(df1[df1['observation_uid'] == '8999522261192187']['value'].values[0]), float(df1[df1['observation_uid'] == '36351f4a050f403c']['value'].values[0])) else float(df1[df1['observation_uid'] == '3481e6e662562166']['value'].values[0]))))) / 1000000000)",
+      "expected_answer": 9.332682344,
+      "rationale": "The requested fund balance is largest in 2024. The same-year consolidated closing investment in other entities is 9,332,682,344 VND."
+    },
+    {
+      "qid": 540,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "S4 candidate disagreement remains for the revenue-growth filter and average two-period gross-margin change."
+    },
+    {
+      "qid": 542,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "S4 candidate disagreement remains for the multi-entity revenue-growth filter and average gross-margin change."
+    },
+    {
+      "qid": 554,
+      "cohort": "complex_composition",
+      "decision": "FAIL_CLOSED",
+      "reason": "S4 candidate disagreement remains for the filtered multi-entity gross-margin change."
+    },
+    {
+      "qid": 632,
+      "cohort": "direct_growth",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {
+        "metric": true,
+        "entity": true,
+        "period": true,
+        "basis": true,
+        "operation": true,
+        "unit": true,
+        "source": true
+      },
+      "parse_candidate_id": "semantic-program:4621e36c71e8c3d7",
+      "ast_fingerprint": "adf275fe4285a8439ddd0fcbd3e1d0e73784c6c445e09b538f86dd35967f80b5",
+      "plan_fingerprint": "f99e41382cbdb11ae452f42e7f49b7df59d1608e4a38aa12e19dda1680ffca48",
+      "source_labels": [
+        "Tài sản dài hạn — mã 200 — cuối năm"
+      ],
+      "fact_uids": [
+        "e787776ac64fcba5",
+        "d1d33054a4c07bb6"
+      ],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'd1d33054a4c07bb6']['value'].values[0]) - float(df1[df1['observation_uid'] == 'e787776ac64fcba5']['value'].values[0])) / float(df1[df1['observation_uid'] == 'e787776ac64fcba5']['value'].values[0]) * 100)",
+      "expected_answer": 26.261844792838143,
+      "rationale": "Both observations are consolidated code-200 non-current assets in thousand VND. The common scale cancels in the 2016-to-2020 growth calculation."
+    },
+    {
+      "qid": 782,
+      "cohort": "binary_difference",
+      "decision": "FAIL_CLOSED",
+      "reason": "The selected HNG row is labeled thousand VND but carries scale_exponent=0; using it directly understates HNG share capital by 1,000 and invalidates the emitted difference."
+    },
+    {
+      "qid": 799,
+      "cohort": "binary_difference",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {
+        "metric": true,
+        "entity": true,
+        "period": true,
+        "basis": true,
+        "operation": true,
+        "unit": true,
+        "source": true
+      },
+      "parse_candidate_id": "semantic-program:068fcac24b326fde",
+      "ast_fingerprint": "8e364931f66271bfcc587d95d7b47d5c9328da5d2ddba58065bb1570227fa6f0",
+      "plan_fingerprint": "da9a80347229ec9eec5a9c24e8957aa7b5ef7355cce3669bd1a04a839ca56288",
+      "source_labels": [
+        "Vốn chủ sở hữu — công ty mẹ — Số cuối năm"
+      ],
+      "fact_uids": [
+        "09944f12d2b612a2",
+        "87b1511f3e1d4a4c"
+      ],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == '09944f12d2b612a2']['value'].values[0]) - float(df1[df1['observation_uid'] == '87b1511f3e1d4a4c']['value'].values[0])) / 1000000000)",
+      "expected_answer": -118.848765917,
+      "rationale": "The question order defines parent HBC minus parent SAM. Both are separate-basis 2021 closing equity balances in VND; the signed difference is -118.848765917 billion VND."
+    },
+    {
+      "qid": 827,
+      "cohort": "entity_average",
+      "decision": "PASS_SOURCE_PROVEN",
+      "checks": {
+        "metric": true,
+        "entity": true,
+        "period": true,
+        "basis": true,
+        "operation": true,
+        "unit": true,
+        "source": true
+      },
+      "parse_candidate_id": "semantic-program:4f3723c3e62604a5",
+      "ast_fingerprint": "2cebd0b068a78d93a531af7530e30835cc4e87cd5b54522f0833279d887ed56d",
+      "plan_fingerprint": "51e0a7e3a41a516384b211543fa4720b195beae2d70f7181e43dcccb6d6543c2",
+      "source_labels": [
+        "Thuế và các khoản phải nộp Nhà nước — công ty mẹ — Số cuối năm"
+      ],
+      "fact_uids": [
+        "f8fceab177f13730",
+        "a4d310ca743bda5a",
+        "d88463f044ca8247",
+        "515f639ea3548214"
+      ],
+      "pandas_query": "float((float(df1[df1['observation_uid'] == 'f8fceab177f13730']['value'].values[0]) + float(df1[df1['observation_uid'] == 'a4d310ca743bda5a']['value'].values[0]) + float(df1[df1['observation_uid'] == 'd88463f044ca8247']['value'].values[0]) * 1000000 + float(df1[df1['observation_uid'] == '515f639ea3548214']['value'].values[0])) / 4 / 1000000000)",
+      "expected_answer": 602.37564375975,
+      "rationale": "All four requested parent-company entities are present at 2019 year-end. VIC is reported in million VND and is scaled to VND before the arithmetic mean."
+    },
+    {
+      "qid": 922,
+      "cohort": "entity_sum",
+      "decision": "FAIL_CLOSED",
+      "reason": "DXS lacks an unambiguous consolidated income-statement financial-expense row; surviving assignments produce three different sums."
+    },
+    {
+      "qid": 929,
+      "cohort": "simple_extremum",
+      "decision": "FAIL_CLOSED",
+      "reason": "The emitted observations are generic issued, corporate, and special bonds rather than government bonds, so metric identity is wrong."
+    }
+  ]
+}

@@ -6,7 +6,7 @@ row or dataframe identifiers; those belong to the bound execution plan.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from typing import Any, TypeAlias
 
@@ -17,6 +17,7 @@ from .types import (
     Basis,
     ComparisonOperator,
     LogicalOperator,
+    ObservationRoleSpec,
     OutputSpec,
     PeriodSemantics,
     PredicateQuantifier,
@@ -85,6 +86,7 @@ class MetricRef:
     # Every phrase is a hard evidence requirement, unlike soft qualifiers.
     required_context_phrases: tuple[str, ...] = ()
     source_binding: MetricBindingHint | None = None
+    observation_role: ObservationRoleSpec | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +105,21 @@ class Arithmetic:
 @dataclass(frozen=True, slots=True)
 class Unary:
     operator: UnaryOperator
+    expression: Expression
+
+
+@dataclass(frozen=True, slots=True)
+class RollingAverage:
+    """Average consecutive periods while preserving the current-period key."""
+
+    expression: Expression
+    window: int = 2
+
+
+@dataclass(frozen=True, slots=True)
+class RollingGrowth:
+    """Compute current/prior - 1 while preserving the current-period key."""
+
     expression: Expression
 
 
@@ -175,9 +192,78 @@ class SelectAtArg:
 
 
 Expression: TypeAlias = (
-    MetricRef | Literal | Arithmetic | Unary | FormulaCall | Aggregate | Filter | Rank | SelectAtArg
+    MetricRef
+    | Literal
+    | Arithmetic
+    | Unary
+    | RollingAverage
+    | RollingGrowth
+    | FormulaCall
+    | Aggregate
+    | Filter
+    | Rank
+    | SelectAtArg
 )
 Predicate: TypeAlias = Comparison | Exists | LogicalPredicate | QuantifiedPredicate
+
+
+def iter_metric_refs(expression: Expression) -> Iterator[MetricRef]:
+    """Walk metric leaves in deterministic expression order."""
+
+    if isinstance(expression, MetricRef):
+        yield expression
+        return
+    if isinstance(expression, Literal):
+        return
+    if isinstance(expression, Arithmetic):
+        yield from iter_metric_refs(expression.left)
+        yield from iter_metric_refs(expression.right)
+        return
+    if isinstance(expression, Unary):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, RollingAverage):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, RollingGrowth):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, FormulaCall):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, Aggregate):
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, Filter):
+        yield from _iter_predicate_metric_refs(expression.predicate)
+        yield from iter_metric_refs(expression.expression)
+        return
+    if isinstance(expression, Rank):
+        yield from iter_metric_refs(expression.by)
+        return
+    if isinstance(expression, SelectAtArg):
+        yield from iter_metric_refs(expression.rank)
+        yield from iter_metric_refs(expression.expression)
+        return
+    raise TypeError(f"unsupported expression: {type(expression).__name__}")
+
+
+def _iter_predicate_metric_refs(predicate: Predicate) -> Iterator[MetricRef]:
+    if isinstance(predicate, Comparison):
+        yield from iter_metric_refs(predicate.left)
+        yield from iter_metric_refs(predicate.right)
+        return
+    if isinstance(predicate, Exists):
+        yield from iter_metric_refs(predicate.expression)
+        return
+    if isinstance(predicate, LogicalPredicate):
+        for child in predicate.predicates:
+            yield from _iter_predicate_metric_refs(child)
+        return
+    if isinstance(predicate, QuantifiedPredicate):
+        yield from _iter_predicate_metric_refs(predicate.predicate)
+        return
+    raise TypeError(f"unsupported predicate: {type(predicate).__name__}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,6 +320,11 @@ def expression_to_dict(expression: Expression) -> dict[str, Any]:
                 if expression.source_binding
                 else {}
             ),
+            **(
+                {"observation_role": expression.observation_role.to_dict()}
+                if expression.observation_role
+                else {}
+            ),
         }
     if isinstance(expression, Literal):
         return {"type": "literal", "value": expression.value, "unit": expression.unit.to_dict()}
@@ -248,6 +339,17 @@ def expression_to_dict(expression: Expression) -> dict[str, Any]:
         return {
             "type": "unary",
             "operator": expression.operator.value,
+            "expression": expression_to_dict(expression.expression),
+        }
+    if isinstance(expression, RollingAverage):
+        return {
+            "type": "rolling_average",
+            "window": expression.window,
+            "expression": expression_to_dict(expression.expression),
+        }
+    if isinstance(expression, RollingGrowth):
+        return {
+            "type": "rolling_growth",
             "expression": expression_to_dict(expression.expression),
         }
     if isinstance(expression, FormulaCall):
@@ -346,6 +448,11 @@ def expression_from_dict(raw: Mapping[str, Any]) -> Expression:
                 if raw.get("source_binding") is not None
                 else None
             ),
+            observation_role=(
+                ObservationRoleSpec.from_dict(_mapping(raw["observation_role"]))
+                if raw.get("observation_role") is not None
+                else None
+            ),
         )
     if kind == "literal":
         return Literal(float(raw["value"]), UnitSpec.from_dict(_mapping(raw["unit"])))
@@ -360,6 +467,13 @@ def expression_from_dict(raw: Mapping[str, Any]) -> Expression:
             UnaryOperator(str(raw["operator"])),
             expression_from_dict(_mapping(raw["expression"])),
         )
+    if kind == "rolling_average":
+        return RollingAverage(
+            expression_from_dict(_mapping(raw["expression"])),
+            int(raw.get("window", 2)),
+        )
+    if kind == "rolling_growth":
+        return RollingGrowth(expression_from_dict(_mapping(raw["expression"])))
     if kind == "formula_call":
         return FormulaCall(
             str(raw["formula_id"]),

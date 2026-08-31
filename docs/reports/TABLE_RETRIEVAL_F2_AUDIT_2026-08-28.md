@@ -98,7 +98,9 @@ Hai ZIP đáng chú ý:
 
 Semantic V3 gần như chắc chắn không phải exact ZIP 3757 theo contract thông thường: chỉ 362/1.012 câu có predicted docs, nên trần macro Docs Recall là `362/1012 = 0.3577`, thấp hơn leaderboard `0.6257`. Ngoại lệ duy nhất là server loại hàng trăm câu khỏi mẫu số, điều không phù hợp với mô tả macro toàn tập.
 
-Canonical ZIP hiện tại cũng không thể nhận là 3757: report [`FINAL_REPORT.md`](../../artifacts/reports/e2e_submission_a2d3ef030861/FINAL_REPORT.md) ghi rõ ZIP này chưa upload.
+Canonical ZIP hiện tại cũng không thể nhận là 3757: report được ghi nhận tại
+`artifacts/reports/e2e_submission_a2d3ef030861/FINAL_REPORT.md` (không được
+materialize trong checkout hiện tại) ghi rõ ZIP này chưa upload.
 
 | Metric | Leaderboard 3757 | Local official reproduction | Absolute difference |
 |---|---:|---:|---:|
@@ -113,7 +115,9 @@ Canonical ZIP hiện tại cũng không thể nhận là 3757: report [`FINAL_RE
 
 Không thể tạo bảng diagnostic chính thức vì thiếu cả exact prediction 3757 lẫn hidden gold. Vì vậy TP/FP/FN, rank gold và contribution vào F2 loss cho cả 10 bucket đều là `UNKNOWN`.
 
-Repository có diagnostic proxy cho 95/1.012 câu tại [`current_after.jsonl`](../../artifacts/runs/retrieval/release-paired-20260828/current_after.jsonl), nhưng:
+Repository ghi nhận diagnostic proxy cho 95/1.012 câu tại
+`artifacts/runs/retrieval/release-paired-20260828/current_after.jsonl` (không
+được materialize trong checkout hiện tại), nhưng:
 
 - Coverage chỉ `9.387%`.
 - Gold trung bình `5.83` bảng/câu, median 2; hidden gold có thể khác đáng kể.
@@ -141,7 +145,9 @@ Trên 95 câu local có manual labels:
 | 20 | 0.9684 | 0.7956 |
 | Full S1 pool | 1.0000 candidate hit | Full-item recall không được lưu |
 
-Nguồn: [`paired_comparison.json`](../../artifacts/runs/retrieval/release-paired-20260828/paired_comparison.json).
+Nguồn được ghi nhận tại
+`artifacts/runs/retrieval/release-paired-20260828/paired_comparison.json`
+(artifact không được materialize trong checkout hiện tại).
 
 Phân loại proxy:
 

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.semantic_parser_wave6_p1_checkpoint",
+  "status": "BLOCKED_PENDING_HUMAN_REVIEW",
+  "gate": "P1_INDEPENDENT_SEMANTIC_PARSER_GOLD",
+  "source": {
+    "review_gate_commit": "9cd62fc38718e7e0cb820808d38b8df73c7f3ed7",
+    "audit_cli_commit": "74147a75f3907476802d759998fab9cd0c47921b"
+  },
+  "scope": {
+    "path": "configs/evaluation/recovery_wave5_riska60_scope_3842_v1.json",
+    "sha256": "9d77ec98fd7a1c2562ec94e4929d023dfbb0552560515c187b20593226d44899",
+    "records": 60,
+    "development": 40,
+    "holdout": 20
+  },
+  "packet": {
+    "path": "artifacts/runs/evaluation/semantic-parser-wave6-review-20260831-v1",
+    "manifest_sha256": "f55393a6c7af61599f185c402eaf7eb60ea6e63fb7162315536f19c88a861c08",
+    "prediction_blind": true
+  },
+  "completion": {
+    "annotator_a": 0,
+    "annotator_b": 0,
+    "adjudication_c": 0,
+    "distinct_reviewer_ids": 0
+  },
+  "blockers": [
+    "ANNOTATOR_A_INCOMPLETE:60",
+    "ANNOTATOR_B_INCOMPLETE:60",
+    "ADJUDICATION_INCOMPLETE:60",
+    "DISTINCT_REVIEWER_IDENTITIES_REQUIRED:0:3"
+  ],
+  "downstream_phases_started": false,
+  "runtime_parser_changed": false,
+  "submission_built": false
+}

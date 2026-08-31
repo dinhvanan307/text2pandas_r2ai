@@ -1,0 +1,624 @@
+{
+  "counts": {
+    "families": {
+      "direct_lookup": 7,
+      "direct_ratio": 9,
+      "single_metric_average": 30,
+      "single_metric_sum": 3,
+      "two_period_difference": 11
+    },
+    "records": 60,
+    "splits": {
+      "development": 40,
+      "holdout": 20
+    }
+  },
+  "family_split": {
+    "direct_lookup": {
+      "development": 5,
+      "holdout": 2
+    },
+    "direct_ratio": {
+      "development": 6,
+      "holdout": 3
+    },
+    "single_metric_average": {
+      "development": 20,
+      "holdout": 10
+    },
+    "single_metric_sum": {
+      "development": 2,
+      "holdout": 1
+    },
+    "two_period_difference": {
+      "development": 7,
+      "holdout": 4
+    }
+  },
+  "kind": "text2pandas.recovery_wave5_riska60_scope",
+  "records": [
+    {
+      "family": "direct_lookup",
+      "qid": 151,
+      "question": "Tiền gửi tiết kiệm bằng VND của EIB đến ngày 31/12/2015 là bao nhiêu triệu đồng?",
+      "question_sha256": "034eaf10e7c1c94c4948935141330d64d52fd7de9cf327c3a70b12b244a382c3",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "f84d1fa72d75fb116ed3162d660e079fbcf198d2b842c898c6093812a6c2a938"
+    },
+    {
+      "family": "direct_lookup",
+      "qid": 267,
+      "question": "Số dư tiền gửi có kỳ hạn bằng ngoại tệ của công ty mẹ Ngân hàng TMCP Á Châu (ACB) đến ngày 31/12/2020 là bao nhiêu triệu đồng?",
+      "question_sha256": "3dc5392ec3ea3058b6f67e027e5b3543e968a294a3b5df2faab1cf17aed9be30",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "7d8c7d4d0a6f41eb530e484d633b72f2b8654b4591ed5cb734cc162c5c4c5fd6"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 406,
+      "question": "Trong năm 2024, các doanh nghiệp ngành thực phẩm (bao gồm các công ty DBC, MSN, OGC) có lợi nhuận sau thuế dương và hệ số chuyển đổi lợi nhuận (CFO/LNST) lớn hơn 1 đạt tốc độ tăng trưởng tài sản dài hạn bình quân là bao nhiêu phần trăm so với năm 2023?",
+      "question_sha256": "8569d477d20446f004de4ead9a5dd11f8c0f197e10aac3c384140c81248ca3c0",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "96566aacc6d30513d27aab2ab03d8dce1ba58e83ad4b01774735ba9bc8eff271"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 408,
+      "question": "Xét các doanh nghiệp thuộc nhóm VNM, DBC, BAF và có tăng trưởng doanh thu thuần năm 2024 so với năm 2023 trên 5%; biên lợi nhuận gộp bình quân năm 2024 của các doanh nghiệp thỏa điều kiện là bao nhiêu phần trăm?",
+      "question_sha256": "236453bddd02d6332a4498cdb3d5139eeda3a710899af953c6e2e3dc31459c61",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "bf54ecae1f78b0e41cd0131c0cc850a9ee9902e78de905bcb5d67dd8c1503b77"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 427,
+      "question": "Vào năm 2016 tại Tập đoàn FPT, với các đồng tiền có công nợ tiền tệ cuối năm lớn hơn tài sản tiền tệ cuối năm, tổng mức giảm lợi nhuận trước thuế theo bảng độ nhạy nếu VND biến động bất lợi 5% là bao nhiêu tỷ đồng?",
+      "question_sha256": "53bafd555c4e62601347728dd1a892f57c1dc7037381b6ea53184a97d265ee86",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "bf1534688b7da7cb7392dfd7f5fe78f8bd4c2a0fb58763e5083cd652f9f1f8b3"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 430,
+      "question": "Trong các doanh nghiệp bất động sản (DIG,IJC,KBC,NVL,SCR,VIC,VPI,VRE) có doanh thu và biên lợi nhuận hoạt động cùng sụt giảm năm 2024, doanh nghiệp có SG&A intensity tăng mạnh nhất có biên lợi nhuận hoạt động giảm bao nhiêu điểm phần trăm?",
+      "question_sha256": "c01036f16727ad8545145898f97a9dcdc01c1c4bc3579bac4fd4aac54cd92528",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "0dd5158bf365a1923df9ea098de1c3aa85190c711e039cbc606c8ed33c76e9cc"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 438,
+      "question": "Trong các doanh nghiệp có mã cổ phiếu VIC, NVL, VRE, KBC, VPI và HPX, xét những doanh nghiệp có lợi nhuận sau thuế dương và tỷ lệ dòng tiền thuần từ hoạt động kinh doanh (CFO) trên lợi nhuận sau thuế lớn hơn 1 ở cả hai năm. Tốc độ tăng trưởng doanh thu thuần năm 2024 so với năm 2023, tính bình quân cho các doanh nghiệp này, là bao nhiêu phần trăm?",
+      "question_sha256": "32d9fd73f2feda5d38dcbcb94290071a462b9e5d70fdbb0a9e25d024052e2b75",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "cfdb6a4bdbbb35167d8fe1e7c5450529a9c8375605396fc76cac30b5345cccf3"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 456,
+      "question": "Trong giai đoạn 2016–2021 của KBC, tại năm liền sau năm đầu tiên doanh nghiệp có lưu chuyển tiền thuần từ hoạt động kinh doanh âm, lợi nhuận gộp chiếm bao nhiêu phần trăm doanh thu thuần?",
+      "question_sha256": "8e3af9fc1fe8d83dcd1de25b89232cb3639e195ef5e5b95142081d255edc2b61",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "47b9ab00f22e8364b92b29c28878590e7a40dadf17458ea53c249cbe026f991a"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 468,
+      "question": "Trong ba mã cổ phiếu DLG, HHV và VSC, với các công ty có lợi nhuận sau thuế dương năm 2020, bình quân của tỷ lệ chênh lệch giữa lợi nhuận sau thuế và lưu chuyển tiền thuần từ hoạt động kinh doanh năm 2020 trên tổng tài sản bình quân năm 2019 và 2020 là bao nhiêu %?",
+      "question_sha256": "5ea2f247f2a031bb522f6e456e5ee7b7b3b1f003a686e64a5f48515ef800e5e2",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "f3d7d26c0dfe2712f9a2ae47f09a5286fb49b3df41ae68520c560caa12263a5a"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 487,
+      "question": "Trong các công ty DLG, HHV và VSC có lợi nhuận sau thuế dương năm 2020, bình quân tỷ lệ giữa chênh lệch lợi nhuận sau thuế và lưu chuyển tiền thuần từ hoạt động kinh doanh với trung bình tổng tài sản cuối năm 2019 và 2020 là bao nhiêu %?",
+      "question_sha256": "4bfe3e2fe953544fe7141ab1ffca0591db34453983955451fe6b45a96084f722",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "01e01db7648cc1e1437616e52b6c1d7fc76b9b5dc96810051aff2a9835702b24"
+    },
+    {
+      "family": "single_metric_sum",
+      "qid": 490,
+      "question": "Trong nhóm HPG, HSG, MSR và NKG có tỷ lệ lợi nhuận sau thuế trên doanh thu thuần dương trong cả ba năm 2020–2022, tổng doanh thu thuần năm 2022 của các công ty đó là bao nhiêu nghìn tỷ đồng?",
+      "question_sha256": "ee7eb8844301d51bd9efc64f32e397577ee51e5abe0bb724fabd6caaa3d69ca7",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "c02978538e4ad0fc467806cd88703066914b66252b4117e6a1ae29f8f9cfa50a"
+    },
+    {
+      "family": "direct_lookup",
+      "qid": 534,
+      "question": "Tổng số phải trả sau 12 tháng của công ty có tỷ lệ quyền biểu quyết tại các đơn vị liên doanh, liên kết đạt từ 50% trở lên trong số CTCP Tập đoàn GELEX (GEX), CTCP Tập đoàn Xây dựng Hòa Bình (HBC) và CTCP Tập Đoàn PC1 (PC1) năm 2024 là bao nhiêu nghìn tỷ đồng?",
+      "question_sha256": "0b32b7db42d669d74a3d88eb30f2e74ce78f91a394b90ff0746f6a561bb8e8e8",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "86c024fb3d1abaee42b258d17c9ea117b26c71665cd0c1e034e2191d7d9c6bd6"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 540,
+      "question": "Trong số CTCP Phân bón Dầu khí Cà Mau, Tổng CTCP Phân bón và Hóa chất Dầu khí và CTCP Sản xuất Kinh doanh Xuất nhập khẩu Dịch vụ và Đầu tư Tân Bình, mức thay đổi trung bình từ năm 2019 đến năm 2020 của tỷ lệ lợi nhuận gộp trên doanh thu thuần tại các công ty có doanh thu thuần năm 2020 tăng so với năm 2019 là bao nhiêu điểm phần trăm?",
+      "question_sha256": "8eb6416cbfd1a629282210bea42f91ae44966b7403e547c3aba3c7810d7953c9",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "022da9c643b3b00693055d9476d17dc8c5f574e6a9819923716c5594b1de6ca8"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 542,
+      "question": "Trong số CTCP Phân bón Dầu khí Cà Mau, Tổng CTCP Phân bón và Hóa chất Dầu khí, Tập đoàn Công nghiệp Cao su Việt Nam và CTCP Sản xuất Kinh doanh Xuất nhập khẩu Dịch vụ và Đầu tư Tân Bình, mức thay đổi trung bình từ năm 2021 đến năm 2022 của tỷ lệ lợi nhuận gộp trên doanh thu thuần tại các công ty có doanh thu thuần năm 2022 tăng so với năm 2021 là bao nhiêu điểm phần trăm?",
+      "question_sha256": "f9161dc83e160d91c84e65205ff131981cf04f30805c6936bcbdadc1e489c2bf",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "dde162612988898aee72d22fbb2a26e22ab863ee923a0f48a1f4506c4c34f98b"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 554,
+      "question": "Trong nhóm DCM, DPM và PRT, xét các công ty có doanh thu thuần năm 2020 cao hơn năm 2019, mức tăng trung bình của tỷ lệ lợi nhuận gộp trên doanh thu thuần từ năm 2019 đến năm 2020 là bao nhiêu điểm phần trăm?",
+      "question_sha256": "027a4ca51d601760b9dd767305fca2fb8775436004acf5d4b8195140ac96c5c9",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "03e604af6f9f86a25597c713a0a75674abefb22149c4d3d4a225bcf6de0627a9"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 559,
+      "question": "Trong nhóm DCM, DPM và PRT, xét các công ty có lưu chuyển tiền thuần từ hoạt động kinh doanh dương ở cả năm 2019 và 2020, trung bình tỷ lệ thay đổi doanh thu thuần năm 2020 so với năm 2019 là bao nhiêu %?",
+      "question_sha256": "04ee95eda7bd9ab6f9f412618fbe0725ee0fe51d2dd934ec5ce8733479229fb7",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "6490d57bf27f012e2c01019e8a3585e951ab88f29b30886db515d787c7f42052"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 560,
+      "question": "Trong nhóm DCM, DPM, GVR và PRT, xét các công ty có lưu chuyển tiền thuần từ hoạt động kinh doanh dương ở cả năm 2020 và 2021, trung bình tỷ lệ thay đổi doanh thu thuần năm 2021 so với năm 2020 là bao nhiêu %?",
+      "question_sha256": "7533a13572c8b73f00bc04c03ea0e368b015957ed3ecedfef3132f15ba60effe",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "260f7515726221f69b6f356fa4ca11940afa2a78a6b2e8a6a68718a90c066890"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 565,
+      "question": "Trong nhóm DLG, HHV và VSC, xét các công ty có lợi nhuận sau thuế dương năm 2020, trung bình tỷ lệ của chênh lệch giữa lợi nhuận sau thuế và lưu chuyển tiền thuần từ hoạt động kinh doanh năm 2020 trên trung bình tổng tài sản cuối năm 2019 và cuối năm 2020 là bao nhiêu %?",
+      "question_sha256": "a5d7c517e60f8b93bf12cbb023ec0428b6843871afff725eb07e31fbee5e58e1",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "2718e0ba89ef146f39df66ee7a9935eb9e9ad4426ad8fb1e42035f7735276d05"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 567,
+      "question": "Năm 2016, trong các công ty AAA, DCM, DPM và GVR có tỷ lệ lợi nhuận sau thuế trên doanh thu thuần lớn hơn 10%, tổng doanh thu thuần là bao nhiêu nghìn tỷ đồng?",
+      "question_sha256": "97b485574b6d58e9645900260f99e18b537dea898e9deb6c08d42da0502f0305",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "f4e3cf110632cb9904dda8ba52a5fdbae0597a2c04207ef4e80af33d9f14b958"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 568,
+      "question": "Trong nhóm HPG, HSG, MSR và NKG, xét các công ty có tỷ lệ lợi nhuận sau thuế trên doanh thu thuần dương trong cả ba năm 2020, 2021 và 2022, tổng doanh thu thuần năm 2022 là bao nhiêu nghìn tỷ đồng?",
+      "question_sha256": "90eeee1dc059ca70f9a7ccf53a6f3059d0c0a73be94158ca401b5b641dc99c3a",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "3c2b795fd94c9e0bd8d16421b637a781cab388551b94b1d29627640061adac08"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 590,
+      "question": "Chênh lệch tổng hạn mức vay ngắn hạn của CTCP Đầu tư Hạ tầng Giao thông Đèo Cả (HHV) giữa năm 2025 và 2021 là bao nhiêu tỷ đồng?",
+      "question_sha256": "1996bbb1668ba409efe95d9adfe4bdd3efa399782802c64397c074676ab90717",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "88eeda961573b9a0e16e4510cce87769d649bbfff833ea62a0a8ed6b09c54737"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 629,
+      "question": "Tỷ lệ biến động số dư dự phòng phải thu ngắn hạn khó đòi giữa hai kỳ tài chính của công ty mẹ HBC giữa năm 2016 và năm 2020 là bao nhiêu %?",
+      "question_sha256": "9e1db5c27f014c9ab0e33d46bdda4bb655c73ea6982168dcd4e466187973a6a1",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "bfce2ffcb31f221eb5b904c33212c112b123e9632645869aa067bfc75d5e7c0c"
+    },
+    {
+      "family": "direct_lookup",
+      "qid": 659,
+      "question": "Tỷ suất chi trả cổ tức của CTCP Masan MeatLife trong năm 2024 là bao nhiêu %?",
+      "question_sha256": "620d54bddda1bcac1632951b1a0008a4f995017a260af889fbb4078f9e0eb6e1",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "1a7a232aa6c251965872790af997711c2ee38ad7b2486c02153208a570372ccd"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 661,
+      "question": "Tỷ lệ đầu tư vốn (CapEx) trên giá gốc Tài sản cố định hữu hình của công ty mẹ CTCP Thủy điện Đa Nhim - Hàm Thuận - Đa Mi năm 2021 là bao nhiêu %?",
+      "question_sha256": "8db14a796db187fbcbf3886e3ff0cbaf9607fc21d4757629a164c268a99c81a6",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "f4ebbda94df7fd915f41ccecd7b08182332475c657949f9bbda5fb4a4a389959"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 667,
+      "question": "Tỷ trọng nguyên giá tài sản cố định hữu hình trên tổng tài sản của công ty mẹ Ngân hàng TMCP Xuất nhập khẩu Việt Nam đến ngày 31/12/2023 là bao nhiêu phần trăm?",
+      "question_sha256": "a73b1eb14cf816430b8b2a963bae5659ade79ced87c07a49bbe68ca782cfc2cf",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "af1d1887d96e15daa2a3b186b4837afdc48d9175a498405e3152c554e5a617e2"
+    },
+    {
+      "family": "direct_lookup",
+      "qid": 668,
+      "question": "Tỷ suất sinh lời từ cổ tức đầu tư năm 2023 của công ty mẹ HHS là bao nhiêu %?",
+      "question_sha256": "321c27540eb557b45bf5fa68c662f712ee2f8bea359c79fad28d70ad658db3ce",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "261415da5422d225968eb26170c0391e789ad46b8972116035ec71e56c0487e6"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 670,
+      "question": "Tỷ trọng nợ vay ngắn hạn ngân hàng trên tổng nợ phải trả tài chính của công ty mẹ CTCP Nông nghiệp BAF Việt Nam đầu năm 2020 là bao nhiêu %?",
+      "question_sha256": "e4c7ae7b5da73272e8b5395d8625a8c84b20dacbde36958a1b257e5ed39e8296",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "5d30b4957a962884ad6faab13e82a9b951ca20da8f4f3d8afa466c93e05cae79"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 691,
+      "question": "Tỷ trọng doanh thu Ure Phú Mỹ trong tổng doanh thu thuần hàng hóa sản xuất trong nước của Tổng công ty Phân bón và Hóa chất Dầu khí - CTCP năm 2018 là bao nhiêu phần trăm?",
+      "question_sha256": "602035adc8091ec92aa632e0e657d11bfead1c6131c7d7f920f5c3644b1f40fe",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "895d332ae147e576010ab5bd3e52bc09c2b9c05249f095c02be54be38df9509d"
+    },
+    {
+      "family": "direct_lookup",
+      "qid": 706,
+      "question": "Tính đến ngày 31/12/2025, tỷ lệ dự phòng giảm giá chứng khoán đầu tư sẵn sàng để bán của EVF là bao nhiêu phần trăm ?",
+      "question_sha256": "d2f363b7a4b7d7c86d9b00011169379fa99607c8b060e1d4ebf4d15323d00740",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "5b2f3720f871a139a11c337aafe47b9498632f447ae232136ada94fb47537287"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 707,
+      "question": "Tỷ lệ nợ khó đòi trên tổng phải thu khách hàng của VGT đến ngày 31/12/2024 là bao nhiêu %?",
+      "question_sha256": "200bf3ed40c2f02c484d4cd819fd589e62e0249be4bf3956eec76270ca1a6a36",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "2a15bad214f4ab666455caa2c1709fc0898d43536cb02cd19fd2fafd8c244286"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 723,
+      "question": "Tỷ trọng khoản cho vay dài hạn bên liên quan trong tổng khoản phải thu dài hạn từ bên liên quan của HAG tại năm 2018 là bao nhiêu phần trăm?",
+      "question_sha256": "11acfa1721c7e5c8c48154f0f100f88efebb6bd0e5817d29a58272c61514a3c3",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "32aa0bb075e0e037427656693b425606b524b2e7c76e3e449e9dbe2b626b0d11"
+    },
+    {
+      "family": "direct_lookup",
+      "qid": 732,
+      "question": "Tổng vay ngắn hạn gấp tổng tiền mặt và tiền gửi ngân hàng của công ty mẹ FIT cuối năm 2023 bao nhiêu lần?",
+      "question_sha256": "62f31db70f209ee3dd4c7d5ca8176cf0da99d8f5222bbd48bbde6915b9ee7aff",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "5cbd5cf54bce04d42b7e1ff74ec3edfa999177b1b3accb8ab5648d48958fc4c7"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 735,
+      "question": "Chênh lệch tỷ trọng nợ vay ngắn hạn trên tổng nợ vay của CTCP Tập đoàn Đại Dương và CTCP Tập đoàn Sao Mai năm 2017 là bao nhiêu phần trăm?",
+      "question_sha256": "999458f98998cc36553abe5715d9bbe736abdebd48114687e215382ee62aa4fe",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "129e316102dbbad59c788c37fe747e0e6b151edba4238fa3450e2c6ad668af2f"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 758,
+      "question": "Chênh lệch khoản vay ngắn hạn từ các bên liên quan cuối năm 2025 của công ty mẹ Tổng Công ty Phát triển Đô thị Kinh Bắc so với công ty mẹ Tập đoàn VINGROUP là bao nhiêu tỷ đồng?",
+      "question_sha256": "c2c4153ad5eb2170d2998b54dd2742b11daf61a0070178aeed691c5d087585a5",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "0165ebe939bafc196fee8b462116f4084cd78fa0ff8aadd1e891dc0583a02bdb"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 766,
+      "question": "Sự chênh lệch số dư phải thu khách hàng từ các bên liên quan cuối năm 2017 giữa Tổng Công ty cổ phần Vận tải Dầu khí và Tổng Công ty Lọc hóa dầu Việt Nam là bao nhiêu tỷ đồng ?",
+      "question_sha256": "89227ec74d8adc2a714def58d44e18d8908aacc21ac6af3a53564bba9dc4d356",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "c0f13abf1e76eca36deb3b4062853b97578a9b6ee1e6dac97e925662b2559a33"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 782,
+      "question": "Vốn cổ phần cuối năm 2016 của CTCP Sữa Việt Nam chênh lệch bao nhiêu tỷ đồng so với Nông nghiệp Quốc tế HAGL?",
+      "question_sha256": "f5ce55f58f2042dad312e69af55b8269a9e867feeea6d4466b54fcca836bc906",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "ef5d6dd528efcbbdcb6cea636d5b4740706ece22de009dace20b7e1013b74b37"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 788,
+      "question": "Chi phí nguyên vật liệu năm 2020 của BAF Việt Nam và Tập Đoàn Sao Mai chênh lệch nhau bao nhiêu nghìn tỷ đồng ?",
+      "question_sha256": "0bc566fcdccf9119a13e3ab9a7f31da80105fdf3672272680c3740689b738ea6",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "bf952a35abcf9d643d1d992ca0f8925740c13bec2aeef7968200813161251924"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 796,
+      "question": "Trong năm 2021, tỷ trọng chi phí lãi tiền gửi của Sài Gòn Công Thương và TMCP Quốc Dân chênh lệch nhau bao nhiêu phần trăm?",
+      "question_sha256": "cecb4b8b37cb0014cfe69ca9a8460ba4e50364a896bf080dc758160fcc8774ef",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "c1b4a81cf3f0f99386ca096e7385578eeb060d1a5e4e04d2797845dc7aeb2c2e"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 844,
+      "question": "Tỷ trọng vốn chủ sở hữu trung bình của CTCP Đầu tư Nam Long (NLG) trong các năm 2015, 2018 và 2024 là bao nhiêu %?",
+      "question_sha256": "96ddeb83092a9483b3a4801abc8f8e91e159d339ab493b5fd50380cfcfa5fc8d",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "67d85d3fc9bd277d5b84f59712e3da3999be45a9ad4a9ddd6a4e5fa8c725a5b5"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 846,
+      "question": "Tỷ lệ trung bình của hao mòn lũy kế trên nguyên giá của CTCP Tập đoàn Hà Đô (HDG) công ty mẹ trong các năm 2020, 2021, 2022, 2023 và 2025 là bao nhiêu phần trăm?",
+      "question_sha256": "02a88f590b18a512b40b490fae5eab9c40fb5c969e49c939948e9d8892add84d",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "1d75607d2b1289d9a3aaa101255378d69e6ffae9b87ec8a2521866bcfac1da58"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 861,
+      "question": "Tính giá trị trung bình số lượng cổ phiếu phổ thông đang lưu hành của CTCP Tập đoàn Đại Dương (OGC), CTCP Sữa Việt Nam (VNM) và CTCP Nông nghiệp Quốc tế Hoàng Anh Gia Lai (HNG) cuối năm 2015, tính bằng đơn vị cổ phiếu.",
+      "question_sha256": "32cc80e322a1ec0558f9206646a368b74d786ab2b62cacdcbb56338adf1c45a1",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "c9d1795243cdd7ee3f7a10b25f15ce4f46406fb3274eaf56d3e96dcbea8a8e0b"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 880,
+      "question": "Tính trung bình tỷ trọng trái phiếu Chính phủ trong tổng chứng khoán nợ của MBB công ty mẹ, MSB công ty mẹ và STB công ty mẹ trong năm 2022 là bao nhiêu %?",
+      "question_sha256": "9b5038604fefec8ab6d056c08ea1e0fd8191fd220a5d3be1d6523b09196c8cb3",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "96a3bf964534e49e19f44694d6483ee252a36d289237be7b46e0c5783c640080"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 881,
+      "question": "Giá trị trung bình tỷ lệ hao mòn lũy kế so với nguyên giá tài sản cố định hữu hình của CTCP Nhiệt điện Hải Phòng (HND) trong các năm 2016, 2018, 2019, 2020 và 2021 là bao nhiêu (%)?",
+      "question_sha256": "b839d0b281ba1d086a54abb6c0e69d4a4c10c10be04e4103977fca097b5c268a",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "ab6d9ab100d9441e88868315d75059d422225bba0e45fd2b73204a8bba7fab4e"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 892,
+      "question": "Tỷ trọng doanh thu từ khu vực Lào so với tổng doanh thu toàn công ty của CTCP Hoàng Anh Gia Lai (HAG) trung bình trong các năm 2015, 2016, 2017 và 2022 là bao nhiêu phần trăm?",
+      "question_sha256": "d73349bd1a8774357651829ecf0ff239d04f8dcb5f86f63ecbc260b634c11f15",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "71323cf9cd136f8e949a8126e7994e2ec884b85b6b2e9a79580ec58a5779cb49"
+    },
+    {
+      "family": "single_metric_sum",
+      "qid": 922,
+      "question": "Tính tổng chi phí tài chính của CTCP Tập đoàn Khải Hoàn Land, CTCP Phát triển Bất động sản Phát Đạt, CTCP Đầu tư Hải Phát và CTCP Dịch vụ Bất động sản Đất Xanh trong năm 2025, tính bằng trăm tỷ VNĐ.",
+      "question_sha256": "6a782020455828e5596f3f185708d28b966be626493e14e23cc98d972fc8c364",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "8690d6d6857c9da17d1437344b2a6ec680a615f55370141b48a9b28bb66ac9bc"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 926,
+      "question": "Ở cuối năm 2020, mức trung bình của tỷ trọng thành phẩm trong tổng giá trị hàng tồn kho (giá gốc) của CTCP Tập đoàn Masan (MSN), CTCP Masan MeatLife (MML), CTCP Tập đoàn Thủy sản Minh Phú (MPC) và CTCP Sữa Việt Nam (VNM) là bao nhiêu phần trăm?",
+      "question_sha256": "c8898559a739a15f41cc85aad87271073d8cc5185e00363ed3ef965aa3c04d76",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "ff25222ce149988f29da24f00475b987f1f52306a67ef20a117963f63ecc1c16"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 931,
+      "question": "Giá trị trung bình của tỷ lệ hao mòn, khấu hao lũy kế trên nguyên giá tài sản cố định của GEE, GEX, VGC, SAM và PC1 ở công ty mẹ vào năm 2025 là bao nhiêu phần trăm?",
+      "question_sha256": "dae0f07046dba7f199fcc3e61bdcbe874b18696aec1b7a16a3658073509e54f4",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "6581e1047e00844c837765a678d13e080a7a2db7bf8997f1d96c20bbcc76697b"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 935,
+      "question": "Giá trị trung bình tỷ lệ trích lập Quỹ khen thưởng, phúc lợi so với Lợi nhuận thuần của HDG, GEG và DNH tại đơn vị công ty mẹ trong năm 2023 là bao nhiêu phần trăm?",
+      "question_sha256": "181fff917faebf01217a12ca0624f837d227861ce0e9d24586e5041c30c3fee6",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "8d89b4d4ef46106766bc4ca37534d5049354a72fa2554246a79bd5cf7b3980ed"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 945,
+      "question": "Trung bình cộng của tỷ trọng ngoại tệ USD trong tổng dư lượng ngoại tệ ghi nhận ngoài bảng cân đối kế toán cuối năm 2023 của CTCP Masan High-Tech Materials (MSR), Tập đoàn Công nghiệp Cao su Việt Nam - CTCP (GVR) và CTCP Nhựa An Phát Xanh (AAA) là bao nhiêu phần trăm?",
+      "question_sha256": "eee7ea5e2eedb099bde5e9bcd3b43289fdfea39800f9c2391e1e0382e4f8432e",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "124b28b4d55e840d30977e72fab691921921090a005be930be65abc58e711ab0"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 955,
+      "question": "Trung bình tỷ trọng cho vay ngắn hạn trong tổng dư nợ cho vay khách hàng vào cuối năm 2019 tại công ty mẹ của Ngân hàng TMCP Á Châu (ACB), Ngân hàng TMCP Quân đội (MBB), Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BID) và Ngân hàng TMCP Sài Gòn Tài Lộc (STB) là bao nhiêu phần trăm?",
+      "question_sha256": "27107c6b39a42bda312656493ac88ecbbf85de78a89b2d6d2333a464f6004899",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "5eba0caffda3d1c4d1214fe1297383cd990b514a9fca021b372c35eb737a3ae1"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 957,
+      "question": "Tính giá trị trung bình của tỷ trọng tài sản có kỳ hạn định lại lãi suất 1-3 tháng trên Tổng tài sản tại năm 2020 của EIB, STB và SSB ra con số bao nhiêu phần trăm?",
+      "question_sha256": "32f6ba9fc99d0b9ec08307663035d9a1db0cb448dd8a04f44081def71ca4e0ff",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "72e44ab803f6eb3484e1555311ca1cd443fbaac3c6e55502c0f22fbe19f1968c"
+    },
+    {
+      "family": "single_metric_sum",
+      "qid": 958,
+      "question": "Tổng số dư nợ vay dài hạn từ ngân hàng cuối năm 2018 của Tập đoàn VINGROUP - CTCP, Tổng Công ty cổ phần Đầu tư Phát triển Xây dựng và CTCP Bluemarq Group là mấy nghìn tỷ đồng?",
+      "question_sha256": "fbf400829ab13936f022f50115a5f492d4912c01cecf40b1fc36a88eb02709d2",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "516e9548c728b36b294cd01e8c58c2f40814b8faab34332eb808bc34475811de"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 970,
+      "question": "Xác định phần trăm tỷ trọng quỹ dự phòng tài chính trong vốn chủ sở hữu cuối kỳ của Ngân hàng TMCP Á Châu trung bình qua các năm 2015, 2021, 2023 và 2025.",
+      "question_sha256": "95d117cee64a49fddd5bb99e554994d900eb4891cb487c19b6c6333217bdba5d",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "b075db79ebdb9d897befd254d9ba8d98682860e4735f6262918375e8f43f6b30"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 976,
+      "question": "Tính tỷ trọng chi phí khấu hao trên tổng chi phí quản lý doanh nghiệp năm 2022 của CTCP Tập đoàn Masan (MSN) công ty mẹ, CTCP Tập đoàn Thủy sản Minh Phú (MPC) công ty mẹ, CTCP Sữa Việt Nam (VNM) công ty mẹ và CTCP Masan MeatLife (MML) công ty mẹ, sau đó lấy trung bình của 4 tỷ trọng này theo đơn vị phần trăm.",
+      "question_sha256": "215aa40e253acd439d85e95b88f7da5f3d3fb66e2ee9233c05bec904d6408e65",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "2ef71e6980f5dce0893ef6bbde206fc15bc46361ffa878a76e3a7059c812defc"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 977,
+      "question": "Tỷ số nợ dài hạn trên vốn chủ sở hữu trung bình tại công ty mẹ của Tổng công ty Phân bón và Hóa chất Dầu khí - CTCP, CTCP Nhựa An Phát Xanh và CTCP Masan High-Tech Materials trong năm 2017 là bao nhiêu phần trăm?",
+      "question_sha256": "5979d4cb737b472944744aac51863d90c73a553df83f28991283d16d8686b1f2",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "77620fcf92bb005394efa6b0bda53edea7a9c75d13b04a0e765c7167c39099db"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 979,
+      "question": "Tỷ trọng lãi tiền gửi trong tổng doanh thu hoạt động tài chính năm 2022 của Tổng Công ty Điện lực Dầu khí Việt Nam - CTCP (POW), Tổng Công ty Khí Việt Nam - CTCP (GAS), Tổng Công ty Điện lực TKV - CTCP (DTK) và CTCP Điện Gia Lai (GEG) là bao nhiêu %?",
+      "question_sha256": "446f6e46eabf9db3e94a3cbebdffbfc19ef7f7900ac9366c10e68a38ba73e0a9",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "f71669abfdeed1d4289e1edb6a03f5c668a3ec6cb1202b1af5f125a9cd4fd49a"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 992,
+      "question": "Tính giá trị trung bình của tỷ lệ hao mòn tài sản cố định hữu hình cuối kỳ (tính theo phần trăm) trên 3 VPB, SHB và MBB cuối năm 2022 theo đơn vị phần trăm.",
+      "question_sha256": "01c445b82dcebd415c5ed01bb32f556ff0d2961c4987343fb1956e493eb16853",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "c37343f3647de76e62406c1f7eac7ba26de00589e71977444b5aaabbdbe119d7"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 1001,
+      "question": "Giá trị trung bình tỷ lệ chi phí dự phòng rủi ro tín dụng trên lợi nhuận trước dự phòng của Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BID), Ngân hàng TMCP Nam Á (NAB) và Ngân hàng TMCP An Bình (ABB) tại năm 2023 là bao nhiêu %?",
+      "question_sha256": "b8c2ea2d1ca0fdd8583191d35011b34b0b6f900a7b5f568f4720db91b80da464",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "d97e54705285552206beef9b97a2713191c9681d03d39d0dc7e7862459b0831a"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 1007,
+      "question": "Giá trị trung bình của tỷ trọng tài sản bộ phận BOT trên tổng tài sản hợp nhất tại HHV qua các năm 2021, 2022, 2024 và 2025 là bao nhiêu %?",
+      "question_sha256": "affaed53261d16e59297a88382b97d0f8b77b768950afaeb4688e7a306c24346",
+      "risk_tier": "A",
+      "split": "development",
+      "split_digest": "9497a0671d380a73a791c375086666dac07d8133aa0384cc386d79ff1895e3a6"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 1009,
+      "question": "Tỷ trọng trung bình của dự phòng chung trong tổng dự phòng rủi ro cho vay khách hàng của OCB, EIB, MSB và VPB là bao nhiêu phần trăm vào cuối năm 2018?",
+      "question_sha256": "74b4f75003fd2169846862725df21a3ab804ef0df73ea89a8dfa13bc059e3efe",
+      "risk_tier": "A",
+      "split": "holdout",
+      "split_digest": "cc654c2d7ccddd617225f84f0b22d8b9c34a24a835781dd9f00630bb4c05509b"
+    }
+  ],
+  "review_contract": {
+    "blind_model_outputs": true,
+    "holdout_access": "SEALED_UNTIL_CODE_AND_CONFIG_FREEZE",
+    "minimum_independent_annotators": 2,
+    "require_distinct_adjudicator": true,
+    "required_observation_fields": [
+      "metric_id",
+      "source_metric_id",
+      "source_metric_code",
+      "observation_uid",
+      "row_label",
+      "row_path",
+      "row_role",
+      "column_path",
+      "column_role",
+      "entity",
+      "basis",
+      "period",
+      "period_role",
+      "sign_mode",
+      "unit",
+      "scale_exponent",
+      "scale_source"
+    ]
+  },
+  "schema_version": 1,
+  "seed": "text2pandas-wave5-riska60-v1",
+  "source": {
+    "baseline": {
+      "path": "/Users/andinh307/Documents/Dagoras-R2AI/text2pandas-main/text2pandas/artifacts/official/submission-3842/submission.zip",
+      "sha256": "2a3457ee2af0b43ef849cc1a5e0d9c46c78cc94e34e560369796a02defa93d76"
+    },
+    "git_commit": "f06fa575e7282e7cf0557ef7256f1be0cb03c83c",
+    "git_dirty": false,
+    "inventory": {
+      "path": "/Users/andinh307/Documents/Dagoras-R2AI/text2pandas-main/text2pandas/artifacts/runs/evaluation/recovery-wave5-3842-inventory-20260831-v1/inventory.jsonl",
+      "sha256": "eb045ae1ce49d2f95bd83be8b955bcac13e6416e1a7ffc123e73644269c72557"
+    },
+    "questions": {
+      "path": "/Users/andinh307/Documents/Dagoras-R2AI/text2pandas-main/text2pandas/data/raw/btc/questions/questions.jsonl",
+      "sha256": "64a428d90a8c5ad5d36a397d2de3b6e3aa4e4c1224dcdcb118fe3a4fca056ff0"
+    }
+  }
+}

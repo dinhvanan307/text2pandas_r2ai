@@ -1,10 +1,23 @@
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import replace
 from pathlib import Path
 
-from text2pandas.application.parsing import OperationKind, QuestionAnnotations
-from text2pandas.domain.semantic import Basis, Dimension, UnitSpec
+from text2pandas.application.parsing import (
+    OperationKind,
+    QuestionAnnotations,
+    SemanticParser,
+)
+from text2pandas.domain.semantic import (
+    Aggregate,
+    Arithmetic,
+    Basis,
+    Dimension,
+    MetricRef,
+    UnitSpec,
+)
+from text2pandas.infrastructure.ontology import load_ontology
 from text2pandas.infrastructure.semantic import A6MetricMentionResolver
 
 
@@ -21,12 +34,24 @@ matching:
   min_source_coverage_milli: 600
   max_hypotheses: 20
   require_unique_winner_per_span: true
+  exclude_entity_tokens_from_scoring: true
+  blocked_scope_tokens: [cua, cong, ty, co, phan, me, so, du, dau, cuoi, ky, nam, vnd, bang, cp, va]
 abbreviation_rules:
+  - rule_id: usd-currency-name
+    phrase: usd
+    replacement: do la my usd
+    evidence_qids: [213]
+    negative_examples: [doanh thu bán hàng]
   - rule_id: tax-current
     phrase: chi phi thue thu nhap hien hanh
     replacement: chi phi thue tndn hien hanh
     evidence_qids: [89]
     negative_examples: [thu nhập khác]
+  - rule_id: raw-material-expense
+    phrase: chi phi nguyen lieu vat lieu
+    replacement: chi phi nguyen vat lieu
+    evidence_qids: [788]
+    negative_examples: [nguyên vật liệu tồn kho]
 """,
         encoding="utf-8",
     )
@@ -77,6 +102,15 @@ def _annotations(*, entity: str = "AAA") -> QuestionAnnotations:
         operation=OperationKind.LOOKUP,
         mode="lookup",
     )
+
+
+class _StaticAnnotator:
+    def __init__(self, annotations: QuestionAnnotations) -> None:
+        self.annotations = annotations
+
+    def annotate(self, question: str) -> QuestionAnnotations:
+        del question
+        return self.annotations
 
 
 def test_resolver_is_scoped_deterministic_and_retains_hierarchy(tmp_path: Path) -> None:
@@ -201,3 +235,878 @@ def test_resolver_rejects_missing_scope_and_hierarchy_only_match(tmp_path: Path)
     assert hierarchy_only.reason == "METRIC_SOURCE_SPECIFICITY_REQUIRED"
     assert wrong_entity.status == "ABSTAIN"
     assert wrong_entity.selected == ()
+
+
+def test_resolver_accepts_unique_scoped_short_exact_label(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "cash",
+                "AAA",
+                "2024-12-31",
+                "Tiền",
+                "B01-DN › Tiền",
+                "110",
+                "money",
+                "balance_sheet",
+            ),
+            (
+                "cash-equivalents",
+                "AAA",
+                "2024-12-31",
+                "Các khoản tương đương tiền",
+                "B01-DN › Các khoản tương đương tiền",
+                "112",
+                "money",
+                "balance_sheet",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve("Tiền của AAA cuối năm 2024?", _annotations())
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].aliases == ("Tiền",)
+    assert result.selected[0].metric_codes == ("110",)
+
+
+def test_resolver_rejects_corporate_scope_as_metric_mention(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "corporate",
+                "AAA",
+                "2024-12-31",
+                "Đầu tư trực tiếp của Công ty Mẹ",
+                "Thông tin doanh nghiệp › Đầu tư trực tiếp của Công ty Mẹ",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "penalty",
+                "AAA",
+                "2024-12-31",
+                "Chi phí phạt",
+                "Chi phí khác › Chi phí phạt",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    blocked = resolver.resolve(
+        "Khoản phải thu của công ty mẹ AAA năm 2024?",
+        _annotations(),
+    )
+    metric = resolver.resolve(
+        "Chi phí phạt của công ty mẹ AAA năm 2024?",
+        _annotations(),
+    )
+
+    assert blocked.status == "ABSTAIN"
+    assert metric.status == "RESOLVED"
+    assert metric.selected[0].aliases == ("Chi phí phạt",)
+
+
+def test_growth_resolves_money_leaf_despite_percent_output(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "o1",
+                "AAA",
+                "2023-12-31",
+                "Chi phí dịch vụ mua ngoài",
+                "Chi phí quản lý › Chi phí dịch vụ mua ngoài",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "o2",
+                "AAA",
+                "2024-12-31",
+                "Chi phí dịch vụ mua ngoài",
+                "Chi phí quản lý › Chi phí dịch vụ mua ngoài",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        periods=("2023", "2024"),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        operation=OperationKind.GROWTH,
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Chi phí dịch vụ mua ngoài của AAA tăng bao nhiêu phần trăm từ 2023 đến 2024?",
+        annotations,
+    )
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].unit.dimension == Dimension.MONEY
+
+
+def test_parser_promotes_unique_source_metric_for_derived_operation(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "o1",
+                "AAA",
+                "2023-12-31",
+                "Chi phí dịch vụ mua ngoài",
+                "Chi phí quản lý › Chi phí dịch vụ mua ngoài",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "o2",
+                "AAA",
+                "2024-12-31",
+                "Chi phí dịch vụ mua ngoài",
+                "Chi phí quản lý › Chi phí dịch vụ mua ngoài",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        periods=("2023", "2024"),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        operation=OperationKind.GROWTH,
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+    parser = SemanticParser(load_ontology(), _StaticAnnotator(annotations), resolver)
+
+    result = parser.parse(
+        "Chi phí dịch vụ mua ngoài của AAA tăng bao nhiêu phần trăm từ 2023 đến 2024?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Arithmetic)
+    assert isinstance(result.ast.expression.left, MetricRef)
+    assert isinstance(result.ast.expression.right, MetricRef)
+    assert result.ast.expression.left.metric_id.startswith("source_")
+    assert result.ast.expression.left.source_binding is not None
+    assert result.ast.expression.right.source_binding is not None
+
+
+def test_resolver_uses_leaf_dimension_for_explicit_ratio_average(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "government_bond",
+                "AAA",
+                "2024-12-31",
+                "Trái phiếu Chính phủ",
+                "Chứng khoán nợ › Trái phiếu Chính phủ",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "debt_securities",
+                "AAA",
+                "2024-12-31",
+                "Chứng khoán nợ",
+                "Chứng khoán nợ",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        entities=("AAA", "BBB"),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        operation=OperationKind.AVERAGE,
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Trung bình tỷ trọng trái phiếu Chính phủ trong tổng chứng khoán nợ "
+        "của AAA và BBB năm 2024 là bao nhiêu phần trăm?",
+        annotations,
+    )
+
+    assert result.status == "RESOLVED"
+    assert {value.aliases for value in result.selected} == {
+        ("Chứng khoán nợ",),
+        ("Trái phiếu Chính phủ",),
+    }
+    assert all(value.unit.dimension == Dimension.MONEY for value in result.selected)
+
+
+def test_source_merge_keeps_unresolved_product_qualifier_fail_closed(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "product",
+                "AAA",
+                "2024-12-31",
+                "Doanh thu kinh doanh Ure Phú Mỹ",
+                "Doanh thu hàng sản xuất trong nước › Doanh thu Ure Phú Mỹ",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        operation=OperationKind.DIVIDE,
+    )
+    parser = SemanticParser(
+        load_ontology(),
+        _StaticAnnotator(annotations),
+        A6MetricMentionResolver(
+            connection,
+            source_build_id="fixture-build",
+            config_path=_config(tmp_path / "resolver.yaml"),
+        ),
+    )
+
+    result = parser.parse(
+        "Tỷ trọng doanh thu Ure Phú Mỹ trong tổng doanh thu thuần hàng hóa "
+        "sản xuất trong nước của AAA năm 2024 là bao nhiêu phần trăm?"
+    )
+
+    assert not result.ok
+    assert result.reason == "EXPLICIT_RATIO_OPERAND_AMBIGUOUS"
+
+
+def test_source_ratio_numerator_may_absorb_marker_suffix(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "investment",
+                "AAA",
+                "2024-12-31",
+                "Đầu tư tài chính dài hạn",
+                "Đầu tư tài chính dài hạn",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+        operation=OperationKind.DIVIDE,
+    )
+    parser = SemanticParser(
+        load_ontology(),
+        _StaticAnnotator(annotations),
+        A6MetricMentionResolver(
+            connection,
+            source_build_id="fixture-build",
+            config_path=_config(tmp_path / "resolver.yaml"),
+        ),
+    )
+
+    result = parser.parse(
+        "Tỷ lệ đầu tư tài chính dài hạn trên vốn chủ sở hữu của AAA năm 2024 "
+        "là bao nhiêu phần trăm?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Arithmetic)
+    assert result.ast.expression.operator.value == "divide"
+    assert isinstance(result.ast.expression.left, MetricRef)
+    assert result.ast.expression.left.source_binding is not None
+
+
+def test_parser_replaces_structural_currency_member_with_complete_source_metric(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "specific",
+                "AAA",
+                "2024-12-31",
+                "Mua nợ bằng VND",
+                "Phân tích mua nợ › Mua nợ bằng VND",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "qualifier",
+                "AAA",
+                "2024-12-31",
+                "Bằng VND",
+                "Phân tích dư nợ › Bằng VND",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+    parser = SemanticParser(load_ontology(), _StaticAnnotator(_annotations()), resolver)
+
+    result = parser.parse("Số dư mua nợ bằng VND của AAA năm 2024 là bao nhiêu?")
+
+    assert result.ok
+    assert isinstance(result.ast.expression, MetricRef)
+    assert result.ast.expression.metric_id.startswith("source_")
+    assert result.ast.expression.source_binding is not None
+    assert result.ast.expression.source_binding.labels == ("Mua nợ bằng VND",)
+
+
+def test_resolver_blocks_elided_entity_suffix_from_metric_candidates(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "loan",
+                "STB",
+                "2024-12-31",
+                "Cho vay khách hàng",
+                "Cho vay khách hàng",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "subsidiary",
+                "STB",
+                "2024-12-31",
+                "Ngân hàng Sài Gòn Thương Tín Campuchia",
+                "Đầu tư dài hạn › Ngân hàng Sài Gòn Thương Tín Campuchia",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        entity_aliases={"STB": ("Ngân hàng TMCP Sài Gòn Thương Tín",)},
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Tổng cho vay khách hàng của TMCP Sài Gòn Thương Tín (STB) năm 2024?",
+        _annotations(entity="STB"),
+    )
+
+    assert result.status == "RESOLVED"
+    assert len(result.selected) == 1
+    assert result.selected[0].aliases == ("Cho vay khách hàng",)
+
+
+def test_resolver_does_not_join_metric_phrase_across_entity_conjunction(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "receivable",
+                "PVT",
+                "2017-12-31",
+                "Các khoản phải thu khách hàng khác",
+                "Phải thu khách hàng › Các khoản phải thu khách hàng khác",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "company_like_label",
+                "PVT",
+                "2017-12-31",
+                "Tổng Công ty Dung dịch khoan và Hóa phẩm Dầu khí",
+                "Phải thu bên liên quan › Tổng Công ty Dung dịch khoan và Hóa phẩm Dầu khí",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(entity="PVT"),
+        entities=("PVT", "BSR"),
+        periods=("2017",),
+        operation=OperationKind.SUBTRACT,
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        entity_aliases={
+            "PVT": ("Tổng Công ty cổ phần Vận tải Dầu khí",),
+            "BSR": ("Tổng Công ty Lọc hóa dầu Việt Nam",),
+        },
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Sự chênh lệch số dư phải thu khách hàng từ các bên liên quan "
+        "cuối năm 2017 giữa Tổng Công ty cổ phần Vận tải Dầu khí và "
+        "Tổng Công ty Lọc hóa dầu Việt Nam là bao nhiêu tỷ đồng?",
+        annotations,
+    )
+
+    assert result.status == "RESOLVED"
+    assert len(result.selected) == 1
+    assert result.selected[0].aliases == ("Các khoản phải thu khách hàng khác",)
+
+
+def test_resolver_keeps_counterparty_label_when_primary_ticker_is_explicit(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "ownership",
+                "HPG",
+                "2023-12-31",
+                "Công ty CP Gang thép Hòa Phát",
+                "Các công ty con › Công ty CP Gang thép Hòa Phát",
+                "",
+                "percent",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(entity="HPG"),
+        periods=("2023",),
+        requested_unit=UnitSpec(Dimension.PERCENT),
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        entity_aliases={"HPG": ("Hòa Phát",)},
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Tỷ lệ sở hữu Công ty CP Gang thép Hòa Phát của HPG năm 2023?",
+        annotations,
+    )
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].aliases == ("Công ty CP Gang thép Hòa Phát",)
+
+
+def test_resolver_prefers_complete_reordered_qualifier_phrase(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "generic",
+                "AAA",
+                "2024-12-31",
+                "Các khoản phải thu ngắn hạn",
+                "Các khoản phải thu ngắn hạn",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "specific",
+                "AAA",
+                "2024-12-31",
+                "Phải thu ngắn hạn khác",
+                "Các khoản phải thu khác › Phải thu ngắn hạn khác",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Chênh lệch tổng giá trị các khoản phải thu khác ngắn hạn của AAA năm 2024?",
+        _annotations(),
+    )
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].aliases == ("Phải thu ngắn hạn khác",)
+    assert "phai thu khac ngan han" in result.selected[0].mention.normalized_surface
+    assert result.selected[0].match_method == "a6_scoped_metric_token_set"
+
+
+def test_resolver_retains_adjacent_metric_qualifier_in_binding_surface(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "depreciation",
+                "AAA",
+                "2024-12-31",
+                "Chi phí khấu hao",
+                "Chi phí sản xuất › Chi phí khấu hao",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "movement",
+                "AAA",
+                "2024-12-31",
+                "Khấu hao trong năm",
+                "Tài sản cố định hữu hình › Khấu hao trong năm",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Tính tổng chi phí khấu hao nhà cửa trong năm của AAA?",
+        replace(_annotations(), operation=OperationKind.SUM),
+    )
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].aliases == ("Khấu hao trong năm",)
+    assert result.selected[0].mention.normalized_surface.endswith("khau hao nha cua trong nam")
+
+
+def test_resolver_expands_currency_abbreviation_for_source_label(tmp_path: Path) -> None:
+    connection = _database(
+        (
+            (
+                "usd",
+                "AAA",
+                "2024-12-31",
+                "Ngoại tệ - Đô la Mỹ (USD)",
+                "Ngoại tệ các loại › Đô la Mỹ (USD)",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve("Số dư ngoại tệ USD của AAA năm 2024?", _annotations())
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].aliases == ("Ngoại tệ - Đô la Mỹ (USD)",)
+    assert result.selected[0].mention.normalized_surface == "so du ngoai te usd"
+
+
+def test_parser_uses_one_coherent_source_metric_for_composite_average_phrase(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "specific",
+                "AAA",
+                "2024-12-31",
+                "Chi phí lãi vay phải trả",
+                "Chi phí phải trả ngắn hạn › Chi phí lãi vay phải trả",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "debt",
+                "AAA",
+                "2024-12-31",
+                "Vay ngắn hạn phải trả bên liên quan",
+                "Vay và nợ thuê tài chính › Vay ngắn hạn phải trả bên liên quan",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        entities=("AAA", "BBB"),
+        operation=OperationKind.AVERAGE,
+    )
+    parser = SemanticParser(
+        load_ontology(),
+        _StaticAnnotator(annotations),
+        A6MetricMentionResolver(
+            connection,
+            source_build_id="fixture-build",
+            config_path=_config(tmp_path / "resolver.yaml"),
+        ),
+    )
+
+    result = parser.parse(
+        "Giá trị trung bình của chi phí lãi vay ngắn hạn phải trả của AAA năm 2024?"
+    )
+
+    assert result.ok
+    assert isinstance(result.ast.expression, Aggregate)
+    assert isinstance(result.ast.expression.expression, MetricRef)
+    binding = result.ast.expression.expression.source_binding
+    assert binding is not None
+    assert binding.labels == ("Chi phí lãi vay phải trả",)
+
+
+def test_resolver_merges_reordered_source_labels_into_one_logical_metric(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "first",
+                "AAA",
+                "2024-12-31",
+                "Giá vốn cho thuê dài hạn đất và cơ sở hạ tầng",
+                "Giá vốn › Giá vốn cho thuê dài hạn đất và cơ sở hạ tầng",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "second",
+                "AAA",
+                "2024-12-31",
+                "Giá vốn đất và cơ sở hạ tầng cho thuê dài hạn",
+                "Giá vốn › Giá vốn đất và cơ sở hạ tầng cho thuê dài hạn",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Giá vốn cho thuê dài hạn đất và cơ sở hạ tầng của AAA năm 2024?",
+        _annotations(),
+    )
+
+    assert result.status == "RESOLVED"
+    assert len(result.selected) == 1
+    assert result.selected[0].aliases == (
+        "Giá vốn cho thuê dài hạn đất và cơ sở hạ tầng",
+        "Giá vốn đất và cơ sở hạ tầng cho thuê dài hạn",
+    )
+
+
+def test_resolver_merges_governed_raw_material_expense_wording(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "first",
+                "AAA",
+                "2024-12-31",
+                "Chi phí nguyên liệu, vật liệu",
+                "Chi phí sản xuất › Chi phí nguyên liệu, vật liệu",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "second",
+                "BBB",
+                "2024-12-31",
+                "Chi phí nguyên, vật liệu",
+                "Chi phí sản xuất › Chi phí nguyên, vật liệu",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    annotations = replace(
+        _annotations(),
+        entities=("AAA", "BBB"),
+        operation=OperationKind.SUBTRACT,
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Chi phí nguyên vật liệu của AAA và BBB chênh lệch nhau bao nhiêu?",
+        annotations,
+    )
+
+    assert result.status == "RESOLVED"
+    assert len(result.selected) == 1
+    assert result.selected[0].aliases == (
+        "Chi phí nguyên liệu, vật liệu",
+        "Chi phí nguyên, vật liệu",
+    )
+
+
+def test_resolver_merges_central_bank_legal_and_abbreviated_labels(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "legal",
+                "AAA",
+                "2024-12-31",
+                "Tiền gửi tại Ngân hàng Nhà nước Việt Nam",
+                "B02/TCTD › Tiền gửi tại Ngân hàng Nhà nước Việt Nam",
+                "",
+                "money",
+                "balance_sheet",
+            ),
+            (
+                "short",
+                "AAA",
+                "2024-12-31",
+                "Tiền gửi tại Ngân hàng Nhà nước",
+                "B02/TCTD-HN › Tiền gửi tại Ngân hàng Nhà nước",
+                "",
+                "money",
+                "balance_sheet",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Tiền gửi tại Ngân hàng Nhà nước Việt Nam của AAA năm 2024?",
+        _annotations(),
+    )
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].aliases == (
+        "Tiền gửi tại Ngân hàng Nhà nước",
+        "Tiền gửi tại Ngân hàng Nhà nước Việt Nam",
+    )
+
+
+def test_resolver_does_not_widen_base_metric_to_distinctive_qualified_metric(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "surplus",
+                "AAA",
+                "2024-12-31",
+                "Thặng dư vốn cổ phần",
+                "Vốn chủ sở hữu › Thặng dư vốn cổ phần",
+                "411.2",
+                "money",
+                "balance_sheet",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve("Vốn cổ phần của AAA cuối năm 2024?", _annotations())
+
+    assert result.status != "RESOLVED"
+
+
+def test_resolver_does_not_bind_broad_shareholder_profit_to_nci(
+    tmp_path: Path,
+) -> None:
+    connection = _database(
+        (
+            (
+                "owners",
+                "AAA",
+                "2024-12-31",
+                "Lợi nhuận thuần phân bổ cho các cổ đông",
+                "Lợi nhuận thuần phân bổ cho các cổ đông",
+                "",
+                "money",
+                "note",
+            ),
+            (
+                "nci",
+                "AAA",
+                "2024-12-31",
+                "Lợi nhuận thuần phân bổ cho cổ đông không kiểm soát",
+                "Lợi nhuận thuần phân bổ cho cổ đông không kiểm soát",
+                "",
+                "money",
+                "note",
+            ),
+        )
+    )
+    resolver = A6MetricMentionResolver(
+        connection,
+        source_build_id="fixture-build",
+        config_path=_config(tmp_path / "resolver.yaml"),
+    )
+
+    result = resolver.resolve(
+        "Lợi nhuận thuần phân bổ cho cổ đông của AAA năm 2024?",
+        _annotations(),
+    )
+
+    assert result.status == "RESOLVED"
+    assert result.selected[0].aliases == (
+        "Lợi nhuận thuần phân bổ cho các cổ đông",
+    )

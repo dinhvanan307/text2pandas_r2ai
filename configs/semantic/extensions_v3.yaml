@@ -2,12 +2,28 @@ schema_version: 1
 extension_id: semantic-v3-cohort-formulas
 
 # V3-only aliases keep the immutable canonical V2 registries byte-identical.
-metric_aliases: {}
+metric_aliases:
+  # Only the full financial-statement total is canonical COGS.  Bare
+  # "giá vốn hàng hóa" denotes a product component and must be resolved from
+  # its physical disclosure instead of being widened to statement code 11.
+  cogs:
+    - "gia von hang ban va dich vu cung cap"
+  # In expense questions the disclosures commonly shorten "chi phí lãi vay"
+  # to the row label "lãi vay".  Period/source resolution rejects accrued
+  # payable balances, so this alias remains governed as a flow metric.
+  interest_expense:
+    - "lai vay"
 
 formula_aliases:
-  current_ratio: ["ty le tai san ngan han tren no ngan han"]
+  current_ratio:
+    - "ty le tai san ngan han tren no ngan han"
+    - "ti so thanh toan hien hanh"
   quick_ratio:
     - "ty le phan chenh lech giua tai san ngan han va hang ton kho tren no ngan han"
+    - "ti so thanh toan nhanh"
+  gross_margin:
+    - "loi nhuan gop tren doanh thu thuan"
+    - "loi nhuan gop chiem bao nhieu phan tram doanh thu thuan"
 
 # Quarantine is V3-only and evidence-driven. These formulas remain byte-stable
 # in the canonical V2 registry for replay, but are excluded from V3 because the
@@ -22,6 +38,194 @@ quarantined_formulas:
     one borrowing facility instead of total short-term borrowings.
 
 formulas:
+  # These formula contracts used to exist only in GroundedQueryExpander. That
+  # split let retrieval find the operands while the semantic parser still
+  # abstained (or selected one operand) for the same phrase. Keep every
+  # same-period arithmetic formula in the ontology so parser, retrieval and
+  # generic AST compilation consume one governed definition.
+  - formula_id: roe_average_equity
+    variant_id: opening_closing_average
+    aliases:
+      - "roe tren von chu so huu binh quan dau va cuoi ky"
+      - "roe tinh bang loi nhuan sau thue chia cho von chu so huu binh quan dau va cuoi ky"
+      - "roe duoc tinh bang loi nhuan sau thue chia cho von chu so huu binh quan dau va cuoi ky"
+      - "ty suat sinh loi tren von chu so huu binh quan"
+    leaves: [profit_after_tax, equity]
+    period_semantics: flow_to_average_balance
+    same_entity: true
+    same_period: false
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: profit_after_tax}
+      den:
+        node: RollingAverage
+        window: 2
+        child: {node: FactRef, metric_id: equity}
+
+  - formula_id: roe_end_equity
+    variant_id: ending_equity
+    aliases:
+      - "roe"
+      - "ty suat sinh loi tren von chu so huu"
+      - "ty suat sinh loi cua von chu so huu"
+    leaves: [profit_after_tax, equity]
+    period_semantics: flow_to_point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: profit_after_tax}
+      den: {node: FactRef, metric_id: equity}
+
+  - formula_id: roa_end_assets
+    variant_id: ending_assets
+    aliases:
+      - "roa"
+      - "ty suat sinh loi tren tai san"
+      - "ty suat sinh loi cua tai san"
+    leaves: [profit_after_tax, total_assets]
+    period_semantics: flow_to_point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: profit_after_tax}
+      den: {node: FactRef, metric_id: total_assets}
+
+  - formula_id: asset_turnover_average_assets
+    variant_id: opening_closing_average
+    aliases:
+      - "vong quay tong tai san tinh theo tong tai san binh quan"
+      - "vong quay tong tai san theo tai san binh quan"
+      - "vong quay tong tai san"
+    leaves: [net_revenue, total_assets]
+    period_semantics: flow_to_average_balance
+    same_entity: true
+    same_period: false
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: net_revenue}
+      den:
+        node: RollingAverage
+        window: 2
+        child: {node: FactRef, metric_id: total_assets}
+
+  - formula_id: fixed_asset_turnover_average
+    variant_id: opening_closing_average
+    aliases:
+      - "vong quay tai san co dinh"
+      - "doanh thu tren binh quan tai san co dinh thuan"
+      - "doanh thu bang bao nhieu lan binh quan tai san co dinh thuan"
+    leaves: [net_revenue, tangible_fixed_assets]
+    period_semantics: flow_to_average_balance
+    same_entity: true
+    same_period: false
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: net_revenue}
+      den:
+        node: RollingAverage
+        window: 2
+        child: {node: FactRef, metric_id: tangible_fixed_assets}
+
+  - formula_id: cash_flow_from_operations_to_net_revenue
+    variant_id: default
+    aliases:
+      - "ty so dong tien hoat dong tren doanh thu thuan"
+      - "ty suat dong tien thuan tu hoat dong kinh doanh tren doanh thu thuan"
+      - "ty le luu chuyen tien thuan tu hoat dong kinh doanh tren doanh thu thuan"
+      - "dong tien thuan tu hoat dong kinh doanh tren doanh thu thuan"
+      - "dong tien tu hoat dong kinh doanh tren doanh thu thuan"
+      - "ty so cfo tren doanh thu thuan"
+      - "cfo tren doanh thu thuan"
+      - "ty le cfo/doanh thu thuan"
+      - "cfo/doanh thu thuan"
+      - "cfo margin"
+      - "bien dong tien tu hoat dong kinh doanh"
+    leaves: [cash_flow_from_operations, net_revenue]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: cash_flow_from_operations}
+      den: {node: FactRef, metric_id: net_revenue}
+
+  - formula_id: cash_flow_from_operations_to_profit_after_tax
+    variant_id: default
+    aliases:
+      - "ty le luu chuyen tien thuan tu hoat dong kinh doanh tren loi nhuan sau thue"
+      - "luu chuyen tien thuan tu hoat dong kinh doanh tren loi nhuan sau thue"
+      - "dong tien thuan tu hoat dong kinh doanh tren loi nhuan sau thue"
+      - "dong tien tu hoat dong kinh doanh tren loi nhuan sau thue"
+      - "ty le cfo tren loi nhuan sau thue"
+      - "cfo tren loi nhuan sau thue"
+      - "he so chuyen doi loi nhuan"
+      - "cfo/lnst"
+    leaves: [cash_flow_from_operations, profit_after_tax]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: cash_flow_from_operations}
+      den: {node: FactRef, metric_id: profit_after_tax}
+
+  - formula_id: long_term_assets_to_total_assets
+    variant_id: default
+    aliases:
+      - "ty trong tai san dai han tren tong tai san"
+      - "ty le tai san dai han tren tong tai san"
+      - "tai san dai han tren tong tai san"
+    leaves: [reported_d58548b4a183bb85, total_assets]
+    period_semantics: point_in_time
+    same_entity: true
+    same_period: true
+    output: {kind: percentage, unit: percent}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num: {node: FactRef, metric_id: reported_d58548b4a183bb85}
+      den: {node: FactRef, metric_id: total_assets}
+
+  - formula_id: interest_coverage
+    variant_id: pbt_plus_absolute_interest
+    aliases:
+      - "he so kha nang thanh toan lai vay"
+      - "he so thanh toan lai vay"
+      - "tong loi nhuan truoc thue va chi phi lai vay gap bao nhieu lan chi phi lai vay"
+    leaves: [profit_before_tax, interest_expense]
+    period_semantics: flow
+    same_entity: true
+    same_period: true
+    output: {kind: ratio, unit: times}
+    zero_policy: unresolved
+    expression:
+      node: Divide
+      num:
+        node: Add
+        left: {node: FactRef, metric_id: profit_before_tax}
+        right:
+          node: Abs
+          child: {node: FactRef, metric_id: interest_expense}
+      den:
+        node: Abs
+        child: {node: FactRef, metric_id: interest_expense}
+
   - formula_id: working_capital
     variant_id: current_assets_minus_current_liabilities
     aliases: ["von luu dong rong", "von luu dong"]
@@ -56,6 +260,8 @@ formulas:
       - "ty le luu chuyen tien thuan tu hoat dong kinh doanh tren no ngan han"
       - "luu chuyen tien thuan tu hoat dong kinh doanh tren no ngan han"
       - "ty le dong tien hoat dong tren no ngan han"
+      - "he so dong tien hoat dong tren no ngan han"
+      - "dong tien hoat dong tren no ngan han"
     leaves: [cash_flow_from_operations, current_liabilities]
     period_semantics: flow
     same_entity: true

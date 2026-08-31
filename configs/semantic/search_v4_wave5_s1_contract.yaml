@@ -1,0 +1,42 @@
+schema_version: 1
+policy_id: semantic-v4-wave5-s1-contract-v1
+status: SHADOW_UNCALIBRATED
+production_eligible: false
+
+physical_retrieval:
+  operand_pool_k: 64
+  include_recoverable_collisions: false
+  enforce_observation_roles: false
+
+hierarchical_retrieval:
+  top_k: 24
+  max_per_logical_table: 6
+  exact_leaf_bonus: 0.8
+  source_code_bonus: 0.7
+  hierarchy_bonus: 0.12
+  statement_bonus: 0.4
+  period_role_bonus: 0.5
+  component_context_penalty: 2.5
+  recoverable_penalty: 2.5
+  collision_penalty: 1.0
+
+program_search:
+  max_parse_candidates: 8
+  max_binding_candidates: 3
+  minimum_confidence: 0.62
+  disagreement_margin: 0.2
+  require_answer_consensus: true
+  maximum_relevant_tables: 10
+  infer_observation_roles: false
+  strict_observation_equivalence: false
+  enforce_rank_semantic_gates: false
+  require_selection_key_consensus: false
+
+verification:
+  allow_recoverable_collisions: false
+  enforce_family_completeness: false
+  enforced_families: []
+  recoverable_collision_classes:
+    - missing_column_group
+    - missing_row_parent
+  minimum_recoverable_confidence: 0.75

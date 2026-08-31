@@ -1,0 +1,50 @@
+{
+  "artifact": {
+    "bytes": 918099,
+    "csv_members": 1130,
+    "duplicate_members": 0,
+    "json_member": "submission.json",
+    "json_sha256": "4f2c9ecb538bc7990efae663caa1f945f9503b7f3ef5f51b0d52055453b88ae3",
+    "members": 1131,
+    "orphan_csv_members": 0,
+    "path": "artifacts/official/submission-3828/submission.zip",
+    "sha256": "87d6c6e9da03057994427816599a02a7a1c67b296e2d5252b5b0a2b560086476"
+  },
+  "attribution": {
+    "artifact_confirmation": "USER_CONFIRMED_EXACT_ARTIFACT",
+    "config_path": "configs/evaluation/grounded_v6_recovery_review_3821_v1.json",
+    "config_sha256": "d1ef7cf8bc22113ff434b91a6d5c9819e26d37c1a35790efd0d0812386ad78f2",
+    "git_commit": "336a2cac6ac7b425acc971a0988ec2cf7574db7a",
+    "leaderboard_receipt_path": null,
+    "remaining_blockers": [
+      "leaderboard receipt is absent"
+    ]
+  },
+  "coverage": {
+    "executable": 735,
+    "records": 1012,
+    "unresolved": 277
+  },
+  "kind": "text2pandas.official_submission_identity",
+  "metrics": {
+    "answer_accuracy": 0.3498,
+    "docs_f2_macro": 0.7361,
+    "docs_mrr_at_5": 0.8162,
+    "docs_precision": 0.6534,
+    "docs_recall": 0.7952,
+    "execution_accuracy": 0.3498,
+    "tables_f2_macro": 0.3151,
+    "tables_mrr_at_5": 0.3939,
+    "tables_precision": 0.2797,
+    "tables_recall": 0.3571
+  },
+  "replay": {
+    "emitted_errors": 0,
+    "executed": 735,
+    "matched": 735,
+    "unresolved": 277
+  },
+  "schema_version": 1,
+  "submission_id": 3828,
+  "submitted_at_utc": "2026-08-30T10:53:00Z"
+}

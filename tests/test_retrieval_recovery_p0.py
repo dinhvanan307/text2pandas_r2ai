@@ -47,6 +47,7 @@ def test_known_retrieval_recovery_entities_resolve_completely() -> None:
     expected = {
         508: {"ACB", "OCB", "STB"},
         586: {"ACV"},
+        782: {"VNM", "HNG"},
         783: {"EIB", "MBB"},
         792: {"EIB", "MBB"},
     }

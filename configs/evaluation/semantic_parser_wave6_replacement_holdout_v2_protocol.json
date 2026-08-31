@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.semantic_parser_wave6_replacement_holdout_protocol",
+  "status": "SELECTION_POLICY_FROZEN_BEFORE_SELECTION",
+  "seed": "text2pandas-semantic-parser-wave6-replacement-holdout-v2-20260831",
+  "records": 20,
+  "family_quota": {
+    "complex_composition": 12,
+    "direct_lookup": 1,
+    "direct_ratio": 1,
+    "simple_extremum": 2,
+    "single_metric_average": 2,
+    "single_metric_sum": 1,
+    "two_period_difference": 1
+  },
+  "sources": {
+    "inventory": {
+      "path": "artifacts/runs/evaluation/recovery-wave5-3842-inventory-20260831-v1/inventory.jsonl",
+      "sha256": "eb045ae1ce49d2f95bd83be8b955bcac13e6416e1a7ffc123e73644269c72557"
+    },
+    "questions": {
+      "path": "data/raw/btc/questions/questions.jsonl",
+      "sha256": "64a428d90a8c5ad5d36a397d2de3b6e3aa4e4c1224dcdcb118fe3a4fca056ff0"
+    },
+    "legacy_contamination_ledger": {
+      "path": "artifacts/runs/evaluation/semantic-gold-v2-phase1.5-packet-20260829-04-determinism/contamination_ledger.json",
+      "sha256": "fa070992927a7a5eef3af8d96aeab69e029586b9b710808c503d6289871aafe0"
+    },
+    "exposed_user_review": {
+      "path": "configs/evaluation/semantic_parser_wave6_user_review_20260831_v1.json",
+      "sha256": "a6c6f07778858a24ed693679b003a0ab18f00ca3c48e5d0de750acb5b18a9e0e"
+    }
+  },
+  "governance": {
+    "unlabeled_before_code_freeze": true,
+    "prediction_fields_forbidden_in_selection": true,
+    "answer_fields_forbidden_in_selection": true,
+    "minimum_independent_annotators": 2,
+    "distinct_adjudicator_required": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.semantic_parser_wave6_model_draft_protocol",
+  "status": "MODEL_DRAFT_PENDING_HUMAN_REVIEW",
+  "scope": {
+    "path": "configs/evaluation/recovery_wave5_riska60_scope_3842_v1.json",
+    "sha256": "9d77ec98fd7a1c2562ec94e4929d023dfbb0552560515c187b20593226d44899",
+    "records": 60
+  },
+  "prompt": "configs/evaluation/semantic_parser_wave6_model_draft_prompt_v1.txt",
+  "response_schema": "configs/evaluation/semantic_parser_wave6_model_draft_response_v1.json",
+  "model": {
+    "provider": "ollama",
+    "model_id": "qwen2.5:14b",
+    "model_digest": "sha256:7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "seed": 0,
+    "num_ctx": 32768,
+    "num_predict": 4096,
+    "max_attempts": 3,
+    "keep_alive": "30m"
+  },
+  "governance": {
+    "question_only": true,
+    "parser_predictions_allowed": false,
+    "retrieval_outputs_allowed": false,
+    "answers_allowed": false,
+    "independent_human_gold": false,
+    "runtime_use_allowed": false,
+    "human_review_required": true
+  }
+}

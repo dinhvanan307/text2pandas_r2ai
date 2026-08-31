@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.semantic_parser_wave6_composition_checkpoint",
+  "status": "SHADOW_IMPLEMENTED_PROMOTION_BLOCKED",
+  "implementation": {
+    "parser_commit": "58fe9e9",
+    "evaluation_commit": "7978c9e",
+    "scope": "GENERALIZED_CLOSED_GRAMMAR_NO_QID_RUNTIME_BRANCHES",
+    "capabilities": [
+      "explicit_ratio_role_grammar",
+      "ratio_per_member_then_aggregate",
+      "same_metric_role_collision_abstention",
+      "static_expression_dimension_gate",
+      "multi_period_filter_then_growth_then_aggregate",
+      "current_prior_filter_then_ratio_change_then_aggregate",
+      "multi_period_sign_filter_then_trailing_aggregate",
+      "filtered_total_operation_preservation",
+      "filtered_accrual_ratio_with_average_assets"
+    ]
+  },
+  "development_scope": {
+    "records": 40,
+    "review_decisions": {
+      "ACCEPT": 4,
+      "ACCEPT_PENDING_SOURCE": 6,
+      "CORRECT": 30
+    },
+    "source_evidence_reviewed": 0,
+    "independent_gold": false
+  },
+  "parser_measurement": {
+    "scope": "PREDICTED_STRUCTURE_ONLY_NOT_GOLD",
+    "baseline": {
+      "run_id": "semantic-parser-wave6-pre-composition-20260831-v1",
+      "records": 1012,
+      "primary_ok": 784,
+      "primary_abstain": 228,
+      "any_candidate_ok": 798,
+      "records_sha256": "63a2b6da21e3447cf652f8a7e2edf15f8c9ceb1bc1c7f35c1a97006abf93ead4"
+    },
+    "candidate": {
+      "run_id": "semantic-parser-wave6-composition-s3-20260831-v1",
+      "records": 1012,
+      "primary_ok": 769,
+      "primary_abstain": 243,
+      "any_candidate_ok": 787,
+      "changed_qids_vs_baseline": 79,
+      "records_sha256": "30baea3d7a100fbc539134a54ef6af744cb9208d575ce30306de80be60d97447"
+    },
+    "correctness": "NOT_MEASURED"
+  },
+  "development_checkpoint": {
+    "run_id": "semantic-parser-wave6-development-checkpoint-20260831-v1",
+    "records": 40,
+    "full_question_ast_candidates": 23,
+    "without_question_ast": 17,
+    "transitions": {
+      "ABSTAIN_TO_ABSTAIN": 14,
+      "ABSTAIN_TO_OK": 9,
+      "OK_TO_ABSTAIN": 3,
+      "OK_TO_OK": 14
+    },
+    "candidate_blockers": {
+      "BINARY_OPERANDS_UNRESOLVED": 2,
+      "DIMENSION_MISMATCH:money:percent": 3,
+      "EXPLICIT_RATIO_OPERAND_AMBIGUOUS": 1,
+      "EXPLICIT_RATIO_OPERAND_UNRESOLVED": 2,
+      "EXPLICIT_RATIO_ROLE_COLLISION": 1,
+      "FILTER_SELECTED_EXPRESSION_UNRESOLVED": 1,
+      "REPORTED_METRIC_REQUIRES_REVIEW_FOR_DERIVED_OPERATION": 7
+    },
+    "manifest_sha256": "117191243918e16ef4792322c06d993f2d4eb9335424bfefa25281366bf07578",
+    "correctness": "NOT_MEASURED",
+    "promotion_eligible": false
+  },
+  "replacement_holdout": {
+    "status": "SEALED_UNOPENED_UNLABELED",
+    "records": 20,
+    "annotator_a_complete": 0,
+    "annotator_b_complete": 0,
+    "adjudicator_c_complete": 0,
+    "scope_path": "configs/evaluation/semantic_parser_wave6_replacement_holdout_v2_scope.json",
+    "scope_sha256": "82724b7376521e148051ce21276ff3b355190f2f656acbed84478e3025a196a9",
+    "manifest_sha256": "8036e3716b34dde77e9782e34849448cbb0cfaa441dd040cf29b251dbab86a8c",
+    "legacy_contamination_overlap": 0,
+    "exposed_review_overlap": 0
+  },
+  "semantic_v3_e2e": {
+    "run_id": "semantic-parser-wave6-composition-e2e-20260831-v1",
+    "questions": 1012,
+    "ok": 491,
+    "abstain": 521,
+    "seconds": 125.096,
+    "ok_with_nonempty_pandas_query": 491,
+    "ok_with_nonempty_evidence": 491,
+    "ok_with_pandas_replay_match": 491,
+    "typed_pandas_mismatch": 0,
+    "top_blockers": {
+      "BINDING_TIE": 121,
+      "METRIC_SOURCE_SPECIFICITY_REQUIRED": 38,
+      "REPORTED_METRIC_REQUIRES_REVIEW_FOR_DERIVED_OPERATION": 23,
+      "EXPLICIT_RATIO_OPERAND_UNRESOLVED": 20
+    },
+    "records_sha256": "d991bf84d763d14a78f88decae25e863c22170fcd68b9dab3c6d63db5ceced3e",
+    "manifest_sha256": "b7c4f96f8157259bf8d91bb4548a7c6805991056ab30618c0d6324b7cadab049",
+    "promotion_status": "BLOCKED",
+    "answer_accuracy": "NOT_MEASURED"
+  },
+  "validation": {
+    "targeted_unit_tests": "54_PASSED",
+    "integration_tests": "22_PASSED",
+    "offline_tests": "2473_PASSED_42_SKIPPED_29_DESELECTED",
+    "lint": "PASS",
+    "typecheck": "PASS_124_SOURCE_FILES",
+    "snapshots_verify": "PASS"
+  },
+  "decision": {
+    "runtime_promotion": "BLOCKED",
+    "submission_built": false,
+    "reasons": [
+      "DEVELOPMENT_SOURCE_EVIDENCE_NOT_REVIEWED",
+      "DEVELOPMENT_AST_INCOMPLETE_17_OF_40",
+      "INDEPENDENT_REPLACEMENT_HOLDOUT_UNLABELED",
+      "ANSWER_ACCURACY_NOT_MEASURED"
+    ]
+  }
+}

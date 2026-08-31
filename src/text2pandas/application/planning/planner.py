@@ -21,12 +21,15 @@ from text2pandas.domain.semantic import (
     QuantifiedPredicate,
     QuestionAST,
     Rank,
+    RollingAverage,
+    RollingGrowth,
     SelectAtArg,
     Unary,
 )
 from text2pandas.domain.semantic.ast import Expression, Predicate
 
 from .contracts import BindingConstraint, ConstraintKind, ExecutionPlan, OperandRequest
+from .observation_roles import infer_observation_role_spec
 
 
 class PlanningError(ValueError):
@@ -42,7 +45,12 @@ class _RequestAccumulator:
     consumers: list[str] = field(default_factory=list)
 
 
-def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> ExecutionPlan:
+def compile_execution_plan(
+    ast: QuestionAST,
+    ontology: MetricOntology,
+    *,
+    infer_observation_roles: bool = False,
+) -> ExecutionPlan:
     requests: dict[tuple[object, ...], _RequestAccumulator] = {}
     formula_scopes: list[tuple[str, bool, set[tuple[object, ...]]]] = []
     _collect(ast.expression, "$.expression", requests, formula_scopes)
@@ -81,6 +89,13 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
             expected_unit = item.ref.expected_unit
             period_semantics = item.ref.period_semantics
         request_id = _request_id(key)
+        observation_role = item.ref.observation_role
+        if observation_role is None and infer_observation_roles:
+            observation_role = infer_observation_role_spec(
+                item.ref,
+                question=ast.question,
+                entity=item.entity,
+            )
         materialized[key] = OperandRequest(
             request_id=request_id,
             metric_id=item.metric_id,
@@ -95,6 +110,7 @@ def compile_execution_plan(ast: QuestionAST, ontology: MetricOntology) -> Execut
             consumers=tuple(sorted(item.consumers)),
             required_context_phrases=item.ref.required_context_phrases,
             source_binding=source_binding,
+            observation_role=observation_role,
         )
 
     constraints: list[BindingConstraint] = []
@@ -160,6 +176,9 @@ def _collect(
                 expression.statement_types,
                 expression.qualifiers,
                 expression.required_context_phrases,
+                repr(expression.observation_role.to_dict())
+                if expression.observation_role is not None
+                else None,
             )
             if expression.source_binding is not None:
                 key = (*key, repr(expression.source_binding.to_dict()))
@@ -177,6 +196,10 @@ def _collect(
             expression.right, f"{path}.right", requests, formula_scopes
         )
     if isinstance(expression, Unary):
+        return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
+    if isinstance(expression, RollingAverage):
+        return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
+    if isinstance(expression, RollingGrowth):
         return _collect(expression.expression, f"{path}.expression", requests, formula_scopes)
     if isinstance(expression, FormulaCall):
         keys = _collect(expression.expression, f"{path}.expression", requests, formula_scopes)

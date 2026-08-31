@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import sqlite3
 from collections import Counter
@@ -10,6 +12,7 @@ from decimal import Decimal, InvalidOperation
 
 from text2pandas.application.planning import OperandRequest
 from text2pandas.application.retrieval import CandidateBatch, ObservationCandidate
+from text2pandas.domain.facts import make_logical_table_uid, split_hierarchy
 from text2pandas.domain.metrics import MetricOntology, normalize_phrase
 from text2pandas.domain.semantic import (
     Basis,
@@ -20,8 +23,13 @@ from text2pandas.domain.semantic import (
 )
 
 from .fact_label import fact_label_segments, normalize_fact_label
+from .observation_roles import (
+    ObservationRolePolicy,
+    load_observation_role_policy,
+)
 
-FACT_RETRIEVAL_POLICY_VERSION = "fact-retrieval-v2"
+FACT_RETRIEVAL_POLICY_VERSION = "fact-retrieval-v4-observation-roles"
+RECOVERABLE_COLLISION_CLASSES = ("missing_column_group", "missing_row_parent")
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +62,9 @@ class SqliteOperandRetriever:
         hard_allowed_table_uids: tuple[str, ...] = (),
         table_rank_priors: tuple[str, ...] = (),
         source_build_id: str | None = None,
+        include_recoverable_collisions: bool = False,
+        observation_role_policy: ObservationRolePolicy | None = None,
+        enforce_observation_roles: bool = False,
     ):
         if top_k < 1:
             raise ValueError("top_k must be positive")
@@ -63,6 +74,11 @@ class SqliteOperandRetriever:
         self.hard_allowed_table_uids = hard_allowed_table_uids
         self.table_rank = {uid: index for index, uid in enumerate(table_rank_priors)}
         self.source_build_id = source_build_id
+        self.include_recoverable_collisions = include_recoverable_collisions
+        self.observation_role_policy = (
+            observation_role_policy or load_observation_role_policy()
+        )
+        self.enforce_observation_roles = enforce_observation_roles
         self._metric_patterns = {
             metric_id: _MetricPattern(
                 tuple(dict.fromkeys(normalize_phrase(alias) for alias in metric.aliases)),
@@ -77,10 +93,33 @@ class SqliteOperandRetriever:
         observation_columns = {
             str(row[1]) for row in connection.execute("PRAGMA table_info(observations)")
         }
+        self._has_collision_metadata = "collision_class" in observation_columns
         self._row_uid_expression = "o.row_uid" if "row_uid" in observation_columns else "NULL"
         self._metric_code_expression = (
             "o.metric_code" if "metric_code" in observation_columns else "NULL"
         )
+        self._column_uid_expression = (
+            "o.column_uid" if "column_uid" in observation_columns else "NULL"
+        )
+        self._collision_expression = (
+            "o.collision_class" if "collision_class" in observation_columns else "NULL"
+        )
+        self._scale_source_expression = (
+            "o.scale_source" if "scale_source" in observation_columns else "NULL"
+        )
+        readiness_columns = {
+            str(row[1])
+            for row in connection.execute("PRAGMA table_info(observation_readiness)")
+        }
+        self._readiness_confidence_expression = (
+            "r.confidence" if "confidence" in readiness_columns else "NULL"
+        )
+
+    def set_table_rank_priors(self, table_uids: tuple[str, ...]) -> None:
+        """Replace question-scoped soft table priors without leaking prior state."""
+        self.table_rank = {
+            uid: index for index, uid in enumerate(dict.fromkeys(table_uids))
+        }
 
     def retrieve(self, request: OperandRequest) -> CandidateBatch:
         metric = self.ontology.metrics.get(request.metric_id)
@@ -117,8 +156,18 @@ class SqliteOperandRetriever:
                 (),
                 {"reason": "UNKNOWN_METRIC", "metric_id": request.metric_id},
             )
-        clauses = ["r.execution_ready = 1", "o.value_decimal_text IS NOT NULL"]
+        readiness_clause = "r.execution_ready = 1"
+        if self.include_recoverable_collisions and self._has_collision_metadata:
+            placeholders = ",".join("?" for _ in RECOVERABLE_COLLISION_CLASSES)
+            readiness_clause = (
+                "(r.execution_ready = 1 OR "
+                f"(o.collision_class IN ({placeholders}) "
+                "AND o.row_uid IS NOT NULL AND o.column_uid IS NOT NULL))"
+            )
+        clauses = [readiness_clause, "o.value_decimal_text IS NOT NULL"]
         parameters: list[object] = []
+        if self.include_recoverable_collisions and self._has_collision_metadata:
+            parameters.extend(RECOVERABLE_COLLISION_CLASSES)
         if request.entity:
             clauses.append("o.ticker = ?")
             parameters.append(request.entity)
@@ -138,11 +187,14 @@ class SqliteOperandRetriever:
         rows = self.connection.execute(
             f"""
             SELECT o.observation_uid, {self._row_uid_expression},
-                   {self._metric_code_expression}, o.table_uid, t.directory_doc_id,
+                   {self._metric_code_expression}, {self._column_uid_expression},
+                   {self._collision_expression}, {self._readiness_confidence_expression},
+                   r.execution_ready, o.table_uid, t.directory_doc_id,
                    o.ticker, d.basis, o.statement_type,
                    o.row_path_text, o.metric_label_clean, o.col_path_text,
                    o.period_end, o.period_role, o.value_decimal_text,
                    o.value_source_raw, o.unit_kind, o.currency, o.scale_exponent,
+                   {self._scale_source_expression},
                    o.is_restated, o.grid_row_idx, o.grid_col_idx, t.section_text
             FROM observations o
             JOIN observation_readiness r USING(observation_uid)
@@ -158,6 +210,8 @@ class SqliteOperandRetriever:
         rejected_metric = 0
         rejected_unit = 0
         match_methods: Counter[str] = Counter()
+        role_rejections: Counter[str] = Counter()
+        local_currency_overrides = 0
         for row in rows:
             scanned += 1
             candidate = self._candidate(
@@ -173,8 +227,16 @@ class SqliteOperandRetriever:
                 else:
                     rejected_unit += 1
                 continue
+            if self.enforce_observation_roles:
+                role_rejection = _observation_role_rejection(request, candidate)
+                if role_rejection is not None:
+                    role_rejections[role_rejection] += 1
+                    continue
             candidates.append(candidate)
             match_methods[candidate.match_method or "unknown"] += 1
+            local_currency_overrides += int(
+                "local_currency_override" in candidate.score_reasons
+            )
         candidates.sort(key=lambda value: (-value.score, value.observation_uid))
         selected = tuple(candidates[: self.top_k])
         failure_reason = None
@@ -186,7 +248,15 @@ class SqliteOperandRetriever:
             elif rejected_unit == scanned:
                 failure_reason = "UNIT_REJECT_ALL"
             else:
-                failure_reason = "CANDIDATE_EMPTY"
+                role_rejection_total = sum(role_rejections.values())
+                if role_rejection_total and role_rejection_total + rejected_metric + rejected_unit == scanned:
+                    failure_reason = (
+                        next(iter(role_rejections))
+                        if len(role_rejections) == 1
+                        else "ROLE_REJECT_ALL"
+                    )
+                else:
+                    failure_reason = "CANDIDATE_EMPTY"
         return CandidateBatch(
             request.request_id,
             selected,
@@ -199,12 +269,30 @@ class SqliteOperandRetriever:
                 "unit_rejected": rejected_unit,
                 "matched": len(candidates),
                 "returned": len(selected),
+                "candidate_observation_uids": [
+                    candidate.observation_uid for candidate in selected
+                ],
+                "candidate_table_uids": list(
+                    dict.fromkeys(candidate.table_uid for candidate in selected)
+                ),
                 "truncated_at": self.top_k,
                 "reason": failure_reason,
                 "match_methods": dict(sorted(match_methods.items())),
                 "retrieval_policy": FACT_RETRIEVAL_POLICY_VERSION,
                 "hard_table_filter": bool(self.hard_allowed_table_uids),
                 "table_prior_count": len(self.table_rank),
+                "recoverable_collisions_enabled": self.include_recoverable_collisions,
+                "local_currency_overrides": local_currency_overrides,
+                "role_rejected": sum(role_rejections.values()),
+                "role_rejection_reasons": dict(sorted(role_rejections.items())),
+                "enforce_observation_roles": self.enforce_observation_roles,
+                "observation_role_policy": self.observation_role_policy.policy_id,
+                "observation_role_fingerprint": self.observation_role_policy.fingerprint,
+                **(
+                    {"observation_role_spec_fingerprint": _role_spec_fingerprint(request)}
+                    if request.observation_role is not None
+                    else {}
+                ),
                 **({"source_binding": True} if source_binding is not None else {}),
             },
         )
@@ -235,6 +323,10 @@ class SqliteOperandRetriever:
             observation_uid,
             row_uid,
             source_metric_code,
+            column_uid,
+            collision_class,
+            readiness_confidence,
+            execution_ready,
             table_uid,
             document_id,
             entity,
@@ -250,6 +342,7 @@ class SqliteOperandRetriever:
             unit_kind,
             currency,
             scale,
+            scale_source,
             is_restated,
             grid_row,
             grid_column,
@@ -274,7 +367,17 @@ class SqliteOperandRetriever:
         )
         if match is None:
             return "metric"
-        unit = _unit(str(unit_kind or "unknown"), scale, currency)
+        local_currency = _local_currency(str(row_path or ""), str(column_path or ""))
+        unit = _unit(
+            str(unit_kind or "unknown"),
+            scale,
+            local_currency if local_currency is not None else currency,
+        )
+        currency_overridden = (
+            unit.dimension == Dimension.MONEY
+            and local_currency is not None
+            and str(currency or "") != local_currency
+        )
         if not _dimension_compatible(request.expected_unit.dimension, unit.dimension):
             return "unit"
         try:
@@ -302,6 +405,8 @@ class SqliteOperandRetriever:
                 1: "metric:aggregate_prefix",
             }[direct]
         ]
+        if currency_overridden:
+            reasons.append("local_currency_override")
         if statement_type and str(statement_type) in request.statement_types:
             score += 3.0
             reasons.append("statement")
@@ -367,6 +472,28 @@ class SqliteOperandRetriever:
             matched_metric_id=request.metric_id,
             match_method=match.method,
             match_features=match.features,
+            column_uid=None if column_uid is None else str(column_uid),
+            logical_table_uid=make_logical_table_uid(
+                document_id=str(document_id),
+                statement_type=None if statement_type is None else str(statement_type),
+                section_text=None if section_text is None else str(section_text),
+                physical_table_uid=str(table_uid),
+            ),
+            section_text=None if section_text is None else str(section_text),
+            row_hierarchy=split_hierarchy(str(row_path or metric_label or "")),
+            column_hierarchy=split_hierarchy(str(column_path or "")),
+            readiness="ready" if bool(execution_ready) else "recoverable",
+            collision_class=(
+                None if collision_class in (None, "") else str(collision_class)
+            ),
+            source_confidence=(
+                _confidence_value(readiness_confidence)
+            ),
+            scale_source=None if scale_source in (None, "") else str(scale_source),
+            row_role=self.observation_role_policy.classify_row(label),
+            column_role=self.observation_role_policy.classify_column(
+                str(column_path or ""), None if period_role is None else str(period_role)
+            ),
         )
 
 
@@ -454,6 +581,81 @@ def _metric_match(
     return None
 
 
+def _observation_role_rejection(
+    request: OperandRequest, candidate: ObservationCandidate
+) -> str | None:
+    spec = request.observation_role
+    if spec is None:
+        return "ROLE_SPEC_MISSING"
+    if spec.source_metric_id is not None and spec.source_metric_id != request.metric_id:
+        return "SOURCE_METRIC_MISMATCH"
+    if spec.accepted_source_metric_codes and (
+        candidate.source_metric_code not in spec.accepted_source_metric_codes
+    ):
+        return "SOURCE_METRIC_MISMATCH"
+    if spec.exact_row_labels:
+        actual_segments = fact_label_segments(candidate.row_path)
+        expected_segments = {
+            fact_label_segments(value) for value in spec.exact_row_labels
+        }
+        if actual_segments not in expected_segments:
+            return "ROW_LABEL_MISMATCH"
+    row_context = normalize_phrase(candidate.row_path)
+    if any(
+        not _contains_phrase(row_context, normalize_phrase(token))
+        for token in spec.required_row_path_tokens
+    ):
+        return "ROW_LABEL_MISMATCH"
+    if any(
+        _contains_phrase(row_context, normalize_phrase(token))
+        for token in spec.forbidden_row_path_tokens
+    ):
+        return "ROW_LABEL_MISMATCH"
+    if spec.allowed_row_roles and candidate.row_role not in spec.allowed_row_roles:
+        return "ROW_ROLE_MISMATCH"
+    if (
+        spec.allowed_column_roles
+        and candidate.column_role not in spec.allowed_column_roles
+    ):
+        return "COLUMN_ROLE_MISMATCH"
+    if spec.allowed_period_roles and (
+        candidate.period_role not in spec.allowed_period_roles
+    ):
+        return "PERIOD_ROLE_MISMATCH"
+    if spec.allowed_scale_sources and (
+        candidate.scale_source not in spec.allowed_scale_sources
+    ):
+        return "SCALE_SOURCE_UNSAFE"
+    if spec.entity_membership and candidate.entity not in spec.entity_membership:
+        return "ENTITY_MEMBERSHIP_MISMATCH"
+    return None
+
+
+def _role_spec_fingerprint(request: OperandRequest) -> str:
+    assert request.observation_role is not None
+    canonical = json.dumps(
+        request.observation_role.to_dict(),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _confidence_value(value: object) -> float | None:
+    if value is None:
+        return None
+    normalized = str(value).strip().casefold()
+    categorical = {"high": 0.9, "medium": 0.65, "low": 0.35}
+    if normalized in categorical:
+        return categorical[normalized]
+    try:
+        converted = float(normalized)
+    except ValueError:
+        return None
+    return converted if 0.0 <= converted <= 1.0 else None
+
+
 def _prefix(value: str, prefix: str) -> bool:
     return value == prefix or value.startswith(prefix + " ")
 
@@ -530,6 +732,34 @@ def _unit(kind: str, scale: object, currency: object) -> UnitSpec:
         str(currency) if currency is not None and dimension == Dimension.MONEY else None
     )
     return UnitSpec(dimension, exponent, currency_value)
+
+
+_LOCAL_CURRENCY_CODE = re.compile(
+    r"(?<![^\W\d_])(?:VND|VNĐ|USD|EUR|JPY)(?![^\W\d_])",
+    re.IGNORECASE,
+)
+_LOCAL_VND_DECLARATION = re.compile(
+    r"\bdon\s+vi(?:\s+tinh)?\s+(?:dong|viet\s+nam\s+dong)\b"
+)
+
+
+def _local_currency(row_path: str, column_path: str) -> str | None:
+    """Resolve one unambiguous currency from observation-local evidence.
+
+    A6 may inherit a document-level currency from unrelated prose. Explicit
+    ISO/Vietnamese unit tokens attached to the row or column are closer to the
+    value and therefore take precedence. Conflicting local tokens abstain from
+    overriding the stored value.
+    """
+
+    local = f"{row_path} {column_path}"
+    currencies = {
+        "VND" if value.upper() == "VNĐ" else value.upper()
+        for value in _LOCAL_CURRENCY_CODE.findall(local)
+    }
+    if _LOCAL_VND_DECLARATION.search(normalize_phrase(local)) is not None:
+        currencies.add("VND")
+    return next(iter(currencies)) if len(currencies) == 1 else None
 
 
 def _basis(value: str) -> Basis:

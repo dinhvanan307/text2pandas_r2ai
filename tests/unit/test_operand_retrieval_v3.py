@@ -8,6 +8,9 @@ from text2pandas.domain.semantic import (
     Basis,
     Dimension,
     MetricBindingHint,
+    ObservationColumnRole,
+    ObservationRoleSpec,
+    ObservationRowRole,
     PeriodSemantics,
     UnitSpec,
 )
@@ -73,6 +76,68 @@ def test_sqlite_retriever_queries_one_operand_and_rejects_descendants() -> None:
     assert [candidate.observation_uid for candidate in batch.candidates] == ["good"]
     assert batch.candidates[0].score_reasons[:2] == ("metric:exact", "statement")
     assert batch.trace["scanned"] == 2
+
+
+def test_strict_observation_roles_reject_wrong_role_column_and_scale() -> None:
+    connection = _database()
+    connection.execute("ALTER TABLE observations ADD COLUMN scale_source TEXT")
+    connection.execute("UPDATE observations SET scale_source='column_path'")
+    base_role = ObservationRoleSpec(
+        allowed_row_roles=(ObservationRowRole.TOTAL,),
+        allowed_column_roles=(ObservationColumnRole.CLOSING,),
+        allowed_period_roles=("closing",),
+        allowed_scale_sources=("column_path",),
+        entity_membership=("VCB",),
+    )
+    request = OperandRequest(
+        request_id="operand:strict-role",
+        metric_id="total_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+        observation_role=base_role,
+    )
+    retriever = SqliteOperandRetriever(
+        connection, load_ontology(), enforce_observation_roles=True
+    )
+
+    accepted = retriever.retrieve(request)
+    wrong_row = retriever.retrieve(
+        replace(
+            request,
+            observation_role=replace(
+                base_role, allowed_row_roles=(ObservationRowRole.CHILD,)
+            ),
+        )
+    )
+    wrong_column = retriever.retrieve(
+        replace(
+            request,
+            observation_role=replace(
+                base_role, allowed_column_roles=(ObservationColumnRole.OPENING,)
+            ),
+        )
+    )
+    unsafe_scale = retriever.retrieve(
+        replace(
+            request,
+            observation_role=replace(base_role, allowed_scale_sources=("cell",)),
+        )
+    )
+
+    assert [candidate.observation_uid for candidate in accepted.candidates] == ["good"]
+    assert accepted.candidates[0].scale_source == "column_path"
+    assert accepted.candidates[0].row_role == ObservationRowRole.TOTAL
+    assert wrong_row.trace["reason"] == "ROW_ROLE_MISMATCH"
+    assert wrong_column.trace["reason"] == "COLUMN_ROLE_MISMATCH"
+    assert unsafe_scale.trace["reason"] == "SCALE_SOURCE_UNSAFE"
+    assert wrong_row.trace["role_rejection_reasons"] == {"ROW_ROLE_MISMATCH": 1}
 
 
 def test_source_binding_requires_build_label_hierarchy_scope_and_unit() -> None:
@@ -448,3 +513,72 @@ def test_empty_batch_reports_scope_and_metric_failures_separately() -> None:
 
     assert metric_empty.trace["reason"] == "METRIC_REJECT_ALL"
     assert scope_empty.trace["reason"] == "SCOPE_EMPTY"
+
+
+def test_question_scoped_table_priors_are_replaceable_and_clearable() -> None:
+    retriever = SqliteOperandRetriever(_database(), load_ontology())
+
+    retriever.set_table_rank_priors(("table-b", "table-a", "table-b"))
+
+    assert retriever.table_rank == {"table-b": 0, "table-a": 1}
+
+    retriever.set_table_rank_priors(())
+
+    assert retriever.table_rank == {}
+
+
+def test_local_currency_declaration_overrides_wrong_document_currency() -> None:
+    connection = _database()
+    connection.execute(
+        "UPDATE observations SET row_path_text = "
+        "'Đơn vị: VND › TỔNG CỘNG TÀI SẢN', currency = 'JPY' "
+        "WHERE observation_uid = 'good'"
+    )
+    request = OperandRequest(
+        request_id="operand:local-currency",
+        metric_id="total_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    batch = SqliteOperandRetriever(connection, load_ontology()).retrieve(request)
+
+    assert batch.candidates[0].unit.currency == "VND"
+    assert "local_currency_override" in batch.candidates[0].score_reasons
+    assert batch.trace["local_currency_overrides"] == 1
+
+
+def test_non_unit_word_dong_does_not_override_stored_currency() -> None:
+    connection = _database()
+    connection.execute(
+        "UPDATE observations SET row_path_text = "
+        "'Hợp đồng › TỔNG CỘNG TÀI SẢN', currency = 'USD' "
+        "WHERE observation_uid = 'good'"
+    )
+    request = OperandRequest(
+        request_id="operand:currency-hard-negative",
+        metric_id="total_assets",
+        entity="VCB",
+        period="2024",
+        basis=Basis.CONSOLIDATED,
+        preferred_basis=Basis.CONSOLIDATED,
+        statement_types=("balance_sheet",),
+        expected_unit=UnitSpec(Dimension.MONEY),
+        period_semantics=PeriodSemantics.POINT_IN_TIME,
+        qualifiers=(),
+        consumers=("$.expression",),
+    )
+
+    candidate = SqliteOperandRetriever(
+        connection, load_ontology()
+    ).retrieve(request).candidates[0]
+
+    assert candidate.unit.currency == "USD"
+    assert "local_currency_override" not in candidate.score_reasons

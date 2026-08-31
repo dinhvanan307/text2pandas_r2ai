@@ -28,6 +28,10 @@ def convert_quantity(quantity: QuantityValue, target: UnitSpec) -> QuantityValue
         return QuantityValue(quantity.value * Decimal(100), target)
     if source.dimension == Dimension.PERCENT and target.dimension == Dimension.RATIO:
         return QuantityValue(quantity.value / Decimal(100), target)
+    if source.dimension == Dimension.RATIO and target.dimension == Dimension.PERCENT_POINT:
+        return QuantityValue(quantity.value * Decimal(100), target)
+    if source.dimension == Dimension.PERCENT_POINT and target.dimension == Dimension.RATIO:
+        return QuantityValue(quantity.value / Decimal(100), target)
     raise QuantityError(f"DIMENSION_MISMATCH:{source.dimension}:{target.dimension}")
 
 
