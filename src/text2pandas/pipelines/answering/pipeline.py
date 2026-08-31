@@ -31,7 +31,7 @@ from .ir import OperationIR
 from .render import RenderResult, render
 from .router import route
 from .units import Unit
-from .validate import PASS, ValidationResult, validate
+from .validate import PASS, VReason, ValidationResult, validate
 from .policy import check_operand_policies
 
 STAGES = ("FRAME", "ROUTE", "BIND", "RENDER", "POLICY", "EXECUTE",
@@ -163,6 +163,28 @@ def answer_question(question: str,
     if not pol.ok:
         res.status, res.stage_failed, res.reason = "ABSTAIN", "POLICY", pol.reason
         return res
+
+    # Reject a duplicated physical operand before the sandbox sees a
+    # necessarily constant expression such as ``cell / cell``.  The validator
+    # has always classified this as a hard selection failure; the effective-
+    # dependency gate must not accidentally downgrade it to an execution
+    # abstention merely because it now catches the constant earlier.
+    if rr.ir.arity > 1:
+        operand_cells = {(item.cell.csv_path, item.cell.row_index) for item in br.operands}
+        if len(operand_cells) < len(br.operands):
+            vr = ValidationResult("REJECT", [VReason.DUPLICATE_OPERAND_CELLS])
+            res.validation = vr
+            res.trace.append(
+                {
+                    "stage": "VALIDATE",
+                    "status": vr.verdict,
+                    "reason": VReason.DUPLICATE_OPERAND_CELLS,
+                }
+            )
+            res.status = "REJECT"
+            res.stage_failed = "VALIDATE"
+            res.reason = VReason.DUPLICATE_OPERAND_CELLS
+            return res
 
     # -- EXECUTE
     value, err = execute(rd.query, frames)

@@ -773,10 +773,10 @@ def _execute_program_node(
             if operation is ProgramOperation.ARGMAX_KEY
             else min(numeric, key=lambda item: (item[1].value, item[0]))
         )
-        grounding = " + ".join(f"0 * ({item.expression})" for _key, item in numeric)
+        selection = _arg_key_selection_expression(operation, numeric, chosen)
         return _Key(
             chosen[0],
-            grounding,
+            selection,
             _merge_fact_uids(*(item for _key, item in numeric)),
         )
     if operation is ProgramOperation.SELECT_AT_KEY:
@@ -789,9 +789,15 @@ def _execute_program_node(
         chosen_value = inputs[0].mapping().get(inputs[1].value)
         if not isinstance(chosen_value, _Scalar):
             raise GroundedPlanError(f"select_at_key misses key {inputs[1].value}")
+        expression = chosen_value.expression
+        if inputs[1].grounding_expression != "1":
+            expression = (
+                f"({chosen_value.expression} / "
+                f"float({inputs[1].grounding_expression}))"
+            )
         return _Scalar(
             chosen_value.value,
-            f"({chosen_value.expression} + {inputs[1].grounding_expression})",
+            expression,
             chosen_value.dimension,
             _merge_fact_uids(chosen_value, inputs[1]),
         )
@@ -1084,7 +1090,6 @@ def _program_top_k_mask(
         reverse=reverse,
     )
     selected = {key for key, _value in ordered[:k]}
-    grounding = " + ".join(f"0 * ({value.expression})" for _key, value in numeric)
     ranking_uids = _merge_fact_uids(*(value for _key, value in numeric))
     return _Series(
         tuple(
@@ -1092,7 +1097,7 @@ def _program_top_k_mask(
                 key,
                 _Boolean(
                     key in selected,
-                    f"(({1 if key in selected else 0} + {grounding}) > 0)",
+                    _top_k_membership_expression(operation, numeric, key, _value, k),
                     ranking_uids,
                 ),
             )
@@ -1124,12 +1129,62 @@ def _program_true_key(operation: ProgramOperation, series: _Series) -> _Key:
         )
     except ValueError as error:
         raise GroundedPlanError(f"{operation.value} requires numeric period keys") from error
-    grounding = " + ".join(f"0 * ({item.expression})" for _key, item in boolean)
+    if operation is ProgramOperation.FIRST_TRUE_KEY:
+        competing = [item for item in boolean if int(item[0]) < int(chosen[0])]
+    else:
+        competing = [item for item in boolean if int(item[0]) > int(chosen[0])]
+    conditions = [f"({chosen[1].expression})"]
+    conditions.extend(f"(({item.expression}) == 0)" for _key, item in competing)
+    selection = "(" + " and ".join(conditions) + ")"
     return _Key(
         chosen[0],
-        grounding,
+        selection,
         _merge_fact_uids(*(item for _key, item in boolean)),
     )
+
+
+def _arg_key_selection_expression(
+    operation: ProgramOperation,
+    numeric: list[tuple[str, _Scalar]],
+    chosen: tuple[str, _Scalar],
+) -> str:
+    conditions: list[str] = []
+    for key, item in numeric:
+        if key == chosen[0]:
+            continue
+        if operation is ProgramOperation.ARGMAX_KEY:
+            comparator = ">" if key > chosen[0] else ">="
+        else:
+            comparator = "<" if key < chosen[0] else "<="
+        conditions.append(
+            f"(({chosen[1].expression}) {comparator} ({item.expression}))"
+        )
+    if not conditions:
+        return "1"
+    return "(" + " and ".join(conditions) + ")"
+
+
+def _top_k_membership_expression(
+    operation: ProgramOperation,
+    numeric: list[tuple[str, _Scalar]],
+    key: str,
+    value: _Scalar,
+    k: int,
+) -> str:
+    outranks: list[str] = []
+    for other_key, other in numeric:
+        if other_key == key:
+            continue
+        if operation is ProgramOperation.TOP_K_MASK:
+            comparator = ">=" if other_key > key else ">"
+        else:
+            comparator = "<=" if other_key < key else "<"
+        outranks.append(
+            f"(({other.expression}) {comparator} ({value.expression}))"
+        )
+    if not outranks:
+        raise GroundedPlanError(f"{operation.value} requires at least two candidates")
+    return f"(({' + '.join(outranks)}) < {k})"
 
 
 def _series_binary(
@@ -1599,10 +1654,26 @@ def _arg_period(
         else min(resolved, key=key)
     )
     assert selected[0].period_year is not None
-    grounding = " + ".join(f"0 * ({item[2]})" for item in resolved)
+    function = "max" if operation is GroundedOperation.ARGMAX_PERIOD else "min"
+    winner = f"{function}({', '.join(item[2] for item in resolved)})"
+    # Preserve the established deterministic tie rule. ARGMAX chooses the
+    # earliest year; ARGMIN chooses the latest year when values are equal.
+    ordered = sorted(
+        resolved,
+        key=lambda item: item[0].period_year or 0,
+        reverse=operation is GroundedOperation.ARGMIN_PERIOD,
+    )
+    final_year = ordered[-1][0].period_year
+    assert final_year is not None
+    expression = str(final_year)
+    for fact, _value, candidate_expression, _dimension in reversed(ordered[:-1]):
+        assert fact.period_year is not None
+        expression = (
+            f"({fact.period_year} if {candidate_expression} == {winner} else {expression})"
+        )
     return (
         Decimal(selected[0].period_year),
-        f"({selected[0].period_year} + {grounding})",
+        expression,
         Dimension.PERIOD,
     )
 
@@ -1640,8 +1711,19 @@ def _select_at_arg(
             f"select_at_arg value cardinality for {plan.join_axis}={key!r}: {len(matching)}"
         )
     value, expression, dimension = _fact_value(matching[0], variable)
-    selector_grounding = " + ".join(f"0 * ({item[2]})" for item in selector_values)
-    return value, f"({expression} + {selector_grounding})", dimension
+    conditions: list[str] = []
+    for fact, _selector_value, selector_expression, _selector_dimension in selector_values:
+        if fact is selected[0]:
+            continue
+        if plan.direction == "max":
+            comparator = ">="
+        else:
+            comparator = "<="
+        conditions.append(
+            f"(({selected[2]}) {comparator} ({selector_expression}))"
+        )
+    guard = "(" + " and ".join(conditions) + ")"
+    return value, f"({expression} / float({guard}))", dimension
 
 
 def _fact_value(fact: GroundedFact, variable: str) -> tuple[Decimal, str, Dimension]:

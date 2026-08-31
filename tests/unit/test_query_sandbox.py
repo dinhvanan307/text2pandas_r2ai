@@ -47,3 +47,56 @@ def test_internal_execution_can_select_a_safe_subset_of_candidate_frames() -> No
     )
 
     assert contract.dataframe_variables == frozenset({"df1"})
+    assert contract.effective_dataframe_variables == frozenset({"df1"})
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "2.06",
+        "1.03 * 2",
+        "float(2021 + 0 * float(df1['value'].values[0]))",
+        "float(df1['value'].values[0] - df1['value'].values[0] + 2021)",
+        "float(pow(float(df1['value'].values[0]), 0) + 2020)",
+        "float(2021 if df1['value'].values[0] == df1['value'].values[0] else 2022)",
+        "float(0 and df1['value'].values[0])",
+        "float(1 or df1['value'].values[0])",
+    ],
+)
+def test_query_result_must_effectively_depend_on_csv_data(query: str) -> None:
+    with pytest.raises(QuerySafetyError, match="does not depend|zero multiplier"):
+        validate_query(query, {"df1"})
+
+
+@pytest.mark.parametrize("column", ["answer", "result", "expected_answer", "prediction"])
+def test_query_cannot_read_a_stored_output_column(column: str) -> None:
+    with pytest.raises(QuerySafetyError, match="stored output column"):
+        validate_query(f"float(df1['{column}'].values[0])", {"df1"})
+
+
+def test_data_driven_period_selection_is_allowed_and_changes_with_csv() -> None:
+    query = (
+        "float(2021 if float(df1[df1['period'] == '2021']['value'].values[0]) == "
+        "max(float(df1[df1['period'] == '2021']['value'].values[0]), "
+        "float(df1[df1['period'] == '2022']['value'].values[0])) else 2022)"
+    )
+    frame = pd.DataFrame(
+        [
+            {"period": "2021", "value": 20.0},
+            {"period": "2022", "value": 10.0},
+        ]
+    )
+
+    assert execute_query(query, {"df1": frame}) == 2021.0
+    frame.loc[frame["period"] == "2022", "value"] = 30.0
+    assert execute_query(query, {"df1": frame}) == 2022.0
+
+
+def test_partially_data_driven_query_cannot_discard_other_csv_data() -> None:
+    query = (
+        "float(df1['value'].values[0] + "
+        "0 * df1['value'].values[1])"
+    )
+
+    with pytest.raises(QuerySafetyError, match="zero multiplier"):
+        validate_query(query, {"df1"})

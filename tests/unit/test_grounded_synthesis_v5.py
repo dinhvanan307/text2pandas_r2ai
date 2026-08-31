@@ -111,6 +111,38 @@ def test_flat_plan_treats_missing_share_scale_as_absolute_units() -> None:
     assert execute_query(execution.pandas_query, {"df1": _frame((fact,))}) == 361481878.0
 
 
+@pytest.mark.parametrize(
+    ("operation", "expected", "mutated_expected"),
+    (
+        (GroundedOperation.ARGMAX_PERIOD, 2021.0, 2019.0),
+        (GroundedOperation.ARGMIN_PERIOD, 2019.0, 2021.0),
+    ),
+)
+def test_arg_period_query_selects_year_from_runtime_csv(
+    operation: GroundedOperation,
+    expected: float,
+    mutated_expected: float,
+) -> None:
+    facts = (
+        _fact("p-19", "5", period="2019-12-31"),
+        _fact("p-21", "9", period="2021-12-31"),
+    )
+    plan = GroundedPlan(
+        operation=operation,
+        operand_uids=tuple(fact.observation_uid for fact in facts),
+        output_dimension=Dimension.PERIOD,
+    )
+
+    execution = execute_grounded_plan(plan, facts)
+    frame = _frame(facts)
+
+    assert execution.answer == expected
+    assert "0 *" not in execution.pandas_query
+    assert execute_query(execution.pandas_query, {"df1": frame}) == expected
+    frame.loc[frame["observation_uid"] == "p-19", "value"] = 10.0
+    assert execute_query(execution.pandas_query, {"df1": frame}) == mutated_expected
+
+
 def test_dag_executes_compound_entity_count() -> None:
     facts = (
         _fact("ca-a", "100", entity="AAA"),
@@ -215,6 +247,7 @@ def test_dag_executes_median_filter_argmax_and_select() -> None:
         "rank-20",
         "roe-20",
     }
+    assert "0 *" not in execution.pandas_query
     assert execute_query(execution.pandas_query, {"df1": _frame(facts)}) == 15.0
 
 
@@ -599,7 +632,13 @@ def test_top_k_mask_and_shifted_period_key_are_grounded() -> None:
         output_node_id="answer",
         output_dimension=Dimension.COUNT,
     )
-    assert execute_grounded(top_two, cohort_facts).answer == 2.0
+    top_two_execution = execute_grounded(top_two, cohort_facts)
+    assert top_two_execution.answer == 2.0
+    assert "0 *" not in top_two_execution.pandas_query
+    assert execute_query(
+        top_two_execution.pandas_query,
+        {"df1": _frame(cohort_facts)},
+    ) == 2.0
 
 
 def test_cagr_by_entity_uses_actual_year_interval() -> None:
