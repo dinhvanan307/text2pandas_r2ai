@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.semantic_parser_wave6_review_protocol",
+  "prediction_blind": true,
+  "scope_config": "configs/evaluation/recovery_wave5_riska60_scope_3842_v1.json",
+  "records": 60,
+  "split": {
+    "development": 40,
+    "holdout": 20
+  },
+  "review": {
+    "minimum_independent_annotators": 2,
+    "require_distinct_adjudicator": true,
+    "require_source_evidence_review": true,
+    "holdout_access": "SEALED_UNTIL_CODE_AND_CONFIG_FREEZE"
+  },
+  "required_semantic_fields": [
+    "entity_domain",
+    "period_domain",
+    "basis",
+    "metric_mentions",
+    "predicate_clauses",
+    "logical_connectors",
+    "temporal_transforms",
+    "projection",
+    "aggregate",
+    "rank",
+    "operation_order",
+    "expected_ast",
+    "output_dimension",
+    "ambiguity"
+  ],
+  "promotion": {
+    "gate_p1": "60/60 A, 60/60 B, 60/60 C; three distinct identities; zero prediction leakage",
+    "correctness_before_seal": "NOT_MEASURED"
+  }
+}
