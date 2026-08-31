@@ -1,8 +1,11 @@
 # SEMANTIC PARSER WAVE 6 — PARTIAL CHECKPOINT REPORT
 
-**Ngày:** 2026-08-31  
-**Repository:** Text2Pandas  
-**Branch:** `mentor-grounded-v6`  
+**Ngày:** 2026-08-31
+
+**Repository:** Text2Pandas
+
+**Branch:** `mentor-grounded-v6`
+
 **Kết luận gate:** `BLOCKED_PENDING_HUMAN_REVIEW`
 
 ## 1. Kết quả điều hành
