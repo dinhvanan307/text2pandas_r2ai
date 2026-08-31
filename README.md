@@ -1,9 +1,20 @@
 # Text2Pandas
 
-Text2Pandas chuyển câu hỏi tài chính tiếng Việt thành truy vấn Pandas có bằng
-chứng trên báo cáo tài chính doanh nghiệp niêm yết. Repository bao gồm pipeline
-dữ liệu A6, retrieval, semantic parsing, typed execution, validation, clean
-replay và đóng gói submission.
+<p align="center">
+  <strong>Vietnamese Financial Question Answering with auditable Pandas programs</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/dinhvanan307/text2pandas_r2ai/actions/workflows/ci.yml"><img src="https://github.com/dinhvanan307/text2pandas_r2ai/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/version-2.0.0-0A7BBB" alt="Version 2.0.0">
+  <img src="https://img.shields.io/badge/runtime-Canonical%20V2-2E8B57" alt="Canonical V2">
+</p>
+
+Text2Pandas là hệ thống hỏi đáp trên báo cáo tài chính tiếng Việt. Hệ thống nhận
+một câu hỏi ngôn ngữ tự nhiên, tìm đúng báo cáo và bảng nguồn, tạo truy vấn
+Pandas có thể thực thi, tính câu trả lời và trả kèm evidence để người dùng kiểm
+tra lại kết quả.
 
 > **Trạng thái tài liệu:** 2026-08-31. Nhánh `main` là bản tích hợp mới nhất.
 > Canonical V2 là đường chạy mặc định; Semantic V3/V4 và Grounded V5 chưa được
@@ -11,7 +22,7 @@ replay và đóng gói submission.
 
 ## Mục lục
 
-- [1. Tổng quan](#1-tổng-quan)
+- [1. Giới thiệu](#1-giới-thiệu)
 - [2. Yêu cầu hệ thống](#2-yêu-cầu-hệ-thống)
 - [3. Cài đặt từ fresh clone](#3-cài-đặt-từ-fresh-clone)
 - [4. Cấu hình](#4-cấu-hình)
@@ -28,16 +39,112 @@ replay và đóng gói submission.
 - [15. Giới hạn hiện tại](#15-giới-hạn-hiện-tại)
 - [16. Đóng góp, bảo mật và giấy phép](#16-đóng-góp-bảo-mật-và-giấy-phép)
 
-## 1. Tổng quan
+## 1. Giới thiệu
 
-### Chức năng chính
+### Bài toán
 
-- Chuẩn hóa báo cáo tài chính ViFinQA thành A6 `silver.db` bất biến.
-- Xây retrieval snapshot gắn với đúng A6 build.
-- Chuyển câu hỏi tiếng Việt thành computation có kiểu và Pandas query.
-- Thực thi query trong sandbox giới hạn, sinh answer và evidence.
-- Kiểm tra `answer == eval(pandas_query)` bằng clean replay.
-- Lưu run manifest, provenance và package submission có thể kiểm toán.
+Báo cáo tài chính thường là tài liệu bán cấu trúc: cùng một chỉ tiêu có thể xuất
+hiện ở nhiều bảng, nhiều kỳ, nhiều đơn vị và nhiều phạm vi hợp nhất/công ty mẹ.
+Một hệ thống hỏi đáp không chỉ cần tìm được con số, mà còn phải chứng minh:
+
+- câu hỏi đang nói tới đúng doanh nghiệp, chỉ tiêu, kỳ và đơn vị;
+- dữ liệu đến từ đúng tài liệu và đúng bảng trong corpus;
+- phép tính có thể biểu diễn và chạy lại bằng Pandas;
+- answer, query và evidence nhất quán với nhau;
+- kết quả có thể tái hiện trên cùng source, config và data snapshot.
+
+Text2Pandas được xây cho bài toán đó. Đây không phải chatbot tài chính tổng quát
+hay hệ thống NL2SQL tùy ý. Runtime mặc định chỉ sử dụng dữ liệu trong corpus,
+giới hạn query được phép chạy và trả về `ABSTAIN` khi không đủ bằng chứng thay vì
+đoán một con số.
+
+### Mục tiêu thiết kế
+
+| Mục tiêu | Cách dự án đáp ứng |
+|---|---|
+| Grounded | Mọi answer phát ra phải gắn với document, table và evidence thực |
+| Auditable | Lưu Pandas query, clean replay result, manifest và checksum |
+| Reproducible | Khóa dependency, source commit, raw/A6/retrieval identity và run ID |
+| Deterministic | Canonical production path không cần remote LLM |
+| Fail closed | Ambiguous binding, unsafe query hoặc replay mismatch dẫn tới `ABSTAIN`/FAIL |
+| Evolvable | Semantic engine mới chạy shadow và chỉ promote qua policy/gold gate |
+
+### Điểm nổi bật
+
+- **Vietnamese financial QA:** phân tích câu hỏi về doanh nghiệp, kỳ báo cáo,
+  chỉ tiêu, basis và đơn vị tiếng Việt.
+- **Immutable data lineage:** raw ViFinQA → A6 → retrieval index đều có identity
+  và manifest riêng.
+- **Executable answers:** câu trả lời đi kèm Pandas query bị giới hạn bởi sandbox.
+- **Evidence-first:** evidence được suy ra từ observation đã bind, không thêm thủ
+  công sau khi có answer.
+- **Clean replay:** mọi query phát ra phải chạy lại và khớp packaged answer.
+- **Governed experimentation:** Canonical, Semantic và Grounded engine được tách
+  bằng composition root, policy và promotion gate.
+- **Reproducible operations:** có lệnh chuẩn cho setup, build, test, run,
+  validation và deterministic comparison.
+
+### Đầu vào và đầu ra
+
+Ví dụ câu hỏi trong ViFinQA:
+
+> Lợi nhuận sau thuế của CTCP Chứng khoán FPT năm 2023 là bao nhiêu tỷ đồng?
+
+Với một câu hỏi đủ bằng chứng, hệ thống tạo một record gồm:
+
+| Trường | Ý nghĩa |
+|---|---|
+| `id`, `question` | Định danh và nguyên văn câu hỏi nguồn |
+| `answer` | Kết quả số hữu hạn sau chuẩn hóa đơn vị |
+| `relevant_docs` | Báo cáo tài chính được sử dụng |
+| `relevant_tables` | Bảng nguồn đã được materialize |
+| `evidence` | Biến/ô dữ liệu thực sự tham gia phép tính |
+| `pandas_query` | Chương trình Pandas có thể kiểm tra và replay |
+
+```text
+Câu hỏi tiếng Việt
+  -> parse intent/semantics
+  -> retrieve document, table và observation
+  -> bind entity, metric, period, basis, unit
+  -> compile + execute restricted Pandas query
+  -> verify answer bằng clean replay
+  -> records.jsonl / validated submission package
+```
+
+### Quick Start
+
+Nếu chỉ cần cài source, kiểm CLI và chạy offline tests:
+
+```bash
+git clone https://github.com/dinhvanan307/text2pandas_r2ai.git
+cd text2pandas_r2ai
+git switch main
+
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --require-hashes -r requirements.lock
+python -m pip install --no-deps -e .
+
+text2pandas --help
+make test-offline
+```
+
+Để chạy sản phẩm trên corpus đầy đủ, tiếp tục lần lượt:
+
+1. [Cấu hình data/artifact root](#4-cấu-hình).
+2. [Tải raw data và materialize checkpoint](#5-dữ-liệu-và-checkpoint).
+3. [Xác minh active lineage](#6-xác-minh-môi-trường-và-active-lineage).
+4. [Chạy smoke hoặc full pipeline](#7-chạy-sản-phẩm).
+5. [Chạy hai lần để kiểm tái hiện](#8-tái-hiện-kết-quả).
+
+### Phạm vi và trạng thái
+
+| Thành phần | Vai trò hiện tại | Trạng thái |
+|---|---|---|
+| Canonical V2 | Production/default answering path | Hoạt động; package complete vẫn fail closed nếu còn abstention |
+| Semantic V3/V4 | Typed/corpus-grounded successor | Shadow; chỉ promote khi policy và independent gold gate PASS |
+| Grounded V5 | Open-weight grounded synthesis | Experimental; chưa có public reproducible input/model bundle |
+| A6 + retrieval | Active materialized data plane | Identity/checksum đã khóa; payload lớn không nằm trong Git |
 
 ### Các mức tái hiện
 
