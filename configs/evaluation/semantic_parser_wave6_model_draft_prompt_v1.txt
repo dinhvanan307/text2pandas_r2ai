@@ -27,6 +27,12 @@ a precise reported line item without a hint, use a stable snake-case ID prefixed
 with "reported_". Do not mark a clearly stated reported metric unresolved only
 because it is absent from the compact reviewed ontology.
 
+Use ticker symbols such as ACB, VCB or DBC as entity IDs when the question gives
+them. The phrase "công ty mẹ" requires basis=separate; "hợp nhất" requires
+basis=consolidated. Never convert an attribute embedded in a reported line item,
+such as "bằng ngoại tệ", into a separate entity filter unless the question
+explicitly asks to filter a domain by that attribute.
+
 The expected_ast object for status OK contains exactly "expression" and
 "output". Expression grammar:
 

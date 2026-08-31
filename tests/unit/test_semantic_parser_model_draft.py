@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from text2pandas.application.usecases.semantic_parser_model_draft import (
     MODEL_DRAFT_STATUS,
-    SemanticParserModelDraftError,
     build_user_review_queue,
     compile_model_draft,
     generation_failure_draft,
@@ -86,22 +85,40 @@ def test_compile_model_draft_is_reviewable_but_not_gold() -> None:
     assert draft["composition_frame"]["expected_ast"]["schema_version"] == 3
 
 
-def test_compile_model_draft_rejects_claimed_complexity_drift() -> None:
-    try:
-        compile_model_draft(
-            _scope(),
-            {
-                "structural_status": "OK",
-                "complexity_class": "compositional",
-                "composition_frame": _frame(),
-                "notes": None,
-            },
-            {"model_id": "test-model"},
-        )
-    except SemanticParserModelDraftError as error:
-        assert "complexity mismatch" in str(error)
-    else:
-        raise AssertionError("complexity drift must fail closed")
+def test_compile_model_draft_infers_complexity_from_validated_ast() -> None:
+    draft = compile_model_draft(
+        _scope(),
+        {
+            "structural_status": "OK",
+            "complexity_class": "compositional",
+            "composition_frame": _frame(),
+            "notes": None,
+        },
+        {"model_id": "test-model"},
+    )
+
+    assert draft["complexity_class"] == "direct"
+    assert draft["compiler_adjustments"] == ["INFER_COMPLEXITY_FROM_AST:compositional->direct"]
+
+
+def test_compile_model_draft_aligns_unaccented_metric_mention() -> None:
+    frame = _frame()
+    frame["metric_mentions"][0]["mention_text"] = "tong tai san"
+
+    draft = compile_model_draft(
+        _scope(),
+        {
+            "structural_status": "OK",
+            "complexity_class": "direct",
+            "composition_frame": frame,
+            "notes": None,
+        },
+        {"model_id": "test-model"},
+    )
+
+    mention = draft["composition_frame"]["metric_mentions"][0]
+    assert mention["mention_text"] == "Tổng tài sản"
+    assert mention["start"] == 0
 
 
 def test_generation_failure_remains_unresolved_silver() -> None:

@@ -6,6 +6,7 @@ from collections import Counter
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import Any
+import unicodedata
 
 from text2pandas.application.usecases.semantic_parser_review import (
     AMBIGUITY_STATUSES,
@@ -43,11 +44,11 @@ def compile_model_draft(
     qid = _positive_int(scope_row.get("qid"), "scope qid")
     question = str(scope_row.get("question") or "")
     structural_status = str(response.get("structural_status") or "")
-    complexity = str(response.get("complexity_class") or "")
+    declared_complexity = str(response.get("complexity_class") or "")
     if structural_status not in STRUCTURAL_STATUSES:
         raise SemanticParserModelDraftError(f"invalid structural status: {structural_status}")
-    if complexity not in COMPLEXITY_CLASSES:
-        raise SemanticParserModelDraftError(f"invalid complexity class: {complexity}")
+    if declared_complexity not in COMPLEXITY_CLASSES:
+        raise SemanticParserModelDraftError(f"invalid complexity class: {declared_complexity}")
     raw_frame = response.get("composition_frame")
     if not isinstance(raw_frame, Mapping):
         raise SemanticParserModelDraftError("composition_frame must be an object")
@@ -60,9 +61,26 @@ def compile_model_draft(
         )
     frame = deepcopy(dict(raw_frame))
     _validate_frame_lists(frame)
-    frame["metric_mentions"] = _compile_metric_mentions(
-        question, _sequence(frame["metric_mentions"], "metric_mentions")
+    compiler_adjustments: list[str] = []
+    raw_mentions = _sequence(frame["metric_mentions"], "metric_mentions")
+    frame["metric_mentions"] = _compile_metric_mentions(question, raw_mentions)
+    if any(
+        isinstance(raw, Mapping) and compiled["mention_text"] != raw.get("mention_text")
+        for raw, compiled in zip(raw_mentions, frame["metric_mentions"], strict=True)
+    ):
+        compiler_adjustments.append("ALIGN_METRIC_MENTIONS_TO_EXACT_SOURCE_SPANS")
+    normalized_question = _normalized_text(question)
+    explicit_basis = (
+        "separate"
+        if "cong ty me" in normalized_question
+        else "consolidated"
+        if "hop nhat" in normalized_question
+        else None
     )
+    if explicit_basis is not None and frame.get("basis") != explicit_basis:
+        raise SemanticParserModelDraftError(
+            f"explicit basis mismatch: question={explicit_basis} frame={frame.get('basis')}"
+        )
     ambiguity = frame.get("ambiguity")
     if not isinstance(ambiguity, Mapping):
         raise SemanticParserModelDraftError("ambiguity must be an object")
@@ -93,9 +111,10 @@ def compile_model_draft(
             detail = "; ".join(f"{issue.path}:{issue.code}" for issue in issues)
             raise SemanticParserModelDraftError(f"expected_ast validation failed: {detail}")
         inferred_complexity = _expression_complexity(ast.to_dict()["expression"])
-        if complexity != inferred_complexity:
-            raise SemanticParserModelDraftError(
-                f"complexity mismatch: declared={complexity} inferred={inferred_complexity}"
+        complexity = inferred_complexity
+        if declared_complexity != inferred_complexity:
+            compiler_adjustments.append(
+                f"INFER_COMPLEXITY_FROM_AST:{declared_complexity}->{inferred_complexity}"
             )
         output_dimension = str(frame.get("output_dimension") or "")
         if output_dimension != ast.output.unit.dimension.value:
@@ -105,6 +124,7 @@ def compile_model_draft(
             )
         frame["expected_ast"] = ast.to_dict()
     else:
+        complexity = declared_complexity
         if ambiguity_status == "NONE":
             raise SemanticParserModelDraftError(
                 "non-OK draft requires AMBIGUOUS or UNRESOLVED ambiguity"
@@ -126,6 +146,7 @@ def compile_model_draft(
         "complexity_class": complexity,
         "composition_frame": frame,
         "generation": dict(generation),
+        "compiler_adjustments": compiler_adjustments,
         "notes": response.get("notes"),
     }
 
@@ -226,23 +247,67 @@ def _compile_metric_mentions(
                 f"metric mention mismatch at {index}: missing={sorted(missing)} "
                 f"extras={sorted(extras)}"
             )
-        mention_text = str(raw.get("mention_text") or "")
-        start = question.find(mention_text)
-        if not mention_text or start < 0:
+        raw_mention = str(raw.get("mention_text") or "")
+        span = _source_span(question, raw_mention)
+        if span is None:
             raise SemanticParserModelDraftError(
-                f"metric mention is not an exact question substring: {mention_text!r}"
+                f"metric mention cannot align to question: {raw_mention!r}"
             )
+        start, end = span
+        mention_text = question[start:end]
         metric_id = str(raw.get("metric_id") or "")
         if not metric_id:
             raise SemanticParserModelDraftError("metric_id must be non-empty")
         mentions.append(
             {
                 **dict(raw),
+                "mention_text": mention_text,
                 "start": start,
-                "end": start + len(mention_text),
+                "end": end,
             }
         )
     return mentions
+
+
+def _source_span(question: str, mention: str) -> tuple[int, int] | None:
+    if not mention:
+        return None
+    exact = question.find(mention)
+    if exact >= 0:
+        return exact, exact + len(mention)
+    normalized_question, offsets = _normalized_text_with_offsets(question)
+    normalized_mention = _normalized_text(mention)
+    start = normalized_question.find(normalized_mention)
+    if start < 0 or not normalized_mention:
+        return None
+    end = start + len(normalized_mention)
+    return offsets[start], offsets[end - 1] + 1
+
+
+def _normalized_text(value: str) -> str:
+    return _normalized_text_with_offsets(value)[0]
+
+
+def _normalized_text_with_offsets(value: str) -> tuple[str, list[int]]:
+    characters: list[str] = []
+    offsets: list[int] = []
+    pending_space: int | None = None
+    for index, source_character in enumerate(value):
+        decomposed = unicodedata.normalize("NFD", source_character.casefold())
+        plain = "".join(
+            character for character in decomposed if unicodedata.category(character) != "Mn"
+        ).replace("đ", "d")
+        for character in plain:
+            if character.isalnum():
+                if pending_space is not None and characters:
+                    characters.append(" ")
+                    offsets.append(pending_space)
+                pending_space = None
+                characters.append(character)
+                offsets.append(index)
+            elif characters:
+                pending_space = index
+    return "".join(characters), offsets
 
 
 def _validate_frame_lists(frame: Mapping[str, object]) -> None:
