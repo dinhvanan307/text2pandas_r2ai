@@ -31,7 +31,7 @@ from .ir import OperationIR
 from .render import render
 from .router import route
 from .units import Unit
-from .validate import ValidationResult, validate
+from .validate import ValidationResult, validate, validate_operand_identity
 from .policy import CROSS_BASIS_OPERANDS, CROSS_PERIOD_METRIC_DRIFT, check_operand_policies
 
 STAGES = ("FRAME", "ROUTE", "BIND", "RENDER", "POLICY", "EXECUTE",
@@ -167,6 +167,16 @@ def answer_question(question: str,
         res.trace.append(bind_trace)
         if not br.ok:
             res.status, res.stage_failed, res.reason = "ABSTAIN", "BIND", br.reason
+            return res
+
+        identity = validate_operand_identity(rr.ir, br.operands)
+        if not identity.ok:
+            reason = ";".join(identity.reasons)
+            res.validation = identity
+            res.trace.append(
+                {"stage": "VALIDATE", "status": identity.verdict, "reason": reason}
+            )
+            res.status, res.stage_failed, res.reason = "REJECT", "VALIDATE", reason
             return res
 
         # -- RENDER (Unit Contract lives here)

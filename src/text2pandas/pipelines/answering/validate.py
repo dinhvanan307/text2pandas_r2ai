@@ -42,6 +42,17 @@ class ValidationResult:
         return self.verdict == PASS
 
 
+def validate_operand_identity(
+    ir: OperationIR, operands: list[BoundOperand]
+) -> ValidationResult:
+    """Reject duplicate physical cells before query execution can cancel them out."""
+    if ir.arity > 1:
+        keys = {(operand.cell.csv_path, operand.cell.row_index) for operand in operands}
+        if len(keys) < len(operands):
+            return ValidationResult(REJECT, [VReason.DUPLICATE_OPERAND_CELLS])
+    return ValidationResult(PASS)
+
+
 def validate(ir: OperationIR, operands: list[BoundOperand],
              value: Optional[float],
              percent_abs_limit: float = 1e4) -> ValidationResult:
@@ -51,12 +62,9 @@ def validate(ir: OperationIR, operands: list[BoundOperand],
     if len(operands) != ir.arity:
         reasons.append(VReason.OPERAND_COUNT_MISMATCH)
 
-    # a multi-operand op whose operands resolved to the same physical cell is
-    # a selection failure that produces a plausible-looking 1.0 / 0.0
-    if ir.arity > 1:
-        keys = {(o.cell.csv_path, o.cell.row_index) for o in operands}
-        if len(keys) < len(operands):
-            reasons.append(VReason.DUPLICATE_OPERAND_CELLS)
+    identity = validate_operand_identity(ir, operands)
+    if not identity.ok:
+        reasons.extend(identity.reasons)
 
     dims = [o.quantity.unit.dimension for o in operands]
     want = ir.output_unit.dimension

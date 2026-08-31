@@ -13,6 +13,7 @@ __all__ = [
     "LegacyVietnameseAnnotator",
     "SemanticV4RuntimePolicy",
     "load_gold_registry",
+    "load_hybrid_policy",
     "load_metric_resolver_policy",
     "load_metric_selector_policy",
     "load_promotion_policy",

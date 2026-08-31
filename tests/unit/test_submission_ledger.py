@@ -41,6 +41,9 @@ def test_submission_ledger_enforces_complete_identity_mapping() -> None:
 def test_local_candidate_cannot_masquerade_as_official_submission() -> None:
     payload = json.loads(LEDGER.read_text(encoding="utf-8"))
     candidates = payload["local_candidates"]
+    submissions = {
+        entry["submission_id"]: entry for entry in payload["submissions"]
+    }
 
     assert candidates
     for candidate in candidates:
@@ -48,6 +51,11 @@ def test_local_candidate_cannot_masquerade_as_official_submission() -> None:
             "NOT_SUBMITTED",
             "READY_TO_UPLOAD",
             "READY_FALLBACK",
+            "SUBMITTED_OFFICIAL_BASELINE",
         }
         assert "submission_id" not in candidate
         assert len(candidate["zip_sha256"]) == 64
+        if candidate["status"] == "SUBMITTED_OFFICIAL_BASELINE":
+            metrics = candidate["official_metrics"]
+            official = submissions[metrics["submission_id"]]
+            assert official["zip_sha256"] == candidate["zip_sha256"]
