@@ -3,7 +3,7 @@
 **Ngày:** 2026-08-31  
 **Trạng thái:** `SHADOW_IMPLEMENTED_PROMOTION_BLOCKED`
 
-## 1. Kết luận
+## Kết luận
 
 Đã triển khai và kiểm thử lớp semantic composition theo hướng tổng quát, fail-closed.
 Hệ thống hiện dựng được full `QuestionAST` candidate cho **23/40** development records;
@@ -14,18 +14,18 @@ Chưa bật runtime mới và không tạo submission. Correctness/Answer Accura
 `NOT_MEASURED` vì source evidence của development set là `0/40` và replacement holdout
 v2 vẫn được niêm phong, chưa có nhãn độc lập A/B/C.
 
-## 2. Phạm vi đã triển khai
+## Phạm vi đã triển khai
 
 Các thay đổi nằm trong grammar/parser chung, không có nhánh runtime theo QID:
 
-1. nhận diện vai trò numerator/denominator cho các mẫu `trên`, `so với`, `trong tổng`;
-2. bảo toàn thứ tự `derive per member → aggregate`;
-3. dựng chuỗi `filter nhiều kỳ → growth/ratio/change → aggregate`;
-4. dựng accrual ratio `(LNST - CFO) / tài sản bình quân` dưới filter;
-5. giữ đúng outer operation là `sum/average` thay vì flatten thành direct lookup;
-6. phân biệt dimension `money`, `ratio`, `percent`, `percent_point` trước khi emit;
-7. phát hiện hai vai trò ratio cùng trỏ một metric và abstain thay vì chọn tùy ý;
-8. giữ trailing aggregate sau filter thay vì để annotator ghi đè sai operation.
+- nhận diện vai trò numerator/denominator cho các mẫu `trên`, `so với`, `trong tổng`;
+- bảo toàn thứ tự `derive per member → aggregate`;
+- dựng chuỗi `filter nhiều kỳ → growth/ratio/change → aggregate`;
+- dựng accrual ratio `(LNST - CFO) / tài sản bình quân` dưới filter;
+- giữ đúng outer operation là `sum/average` thay vì flatten thành direct lookup;
+- phân biệt dimension `money`, `ratio`, `percent`, `percent_point` trước khi emit;
+- phát hiện hai vai trò ratio cùng trỏ một metric và abstain thay vì chọn tùy ý;
+- giữ trailing aggregate sau filter thay vì để annotator ghi đè sai operation.
 
 Code và kiểm thử chính:
 
@@ -41,7 +41,7 @@ Commits:
 - `58fe9e9` — `feat(parser): preserve nested composition semantics`
 - `7978c9e` — `feat(evaluation): audit reviewed parser development set`
 
-## 3. Kết quả trên 40 development records
+## Kết quả trên 40 development records
 
 | Chỉ số | Kết quả |
 | --- | ---: |
@@ -77,7 +77,7 @@ Checkpoint chi tiết:
 - [40 development records](../../artifacts/runs/evaluation/semantic-parser-wave6-development-checkpoint-20260831-v1/records.jsonl)
 - [development manifest](../../artifacts/runs/evaluation/semantic-parser-wave6-development-checkpoint-20260831-v1/manifest.json)
 
-## 4. Differential parser toàn bộ 1.012 QID
+## Differential parser toàn bộ 1.012 QID
 
 | Measurement | S0 trước sửa | S3 candidate | Delta |
 | --- | ---: | ---: | ---: |
@@ -96,7 +96,7 @@ Artifacts:
 - [S0 manifest](../../artifacts/runs/semantic-parser/semantic-parser-wave6-pre-composition-20260831-v1/manifest.json)
 - [S3 manifest](../../artifacts/runs/semantic-parser/semantic-parser-wave6-composition-s3-20260831-v1/manifest.json)
 
-## 5. Full Semantic V3 E2E
+## Full Semantic V3 E2E
 
 Run `semantic-parser-wave6-composition-e2e-20260831-v1` hoàn tất trong `125.096s`:
 
@@ -131,7 +131,7 @@ Artifacts:
 - [E2E manifest](../../artifacts/runs/semantic-v3/semantic-parser-wave6-composition-e2e-20260831-v1/manifest.json)
 - [E2E records](../../artifacts/runs/semantic-v3/semantic-parser-wave6-composition-e2e-20260831-v1/records.jsonl)
 
-## 6. Validation
+## Validation
 
 | Gate | Kết quả |
 | --- | --- |
@@ -150,7 +150,7 @@ Active snapshot IDs:
 
 Machine-readable checkpoint: [semantic_parser_wave6_composition_checkpoint.json](../../provenance/semantic_parser/semantic_parser_wave6_composition_checkpoint.json).
 
-## 7. Holdout và promotion boundary
+## Holdout và promotion boundary
 
 20 holdout cũ đã xuất hiện trong review người dùng nên chỉ còn vai trò exposed diagnostic.
 Replacement holdout v2 đã được chọn độc lập với prediction/answer, overlap với legacy gold và
@@ -163,15 +163,15 @@ review đều bằng 0, nhưng vẫn giữ trạng thái `SEALED_UNOPENED_UNLABE
 Do đó không dùng development prose làm runtime truth, không mở holdout để sửa parser, không
 tạo submission và không dự báo leaderboard score từ replay/coverage.
 
-## 8. Bước tiếp theo đúng thứ tự
+## Bước tiếp theo đúng thứ tự
 
-1. Hoàn thiện 17/40 AST còn thiếu bằng source-metric evidence và role/dimension rules tổng quát.
-2. Freeze code/config/parser fingerprint sau khi 40/40 có full candidate schema hợp lệ.
-3. Giao replacement holdout cho annotator A và B độc lập; adjudicator C chỉ xem các disagreement.
-4. Đo AST exact, binding exact và answer correctness trên holdout đã adjudicate.
-5. Chỉ chạy differential với protected baseline khi holdout đạt gate định trước; promotion phải
-   không có protected loss và có improvement độc lập.
-6. Chỉ sau PASS mới bật guarded runtime và build submission candidate.
+- Hoàn thiện 17/40 AST còn thiếu bằng source-metric evidence và role/dimension rules tổng quát.
+- Freeze code/config/parser fingerprint sau khi 40/40 có full candidate schema hợp lệ.
+- Giao replacement holdout cho annotator A và B độc lập; adjudicator C chỉ xem các disagreement.
+- Đo AST exact, binding exact và answer correctness trên holdout đã adjudicate.
+- Chỉ chạy differential với protected baseline khi holdout đạt gate định trước; promotion phải
+  không có protected loss và có improvement độc lập.
+- Chỉ sau PASS mới bật guarded runtime và build submission candidate.
 
 Ưu tiên kỹ thuật sau parser là giải quyết `BINDING_TIE` và source specificity, nhưng không mở
 rộng selector/binder trước khi 17 development blocker của semantic/source layer được phân loại
