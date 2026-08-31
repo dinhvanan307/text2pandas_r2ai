@@ -1,0 +1,90 @@
+You are producing one SILVER semantic-parser draft for later human review.
+This is not human gold and must never be used as a runtime prediction.
+
+Interpret only the Vietnamese question and the ontology hints supplied below.
+Do not use or invent parser output, retrieval results, selected tables, numeric
+answers, Pandas queries, execution traces, or evidence bindings.
+
+Return exactly one JSON object matching the supplied response schema.
+
+Build semantics bottom-up in this order:
+
+1. entity and period domains;
+2. reported metric leaves;
+3. temporal transforms and explicit arithmetic or ratios;
+4. predicates;
+5. filters;
+6. aggregate or rank;
+7. requested output and dimension.
+
+Never classify a question only by its outer word such as "trung bình" or
+"chênh lệch". A question containing filter, ratio and growth before an average
+must be compositional.
+
+Metric mention_text values must preserve source casing and be exact substrings
+of the question. Use the supplied metric_id when an ontology hint matches. For
+a precise reported line item without a hint, use a stable snake-case ID prefixed
+with "reported_". Do not mark a clearly stated reported metric unresolved only
+because it is absent from the compact reviewed ontology.
+
+The expected_ast object for status OK contains exactly "expression" and
+"output". Expression grammar:
+
+- metric leaf:
+  {"type":"metric_ref","metric_id":"...","entities":["..."],
+   "periods":["2024"],"basis":"consolidated|separate|unspecified",
+   "expected_unit":{"dimension":"money|percent|ratio|shares|count|unknown",
+                    "scale_exponent":null,"currency":null}}
+- numeric literal:
+  {"type":"literal","value":0,
+   "unit":{"dimension":"money|percent|ratio|count","scale_exponent":null,
+           "currency":null}}
+- arithmetic:
+  {"type":"arithmetic","operator":"add|subtract|multiply|divide|growth",
+   "left":EXPRESSION,"right":EXPRESSION}
+- rolling transform:
+  {"type":"rolling_average","window":2,"expression":EXPRESSION}
+  {"type":"rolling_growth","expression":EXPRESSION}
+- aggregate:
+  {"type":"aggregate","function":"sum|average|count|minimum|maximum|median",
+   "axis":"entity|period","members":["...","..."],"expression":EXPRESSION}
+- filter:
+  {"type":"filter","axis":"entity|period","members":["..."],
+   "predicate":PREDICATE,"expression":EXPRESSION}
+- rank and select-at-arg:
+  {"type":"rank","axis":"entity|period","members":["..."],
+   "by":EXPRESSION,"direction":"ascending|descending","limit":1}
+  {"type":"select_at_arg","rank":RANK,"expression":EXPRESSION}
+
+Predicate grammar:
+
+- comparison:
+  {"type":"comparison","operator":"eq|ne|gt|ge|lt|le",
+   "left":EXPRESSION,"right":EXPRESSION}
+- logical:
+  {"type":"logical","operator":"and|or","predicates":[PREDICATE,PREDICATE]}
+- quantified over periods/entities:
+  {"type":"quantified","axis":"period|entity","quantifier":"all|any",
+   "predicate":PREDICATE}
+
+Output grammar:
+
+{"result_kind":"scalar|entity|period","rounding_digits":null,
+ "unit":{"dimension":"money|percent|percent_point|ratio|count|shares|entity|period|unknown",
+         "scale_exponent":null,"currency":null}}
+
+Rules:
+
+- A-B preserves the stated direction.
+- A/B preserves numerator and denominator.
+- Explicit growth is new/old - 1 and has percent output.
+- "điểm phần trăm" means percent_point, not percent.
+- money/money produces ratio; convert the requested output to percent only at
+  the output contract.
+- An average across companies uses aggregate axis entity; an average across
+  years uses aggregate axis period.
+- Filter must be inside the later aggregate/rank operation.
+- A condition required in every listed year uses a quantified ALL predicate.
+- If the meaning is genuinely ambiguous, return AMBIGUOUS and expected_ast=null.
+- If no valid tree can be represented, return UNRESOLVED and expected_ast=null.
+- An OK draft requires ambiguity.status=NONE and a complete expected_ast.
