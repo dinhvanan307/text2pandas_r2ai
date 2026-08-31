@@ -121,6 +121,34 @@ def test_compile_model_draft_aligns_unaccented_metric_mention() -> None:
     assert mention["start"] == 0
 
 
+def test_compile_model_draft_rejects_unused_metric_mentions() -> None:
+    frame = _frame()
+    frame["metric_mentions"].append(
+        {
+            "mention_text": "năm 2024",
+            "metric_id": "reported_unused",
+            "semantic_role": "qualifier",
+            "reported_or_derived": "reported",
+        }
+    )
+
+    try:
+        compile_model_draft(
+            _scope(),
+            {
+                "structural_status": "OK",
+                "complexity_class": "direct",
+                "composition_frame": frame,
+                "notes": None,
+            },
+            {"model_id": "test-model"},
+        )
+    except ValueError as error:
+        assert "not referenced" in str(error)
+    else:
+        raise AssertionError("unused metric mention must fail closed")
+
+
 def test_generation_failure_remains_unresolved_silver() -> None:
     draft = generation_failure_draft(_scope(), {"model_id": "test-model"}, "bad JSON")
     queue = build_user_review_queue([draft])

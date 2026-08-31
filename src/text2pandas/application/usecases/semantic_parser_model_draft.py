@@ -110,7 +110,15 @@ def compile_model_draft(
         if issues:
             detail = "; ".join(f"{issue.path}:{issue.code}" for issue in issues)
             raise SemanticParserModelDraftError(f"expected_ast validation failed: {detail}")
-        inferred_complexity = _expression_complexity(ast.to_dict()["expression"])
+        canonical_expression = ast.to_dict()["expression"]
+        ast_metric_ids = _expression_metric_ids(canonical_expression)
+        mention_metric_ids = {str(mention["metric_id"]) for mention in frame["metric_mentions"]}
+        unused_mentions = sorted(mention_metric_ids - ast_metric_ids)
+        if unused_mentions:
+            raise SemanticParserModelDraftError(
+                f"metric mentions are not referenced by expected_ast: {unused_mentions}"
+            )
+        inferred_complexity = _expression_complexity(canonical_expression)
         complexity = inferred_complexity
         if declared_complexity != inferred_complexity:
             compiler_adjustments.append(
@@ -122,6 +130,10 @@ def compile_model_draft(
                 "output dimension mismatch: "
                 f"frame={output_dimension} ast={ast.output.unit.dimension.value}"
             )
+        inferred_order = _operation_order(canonical_expression)
+        if frame["operation_order"] != inferred_order:
+            compiler_adjustments.append("INFER_OPERATION_ORDER_FROM_AST")
+            frame["operation_order"] = inferred_order
         frame["expected_ast"] = ast.to_dict()
     else:
         complexity = declared_complexity
@@ -377,6 +389,107 @@ def _expression_complexity(expression: Mapping[str, Any]) -> str:
     if "derived" in layers:
         return "derived"
     return "direct"
+
+
+def _expression_metric_ids(expression: Mapping[str, Any]) -> set[str]:
+    output: set[str] = set()
+
+    def walk(node: Mapping[str, Any]) -> None:
+        if node.get("type") == "metric_ref":
+            metric_id = str(node.get("metric_id") or "")
+            if metric_id:
+                output.add(metric_id)
+        for key in ("left", "right", "expression", "by", "rank"):
+            child = node.get(key)
+            if isinstance(child, Mapping):
+                walk(child)
+        predicate = node.get("predicate")
+        if isinstance(predicate, Mapping):
+            walk_predicate(predicate)
+
+    def walk_predicate(predicate: Mapping[str, Any]) -> None:
+        for key in ("left", "right", "expression"):
+            child = predicate.get(key)
+            if isinstance(child, Mapping):
+                walk(child)
+        children = predicate.get("predicates")
+        if isinstance(children, list):
+            for child in children:
+                if isinstance(child, Mapping):
+                    walk_predicate(child)
+        nested = predicate.get("predicate")
+        if isinstance(nested, Mapping):
+            walk_predicate(nested)
+
+    walk(expression)
+    return output
+
+
+def _operation_order(expression: Mapping[str, Any]) -> list[str]:
+    ordered: list[str] = []
+
+    def add(value: str) -> None:
+        if value not in ordered:
+            ordered.append(value)
+
+    def walk(node: Mapping[str, Any]) -> None:
+        node_type = str(node.get("type"))
+        if node_type == "metric_ref":
+            add("lookup")
+            return
+        if node_type == "literal":
+            return
+        if node_type == "filter":
+            predicate = node.get("predicate")
+            if isinstance(predicate, Mapping):
+                walk_predicate(predicate)
+            child = node.get("expression")
+            if isinstance(child, Mapping):
+                walk(child)
+            add("filter")
+            return
+        if node_type == "select_at_arg":
+            rank = node.get("rank")
+            child = node.get("expression")
+            if isinstance(rank, Mapping):
+                walk(rank)
+            if isinstance(child, Mapping):
+                walk(child)
+            add("select_at_arg")
+            return
+        for key in ("left", "right", "expression", "by"):
+            child = node.get(key)
+            if isinstance(child, Mapping):
+                walk(child)
+        stage = {
+            "arithmetic": "arithmetic",
+            "unary": "arithmetic",
+            "rolling_average": "temporal_transform",
+            "rolling_growth": "temporal_transform",
+            "formula_call": "arithmetic",
+            "aggregate": "aggregate",
+            "rank": "rank",
+        }.get(node_type)
+        if stage:
+            add(stage)
+
+    def walk_predicate(predicate: Mapping[str, Any]) -> None:
+        for key in ("left", "right", "expression"):
+            child = predicate.get(key)
+            if isinstance(child, Mapping):
+                walk(child)
+        children = predicate.get("predicates")
+        if isinstance(children, list):
+            for child in children:
+                if isinstance(child, Mapping):
+                    walk_predicate(child)
+        nested = predicate.get("predicate")
+        if isinstance(nested, Mapping):
+            walk_predicate(nested)
+        add("predicate")
+
+    walk(expression)
+    return ordered
 
 
 def _sequence(value: object, label: str) -> Sequence[object]:

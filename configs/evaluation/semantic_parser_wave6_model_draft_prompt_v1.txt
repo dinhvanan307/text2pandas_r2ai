@@ -33,6 +33,11 @@ basis=consolidated. Never convert an attribute embedded in a reported line item,
 such as "bằng ngoại tệ", into a separate entity filter unless the question
 explicitly asks to filter a domain by that attribute.
 
+Every metric mention must correspond to a metric leaf referenced by expected_ast.
+Do not emit qualifier fragments as separate metric mentions. operation_order must
+use only these stage names in inner-to-outer order: lookup, temporal_transform,
+arithmetic, predicate, filter, aggregate, rank, select_at_arg, output_conversion.
+
 The expected_ast object for status OK contains exactly "expression" and
 "output". Expression grammar:
 
