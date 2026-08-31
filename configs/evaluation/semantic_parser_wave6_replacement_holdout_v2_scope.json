@@ -1,0 +1,244 @@
+{
+  "counts": {
+    "eligible_by_family": {
+      "complex_composition": 67,
+      "direct_lookup": 3,
+      "direct_ratio": 2,
+      "simple_extremum": 13,
+      "single_metric_average": 14,
+      "single_metric_sum": 3,
+      "two_period_difference": 11
+    },
+    "eligible_records": 113,
+    "excluded_qids": 269,
+    "family_quota": {
+      "complex_composition": 12,
+      "direct_lookup": 1,
+      "direct_ratio": 1,
+      "simple_extremum": 2,
+      "single_metric_average": 2,
+      "single_metric_sum": 1,
+      "two_period_difference": 1
+    },
+    "records": 20
+  },
+  "kind": "text2pandas.semantic_parser_wave6_replacement_holdout_scope",
+  "records": [
+    {
+      "family": "direct_lookup",
+      "qid": 19,
+      "question": "Tổng tỷ lệ quyền biểu quyết của công ty mẹ CTCP Đầu tư Hạ tầng Giao thông Đèo Cả năm 2023 là bao nhiêu phần trăm?",
+      "question_sha256": "486841f3ac63d81a0ac8793a337b9791859a8046f7f78b2b09bae1e23c78af5f",
+      "risk_tier": "D",
+      "selection_digest": "439986d9be197005983f6a515e44f19e6109d32268d0983c073b4d1bf9947c71",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 233,
+      "question": "Tổng khoản tiền thuê tối thiểu theo hợp đồng thuê hoạt động của CTCP Tập đoàn GELEX (GEX) đến ngày 31/12/2017 là bao nhiêu trăm tỷ đồng?",
+      "question_sha256": "3ff02472c01b3a399eef2640cb5eaa837d8165807855c2db3b0773b94ac1618c",
+      "risk_tier": "D",
+      "selection_digest": "2d60ae197ec546a4f36a9a09af1d6621e2ada2b007134952aa7abb61715dc61e",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 336,
+      "question": "Tổng số tiền thuê tối thiểu trong tương lai của công ty mẹ HND đến ngày 31 tháng 12 năm 2025 là bao nhiêu tỷ đồng?",
+      "question_sha256": "bdbc288163013ba87af7b6a3b898cf2a3a2e8d691aed91735e5c3f919c6fe70e",
+      "risk_tier": "D",
+      "selection_digest": "30706df5f3c5aae6e59192bdc95f1036d2c9c9bc5953b1e64330920417006347",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 412,
+      "question": "Trong số các công ty Masan, Đại Dương và Vinamilk có lợi nhuận sau thuế dương, doanh nghiệp có biên lợi nhuận ròng cao nhất ghi nhận tỷ lệ lưu chuyển tiền thuần từ hoạt động kinh doanh trên lợi nhuận sau thuế là bao nhiêu lần?",
+      "question_sha256": "687388d6a5cbcb6a57e7e0c8557d359e411d826d9ecbbc8dbee22e69907b3b90",
+      "risk_tier": "C",
+      "selection_digest": "38cc01a4a4e9472e3b5461f13afc32ba0418cdba2729fbbb506891f79b7fb561",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 420,
+      "question": "Trong các doanh nghiệp thuộc nhóm VNM-MSN-DBC-ASM-MPC-OGC và có vốn lưu động ròng âm cuối năm 2024, ROA của doanh nghiệp có hệ số nợ phải trả trên tổng tài sản thấp nhất là bao nhiêu phần trăm?",
+      "question_sha256": "581d674d8f1ec902685164836c58d9c10668b015cbe17ca5f486267747e5f177",
+      "risk_tier": "C",
+      "selection_digest": "37460ecfc7ddbffe93991e9fbf2638542f79b9230ead21fb6847ec53220fab19",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 453,
+      "question": "Năm 2022, xét các doanh nghiệp có mã cổ phiếu HPG, HSG, MSR và NKG, trong nhóm có tỷ lệ tài sản ngắn hạn trừ hàng tồn kho rồi chia cho nợ ngắn hạn thấp hơn mức trung vị của cả 4 doanh nghiệp, tỷ lệ lợi nhuận sau thuế trên doanh thu thuần bình quân là bao nhiêu phần trăm?",
+      "question_sha256": "c8f12827b2eecd7c212595feda2a96f0c3c157396184d35c6e5855a98b438e3a",
+      "risk_tier": "C",
+      "selection_digest": "09369e07c6133c15a8b6d2258bce1ba680b1ee3802c621b1460ae410b396974a",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 462,
+      "question": "Năm 2020, trong các doanh nghiệp có mã cổ phiếu DLG, HHV và VSC, xét những doanh nghiệp có tài sản ngắn hạn thấp hơn nợ ngắn hạn, tại doanh nghiệp có tỷ lệ nợ phải trả chia cho tổng tài sản thấp nhất, lợi nhuận sau thuế năm 2020 bằng bao nhiêu phần trăm tổng tài sản bình quân cuối năm 2019 và cuối năm 2020?",
+      "question_sha256": "aaf3e794acf4b5e7177de7af0f16f7d738719a1057a555fa47203aa6c3a082d4",
+      "risk_tier": "C",
+      "selection_digest": "33c2d238010b39951d9e6666f6dfdcfd306cea91c27485383e258154e651a6b1",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 472,
+      "question": "Trong năm mã cổ phiếu AAA, DCM, DPM, GVR và PRT, xét các công ty có lưu chuyển tiền thuần từ hoạt động kinh doanh dương trong cả ba năm 2020, 2021 và 2022, tỷ lệ lợi nhuận sau thuế trên doanh thu thuần cao nhất năm 2022 là bao nhiêu %?",
+      "question_sha256": "820d38d734eb3409b18de02aa434f794b65096b6c4af659cf20f06e437270909",
+      "risk_tier": "C",
+      "selection_digest": "094e3366618536e58d8307a69ae8c9bb56c36c7304ff24f9aee3d20aebf6d882",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 499,
+      "question": "Trong các năm 2018, 2019, 2022, 2023 và 2024, tại năm có giá trị vay ngắn hạn cuối năm lớn nhất của CTCP Chứng khoán FPT, mức thay đổi của tiền và các khoản tương đương tiền từ đầu năm đến cuối năm, tính bằng chênh lệch giữa giá trị cuối năm và đầu năm chia cho giá trị đầu năm, là bao nhiêu %?",
+      "question_sha256": "0a81e7fcc1d6e86340abf5c17c15e0e34af1c3923d4eab17e060db56443f6d82",
+      "risk_tier": "C",
+      "selection_digest": "2f10aa4a8a4496cc86f1a96ea2aeaf12b866c2cc9ddc625f2ad4c5f004e2ea06",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 504,
+      "question": "Trong các năm 2022, 2024 và 2025 của CTCP Tập đoàn Sao Mai (ASM), tỷ lệ giữa lưu chuyển tiền thuần từ hoạt động kinh doanh và doanh thu của năm có số dư vay ngắn hạn cuối năm cao nhất là bao nhiêu %?",
+      "question_sha256": "90e32f57178c09b034ba6905210a32ffc3f037b68a2e19ebe74bd2d816d9d2fb",
+      "risk_tier": "C",
+      "selection_digest": "2290427faa8e6f8eb9630074d9622c4faeb7a8f222aba2a9a8d5b87f4688f3f8",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "simple_extremum",
+      "qid": 505,
+      "question": "Trong các năm 2017, 2018, 2019, 2022 và 2024, số dư vay ngắn hạn phải trả các bên liên quan cuối năm của công ty mẹ CTCP Phát triển Hạ tầng Kỹ thuật (IJC) tại năm có số dư vay ngắn hạn ngân hàng cuối năm cao nhất là bao nhiêu tỷ đồng?",
+      "question_sha256": "365a766cc2303a96f8271be17e43e780ba2fe6a2e157c028068e3c689edc5844",
+      "risk_tier": "B",
+      "selection_digest": "1cd1bc94c1888271276875fbd96b9a92603a01af5d76377d09c67c0161723ea0",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 512,
+      "question": "Trong các năm 2015, 2018, 2019, 2021, 2022 và 2023, số dư vay dài hạn tại ngày 30/9 của CTCP Tập đoàn Hoa Sen (HSG) trong năm có tổng vốn chủ sở hữu cao nhất là bao nhiêu tỷ đồng?",
+      "question_sha256": "484307def721d9e81202da45c85b6d041c9fcaca5b39528da51a4251d6381295",
+      "risk_tier": "C",
+      "selection_digest": "202fbc084ad667064b3f2fb5c692bad9659d5545d7b660d4127727adaeb81072",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 553,
+      "question": "Trong nhóm BSR, PLX và PVT năm 2019, công ty có tỷ lệ nợ phải trả trên vốn chủ sở hữu cao nhất có tỷ lệ tổng của lợi nhuận trước thuế và chi phí lãi vay trên chi phí lãi vay là bao nhiêu lần?",
+      "question_sha256": "0f760561488508190ea8219beb48244ea7a762fdfdb142e2319c30c21dbc7976",
+      "risk_tier": "C",
+      "selection_digest": "1becdeade187b279e55bef4e00c757750efeca7d1ae68a9e026315b647c96929",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 574,
+      "question": "Năm 2024, trong các công ty GEE, GEX và SAM có lưu chuyển tiền thuần từ hoạt động kinh doanh dương trong cả ba năm 2022, 2023 và 2024, tỷ lệ lợi nhuận sau thuế trên doanh thu thuần cao nhất là bao nhiêu %?",
+      "question_sha256": "2aa7c71cc6620aff582925e429100eeefc92c651108fe2c4388263ee3419d5ba",
+      "risk_tier": "C",
+      "selection_digest": "376f6543759139a7c53d3ce80798488fa64db08f19e731ed81b8a0c5bdd1b25c",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "complex_composition",
+      "qid": 579,
+      "question": "Tính phần trăm tăng trưởng lãi tiền gửi có kỳ hạn của công ty mẹ CTCP Phát triển Hạ tầng Kỹ thuật từ năm 2016 sang năm 2021.",
+      "question_sha256": "2646f3a8833a1fdef2db4fd3ad0733da3033157323aaec5a7d74202bc26ede4b",
+      "risk_tier": "C",
+      "selection_digest": "300408226cbe7e6e3018ede54ccbf830a3c14d6fe75f0463f7c630f2eb5c9dfb",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "two_period_difference",
+      "qid": 594,
+      "question": "Chênh lệch giá trị hợp lý khoản đầu tư vào Ngân hàng TMCP Ngoại Thương Việt Nam của GEE giữa cuối năm 2025 và cuối năm 2022 là bao nhiêu triệu đồng?",
+      "question_sha256": "84d08c16a8101966726f64d10e43aa913bc226dbbf06577a866916ae7743e84a",
+      "risk_tier": "D",
+      "selection_digest": "31373847b160960a493905bfa4088f93f2a34ed2a7c3ac523c6186558d652647",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "direct_ratio",
+      "qid": 715,
+      "question": "Tỷ lệ đầu tư ngắn hạn trên tiền và tương đương tiền của công ty mẹ Tập đoàn VINGROUP cuối năm 2023 là bao nhiêu %?",
+      "question_sha256": "e2992a1f6ddc4fb9f23e39767e687a8cc25f3de19d85df7b4c59922f953894eb",
+      "risk_tier": "D",
+      "selection_digest": "69837470f8325ee3433c7f659d9427ec2ffb9cbe273fd2d1298c98b7aea8a6cf",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "simple_extremum",
+      "qid": 849,
+      "question": "Tỷ trọng chi phí khấu hao và phân bổ trong tổng chi phí sản xuất và kinh doanh theo yếu tố của Tổng Công ty cổ phần Bia - Rượu - Nước giải khát Sài Gòn đạt mức cao nhất trong các năm 2018, 2020, 2024 và 2025 là bao nhiêu phần trăm?",
+      "question_sha256": "10041779b604466f97f3ed2e8dd5ac51cb11ec2ac26e14cf1c767208c05b0241",
+      "risk_tier": "B",
+      "selection_digest": "148d9f55d3688f05dacfcca9924098e9951b754e58c32ac5785de37d56722e73",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "single_metric_sum",
+      "qid": 887,
+      "question": "Tổng thù lao Hội đồng Quản trị của Công ty mẹ Tập đoàn VINGROUP - CTCP (VIC) cho các năm 2022, 2023 và 2024 sau khi được cộng dồn lại là bao nhiêu triệu đồng?",
+      "question_sha256": "d6007453c3b6d8f49b5cfd104ff230079eb7de9cb7f08c77f9e0d92555935e36",
+      "risk_tier": "D",
+      "selection_digest": "5eec8ff6e15b1f8dc4bc7275f5a86e79edda6c8a924174e2950026a437c31776",
+      "split": "replacement_holdout"
+    },
+    {
+      "family": "single_metric_average",
+      "qid": 896,
+      "question": "Trung bình số dư cuối kỳ khoản vay bên liên quan ngắn hạn của CTCP Tập đoàn Kỹ nghệ gỗ Trường Thành (TTF) công ty mẹ trong các năm 2018, 2021, 2022 và 2024 là bao nhiêu tỷ đồng?",
+      "question_sha256": "243e703749a234d59a570e62a84435c347d1aaf418c9299f7fdbf308807cba5d",
+      "risk_tier": "D",
+      "selection_digest": "1307e04f63bdb538b744dbe91fa4fdda2b06b364637c73ebfa7e0c68ad710ca8",
+      "split": "replacement_holdout"
+    }
+  ],
+  "review_contract": {
+    "labels_visible_to_implementer_before_freeze": false,
+    "minimum_independent_annotators": 2,
+    "require_distinct_adjudicator": true,
+    "source_evidence_required": true
+  },
+  "schema_version": 1,
+  "seed": "text2pandas-semantic-parser-wave6-replacement-holdout-v2-20260831",
+  "selection": {
+    "algorithm": "lowest_sha256(seed\\0family\\0risk_tier\\0qid\\0question_sha256)",
+    "answer_fields_read": false,
+    "prediction_fields_read": false
+  },
+  "source": {
+    "exposed_user_review": {
+      "path": "configs/evaluation/semantic_parser_wave6_user_review_20260831_v1.json",
+      "sha256": "a6c6f07778858a24ed693679b003a0ab18f00ca3c48e5d0de750acb5b18a9e0e"
+    },
+    "git": {
+      "git_commit": "721baa1a652cc0c82e761524596d1c5d92d950bd",
+      "git_dirty": false
+    },
+    "inventory": {
+      "path": "artifacts/runs/evaluation/recovery-wave5-3842-inventory-20260831-v1/inventory.jsonl",
+      "sha256": "eb045ae1ce49d2f95bd83be8b955bcac13e6416e1a7ffc123e73644269c72557"
+    },
+    "legacy_contamination_ledger": {
+      "path": "artifacts/runs/evaluation/semantic-gold-v2-phase1.5-packet-20260829-04-determinism/contamination_ledger.json",
+      "sha256": "fa070992927a7a5eef3af8d96aeab69e029586b9b710808c503d6289871aafe0"
+    },
+    "questions": {
+      "path": "data/raw/btc/questions/questions.jsonl",
+      "sha256": "64a428d90a8c5ad5d36a397d2de3b6e3aa4e4c1224dcdcb118fe3a4fca056ff0"
+    }
+  },
+  "status": "UNLABELED_SEALED_PENDING_CODE_FREEZE"
+}

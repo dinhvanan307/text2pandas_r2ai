@@ -87,5 +87,7 @@ Vì vậy `corrected_annotation` được giữ `null`; importer không tự suy
 
 Review này là bằng chứng chẩn đoán rất có giá trị và đã chỉ ra structural validator hiện tại
 chưa đủ precision. Tuy nhiên, nó chưa cấp quyền dùng review prose làm runtime truth. Bước an
-toàn tiếp theo là chuyển 40 development records thành full CompositionFrame/AST, giữ 20
-holdout sealed, rồi mới sửa parser theo các pattern hệ thống ở mục 4.
+toàn tiếp theo là chuyển 40 development records thành full CompositionFrame/AST. Hai mươi
+QID holdout cũ đã xuất hiện trong review này nên được hạ thành exposed diagnostic, không còn
+đủ độc lập để promotion. Holdout v2 mới gồm 20 QID chưa có nhãn, legacy-overlap 0 và
+review-overlap 0; chỉ được mở sau khi code/config freeze.

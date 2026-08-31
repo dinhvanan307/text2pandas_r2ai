@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "kind": "text2pandas.semantic_parser_wave6_replacement_holdout_provenance",
+  "status": "UNLABELED_SEALED_PENDING_CODE_FREEZE",
+  "retired_holdout": {
+    "scope_path": "configs/evaluation/recovery_wave5_riska60_scope_3842_v1.json",
+    "records": 20,
+    "reason": "semantic labels for all 20 records were exposed in the user review on 2026-08-31",
+    "new_role": "EXPOSED_DIAGNOSTIC_NOT_PROMOTION_HOLDOUT"
+  },
+  "replacement": {
+    "protocol_path": "configs/evaluation/semantic_parser_wave6_replacement_holdout_v2_protocol.json",
+    "scope_path": "configs/evaluation/semantic_parser_wave6_replacement_holdout_v2_scope.json",
+    "scope_sha256": "82724b7376521e148051ce21276ff3b355190f2f656acbed84478e3025a196a9",
+    "records": 20,
+    "eligible_records": 113,
+    "legacy_contamination_overlap": 0,
+    "exposed_review_overlap": 0,
+    "labels_filled": 0,
+    "family_quota": {
+      "complex_composition": 12,
+      "direct_lookup": 1,
+      "direct_ratio": 1,
+      "simple_extremum": 2,
+      "single_metric_average": 2,
+      "single_metric_sum": 1,
+      "two_period_difference": 1
+    }
+  },
+  "packet": {
+    "path": "artifacts/runs/evaluation/semantic-parser-wave6-replacement-holdout-20260831-v2",
+    "manifest_sha256": "8036e3716b34dde77e9782e34849448cbb0cfaa441dd040cf29b251dbab86a8c",
+    "scope_sha256": "82724b7376521e148051ce21276ff3b355190f2f656acbed84478e3025a196a9",
+    "annotator_a_sha256": "33041261ce90f2b0f3f7b1090056bdcf8279325fe14d7b5c7b9743e1bfaa778b",
+    "annotator_b_sha256": "8012ba859f17ff4ae95d7d8c3a8a928b8b55c5fc5c1047dd31eb39e5826baa7f",
+    "adjudication_sha256": "8ea4c343a0f4cf37a3d2978a0c126543dbb3b9e9eef8197cdfe9cf7bdf7eefd1"
+  },
+  "selection": {
+    "source_commit": "721baa1a652cc0c82e761524596d1c5d92d950bd",
+    "seed": "text2pandas-semantic-parser-wave6-replacement-holdout-v2-20260831",
+    "algorithm": "lowest_sha256(seed\\0family\\0risk_tier\\0qid\\0question_sha256)",
+    "prediction_fields_read": false,
+    "answer_fields_read": false
+  },
+  "runtime_parser_changed": false,
+  "submission_built": false
+}
