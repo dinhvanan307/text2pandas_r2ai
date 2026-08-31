@@ -121,6 +121,34 @@ def test_compile_model_draft_aligns_unaccented_metric_mention() -> None:
     assert mention["start"] == 0
 
 
+def test_compile_model_draft_canonicalizes_explicit_output_unit() -> None:
+    frame = _frame()
+    expected_ast = frame["expected_ast"]
+    assert isinstance(expected_ast, dict)
+    output = expected_ast["output"]
+    assert isinstance(output, dict)
+    output["unit"] = {
+        "dimension": "money",
+        "scale_exponent": None,
+        "currency": None,
+    }
+
+    draft = compile_model_draft(
+        _scope(),
+        {
+            "structural_status": "OK",
+            "complexity_class": "direct",
+            "composition_frame": frame,
+            "notes": None,
+        },
+        {"model_id": "test-model"},
+    )
+
+    unit = draft["composition_frame"]["expected_ast"]["output"]["unit"]
+    assert unit == {"dimension": "money", "scale_exponent": 9, "currency": "VND"}
+    assert "CANONICALIZE_EXPLICIT_OUTPUT_UNIT" in draft["compiler_adjustments"]
+
+
 def test_compile_model_draft_rejects_unused_metric_mentions() -> None:
     frame = _frame()
     frame["metric_mentions"].append(

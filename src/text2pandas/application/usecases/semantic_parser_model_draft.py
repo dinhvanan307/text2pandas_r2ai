@@ -94,12 +94,20 @@ def compile_model_draft(
         raw_ast = frame.get("expected_ast")
         if not isinstance(raw_ast, Mapping):
             raise SemanticParserModelDraftError("OK draft requires expected_ast")
+        raw_output = raw_ast.get("output")
+        if not isinstance(raw_output, Mapping):
+            raise SemanticParserModelDraftError("expected_ast.output must be an object")
+        canonical_output = deepcopy(dict(raw_output))
+        explicit_unit = _explicit_output_unit(question)
+        if explicit_unit is not None and canonical_output.get("unit") != explicit_unit:
+            canonical_output["unit"] = explicit_unit
+            compiler_adjustments.append("CANONICALIZE_EXPLICIT_OUTPUT_UNIT")
         ast_payload = {
             "schema_version": 3,
             "qid": qid,
             "question": question,
             "expression": raw_ast.get("expression"),
-            "output": raw_ast.get("output"),
+            "output": canonical_output,
             "diagnostics": [MODEL_DRAFT_STATUS],
         }
         try:
@@ -320,6 +328,31 @@ def _normalized_text_with_offsets(value: str) -> tuple[str, list[int]]:
             elif characters:
                 pending_space = index
     return "".join(characters), offsets
+
+
+def _explicit_output_unit(question: str) -> dict[str, object] | None:
+    normalized = _normalized_text(question)
+    if "diem phan tram" in normalized:
+        return {"dimension": "percent_point", "scale_exponent": None, "currency": None}
+    if "%" in question or "phan tram" in normalized:
+        return {"dimension": "percent", "scale_exponent": None, "currency": None}
+    if "nghin ty" in normalized:
+        return {"dimension": "money", "scale_exponent": 12, "currency": "VND"}
+    if "tram ty" in normalized:
+        return {"dimension": "money", "scale_exponent": 11, "currency": "VND"}
+    if "ty dong" in normalized or "ty vnd" in normalized:
+        return {"dimension": "money", "scale_exponent": 9, "currency": "VND"}
+    if "trieu dong" in normalized or "trieu vnd" in normalized:
+        return {"dimension": "money", "scale_exponent": 6, "currency": "VND"}
+    if "nghin dong" in normalized or "ngan dong" in normalized:
+        return {"dimension": "money", "scale_exponent": 3, "currency": "VND"}
+    if " don vi co phieu" in f" {normalized}" or normalized.endswith("co phieu"):
+        return {"dimension": "shares", "scale_exponent": 0, "currency": None}
+    if "bao nhieu lan" in normalized or normalized.endswith("lan"):
+        return {"dimension": "ratio", "scale_exponent": None, "currency": None}
+    if "dong" in normalized or "vnd" in normalized:
+        return {"dimension": "money", "scale_exponent": 0, "currency": "VND"}
+    return None
 
 
 def _validate_frame_lists(frame: Mapping[str, object]) -> None:
