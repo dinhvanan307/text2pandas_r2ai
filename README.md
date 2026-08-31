@@ -22,31 +22,147 @@ Các con số parser candidate coverage, executable coverage, replay và officia
 accuracy là các đại lượng khác nhau. Không dùng một đại lượng thay cho đại lượng
 khác khi đánh giá chất lượng.
 
-## Kiến trúc
+## Kiến trúc hệ thống
 
-```text
-Câu hỏi tiếng Việt
-    -> semantic parsing / operation planning
-    -> retrieval bảng và observation
-    -> joint binding theo entity, period, basis, unit
-    -> typed Decimal execution
-    -> restricted Pandas query
-    -> evidence CSV + clean replay
-    -> validation + submission ZIP
+Text2Pandas dùng **layered architecture** cho runtime typed mới và
+**strangler architecture** để thay dần Canonical V2. Canonical V2 vẫn là đường
+chạy mặc định; Semantic V3/V4 và Grounded V5 chạy qua các composition root riêng,
+không tự động thay thế output Canonical.
+
+### Tổng quan component
+
+```mermaid
+flowchart LR
+    Q["Câu hỏi ViFinQA"] --> CLI["CLI: text2pandas"]
+    CLI --> ROOT["Composition root / Use case"]
+
+    ROOT --> V2["Canonical V2"]
+    ROOT --> SEM["Semantic V3 / V4 shadow"]
+    ROOT --> GND["Grounded V5 experimental"]
+
+    RAW[("Raw ViFinQA")] --> A6[("A6 silver.db")]
+    A6 --> IDX[("Retrieval snapshot")]
+    A6 --> V2
+    A6 --> SEM
+    A6 --> GND
+    IDX --> V2
+    IDX -. "optional table priors" .-> SEM
+
+    V2 --> EXEC["Typed/Pandas execution"]
+    SEM --> EXEC
+    GND --> EXEC
+    EXEC --> VERIFY["Sandbox + validation + clean replay"]
+    VERIFY --> RUN["Immutable run artifacts"]
+    RUN --> ZIP["Submission ZIP"]
+    RUN --> PROV["Tracked provenance"]
 ```
 
-Data lineage không chọn thư mục `latest`:
+Hệ thống được chia thành ba plane:
+
+| Plane | Thành phần | Trách nhiệm |
+|---|---|---|
+| Data plane | raw ViFinQA, A6, retrieval snapshot | Chuẩn hóa báo cáo, observations, table cards và index có identity bất biến |
+| Runtime plane | CLI, parser, planner, retrieval, binder, executor | Biến câu hỏi thành computation có kiểu, nguồn và evidence |
+| Governance plane | validator, replay, manifest, provenance, promotion policy | Fail closed, kiểm determinism, tách coverage/replay khỏi accuracy và kiểm soát release |
+
+### Các layer trong source
+
+```text
+interface ─────────────> application ─────────────> domain
+    │                          ▲
+    └──> infrastructure ───────┘
+
+pipelines = Canonical V2/A6/retrieval code được giữ trong giai đoạn migration
+```
+
+| Layer | Package | Trách nhiệm chính |
+|---|---|---|
+| Domain | [`src/text2pandas/domain/`](src/text2pandas/domain/) | `QuestionAST`, semantic types, metric ontology, unit/value object và business rules không gắn I/O |
+| Application | [`src/text2pandas/application/`](src/text2pandas/application/) | Use case, parser, planner, operand contracts, joint binding, typed execution, verification và submission orchestration |
+| Infrastructure | [`src/text2pandas/infrastructure/`](src/text2pandas/infrastructure/) | Filesystem, SQLite, A6/retrieval adapters, ontology loader, Pandas replay, sandbox và optional Ollama adapter |
+| Interface | [`src/text2pandas/interface/`](src/text2pandas/interface/) | Composition root và CLI; console entrypoint là `text2pandas.interface.cli.main:main` |
+| Migration/compatibility | [`src/text2pandas/pipelines/`](src/text2pandas/pipelines/) | A6 pipeline, Canonical V2 answering và retrieval/evalkit được giữ trong strangler migration |
+
+Hướng phụ thuộc mong muốn của code typed mới là đi vào trong: `interface` gọi
+`application`, `application` dùng contract/domain, còn I/O nằm ở adapter
+`infrastructure`. Policy, ontology và threshold phải nằm trong `configs/`, không
+hard-code trong use case.
+
+> **Migration debt:** repository chưa phải Clean Architecture hoàn tất.
+> Canonical V2 và một số use case chuyển tiếp vẫn import trực tiếp
+> `infrastructure`/`pipelines`; `application/ports/` chưa phải inversion boundary
+> đầy đủ. Đây là ngoại lệ được giữ để migration, không phải mẫu cho code mới.
+
+### Runtime flow đang hoạt động
+
+#### Canonical V2 — đường mặc định
+
+```text
+text2pandas run
+    -> interface/cli/main.py
+    -> application/usecases/canonical_run.py
+    -> pipelines/retrieval + pipelines/answering
+    -> application/usecases/submission.py
+    -> infrastructure/sandbox/query.py
+    -> records.jsonl / validated ZIP
+```
+
+Canonical dùng broad retrieval nhưng chỉ phát answer sau khi entity, period,
+metric, basis và unit đủ điều kiện. Các operation chưa chứng minh được phải
+`ABSTAIN`; không được chọn tùy ý một candidate.
+
+#### Semantic V3 — typed shadow path
+
+```text
+Vietnamese annotation
+    -> SemanticParser
+    -> immutable QuestionAST
+    -> compile_execution_plan()
+    -> operand-aware retrieval
+    -> JointBinder
+    -> TypedExecutor (Decimal)
+    -> restricted Pandas compiler
+    -> clean replay comparison
+    -> evidence từ bound observation UIDs
+```
+
+Composition root nằm tại
+[`application/usecases/semantic_v3.py`](src/text2pandas/application/usecases/semantic_v3.py).
+Typed answer và Pandas replay phải bằng nhau; mismatch hoặc ambiguity trả về
+`ABSTAIN`. V3 chỉ được promote khi policy trong
+[`configs/semantic/promotion_policy_v3.yaml`](configs/semantic/promotion_policy_v3.yaml)
+đạt trên gold release độc lập.
+
+#### Data build và lineage
 
 ```text
 raw ViFinQA
     -> A6 build có build_id
     -> retrieval snapshot có index_id
     -> immutable answer run có run_id
-    -> validated submission_<run_id>.zip
+    -> validation + clean replay
+    -> submission_<run_id>.zip + provenance
 ```
 
-`configs/datasets/active_snapshot.yaml` là nguồn duy nhất chọn raw/A6/retrieval
-đang active.
+[`configs/datasets/active_snapshot.yaml`](configs/datasets/active_snapshot.yaml)
+là nguồn duy nhất chọn raw/A6/retrieval active. Runtime không chọn thư mục
+`latest`, modification time hoặc directory order.
+
+### Architecture invariants
+
+- Mọi run có `run-id` mới và không ghi đè artifact cũ.
+- A6 và retrieval snapshot được bind bằng identity/checksum, không bằng path gần đúng.
+- Evidence phải suy ra từ observation thực sự được bind.
+- Mọi query phát ra phải chạy trong restricted sandbox và khớp packaged answer.
+- `competition` validation có thể báo unresolved; `complete` yêu cầu execution coverage đầy đủ.
+- Replay/coverage không được báo cáo như Answer Accuracy.
+- Production data processing và query execution không gọi mạng.
+- Compatibility namespaces `data_pipeline`, `retrieval` và
+  `text2pandas.answer_pipeline` chỉ phục vụ migration; code mới không import chúng.
+
+Các quyết định nền tảng nằm trong [ADR-0008](docs/adr/0008-semantic-query-engine-v3.md),
+[ADR-0015](docs/adr/0015-semantic-v3-artifact-level-strangler.md) và
+[ADR-0016](docs/adr/0016-submission-validation-profiles.md).
 
 ## Hợp đồng tái hiện
 
@@ -103,14 +219,16 @@ PY
 
 ## 1. Clone đúng source
 
-Nhánh chứa dòng phát triển mới nhất là `mentor-grounded-v6`. `main` và nhánh này
-có lịch sử riêng; không tự merge hai nhánh khi chỉ muốn tái hiện một checkpoint.
+Nhánh mặc định `main` chứa bản tích hợp mới nhất. Nhánh migration
+`mentor-grounded-v6` đã được merge vào `main`; fresh clone không cần checkout
+nhánh feature đó.
 
 ```bash
 git clone https://github.com/dinhvanan307/text2pandas_r2ai.git
 cd text2pandas_r2ai
-git switch mentor-grounded-v6
+git switch main
 git status --short --branch
+git rev-parse HEAD
 ```
 
 Để tái hiện một report/checkpoint cụ thể, checkout đúng commit ghi trong report
@@ -497,22 +615,93 @@ manifest, checksum, source identity và gate trước khi trở thành active.
 
 ## 11. Cấu trúc repository
 
-| Path | Trách nhiệm |
-|---|---|
-| `src/text2pandas/domain/` | Pure types và business rules |
-| `src/text2pandas/application/` | Parser, planner, binder, compiler, executor |
-| `src/text2pandas/infrastructure/` | SQLite, filesystem, retrieval, ontology, sandbox |
-| `src/text2pandas/interface/` | CLI thống nhất |
-| `src/text2pandas/pipelines/` | Canonical/migration pipelines |
-| `configs/` | Identity, policy, registry, formula, ontology |
-| `data/` | Raw/processed/indexed/curated data classes; payload lớn bị ignore |
-| `artifacts/` | Generated run/report/package/submission; bị ignore mặc định |
-| `provenance/` | Identity, checksum và audit seal nhỏ được track |
-| `tests/` | Unit, contract, regression và materialized integration |
-| `docs/` | ADR, competition contract, migration status và report |
+Cây dưới đây chỉ hiển thị các package có vai trò kiến trúc; cache, virtualenv và
+generated payload được lược bỏ:
 
-`data_pipeline`, `retrieval` và `text2pandas.answer_pipeline` là compatibility
-namespace. Code production mới phải import từ `text2pandas`.
+```text
+text2pandas_r2ai/
+├── src/
+│   ├── text2pandas/
+│   │   ├── domain/
+│   │   │   ├── semantic/          # QuestionAST, typed semantic nodes
+│   │   │   ├── metrics/           # metric ontology contracts
+│   │   │   ├── rules/             # deterministic business rules
+│   │   │   ├── units/             # unit lexicon
+│   │   │   └── values/            # document ID, Vietnamese numbers
+│   │   ├── application/
+│   │   │   ├── parsing/           # Vietnamese annotation -> AST candidates
+│   │   │   ├── planning/          # AST -> operand requests/constraints
+│   │   │   ├── retrieval/         # retrieval contracts and orchestration
+│   │   │   ├── binding/           # global/joint operand assignment
+│   │   │   ├── execution/         # typed executor + Pandas compiler
+│   │   │   ├── verification/      # family completeness and replay checks
+│   │   │   └── usecases/          # canonical, semantic, release workflows
+│   │   ├── infrastructure/
+│   │   │   ├── catalog/           # corpus scan and catalog persistence
+│   │   │   ├── parsing/           # HTML/table adapters
+│   │   │   ├── retrieval/         # SQLite/A6/fact/operand retrieval
+│   │   │   ├── semantic/          # ontology/policy/annotator adapters
+│   │   │   ├── execution/         # clean Pandas replay adapter
+│   │   │   ├── sandbox/           # restricted query validation/execution
+│   │   │   └── llm/               # optional open-weight Ollama adapter
+│   │   ├── interface/
+│   │   │   ├── cli/               # production composition root
+│   │   │   └── api/               # optional demo boundary
+│   │   ├── pipelines/
+│   │   │   ├── a6/                # mature raw -> A6 pipeline
+│   │   │   ├── retrieval/         # Canonical retrieval and evalkit
+│   │   │   └── answering/         # Canonical V2 answering engines
+│   │   └── answer_pipeline/        # compatibility re-export only
+│   ├── data_pipeline/              # compatibility namespace
+│   └── retrieval/                  # compatibility namespace
+├── configs/
+│   ├── datasets/                   # active snapshot identities
+│   ├── semantic/                   # ontology, parser/search/promotion policy
+│   ├── retrieval/                  # retrieval config and tracked model bytes
+│   ├── evaluation/                 # gold/review/release protocols
+│   ├── execution/                  # execution policy
+│   └── testing/                    # governed skip allowlist
+├── data/
+│   ├── raw/                        # immutable source corpus
+│   ├── processed/                  # A6 builds keyed by build_id
+│   ├── indexes/                    # retrieval snapshots keyed by index_id
+│   └── curated/                    # governed evaluation/gold inputs
+├── artifacts/                      # generated runs/reports/ZIPs; ignored
+├── provenance/                     # tracked identities, checksums, seals
+├── tools/                          # operator/evaluation scripts; not runtime imports
+├── tests/
+│   ├── unit/                       # typed components and policies
+│   ├── integration/                # materialized raw/A6/retrieval contracts
+│   ├── regression/                 # frozen behavior checks
+│   ├── semantic/                   # semantic parser/execution suites
+│   └── fixtures/                   # small deterministic fixtures
+├── docs/
+│   ├── adr/                        # accepted architecture decisions
+│   ├── competition/                # source contract and license notes
+│   └── reports/                    # dated evidence, not implicit authority
+├── Makefile                        # reproducible developer/release commands
+├── pyproject.toml                  # package, CLI and tool configuration
+└── requirements.lock               # hash-locked acceptance environment
+```
+
+### Nơi bắt đầu khi đọc code
+
+| Mục tiêu | Bắt đầu tại |
+|---|---|
+| Hiểu CLI/subcommands | [`src/text2pandas/interface/cli/main.py`](src/text2pandas/interface/cli/main.py) |
+| Theo dõi Canonical runtime | [`src/text2pandas/application/usecases/canonical_run.py`](src/text2pandas/application/usecases/canonical_run.py) |
+| Theo dõi Semantic V3 E2E | [`src/text2pandas/application/usecases/semantic_v3.py`](src/text2pandas/application/usecases/semantic_v3.py) |
+| Hiểu AST và type system | [`src/text2pandas/domain/semantic/`](src/text2pandas/domain/semantic/) |
+| Hiểu joint binding | [`src/text2pandas/application/binding/binder.py`](src/text2pandas/application/binding/binder.py) |
+| Hiểu typed/Pandas execution | [`src/text2pandas/application/execution/`](src/text2pandas/application/execution/) |
+| Hiểu retrieval active | [`src/text2pandas/infrastructure/retrieval/`](src/text2pandas/infrastructure/retrieval/) |
+| Hiểu validation/package | [`src/text2pandas/application/usecases/submission.py`](src/text2pandas/application/usecases/submission.py) |
+| Hiểu data ownership | [`data/README.md`](data/README.md) |
+| Hiểu migration state | [`docs/SEMANTIC_V3_MIGRATION_STATUS.md`](docs/SEMANTIC_V3_MIGRATION_STATUS.md) |
+
+`tools/`, `experiments/` và generated artifacts không được import bởi production
+runtime. Compatibility namespaces chỉ được giữ để các command/test lịch sử tiếp
+tục chạy trong thời gian migration.
 
 ## 12. Submission contract
 
